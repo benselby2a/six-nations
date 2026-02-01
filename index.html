@@ -2527,7 +2527,7 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_LDr2Tvnosv-H38JuWV5B0g_aKKA4NV1';  // Your anon/public key
         
         // Initialize Supabase client
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // ============================================
         // STORAGE ABSTRACTION LAYER (Supabase)
@@ -2535,7 +2535,7 @@
         const Storage = {
             // Users - get all users as object keyed by username
             getUsers: async () => {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('users')
                     .select('*');
                 
@@ -2557,7 +2557,7 @@
                 });
                 
                 // Fetch predictions for all users
-                const { data: predictions, error: predError } = await supabase
+                const { data: predictions, error: predError } = await supabaseClient
                     .from('predictions')
                     .select('*');
                 
@@ -2585,7 +2585,7 @@
             // Save a single user (for registration/updates)
             saveUser: async (username, userData) => {
                 // Check if user exists
-                const { data: existing } = await supabase
+                const { data: existing } = await supabaseClient
                     .from('users')
                     .select('id')
                     .eq('username', username)
@@ -2593,7 +2593,7 @@
                 
                 if (existing) {
                     // Update existing user
-                    const { error } = await supabase
+                    const { error } = await supabaseClient
                         .from('users')
                         .update({
                             nickname: userData.nickname,
@@ -2606,7 +2606,7 @@
                     if (error) console.error('Error updating user:', error);
                 } else {
                     // Insert new user
-                    const { error } = await supabase
+                    const { error } = await supabaseClient
                         .from('users')
                         .insert({
                             username: username,
@@ -2623,7 +2623,7 @@
             // Save predictions for a user
             savePredictions: async (username, predictions, totalTries) => {
                 // Get user ID
-                const { data: user } = await supabase
+                const { data: user } = await supabaseClient
                     .from('users')
                     .select('id')
                     .eq('username', username)
@@ -2635,14 +2635,14 @@
                 }
                 
                 // Update total tries
-                await supabase
+                await supabaseClient
                     .from('users')
                     .update({ total_tries: totalTries })
                     .eq('id', user.id);
                 
                 // Upsert predictions
                 for (const [matchId, pred] of Object.entries(predictions)) {
-                    const { error } = await supabase
+                    const { error } = await supabaseClient
                         .from('predictions')
                         .upsert({
                             user_id: user.id,
@@ -2660,7 +2660,7 @@
             
             // Delete a user
             deleteUser: async (username) => {
-                const { error } = await supabase
+                const { error } = await supabaseClient
                     .from('users')
                     .delete()
                     .eq('username', username);
@@ -2670,7 +2670,7 @@
             
             // Matches/Fixtures
             getMatches: async () => {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('matches')
                     .select('*')
                     .order('id');
@@ -2699,7 +2699,7 @@
             
             saveMatches: async (matchesData) => {
                 // Delete all existing matches and re-insert
-                await supabase.from('matches').delete().neq('id', 0);
+                await supabaseClient.from('matches').delete().neq('id', 0);
                 
                 const rows = matchesData.map(m => ({
                     id: m.id,
@@ -2714,13 +2714,13 @@
                     actual_tries2: m.actualTries2
                 }));
                 
-                const { error } = await supabase.from('matches').insert(rows);
+                const { error } = await supabaseClient.from('matches').insert(rows);
                 if (error) console.error('Error saving matches:', error);
             },
             
             // Admin emails
             getAdminEmails: async () => {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('admin_emails')
                     .select('email');
                 
@@ -2734,18 +2734,18 @@
             
             saveAdminEmails: async (emails) => {
                 // Delete all and re-insert
-                await supabase.from('admin_emails').delete().neq('email', '');
+                await supabaseClient.from('admin_emails').delete().neq('email', '');
                 
                 if (emails.length > 0) {
                     const rows = emails.map(email => ({ email }));
-                    const { error } = await supabase.from('admin_emails').insert(rows);
+                    const { error } = await supabaseClient.from('admin_emails').insert(rows);
                     if (error) console.error('Error saving admin emails:', error);
                 }
             },
             
             // App settings
             getSettings: async () => {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient
                     .from('settings')
                     .select('*');
                 
@@ -2764,7 +2764,7 @@
             },
             
             saveSettings: async (settings) => {
-                const { error } = await supabase
+                const { error } = await supabaseClient
                     .from('settings')
                     .upsert({
                         key: 'predictions_locked',
@@ -2786,7 +2786,7 @@
         // Loading state
         let isLoading = true;
 
-        // Initialize data from Supabase
+        // Initialize data from supabaseClient
         async function initializeData() {
             try {
                 // Show loading indicator
