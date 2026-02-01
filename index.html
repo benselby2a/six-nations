@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Six Nations Predictor</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;600;800&family=VT323&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         /* Default Theme (Classic) */
         :root {
@@ -2159,61 +2158,9 @@
             font-weight: bold;
             font-size: 1.1rem;
         }
-
-        /* Loading Screen */
-        .loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg-gradient);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-
-        .loading-screen.hidden {
-            display: none;
-        }
-
-        .loading-content {
-            text-align: center;
-        }
-
-        .loading-spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid rgba(212, 175, 55, 0.3);
-            border-top: 4px solid var(--gold);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1.5rem;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .loading-text {
-            font-family: 'Bebas Neue', cursive;
-            font-size: 1.5rem;
-            color: var(--gold);
-            letter-spacing: 0.1em;
-        }
     </style>
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div id="loadingScreen" class="loading-screen">
-        <div class="loading-content">
-            <div class="loading-spinner"></div>
-            <div class="loading-text">Loading...</div>
-        </div>
-    </div>
-
     <div class="container">
         <header>
             <h1>Six Nations</h1>
@@ -2520,315 +2467,41 @@
         }
 
         // ============================================
-        // SUPABASE CONFIGURATION
-        // Replace these with your Supabase project details
-        // ============================================
-        const SUPABASE_URL = 'https://tzspmhmyhcbogwqefvfc.supabase.co';  // e.g., 'https://xxxxx.supabase.co'
-        const SUPABASE_ANON_KEY = 'sb_publishable_LDr2Tvnosv-H38JuWV5B0g_aKKA4NV1';  // Your anon/public key
-        
-        // Initialize Supabase client
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        // ============================================
-        // STORAGE ABSTRACTION LAYER (Supabase)
+        // STORAGE ABSTRACTION LAYER
+        // Replace these methods to switch to a database
         // ============================================
         const Storage = {
-            // Users - get all users as object keyed by username
-            getUsers: async () => {
-                const { data, error } = await supabase
-                    .from('users')
-                    .select('*');
-                
-                if (error) {
-                    console.error('Error fetching users:', error);
-                    return {};
-                }
-                
-                // Convert array to object keyed by username
-                const usersObj = {};
-                data.forEach(user => {
-                    usersObj[user.username] = {
-                        nickname: user.nickname,
-                        email: user.email,
-                        passwordHash: user.password_hash,
-                        totalTries: user.total_tries,
-                        predictions: {}  // Will be populated separately
-                    };
-                });
-                
-                // Fetch predictions for all users
-                const { data: predictions, error: predError } = await supabase
-                    .from('predictions')
-                    .select('*');
-                
-                if (!predError && predictions) {
-                    // Map user_id to username
-                    const userIdToUsername = {};
-                    data.forEach(user => {
-                        userIdToUsername[user.id] = user.username;
-                    });
-                    
-                    predictions.forEach(pred => {
-                        const username = userIdToUsername[pred.user_id];
-                        if (username && usersObj[username]) {
-                            usersObj[username].predictions[pred.match_id] = {
-                                team1: pred.team1_score,
-                                team2: pred.team2_score
-                            };
-                        }
-                    });
-                }
-                
-                return usersObj;
-            },
-            
-            // Save a single user (for registration/updates)
-            saveUser: async (username, userData) => {
-                // Check if user exists
-                const { data: existing } = await supabase
-                    .from('users')
-                    .select('id')
-                    .eq('username', username)
-                    .single();
-                
-                if (existing) {
-                    // Update existing user
-                    const { error } = await supabase
-                        .from('users')
-                        .update({
-                            nickname: userData.nickname,
-                            email: userData.email,
-                            password_hash: userData.passwordHash,
-                            total_tries: userData.totalTries
-                        })
-                        .eq('username', username);
-                    
-                    if (error) console.error('Error updating user:', error);
-                } else {
-                    // Insert new user
-                    const { error } = await supabase
-                        .from('users')
-                        .insert({
-                            username: username,
-                            nickname: userData.nickname,
-                            email: userData.email,
-                            password_hash: userData.passwordHash,
-                            total_tries: userData.totalTries
-                        });
-                    
-                    if (error) console.error('Error inserting user:', error);
-                }
-            },
-            
-            // Save predictions for a user
-            savePredictions: async (username, predictions, totalTries) => {
-                // Get user ID
-                const { data: user } = await supabase
-                    .from('users')
-                    .select('id')
-                    .eq('username', username)
-                    .single();
-                
-                if (!user) {
-                    console.error('User not found:', username);
-                    return;
-                }
-                
-                // Update total tries
-                await supabase
-                    .from('users')
-                    .update({ total_tries: totalTries })
-                    .eq('id', user.id);
-                
-                // Upsert predictions
-                for (const [matchId, pred] of Object.entries(predictions)) {
-                    const { error } = await supabase
-                        .from('predictions')
-                        .upsert({
-                            user_id: user.id,
-                            match_id: parseInt(matchId),
-                            team1_score: pred.team1,
-                            team2_score: pred.team2,
-                            updated_at: new Date().toISOString()
-                        }, {
-                            onConflict: 'user_id,match_id'
-                        });
-                    
-                    if (error) console.error('Error saving prediction:', error);
-                }
-            },
-            
-            // Delete a user
-            deleteUser: async (username) => {
-                const { error } = await supabase
-                    .from('users')
-                    .delete()
-                    .eq('username', username);
-                
-                if (error) console.error('Error deleting user:', error);
-            },
+            // Users
+            getUsers: () => JSON.parse(localStorage.getItem('rugbyUsers')) || {},
+            saveUsers: (data) => localStorage.setItem('rugbyUsers', JSON.stringify(data)),
             
             // Matches/Fixtures
-            getMatches: async () => {
-                const { data, error } = await supabase
-                    .from('matches')
-                    .select('*')
-                    .order('id');
-                
-                if (error) {
-                    console.error('Error fetching matches:', error);
-                    return null;
-                }
-                
-                if (!data || data.length === 0) return null;
-                
-                // Convert to app format
-                return data.map(m => ({
-                    id: m.id,
-                    round: m.round,
-                    date: m.date,
-                    time: m.time,
-                    team1: m.team1,
-                    team2: m.team2,
-                    actualScore1: m.actual_score1,
-                    actualScore2: m.actual_score2,
-                    actualTries1: m.actual_tries1,
-                    actualTries2: m.actual_tries2
-                }));
+            getMatches: () => {
+                const saved = localStorage.getItem('rugbyMatches');
+                return saved ? JSON.parse(saved) : null;
             },
-            
-            saveMatches: async (matchesData) => {
-                // Delete all existing matches and re-insert
-                await supabase.from('matches').delete().neq('id', 0);
-                
-                const rows = matchesData.map(m => ({
-                    id: m.id,
-                    round: m.round,
-                    date: m.date,
-                    time: m.time,
-                    team1: m.team1,
-                    team2: m.team2,
-                    actual_score1: m.actualScore1,
-                    actual_score2: m.actualScore2,
-                    actual_tries1: m.actualTries1,
-                    actual_tries2: m.actualTries2
-                }));
-                
-                const { error } = await supabase.from('matches').insert(rows);
-                if (error) console.error('Error saving matches:', error);
-            },
+            saveMatches: (data) => localStorage.setItem('rugbyMatches', JSON.stringify(data)),
             
             // Admin emails
-            getAdminEmails: async () => {
-                const { data, error } = await supabase
-                    .from('admin_emails')
-                    .select('email');
-                
-                if (error) {
-                    console.error('Error fetching admin emails:', error);
-                    return [];
-                }
-                
-                return data.map(row => row.email);
-            },
-            
-            saveAdminEmails: async (emails) => {
-                // Delete all and re-insert
-                await supabase.from('admin_emails').delete().neq('email', '');
-                
-                if (emails.length > 0) {
-                    const rows = emails.map(email => ({ email }));
-                    const { error } = await supabase.from('admin_emails').insert(rows);
-                    if (error) console.error('Error saving admin emails:', error);
-                }
-            },
+            getAdminEmails: () => JSON.parse(localStorage.getItem('rugbyAdminEmails')) || [],
+            saveAdminEmails: (data) => localStorage.setItem('rugbyAdminEmails', JSON.stringify(data)),
             
             // App settings
-            getSettings: async () => {
-                const { data, error } = await supabase
-                    .from('settings')
-                    .select('*');
-                
-                if (error || !data || data.length === 0) {
-                    return { predictionsLocked: false };
-                }
-                
-                const settings = {};
-                data.forEach(row => {
-                    if (row.key === 'predictions_locked') {
-                        settings.predictionsLocked = row.value === 'true' || row.value === true;
-                    }
-                });
-                
-                return settings;
-            },
-            
-            saveSettings: async (settings) => {
-                const { error } = await supabase
-                    .from('settings')
-                    .upsert({
-                        key: 'predictions_locked',
-                        value: settings.predictionsLocked ? 'true' : 'false'
-                    }, {
-                        onConflict: 'key'
-                    });
-                
-                if (error) console.error('Error saving settings:', error);
-            }
+            getSettings: () => JSON.parse(localStorage.getItem('rugbySettings')) || { predictionsLocked: false },
+            saveSettings: (data) => localStorage.setItem('rugbySettings', JSON.stringify(data))
         };
 
         // In-memory state (loaded from storage on init)
-        let users = {};
+        let users = Storage.getUsers();
         let currentUsername = null;
-        let adminEmails = [];
-        let appSettings = { predictionsLocked: false };
+        let adminEmails = Storage.getAdminEmails();
+        let appSettings = Storage.getSettings();
 
-        // Loading state
-        let isLoading = true;
-
-        // Initialize data from Supabase
-        async function initializeData() {
-            try {
-                // Show loading indicator
-                showLoadingScreen();
-                
-                // Load all data in parallel
-                const [loadedUsers, loadedAdmins, loadedSettings, loadedMatches] = await Promise.all([
-                    Storage.getUsers(),
-                    Storage.getAdminEmails(),
-                    Storage.getSettings(),
-                    Storage.getMatches()
-                ]);
-                
-                users = loadedUsers;
-                adminEmails = loadedAdmins;
-                appSettings = loadedSettings;
-                
-                // Load matches from database or use defaults
-                if (loadedMatches && loadedMatches.length > 0) {
-                    matches.length = 0;
-                    loadedMatches.forEach(m => matches.push(m));
-                }
-                
-                isLoading = false;
-                hideLoadingScreen();
-                
-            } catch (error) {
-                console.error('Error initializing data:', error);
-                isLoading = false;
-                hideLoadingScreen();
-                alert('Error connecting to database. Please check your connection and refresh.');
-            }
-        }
-
-        function showLoadingScreen() {
-            const loader = document.getElementById('loadingScreen');
-            if (loader) loader.classList.remove('hidden');
-        }
-
-        function hideLoadingScreen() {
-            const loader = document.getElementById('loadingScreen');
-            if (loader) loader.classList.add('hidden');
+        // Load matches from storage or use defaults
+        const savedMatches = Storage.getMatches();
+        if (savedMatches) {
+            matches.length = 0;
+            savedMatches.forEach(m => matches.push(m));
         }
 
         // Check if current user is admin
@@ -2868,9 +2541,9 @@
         }
 
         // Toggle predictions lock
-        async function togglePredictionsLock() {
+        function togglePredictionsLock() {
             appSettings.predictionsLocked = !appSettings.predictionsLocked;
-            await Storage.saveSettings(appSettings);
+            Storage.saveSettings(appSettings);
             updateLockToggleUI();
             renderMatches(); // Re-render to show/hide inputs
         }
@@ -2980,7 +2653,7 @@
         }
 
         // Add a new match
-        async function addNewMatch() {
+        function addNewMatch() {
             // Find the highest existing ID
             const maxId = matches.length > 0 ? Math.max(...matches.map(m => m.id)) : 0;
             // Find the highest round
@@ -3000,13 +2673,13 @@
             };
             
             matches.push(newMatch);
-            await Storage.saveMatches(matches);
+            Storage.saveMatches(matches);
             renderAdminMatches();
             renderMatches();
         }
 
         // Delete a match
-        async function deleteMatch(matchId) {
+        function deleteMatch(matchId) {
             const match = matches.find(m => m.id === matchId);
             if (!match) return;
             
@@ -3018,7 +2691,7 @@
             const index = matches.findIndex(m => m.id === matchId);
             if (index > -1) {
                 matches.splice(index, 1);
-                await Storage.saveMatches(matches);
+                Storage.saveMatches(matches);
                 renderAdminMatches();
                 renderMatches();
                 updateLeaderboard();
@@ -3026,7 +2699,7 @@
         }
 
         // Clear all fixtures
-        async function clearAllFixtures() {
+        function clearAllFixtures() {
             if (!confirm('Are you sure you want to remove ALL fixtures? This cannot be undone.')) {
                 return;
             }
@@ -3035,7 +2708,7 @@
             }
             
             matches.length = 0;
-            await Storage.saveMatches(matches);
+            Storage.saveMatches(matches);
             renderAdminMatches();
             renderMatches();
             showSummary();
@@ -3055,7 +2728,7 @@
         }
 
         // Process bulk import data
-        async function processBulkImport() {
+        function processBulkImport() {
             const data = document.getElementById('bulkImportData').value.trim();
             
             if (!data) {
@@ -3183,7 +2856,7 @@
             // Add new fixtures
             newFixtures.forEach(f => matches.push(f));
             
-            await Storage.saveMatches(matches);
+            Storage.saveMatches(matches);
             closeBulkImport();
             renderAdminMatches();
             renderMatches();
@@ -3205,7 +2878,7 @@
         }
 
         // Auto-save match results on blur
-        async function autoSaveResults() {
+        function autoSaveResults() {
             matches.forEach(match => {
                 // Get all editable fields
                 const roundEl = document.getElementById(`round-${match.id}`);
@@ -3260,7 +2933,7 @@
             });
 
             // Save to storage
-            await Storage.saveMatches(matches);
+            Storage.saveMatches(matches);
             
             // Update saved indicators
             updateResultSavedIndicators();
@@ -3338,7 +3011,7 @@
         }
 
         // Save changes to a user
-        async function saveUserChanges(username) {
+        function saveUserChanges(username) {
             const nickname = document.getElementById(`edit-nickname-${username}`).value.trim();
 
             if (!nickname) {
@@ -3357,7 +3030,7 @@
 
             users[username].nickname = nickname;
 
-            await Storage.saveUser(username, users[username]);
+            Storage.saveUsers(users);
             alert('User updated successfully!');
             
             // Update current user display if editing self
@@ -3367,7 +3040,7 @@
         }
 
         // Toggle user admin status
-        async function toggleUserAdmin(username) {
+        function toggleUserAdmin(username) {
             const user = users[username];
             if (!user || !user.email) return;
 
@@ -3382,12 +3055,12 @@
                 adminEmails.push(email);
             }
 
-            await Storage.saveAdminEmails(adminEmails);
+            Storage.saveAdminEmails(adminEmails);
             updateAdminSubtitle();
         }
 
         // Delete a user
-        async function deleteUser(username) {
+        function deleteUser(username) {
             if (!username || !users[username]) {
                 alert('User not found.');
                 return;
@@ -3407,18 +3080,18 @@
             const userEmail = users[username].email;
             if (userEmail) {
                 adminEmails = adminEmails.filter(e => e.toLowerCase() !== userEmail.toLowerCase());
-                await Storage.saveAdminEmails(adminEmails);
+                Storage.saveAdminEmails(adminEmails);
             }
 
             delete users[username];
-            await Storage.deleteUser(username);
+            Storage.saveUsers(users);
             renderCompetitorManagement();
             updateLeaderboard();
             updateAdminSubtitle();
         }
 
         // Reset a user's password
-        async function resetUserPassword(username) {
+        function resetUserPassword(username) {
             if (!username || !users[username]) {
                 alert('User not found.');
                 return;
@@ -3431,7 +3104,7 @@
 
             // Set flag to require password reset on next login
             users[username].passwordResetRequired = true;
-            await Storage.saveUser(username, users[username]);
+            Storage.saveUsers(users);
             
             alert(`Password reset initiated for ${displayName}. They will be prompted to set a new password on their next login.`);
             renderCompetitorManagement();
@@ -3491,7 +3164,7 @@
             users[passwordResetUsername].passwordHash = passwordHash;
             delete users[passwordResetUsername].password; // Remove any legacy plain text password
             users[passwordResetUsername].passwordResetRequired = false;
-            await Storage.saveUser(passwordResetUsername, users[passwordResetUsername]);
+            Storage.saveUsers(users);
 
             // Close modal and log in
             document.getElementById('passwordResetModal').classList.add('hidden');
@@ -3506,7 +3179,7 @@
         }
 
         // Change theme
-        async function changeTheme(theme) {
+        function changeTheme(theme) {
             // Apply theme to document
             if (theme === 'classic') {
                 document.documentElement.removeAttribute('data-theme');
@@ -3517,7 +3190,7 @@
             // Save to user's account if logged in
             if (currentUsername && users[currentUsername]) {
                 users[currentUsername].theme = theme;
-                await Storage.saveUser(currentUsername, users[currentUsername]);
+                Storage.saveUsers(users);
             }
             
             // Update the selector
@@ -3622,7 +3295,7 @@
                     // Migrate to hashed password
                     users[username].passwordHash = await hashPassword(password);
                     delete users[username].password;
-                    await Storage.saveUser(username, users[username]);
+                    Storage.saveUsers(users);
                 }
             }
 
@@ -3694,12 +3367,12 @@
                 totalTries: null
             };
 
-            await Storage.saveUser(username, users[username]);
+            Storage.saveUsers(users);
             
             // Make first user an admin
             if (isFirstUser) {
                 adminEmails.push(email.toLowerCase());
-                await Storage.saveAdminEmails(adminEmails);
+                Storage.saveAdminEmails(adminEmails);
                 showLoginFeedback('Account created! As the first user, you are now an Admin. Welcome, ' + toTitleCase(nickname) + '!', 'info');
             } else {
                 showLoginFeedback('Competitor account created! Welcome, ' + toTitleCase(nickname) + '!', 'info');
@@ -3896,7 +3569,7 @@
         }
 
         // Auto-save predictions on blur
-        async function autoSavePredictions() {
+        function autoSavePredictions() {
             if (appSettings.predictionsLocked) return;
             
             const predictions = {};
@@ -3922,7 +3595,7 @@
 
             users[currentUsername].predictions = predictions;
             users[currentUsername].totalTries = newTries;
-            await Storage.savePredictions(currentUsername, predictions, newTries);
+            Storage.saveUsers(users);
 
             // Update the tick indicators
             updateSavedIndicators();
@@ -4682,10 +4355,8 @@
             }
         }
 
-        // Initialize on load - load data from Supabase first
-        initializeData().then(() => {
-            init();
-        });
+        // Initialize on load
+        init();
     </script>
 </body>
 </html>
