@@ -264,28 +264,43 @@
         }
 
         .theme-selector select {
-            padding: 0.4rem 0.8rem;
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            border-radius: 15px;
-            background: rgba(0, 0, 0, 0.3);
+            padding: 0.5rem 2.5rem 0.5rem 1rem;
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
             color: var(--white);
-            font-size: 0.75rem;
+            font-size: 0.85rem;
+            font-weight: 700;
             font-family: var(--body-font);
             cursor: pointer;
             outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23d4af37' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            min-width: 130px;
         }
 
-        .theme-selector select:focus {
+        .theme-selector select:hover {
+            background-color: rgba(255, 255, 255, 0.15);
             border-color: var(--gold);
         }
 
+        .theme-selector select:focus {
+            border-color: var(--bright-gold);
+            background-color: rgba(212, 175, 55, 0.2);
+        }
+
         .theme-selector label {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            opacity: 0.7;
+            opacity: 0.8;
             margin: 0;
-            color: var(--white);
+            color: var(--gold);
+            font-weight: 700;
         }
 
         /* App header with theme selector */
@@ -409,6 +424,7 @@
             position: relative;
             overflow: hidden;
             white-space: nowrap;
+            text-align: center;
         }
 
         .tab::before {
@@ -559,12 +575,37 @@
             animation: fadeIn 0.8s ease-out;
         }
 
+        .outstanding-banner {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2) 0%, rgba(231, 76, 60, 0.1) 100%);
+            border: 2px solid var(--red);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .outstanding-banner-icon {
+            font-size: 1.5rem;
+        }
+
+        .outstanding-banner-text {
+            font-weight: 600;
+            color: var(--white);
+        }
+
+        .outstanding-banner-count {
+            color: var(--red);
+            font-weight: 800;
+        }
+
         .match-card {
             background: rgba(255, 255, 255, 0.05);
             border: 2px solid rgba(212, 175, 55, 0.3);
-            border-radius: 10px;
-            padding: 2rem;
-            margin-bottom: 1.5rem;
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 0.75rem;
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
             position: relative;
@@ -577,7 +618,7 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 4px;
+            height: 3px;
             background: linear-gradient(90deg, var(--gold), var(--bright-gold), var(--gold));
             transform: translateX(-100%);
             transition: transform 0.5s ease;
@@ -590,24 +631,24 @@
         .match-card:hover {
             border-color: var(--gold);
             background: rgba(255, 255, 255, 0.08);
-            transform: translateY(-3px);
-            box-shadow: 0 8px 30px var(--shadow);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px var(--shadow);
         }
 
         .match-header {
             font-family: 'Bebas Neue', cursive;
-            font-size: 1.8rem;
+            font-size: 1.2rem;
             color: var(--bright-gold);
-            margin-bottom: 1.5rem;
+            margin-bottom: 0.75rem;
             letter-spacing: 0.05em;
         }
 
         .match-teams {
             display: grid;
             grid-template-columns: 1fr auto 1fr;
-            gap: 2rem;
+            gap: 1rem;
             align-items: center;
-            margin-bottom: 1.5rem;
+            margin-bottom: 0;
         }
 
         .team {
@@ -615,16 +656,16 @@
         }
 
         .team-name {
-            font-size: 1.4rem;
+            font-size: 1rem;
             font-weight: 800;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
 
         .team-flag {
-            font-size: 3rem;
-            margin-bottom: 0.5rem;
+            font-size: 2rem;
+            margin-bottom: 0.25rem;
             line-height: 1;
         }
 
@@ -699,16 +740,16 @@
         }
 
         .score-input {
-            width: 80px;
+            width: 70px;
             text-align: center;
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             font-weight: 800;
-            padding: 0.8rem;
+            padding: 0.5rem;
         }
 
         .vs {
             font-family: 'Bebas Neue', cursive;
-            font-size: 2rem;
+            font-size: 1.5rem;
             color: var(--gold);
             font-weight: 800;
         }
@@ -716,18 +757,18 @@
         /* Tries Prediction */
         .tries-section {
             background: rgba(255, 255, 255, 0.08);
-            border: 3px solid var(--gold);
-            border-radius: 10px;
-            padding: 2.5rem;
-            margin-top: 2rem;
+            border: 2px solid var(--gold);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
             text-align: center;
         }
 
         .tries-section h3 {
             font-family: 'Bebas Neue', cursive;
-            font-size: 2.5rem;
+            font-size: 1.8rem;
             color: var(--bright-gold);
-            margin-bottom: 1.5rem;
+            margin-bottom: 0.75rem;
             letter-spacing: 0.1em;
         }
 
@@ -1002,6 +1043,67 @@
             border-color: var(--bright-gold);
         }
 
+        .round-filter-group {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            flex: 1 1 100%;
+        }
+
+        .round-filter-group .filter-btn {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            border-right: none;
+            flex: 1;
+        }
+
+        .round-divider {
+            width: 2px;
+            background: rgba(212, 175, 55, 0.5);
+            align-self: stretch;
+        }
+
+        .round-filter-group .filter-btn.active + .round-divider {
+            background: var(--bright-gold);
+        }
+
+        .round-select {
+            padding: 0.8rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-left: none;
+            color: var(--white);
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            border-top-right-radius: 5px;
+            border-bottom-right-radius: 5px;
+            flex: 1;
+            min-width: 0;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23d4af37' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            padding-right: 2.5rem;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+        }
+
+        .round-select:focus {
+            outline: none;
+            border-color: var(--gold);
+        }
+
+        .round-select:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-color: var(--gold);
+        }
+
+        .round-filter-group .filter-btn.active + .round-divider + .round-select {
+            background-color: rgba(212, 175, 55, 0.3);
+            border-color: var(--bright-gold);
+        }
+
         .summary-table {
             width: 100%;
             background: rgba(255, 255, 255, 0.05);
@@ -1009,7 +1111,8 @@
             overflow: hidden;
             border: 2px solid var(--gold);
             backdrop-filter: blur(10px);
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             table-layout: auto;
         }
 
@@ -1027,14 +1130,68 @@
             vertical-align: bottom;
         }
 
-        .summary-table th.competitor-col {
-            text-align: left;
-            min-width: 150px;
+        /* Sticky rank column */
+        .summary-table th.rank-col,
+        .summary-table td.rank-col {
             position: sticky;
             left: 0;
+            z-index: 12;
+            min-width: 40px;
+            width: 40px;
+            text-align: center;
+        }
+
+        .summary-table th.rank-col {
             background: var(--gold);
-            z-index: 10;
+        }
+
+        .summary-table td.rank-col {
+            background: rgba(26, 77, 46, 0.98);
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        /* Sticky competitor name column */
+        .summary-table th.competitor-col {
+            text-align: left;
+            min-width: 120px;
+            position: sticky;
+            left: 40px;
+            background: var(--gold);
+            z-index: 12;
             white-space: nowrap;
+        }
+
+        .summary-table td.competitor-name {
+            text-align: left;
+            font-weight: 700;
+            position: sticky;
+            left: 40px;
+            background: rgba(26, 77, 46, 0.98);
+            z-index: 11;
+            border-right: 2px solid rgba(212, 175, 55, 0.3);
+        }
+
+        /* Sticky points column on the right */
+        .summary-table th.pts-col,
+        .summary-table td.pts-col {
+            position: sticky;
+            right: 0;
+            z-index: 12;
+            min-width: 50px;
+            text-align: center;
+            box-shadow: -2px 0 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .summary-table th.pts-col {
+            background: var(--gold);
+        }
+
+        .summary-table td.pts-col {
+            background: rgba(26, 77, 46, 0.98);
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: var(--bright-gold);
         }
 
         .summary-table td {
@@ -1045,22 +1202,37 @@
             white-space: nowrap;
         }
 
-        .summary-table td.competitor-name {
-            text-align: left;
-            font-weight: 700;
-            position: sticky;
-            left: 0;
-            background: rgba(26, 77, 46, 0.95);
-            z-index: 9;
-            border-right: 2px solid rgba(212, 175, 55, 0.3);
-        }
-
         .summary-table tr:hover td {
             background: rgba(255, 255, 255, 0.1);
         }
 
-        .summary-table tr:hover td.competitor-name {
+        .summary-table tr:hover td.rank-col,
+        .summary-table tr:hover td.competitor-name,
+        .summary-table tr:hover td.pts-col {
             background: rgba(26, 77, 46, 1);
+        }
+
+        /* Highlight current logged in user */
+        .summary-table tr.current-user-row td {
+            background: rgba(212, 175, 55, 0.15);
+        }
+
+        .summary-table tr.current-user-row td.rank-col,
+        .summary-table tr.current-user-row td.competitor-name,
+        .summary-table tr.current-user-row td.pts-col {
+            background: rgba(212, 175, 55, 0.25);
+        }
+
+        .summary-table tr.current-user-row td.competitor-name {
+            border-left: 3px solid var(--bright-gold);
+        }
+
+        .summary-table tr.current-user-row:hover td {
+            background: rgba(212, 175, 55, 0.25);
+        }
+
+        .summary-table tr.current-user-row:hover td.competitor-name {
+            background: rgba(212, 175, 55, 0.35);
         }
 
         .match-header-cell {
@@ -1290,12 +1462,20 @@
         /* Responsive */
         @media (max-width: 768px) {
             h1 {
-                font-size: 3rem;
+                font-size: 2.5rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+
+            .container {
+                padding: 1rem;
             }
 
             .match-teams {
                 grid-template-columns: 1fr;
-                gap: 1rem;
+                gap: 0.75rem;
             }
 
             .vs {
@@ -1313,36 +1493,276 @@
             }
 
             .tab {
-                padding: 0.8rem 1rem;
-                font-size: 0.85rem;
+                padding: 0.6rem 0.8rem;
+                font-size: 0.75rem;
                 flex: 1 1 auto;
                 min-width: fit-content;
+                letter-spacing: 0.02em;
+            }
+            
+            .app-header {
+                flex-direction: column;
+                gap: 0.75rem;
+                align-items: stretch;
+            }
+            
+            .theme-selector {
+                justify-content: center;
+            }
+            
+            .user-info {
+                justify-content: center;
+            }
+            
+            .filter-btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.8rem;
+                flex: 1 1 auto;
+            }
+            
+            .summary-filters {
+                gap: 0.5rem;
+            }
+            
+            .round-filter-group {
+                flex: 1 1 100%;
+            }
+            
+            .round-filter-group .filter-btn {
+                flex: 1;
+            }
+            
+            .round-select {
+                padding: 0.6rem 0.5rem;
+                font-size: 0.8rem;
+                min-width: 60px;
+            }
+            
+            /* Summary table mobile adjustments */
+            .summary-table th.rank-col,
+            .summary-table td.rank-col {
+                min-width: 30px;
+                width: 30px;
+                padding: 0.5rem 0.3rem;
+                font-size: 0.85rem;
+            }
+            
+            .summary-table th.competitor-col,
+            .summary-table td.competitor-name {
+                min-width: 80px;
+                max-width: 100px;
+                padding: 0.5rem;
+                font-size: 0.8rem;
+                left: 30px;
+            }
+            
+            .summary-table th.pts-col,
+            .summary-table td.pts-col {
+                min-width: 40px;
+                padding: 0.5rem 0.3rem;
+                font-size: 0.9rem;
+            }
+            
+            .summary-table td {
+                padding: 0.5rem;
+                font-size: 0.8rem;
+            }
+            
+            .match-header-cell {
+                min-width: 80px !important;
+                padding: 0.4rem !important;
+                font-size: 0.75rem;
+            }
+            
+            .match-header-cell-inner {
+                min-height: 100px;
+            }
+            
+            .match-header-cell .match-teams {
+                font-size: 0.7rem;
+            }
+            
+            .match-header-cell .match-date {
+                font-size: 0.6rem;
+            }
+            
+            .outstanding-banner {
+                flex-direction: column;
+                text-align: center;
+                gap: 0.5rem;
+                padding: 0.75rem 1rem;
+            }
+            
+            .match-card {
+                padding: 0.75rem 1rem;
+            }
+            
+            .match-header {
+                font-size: 1rem;
+            }
+            
+            .team-name {
+                font-size: 0.9rem;
+            }
+            
+            .team-flag {
+                font-size: 1.75rem;
+            }
+            
+            .tries-section {
+                padding: 1rem;
+            }
+            
+            .tries-section h3 {
+                font-size: 1.5rem;
+            }
+            
+            .tries-input {
+                width: 100px;
+                font-size: 1.5rem;
+            }
+            
+            .admin-tabs-section {
+                padding: 0.75rem;
+            }
+            
+            .admin-tabs-label {
+                font-size: 0.75rem;
+            }
+            
+            .lock-banner, .unlock-banner {
+                font-size: 0.85rem;
+                padding: 0.75rem;
+            }
+            
+            .btn-small {
+                padding: 0.5rem 1rem !important;
+                font-size: 0.7rem !important;
             }
         }
 
         @media (max-width: 480px) {
-            .tab {
-                font-size: 0.75rem;
-                padding: 0.7rem 0.8rem;
-                letter-spacing: 0.02em;
+            h1 {
+                font-size: 2rem;
             }
             
-            h1 {
-                font-size: 2.5rem;
+            .subtitle {
+                font-size: 0.9rem;
+            }
+            
+            .tab {
+                font-size: 0.65rem;
+                padding: 0.5rem 0.6rem;
+                letter-spacing: 0.01em;
+            }
+            
+            .filter-btn {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.7rem;
+            }
+            
+            .match-header {
+                font-size: 0.9rem;
+            }
+            
+            .team-name {
+                font-size: 0.8rem;
+            }
+            
+            .team-flag {
+                font-size: 1.5rem;
+            }
+            
+            .score-input {
+                width: 55px;
+                font-size: 1rem;
+                padding: 0.4rem;
+            }
+            
+            .theme-selector select {
+                font-size: 0.75rem;
+                padding: 0.4rem 2rem 0.4rem 0.75rem;
+                min-width: 110px;
+            }
+            
+            .theme-selector label {
+                font-size: 0.65rem;
+            }
+            
+            .logout-btn {
+                font-size: 0.65rem;
+                padding: 0.3rem 0.75rem;
+            }
+            
+            .user-info .username {
+                font-size: 0.8rem;
+            }
+            
+            .outstanding-banner {
+                font-size: 0.85rem;
+            }
+            
+            .outstanding-banner-icon {
+                font-size: 1.2rem;
+            }
+            
+            .login-section {
+                padding: 1.5rem;
+            }
+            
+            .login-toggle {
+                flex-direction: column;
+            }
+            
+            .toggle-btn {
+                width: 100%;
+            }
+            
+            button {
+                padding: 1rem;
+                font-size: 0.95rem;
+            }
+            
+            input[type="text"],
+            input[type="password"],
+            input[type="email"],
+            input[type="number"] {
+                padding: 0.8rem;
+                font-size: 0.95rem;
+            }
+            
+            .btn-small {
+                padding: 0.4rem 0.8rem !important;
+                font-size: 0.65rem !important;
+            }
+            
+            .results-table th,
+            .results-table td {
+                padding: 0.4rem;
+                font-size: 0.7rem;
+            }
+            
+            .results-table input,
+            .results-table select {
+                font-size: 0.7rem;
+                padding: 0.3rem;
             }
         }
-
-        /* Success message */
-        .success-message {
-            background: rgba(46, 204, 113, 0.2);
-            border: 2px solid #2ecc71;
-            color: #2ecc71;
-            padding: 1rem;
-            border-radius: 5px;
-            margin-bottom: 1rem;
-            text-align: center;
-            font-weight: 600;
-            animation: slideDown 0.5s ease-out;
+        
+        @media (max-width: 380px) {
+            h1 {
+                font-size: 1.75rem;
+            }
+            
+            .tab {
+                font-size: 0.6rem;
+                padding: 0.45rem 0.5rem;
+            }
+            
+            .filter-btn {
+                font-size: 0.65rem;
+                padding: 0.4rem 0.6rem;
+            }
         }
 
         /* Login feedback */
@@ -1776,17 +2196,8 @@
                 <!-- New User Form -->
                 <div id="newUserForm" class="login-form hidden">
                     <div class="input-group">
-                        <label for="firstName">First Name</label>
-                        <input type="text" id="firstName" placeholder="Enter your first name" onkeypress="handleLoginKeyPress(event, 'new')" oninput="updateDefaultNickname()">
-                    </div>
-                    <div class="input-group">
-                        <label for="lastName">Last Name</label>
-                        <input type="text" id="lastName" placeholder="Enter your last name" onkeypress="handleLoginKeyPress(event, 'new')" oninput="updateDefaultNickname()">
-                    </div>
-                    <div class="input-group">
                         <label for="nickname">Display Name</label>
-                        <input type="text" id="nickname" placeholder="Auto-filled from your name" onkeypress="handleLoginKeyPress(event, 'new')">
-                        <small style="opacity: 0.7; font-size: 0.85rem; margin-top: 0.3rem; display: block;">This is how you'll appear on the leaderboard</small>
+                        <input type="text" id="nickname" placeholder="How you'll appear on the leaderboard" onkeypress="handleLoginKeyPress(event, 'new')">
                     </div>
                     <div class="input-group">
                         <label for="email">Email Address</label>
@@ -1850,12 +2261,12 @@
             </div>
 
             <!-- Predictions Tab -->
-            <div id="predictionsTab" class="prediction-section hidden">
+            <div id="predictionsTab" class="prediction-section hidden" style="margin-top: 2rem;">
                 <div id="matchesContainer"></div>
 
                 <div class="tries-section" id="triesSection">
                     <h3>Total Tournament Tries</h3>
-                    <p style="margin-bottom: 1rem; font-size: 1.1rem;">Predict the total number of tries scored in the entire tournament</p>
+                    <p style="margin-bottom: 0.75rem; font-size: 0.95rem; opacity: 0.8;">Predict the total tries scored across all matches</p>
                     <input type="number" class="tries-input" id="totalTries" min="0" placeholder="000">
                 </div>
             </div>
@@ -1869,7 +2280,12 @@
                     <div class="summary-filters">
                         <button class="filter-btn active" onclick="filterMatches('all')">All Matches</button>
                         <button class="filter-btn" onclick="filterMatches('completed')">Completed Only</button>
-                        <button class="filter-btn" onclick="filterMatches('weekend')">This Weekend</button>
+                        <div class="round-filter-group">
+                            <button class="filter-btn" onclick="filterMatches('round')">Filter By Round</button>
+                            <span class="round-divider"></span>
+                            <select id="roundSelect" class="round-select" onchange="onRoundSelectChange()">
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -1897,22 +2313,6 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
-
-            <!-- Leaderboard Tab -->
-            <div id="leaderboardTab" class="leaderboard hidden">
-                <table class="leaderboard-table">
-                    <thead>
-                        <tr>
-                            <th>Rank</th>
-                            <th>Competitor</th>
-                            <th>Points</th>
-                            <th>Tries Prediction</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leaderboardBody">
-                    </tbody>
-                </table>
             </div>
 
             <!-- All Predictions Tab -->
@@ -1979,11 +2379,12 @@
                     <div class="modal-content" style="max-width: 600px;">
                         <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Bulk Import Fixtures</h2>
                         <p style="margin-bottom: 1rem;">Enter one fixture per line in the format:</p>
-                        <p style="margin-bottom: 1rem; font-family: monospace; background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 5px;">DD/MM/YYYY, HH:MM, Home Team, Away Team</p>
+                        <p style="margin-bottom: 1rem; font-family: monospace; background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 5px;">Round, DD/MM/YYYY, HH:MM, Home Team, Away Team</p>
                         <p style="margin-bottom: 1rem; font-size: 0.9rem; opacity: 0.8;">Example:<br>
-                        <span style="font-family: monospace;">01/02/2026, 14:30, England, France</span><br>
-                        <span style="font-family: monospace;">01/02/2026, 17:00, Ireland, Wales</span></p>
-                        <textarea id="bulkImportData" rows="10" style="width: 100%; padding: 1rem; background: rgba(255,255,255,0.1); border: 2px solid rgba(212,175,55,0.3); color: var(--white); font-family: monospace; font-size: 0.9rem; border-radius: 5px; resize: vertical;" placeholder="01/02/2026, 14:30, England, France&#10;01/02/2026, 17:00, Ireland, Wales"></textarea>
+                        <span style="font-family: monospace;">1, 01/02/2026, 14:30, England, France</span><br>
+                        <span style="font-family: monospace;">1, 01/02/2026, 17:00, Ireland, Wales</span><br>
+                        <span style="font-family: monospace;">2, 08/02/2026, 14:30, France, Ireland</span></p>
+                        <textarea id="bulkImportData" rows="10" style="width: 100%; padding: 1rem; background: rgba(255,255,255,0.1); border: 2px solid rgba(212,175,55,0.3); color: var(--white); font-family: monospace; font-size: 0.9rem; border-radius: 5px; resize: vertical;" placeholder="1, 01/02/2026, 14:30, England, France&#10;1, 01/02/2026, 17:00, Ireland, Wales&#10;2, 08/02/2026, 14:30, France, Ireland"></textarea>
                         <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: flex-end;">
                             <button class="btn-cancel" onclick="closeBulkImport()">Cancel</button>
                             <button onclick="processBulkImport()">Import Fixtures</button>
@@ -2049,26 +2450,58 @@
             return toTitleCase(nickname);
         }
 
-        // In-memory storage (in production, use backend/database)
-        let users = JSON.parse(localStorage.getItem('rugbyUsers')) || {};
-        let currentUsername = null;
+        // Simple hash function for password storage (SHA-256)
+        async function hashPassword(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
 
-        // Admin emails - add email addresses here to grant admin access
-        let adminEmails = JSON.parse(localStorage.getItem('rugbyAdminEmails')) || ['ben@test.com'];
+        // Check if a password matches a hash
+        async function verifyPassword(password, hash) {
+            const passwordHash = await hashPassword(password);
+            return passwordHash === hash;
+        }
 
-        // App settings
-        let appSettings = JSON.parse(localStorage.getItem('rugbySettings')) || {
-            predictionsLocked: false
+        // ============================================
+        // STORAGE ABSTRACTION LAYER
+        // Replace these methods to switch to a database
+        // ============================================
+        const Storage = {
+            // Users
+            getUsers: () => JSON.parse(localStorage.getItem('rugbyUsers')) || {},
+            saveUsers: (data) => localStorage.setItem('rugbyUsers', JSON.stringify(data)),
+            
+            // Matches/Fixtures
+            getMatches: () => {
+                const saved = localStorage.getItem('rugbyMatches');
+                return saved ? JSON.parse(saved) : null;
+            },
+            saveMatches: (data) => localStorage.setItem('rugbyMatches', JSON.stringify(data)),
+            
+            // Admin emails
+            getAdminEmails: () => JSON.parse(localStorage.getItem('rugbyAdminEmails')) || [],
+            saveAdminEmails: (data) => localStorage.setItem('rugbyAdminEmails', JSON.stringify(data)),
+            
+            // App settings
+            getSettings: () => JSON.parse(localStorage.getItem('rugbySettings')) || { predictionsLocked: false },
+            saveSettings: (data) => localStorage.setItem('rugbySettings', JSON.stringify(data))
         };
 
-        // Load matches from localStorage or use defaults
-        let savedMatches = localStorage.getItem('rugbyMatches');
+        // In-memory state (loaded from storage on init)
+        let users = Storage.getUsers();
+        let currentUsername = null;
+        let adminEmails = Storage.getAdminEmails();
+        let appSettings = Storage.getSettings();
+
+        // Load matches from storage or use defaults
+        const savedMatches = Storage.getMatches();
         if (savedMatches) {
-            // Replace matches array entirely with saved data
-            // This respects any added/removed fixtures and all edits
-            matches.length = 0; // Clear the array
-            const parsed = JSON.parse(savedMatches);
-            parsed.forEach(m => matches.push(m));
+            matches.length = 0;
+            savedMatches.forEach(m => matches.push(m));
         }
 
         // Check if current user is admin
@@ -2093,7 +2526,7 @@
             Object.keys(users).forEach(username => {
                 const user = users[username];
                 if (user.email && adminEmails.includes(user.email.toLowerCase())) {
-                    adminNames.push(toTitleCase(user.nickname || user.firstName || username));
+                    adminNames.push(toTitleCase(user.nickname || username));
                 }
             });
             
@@ -2110,7 +2543,7 @@
         // Toggle predictions lock
         function togglePredictionsLock() {
             appSettings.predictionsLocked = !appSettings.predictionsLocked;
-            localStorage.setItem('rugbySettings', JSON.stringify(appSettings));
+            Storage.saveSettings(appSettings);
             updateLockToggleUI();
             renderMatches(); // Re-render to show/hide inputs
         }
@@ -2240,7 +2673,7 @@
             };
             
             matches.push(newMatch);
-            localStorage.setItem('rugbyMatches', JSON.stringify(matches));
+            Storage.saveMatches(matches);
             renderAdminMatches();
             renderMatches();
         }
@@ -2258,7 +2691,7 @@
             const index = matches.findIndex(m => m.id === matchId);
             if (index > -1) {
                 matches.splice(index, 1);
-                localStorage.setItem('rugbyMatches', JSON.stringify(matches));
+                Storage.saveMatches(matches);
                 renderAdminMatches();
                 renderMatches();
                 updateLeaderboard();
@@ -2275,7 +2708,7 @@
             }
             
             matches.length = 0;
-            localStorage.setItem('rugbyMatches', JSON.stringify(matches));
+            Storage.saveMatches(matches);
             renderAdminMatches();
             renderMatches();
             showSummary();
@@ -2314,12 +2747,19 @@
             lines.forEach((line, index) => {
                 const parts = line.split(',').map(p => p.trim());
                 
-                if (parts.length < 4) {
-                    errors.push(`Line ${index + 1}: Not enough fields (need date, time, home team, away team)`);
+                if (parts.length < 5) {
+                    errors.push(`Line ${index + 1}: Not enough fields (need round, date, time, home team, away team)`);
                     return;
                 }
                 
-                const [dateStr, timeStr, homeTeam, awayTeam] = parts;
+                const [roundStr, dateStr, timeStr, homeTeam, awayTeam] = parts;
+                
+                // Parse round
+                const round = parseInt(roundStr);
+                if (isNaN(round) || round < 1) {
+                    errors.push(`Line ${index + 1}: Invalid round number "${roundStr}"`);
+                    return;
+                }
                 
                 // Parse date (DD/MM/YYYY)
                 const dateMatch = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
@@ -2383,7 +2823,7 @@
                 
                 newFixtures.push({
                     id: nextId++,
-                    round: 1, // Default round, admin can adjust later
+                    round: round,
                     date: displayDate,
                     time: displayTime,
                     team1: team1,
@@ -2416,10 +2856,7 @@
             // Add new fixtures
             newFixtures.forEach(f => matches.push(f));
             
-            // Auto-assign rounds based on dates
-            assignRoundsByDate();
-            
-            localStorage.setItem('rugbyMatches', JSON.stringify(matches));
+            Storage.saveMatches(matches);
             closeBulkImport();
             renderAdminMatches();
             renderMatches();
@@ -2438,57 +2875,6 @@
             if (normalized.includes('scotland') || normalized === 'sco') return 'Scotland';
             if (normalized.includes('wales') || normalized === 'wal') return 'Wales';
             return null;
-        }
-
-        // Auto-assign rounds based on fixture dates
-        function assignRoundsByDate() {
-            // Sort matches by date
-            const sortedMatches = [...matches].sort((a, b) => {
-                const dateA = parseDateForSort(a.date);
-                const dateB = parseDateForSort(b.date);
-                return dateA - dateB;
-            });
-            
-            // Group by weekend (matches within 2 days of each other)
-            let currentRound = 1;
-            let lastDate = null;
-            
-            sortedMatches.forEach(sortedMatch => {
-                const match = matches.find(m => m.id === sortedMatch.id);
-                const matchDate = parseDateForSort(match.date);
-                
-                if (lastDate !== null) {
-                    const daysDiff = (matchDate - lastDate) / (1000 * 60 * 60 * 24);
-                    if (daysDiff > 3) {
-                        currentRound++;
-                    }
-                }
-                
-                match.round = currentRound;
-                lastDate = matchDate;
-            });
-        }
-
-        // Parse date for sorting
-        function parseDateForSort(dateStr) {
-            if (!dateStr || dateStr === 'TBD') return new Date(9999, 0, 1);
-            
-            const months = {
-                'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3,
-                'May': 4, 'Jun': 5, 'Jul': 6, 'Aug': 7,
-                'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
-            };
-            
-            const match = dateStr.match(/(\w+),?\s*(\w+)\s+(\d+)/);
-            if (match) {
-                const month = months[match[2]];
-                const day = parseInt(match[3]);
-                if (month !== undefined) {
-                    return new Date(2026, month, day);
-                }
-            }
-            
-            return new Date(9999, 0, 1);
         }
 
         // Auto-save match results on blur
@@ -2546,8 +2932,8 @@
                 }
             });
 
-            // Save to localStorage
-            localStorage.setItem('rugbyMatches', JSON.stringify(matches));
+            // Save to storage
+            Storage.saveMatches(matches);
             
             // Update saved indicators
             updateResultSavedIndicators();
@@ -2591,8 +2977,6 @@
                     <thead>
                         <tr>
                             <th>Email</th>
-                            <th>First Name</th>
-                            <th>Last Name</th>
                             <th>Display Name</th>
                             <th>Admin</th>
                             <th>Actions</th>
@@ -2609,8 +2993,6 @@
                 html += `
                     <tr id="user-row-${username}">
                         <td>${user.email || 'N/A'}${needsReset}</td>
-                        <td><input type="text" id="edit-firstName-${username}" value="${user.firstName || ''}" style="max-width: 120px;"></td>
-                        <td><input type="text" id="edit-lastName-${username}" value="${user.lastName || ''}" style="max-width: 120px;"></td>
                         <td><input type="text" id="edit-nickname-${username}" value="${user.nickname || ''}" style="max-width: 150px;"></td>
                         <td>
                             <input type="checkbox" id="edit-admin-${username}" ${isAdmin ? 'checked' : ''} onchange="toggleUserAdmin('${safeUsername}')">
@@ -2630,12 +3012,10 @@
 
         // Save changes to a user
         function saveUserChanges(username) {
-            const firstName = document.getElementById(`edit-firstName-${username}`).value.trim();
-            const lastName = document.getElementById(`edit-lastName-${username}`).value.trim();
             const nickname = document.getElementById(`edit-nickname-${username}`).value.trim();
 
-            if (!firstName || !lastName || !nickname) {
-                alert('All fields are required.');
+            if (!nickname) {
+                alert('Display name is required.');
                 return;
             }
 
@@ -2648,11 +3028,9 @@
                 return;
             }
 
-            users[username].firstName = firstName;
-            users[username].lastName = lastName;
             users[username].nickname = nickname;
 
-            localStorage.setItem('rugbyUsers', JSON.stringify(users));
+            Storage.saveUsers(users);
             alert('User updated successfully!');
             
             // Update current user display if editing self
@@ -2677,7 +3055,7 @@
                 adminEmails.push(email);
             }
 
-            localStorage.setItem('rugbyAdminEmails', JSON.stringify(adminEmails));
+            Storage.saveAdminEmails(adminEmails);
             updateAdminSubtitle();
         }
 
@@ -2702,11 +3080,11 @@
             const userEmail = users[username].email;
             if (userEmail) {
                 adminEmails = adminEmails.filter(e => e.toLowerCase() !== userEmail.toLowerCase());
-                localStorage.setItem('rugbyAdminEmails', JSON.stringify(adminEmails));
+                Storage.saveAdminEmails(adminEmails);
             }
 
             delete users[username];
-            localStorage.setItem('rugbyUsers', JSON.stringify(users));
+            Storage.saveUsers(users);
             renderCompetitorManagement();
             updateLeaderboard();
             updateAdminSubtitle();
@@ -2726,7 +3104,7 @@
 
             // Set flag to require password reset on next login
             users[username].passwordResetRequired = true;
-            localStorage.setItem('rugbyUsers', JSON.stringify(users));
+            Storage.saveUsers(users);
             
             alert(`Password reset initiated for ${displayName}. They will be prompted to set a new password on their next login.`);
             renderCompetitorManagement();
@@ -2760,7 +3138,7 @@
         }
 
         // Submit new password
-        function submitPasswordReset() {
+        async function submitPasswordReset() {
             const newPassword = document.getElementById('newPasswordReset').value;
             const confirmPassword = document.getElementById('confirmPasswordReset').value;
 
@@ -2779,10 +3157,14 @@
                 return;
             }
 
-            // Update the user's password and clear the reset flag
-            users[passwordResetUsername].password = newPassword;
+            // Hash the new password
+            const passwordHash = await hashPassword(newPassword);
+
+            // Update the user's password hash and clear the reset flag
+            users[passwordResetUsername].passwordHash = passwordHash;
+            delete users[passwordResetUsername].password; // Remove any legacy plain text password
             users[passwordResetUsername].passwordResetRequired = false;
-            localStorage.setItem('rugbyUsers', JSON.stringify(users));
+            Storage.saveUsers(users);
 
             // Close modal and log in
             document.getElementById('passwordResetModal').classList.add('hidden');
@@ -2808,7 +3190,7 @@
             // Save to user's account if logged in
             if (currentUsername && users[currentUsername]) {
                 users[currentUsername].theme = theme;
-                localStorage.setItem('rugbyUsers', JSON.stringify(users));
+                Storage.saveUsers(users);
             }
             
             // Update the selector
@@ -2863,7 +3245,7 @@
         }
 
         // Login existing user
-        function loginExisting() {
+        async function loginExisting() {
             const email = document.getElementById('existingEmail').value.trim().toLowerCase();
             const password = document.getElementById('existingPassword').value;
             const feedbackEl = document.getElementById('loginFeedback');
@@ -2901,8 +3283,23 @@
                 return;
             }
 
-            // Check password
-            if (users[username].password !== password) {
+            // Check password - support both hashed and legacy plain text passwords
+            let passwordValid = false;
+            if (users[username].passwordHash) {
+                // New hashed password
+                passwordValid = await verifyPassword(password, users[username].passwordHash);
+            } else if (users[username].password) {
+                // Legacy plain text password - migrate to hash on successful login
+                if (users[username].password === password) {
+                    passwordValid = true;
+                    // Migrate to hashed password
+                    users[username].passwordHash = await hashPassword(password);
+                    delete users[username].password;
+                    Storage.saveUsers(users);
+                }
+            }
+
+            if (!passwordValid) {
                 showLoginFeedback('Incorrect password. Please try again.', 'error');
                 return;
             }
@@ -2916,15 +3313,13 @@
         }
 
         // Register new user
-        function registerNewUser() {
-            const firstName = document.getElementById('firstName').value.trim();
-            const lastName = document.getElementById('lastName').value.trim();
+        async function registerNewUser() {
             const nickname = document.getElementById('nickname').value.trim();
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('newPassword').value;
 
             // Validation
-            if (!firstName || !lastName || !nickname || !email || !password) {
+            if (!nickname || !email || !password) {
                 showLoginFeedback('Please fill in all fields', 'error');
                 return;
             }
@@ -2954,48 +3349,40 @@
                 return;
             }
 
+            // Check if this is the first user - they become admin automatically
+            const isFirstUser = Object.keys(users).length === 0;
+
             // Generate username from email (before @ symbol)
             const username = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
 
-            // Create new user
+            // Hash the password
+            const passwordHash = await hashPassword(password);
+
+            // Create new user with hashed password
             users[username] = {
-                firstName: firstName,
-                lastName: lastName,
                 nickname: nickname,
                 email: email,
-                password: password,
+                passwordHash: passwordHash,
                 predictions: {},
-                totalTries: null,
-                points: 0
+                totalTries: null
             };
 
-            localStorage.setItem('rugbyUsers', JSON.stringify(users));
-            showLoginFeedback('Competitor account created! Welcome, ' + toTitleCase(nickname) + '!', 'info');
+            Storage.saveUsers(users);
+            
+            // Make first user an admin
+            if (isFirstUser) {
+                adminEmails.push(email.toLowerCase());
+                Storage.saveAdminEmails(adminEmails);
+                showLoginFeedback('Account created! As the first user, you are now an Admin. Welcome, ' + toTitleCase(nickname) + '!', 'info');
+            } else {
+                showLoginFeedback('Competitor account created! Welcome, ' + toTitleCase(nickname) + '!', 'info');
+            }
+            
             currentUsername = username;
             
             setTimeout(() => {
                 showApp();
             }, 1000);
-        }
-
-        // Auto-update nickname field based on first and last name
-        function updateDefaultNickname() {
-            const firstName = document.getElementById('firstName').value.trim();
-            const lastName = document.getElementById('lastName').value.trim();
-            const nicknameField = document.getElementById('nickname');
-            
-            // Only auto-fill if the field is empty or contains the previous auto-filled value
-            const currentNickname = nicknameField.value.trim();
-            const expectedDefault = (nicknameField.dataset.lastDefault || '').trim();
-            
-            // Update if empty or if it matches what we auto-filled before
-            if (!currentNickname || currentNickname === expectedDefault) {
-                const newDefault = firstName && lastName ? firstName + ' ' + lastName : 
-                                   firstName ? firstName : 
-                                   lastName ? lastName : '';
-                nicknameField.value = newDefault;
-                nicknameField.dataset.lastDefault = newDefault;
-            }
         }
 
         // Show login feedback
@@ -3026,10 +3413,7 @@
             // Clear all login form fields
             document.getElementById('existingEmail').value = '';
             document.getElementById('existingPassword').value = '';
-            document.getElementById('firstName').value = '';
-            document.getElementById('lastName').value = '';
             document.getElementById('nickname').value = '';
-            document.getElementById('nickname').dataset.lastDefault = '';
             document.getElementById('email').value = '';
             document.getElementById('newPassword').value = '';
             
@@ -3063,6 +3447,9 @@
             // Update lock toggle UI
             updateLockToggleUI();
             
+            // Initialize round selector dropdown
+            initRoundSelector();
+            
             renderMatches(); // Render the prediction inputs first
             loadPredictions(); // Then populate with saved predictions
             showSummary(); // Load summary by default (includes leaderboard)
@@ -3074,18 +3461,47 @@
             let currentRound = 0;
             let html = '';
             
+            // Calculate outstanding predictions
+            const userData = users[currentUsername];
+            const completedPredictions = userData && userData.predictions ? Object.keys(userData.predictions).length : 0;
+            const totalMatches = matches.length;
+            const outstandingCount = totalMatches - completedPredictions;
+            const hasTries = userData && userData.totalTries !== null && userData.totalTries !== undefined;
+            
             // Show lock status banner at top
             if (appSettings.predictionsLocked) {
                 html += '<div class="lock-banner">🔒 Predictions are LOCKED. You cannot make changes.</div>';
             } else {
                 html += '<div class="unlock-banner">🔓 Predictions are OPEN. Your changes are saved automatically.</div>';
             }
+            
+            // Show outstanding predictions banner if there are any
+            if (!appSettings.predictionsLocked && (outstandingCount > 0 || !hasTries)) {
+                let outstandingText = '';
+                if (outstandingCount > 0 && !hasTries) {
+                    outstandingText = `<span class="outstanding-banner-count">${outstandingCount}</span> match prediction${outstandingCount !== 1 ? 's' : ''} and <span class="outstanding-banner-count">total tries</span> still to enter`;
+                } else if (outstandingCount > 0) {
+                    outstandingText = `<span class="outstanding-banner-count">${outstandingCount}</span> match prediction${outstandingCount !== 1 ? 's' : ''} still to enter`;
+                } else {
+                    outstandingText = `<span class="outstanding-banner-count">Total tries</span> prediction still to enter`;
+                }
+                html += `<div id="outstandingBanner" class="outstanding-banner">
+                    <span class="outstanding-banner-icon">⚠️</span>
+                    <span class="outstanding-banner-text">${outstandingText}</span>
+                </div>`;
+            } else if (!appSettings.predictionsLocked) {
+                // Add hidden banner that can be shown later if predictions are removed
+                html += `<div id="outstandingBanner" class="outstanding-banner" style="display: none;">
+                    <span class="outstanding-banner-icon">⚠️</span>
+                    <span class="outstanding-banner-text"></span>
+                </div>`;
+            }
 
             matches.forEach(match => {
                 // Add round header if it's a new round
                 if (match.round !== currentRound) {
                     currentRound = match.round;
-                    html += `<h2 style="font-family: 'Bebas Neue', cursive; font-size: 2.5rem; color: var(--bright-gold); margin: 2rem 0 1rem 0; letter-spacing: 0.1em;">Round ${currentRound}</h2>`;
+                    html += `<h2 style="font-family: 'Bebas Neue', cursive; font-size: 1.8rem; color: var(--bright-gold); margin: 1.5rem 0 0.75rem 0; letter-spacing: 0.1em;">Round ${currentRound}</h2>`;
                 }
 
                 const disabledAttr = appSettings.predictionsLocked ? 'disabled' : '';
@@ -3179,49 +3595,46 @@
 
             users[currentUsername].predictions = predictions;
             users[currentUsername].totalTries = newTries;
-            localStorage.setItem('rugbyUsers', JSON.stringify(users));
+            Storage.saveUsers(users);
 
             // Update the tick indicators
             updateSavedIndicators();
+            
+            // Update the outstanding banner in real time
+            updateOutstandingBanner();
         }
-
-        // Save predictions
-        function savePredictions() {
-            // Check if predictions are locked
-            if (appSettings.predictionsLocked) {
-                alert('Predictions are currently locked. You cannot make changes.');
+        
+        // Update the outstanding predictions banner
+        function updateOutstandingBanner() {
+            const banner = document.getElementById('outstandingBanner');
+            if (!banner) return;
+            
+            const userData = users[currentUsername];
+            const completedPredictions = userData && userData.predictions ? Object.keys(userData.predictions).length : 0;
+            const totalMatches = matches.length;
+            const outstandingCount = totalMatches - completedPredictions;
+            const hasTries = userData && userData.totalTries !== null && userData.totalTries !== undefined;
+            
+            if (appSettings.predictionsLocked || (outstandingCount === 0 && hasTries)) {
+                banner.style.display = 'none';
                 return;
             }
             
-            const predictions = {};
-            matches.forEach(match => {
-                const team1Score = document.getElementById(`team1-${match.id}`).value;
-                const team2Score = document.getElementById(`team2-${match.id}`).value;
-                if (team1Score !== '' && team2Score !== '') {
-                    predictions[match.id] = {
-                        team1: parseInt(team1Score),
-                        team2: parseInt(team2Score)
-                    };
-                }
-            });
-
-            const totalTries = document.getElementById('totalTries').value;
-
-            users[currentUsername].predictions = predictions;
-            users[currentUsername].totalTries = totalTries ? parseInt(totalTries) : null;
-            localStorage.setItem('rugbyUsers', JSON.stringify(users));
-
-            // Show success message
-            const msg = document.getElementById('successMessage');
-            msg.classList.remove('hidden');
-            setTimeout(() => {
-                msg.classList.add('hidden');
-            }, 3000);
-
-            updateLeaderboard();
-            showAllPredictions();
+            banner.style.display = 'flex';
+            
+            let outstandingText = '';
+            if (outstandingCount > 0 && !hasTries) {
+                outstandingText = `<span class="outstanding-banner-count">${outstandingCount}</span> match prediction${outstandingCount !== 1 ? 's' : ''} and <span class="outstanding-banner-count">total tries</span> still to enter`;
+            } else if (outstandingCount > 0) {
+                outstandingText = `<span class="outstanding-banner-count">${outstandingCount}</span> match prediction${outstandingCount !== 1 ? 's' : ''} still to enter`;
+            } else {
+                outstandingText = `<span class="outstanding-banner-count">Total tries</span> prediction still to enter`;
+            }
+            
+            banner.querySelector('.outstanding-banner-text').innerHTML = outstandingText;
         }
 
+        // Save predictions
         // Load predictions
         function loadPredictions() {
             const userData = users[currentUsername];
@@ -3391,7 +3804,14 @@
                 "as solid as the Shed End faithful in December",
                 "with the guile of a young Jeremy Guscott cutting through the defence",
                 "fiercer than the Bath-Gloucester derby in the 80s",
-                "tougher than playing at the Rec in February without gloves"
+                "tougher than playing at the Rec in February without gloves",
+                "more committed than Phil Vickery scrummaging on a wet Wednesday",
+                "steadier than Don Caskie slotting penalties in the wind",
+                "showing more heart than Gloucester's 2003 Powergen Cup final win",
+                "hungrier than a young Olly Morgan chasing a high ball",
+                "more unpredictable than a Friday night under the lights at Kingsholm",
+                "with the power of the Cherry and Whites in their Heineken Cup days",
+                "as fearless as Marcel Garvey running at a full defence"
             ];
             
             const rugbyRefs = [
@@ -3406,70 +3826,130 @@
                 "More dramatic than the 1990 Grand Slam decider at Murrayfield.",
                 "Channeling the spirit of the 1987 World Cup - when it all began!",
                 "Tighter than Wales vs England at the old Arms Park in '87.",
-                "As unpredictable as a Campese goose-step on the try line."
+                "As unpredictable as a Campese goose-step on the try line.",
+                "More nerve-wracking than the 2019 World Cup semi-finals!",
+                "Showing the resilience of South Africa in that 1995 final - Mandela would approve.",
+                "Like watching the All Blacks in their 2011 World Cup campaign - clinical when it matters.",
+                "Has the drama of that 2015 World Cup when Japan shocked the Springboks!",
+                "More twists and turns than the 2007 World Cup when anyone could win it.",
+                "Reminds me of Ireland's Grand Slam in 2009 - the fairytale might just happen!",
+                "As tense as England vs Australia in the 1991 World Cup final.",
+                "Showing the grit of Wales in their 2019 Grand Slam campaign.",
+                "Like the French in 1999 - capable of producing magic when least expected!",
+                "More exciting than Lomu's demolition of England in '95."
             ];
             
             const randomGloucester = gloucesterRefs[Math.floor(Math.random() * gloucesterRefs.length)];
             const randomRugby = rugbyRefs[Math.floor(Math.random() * rugbyRefs.length)];
+            const randomGloucester2 = gloucesterRefs[Math.floor(Math.random() * gloucesterRefs.length)];
             
             if (completedMatches.length === 0) {
-                tip = `No matches played yet, but the tension is building like the 2003 World Cup final in extra time! Get your predictions in sharpish - this isn't a Gloucester training session where you can take your time. The tournament kicks off soon and every point counts. Make sure you've got all your scores in before kick-off - no late changes allowed once the whistle blows! ${randomRugby}`;
+                tip = `No matches played yet, but the tension is building like the 2003 World Cup final in extra time! Get your predictions in sharpish - this isn't a Gloucester training session where you can take your time. The tournament kicks off soon and every point counts. Make sure you've got all your scores in before kick-off - no late changes allowed once the whistle blows! Remember, predicting a draw gets you bonus points, and if you nail the exact score, you'll be celebrating like Gloucester winning the Premiership. ${randomRugby}`;
             } else if (leaderboardData.length === 1) {
-                tip = `${leaderboardData[0].nickname} is currently the only competitor - ${randomGloucester}! Bit lonely at the top though, like being the only person who remembers Gloucester's Powergen Cup wins. ${randomRugby}`;
+                tip = `${leaderboardData[0].nickname} is currently the only competitor - ${randomGloucester}! Bit lonely at the top though, like being the only person who remembers Gloucester's Powergen Cup wins. Get some mates involved and make this a proper competition! The more the merrier, as they say down at Kingsholm on match day. ${randomRugby}`;
             } else {
                 const leader = leaderboardData[0];
                 const second = leaderboardData[1];
                 const gap = leader.points - second.points;
+                const remainingMatches = matches.length - completedMatches.length;
                 
-                // Build match analysis
+                // Build match analysis with more detail
                 let matchAnalysis = '';
                 if (completedMatches.length > 0) {
                     const recentMatch = completedMatches[completedMatches.length - 1];
                     const scoreDiff = Math.abs(recentMatch.actualScore1 - recentMatch.actualScore2);
+                    const totalPoints = recentMatch.actualScore1 + recentMatch.actualScore2;
                     const winner = recentMatch.actualScore1 > recentMatch.actualScore2 ? recentMatch.team1 : 
                                    recentMatch.actualScore2 > recentMatch.actualScore1 ? recentMatch.team2 : null;
+                    const loser = recentMatch.actualScore1 < recentMatch.actualScore2 ? recentMatch.team1 : 
+                                  recentMatch.actualScore2 < recentMatch.actualScore1 ? recentMatch.team2 : null;
                     
                     if (winner) {
-                        if (scoreDiff > 20) {
-                            matchAnalysis = `${winner} absolutely demolished their opponents ${recentMatch.actualScore1}-${recentMatch.actualScore2} - a proper thrashing that would make the old Kingsholm faithful proud! `;
+                        if (scoreDiff > 30) {
+                            matchAnalysis = `Blimey! ${winner} absolutely annihilated ${loser} ${recentMatch.actualScore1}-${recentMatch.actualScore2} - that's the kind of hammering you don't see often in international rugby! ${loser} will want to forget that one quickly. Reminds me of when the All Blacks used to put 50 on teams in the early 2000s. `;
+                        } else if (scoreDiff > 20) {
+                            matchAnalysis = `${winner} put ${loser} to the sword with a dominant ${recentMatch.actualScore1}-${recentMatch.actualScore2} victory - a proper thrashing that would make the old Kingsholm faithful proud! ${loser} had no answer to that kind of pressure. Anyone who predicted that margin deserves a pint! `;
                         } else if (scoreDiff > 10) {
-                            matchAnalysis = `${winner} put in a commanding performance, winning ${recentMatch.actualScore1}-${recentMatch.actualScore2}. A solid victory that showed real class. `;
+                            matchAnalysis = `${winner} claimed a convincing ${recentMatch.actualScore1}-${recentMatch.actualScore2} win over ${loser}. A solid performance that showed real class and composure when it mattered. ${loser} competed but couldn't live with ${winner}'s intensity in the key moments. `;
                         } else if (scoreDiff <= 3) {
-                            matchAnalysis = `What a nail-biter! ${winner} just edged it ${recentMatch.actualScore1}-${recentMatch.actualScore2} - tighter than a Gloucester scrum on their own five-metre line! `;
+                            matchAnalysis = `What a nail-biter! ${winner} scraped past ${loser} ${recentMatch.actualScore1}-${recentMatch.actualScore2} - tighter than a Gloucester scrum on their own five-metre line! Could have gone either way right until the final whistle. That's the kind of match that makes this tournament special. If you got that result right, take a bow! `;
                         } else {
-                            matchAnalysis = `${winner} secured the win ${recentMatch.actualScore1}-${recentMatch.actualScore2} in a hard-fought contest. `;
+                            matchAnalysis = `${winner} edged out ${loser} ${recentMatch.actualScore1}-${recentMatch.actualScore2} in a hard-fought contest. Neither side gave an inch, proper Test match rugby that was. ${loser} will feel they let that one slip, but ${winner} showed composure when it counted. `;
+                        }
+                        
+                        // High scoring game
+                        if (totalPoints > 60) {
+                            matchAnalysis += `A ${totalPoints}-point thriller - the defences will be getting a talking to after that one! `;
+                        } else if (totalPoints < 25) {
+                            matchAnalysis += `Low-scoring but brutal - a real arm-wrestle between two tough teams. `;
                         }
                     } else {
-                        matchAnalysis = `A ${recentMatch.actualScore1}-${recentMatch.actualScore2} draw! You don't see many of those - rarer than a sunny day at Kingsholm in February! `;
+                        matchAnalysis = `A ${recentMatch.actualScore1}-${recentMatch.actualScore2} draw between ${recentMatch.team1} and ${recentMatch.team2}! You don't see many of those in international rugby - rarer than a sunny day at Kingsholm in February! If anyone predicted that exact score, they deserve a standing ovation from the Shed. That's seriously impressive prediction work. `;
                     }
                     
                     // Add tries analysis if available
                     if (recentMatch.actualTries1 !== null && recentMatch.actualTries2 !== null) {
                         const totalTries = recentMatch.actualTries1 + recentMatch.actualTries2;
-                        if (totalTries >= 8) {
-                            matchAnalysis += `${totalTries} tries in total - that's proper running rugby! `;
+                        if (totalTries >= 10) {
+                            matchAnalysis += `${totalTries} tries in one match - that's an absolute try-fest! The kind of rugby we all want to see. `;
+                        } else if (totalTries >= 8) {
+                            matchAnalysis += `${totalTries} tries in total - proper running rugby that keeps the crowd on their feet! `;
                         } else if (totalTries <= 2) {
-                            matchAnalysis += `Only ${totalTries} tries though - a real forwards' battle that one. `;
+                            matchAnalysis += `Only ${totalTries} tries though - a real forwards' battle that one, the kind of game where every scrum matters. `;
+                        } else if (totalTries <= 4) {
+                            matchAnalysis += `${totalTries} tries tells you it was tight and tense - defences on top throughout. `;
                         }
                     }
                 }
                 
-                // Overall tournament stats
+                // Overall tournament stats with more analysis
                 let tournamentStats = '';
                 if (completedMatches.length >= 3) {
                     const totalActualTries = getTotalActualTries();
                     const avgTries = (totalActualTries / completedMatches.length).toFixed(1);
-                    tournamentStats = `We've had ${totalActualTries} tries across ${completedMatches.length} matches so far (averaging ${avgTries} per game). `;
+                    const totalPointsScored = completedMatches.reduce((sum, m) => sum + m.actualScore1 + m.actualScore2, 0);
+                    const avgPointsPerGame = (totalPointsScored / completedMatches.length).toFixed(0);
+                    
+                    tournamentStats = `Tournament stats: ${totalActualTries} tries across ${completedMatches.length} matches (${avgTries} per game), averaging ${avgPointsPerGame} points per match. `;
+                    
+                    if (avgTries > 7) {
+                        tournamentStats += `This is shaping up to be a high-scoring tournament - good news for the try prediction! `;
+                    } else if (avgTries < 5) {
+                        tournamentStats += `Defences have been on top - those predicting lower try totals might be onto something. `;
+                    }
+                }
+                
+                // Who predicted well in recent match
+                let predictionAnalysis = '';
+                if (recentMatch) {
+                    const correctPredictions = allUsers.filter(username => {
+                        const pred = users[username].predictions[recentMatch.id];
+                        if (!pred) return false;
+                        const actualResult = getResult(recentMatch.actualScore1, recentMatch.actualScore2);
+                        const predictedResult = getResult(pred.team1, pred.team2);
+                        return actualResult === predictedResult;
+                    });
+                    
+                    if (correctPredictions.length === 0) {
+                        predictionAnalysis = `Nobody got that result right - ${recentMatch.team1} vs ${recentMatch.team2} caught everyone out! `;
+                    } else if (correctPredictions.length === 1) {
+                        const winner = toTitleCase(users[correctPredictions[0]].nickname || correctPredictions[0]);
+                        predictionAnalysis = `Only ${winner} called that one correctly - sharp stuff! `;
+                    } else if (correctPredictions.length <= 3) {
+                        predictionAnalysis = `Only ${correctPredictions.length} competitors got the result right - not an easy one to call! `;
+                    }
                 }
                 
                 if (gap === 0) {
-                    tip = `It's tighter than the 2003 World Cup final at the top! ${leader.nickname} and ${second.nickname} are level on ${leader.points} points - ${randomGloucester}. ${matchAnalysis}${tournamentStats}With ${matches.length - completedMatches.length} matches still to play, this one's going down to the wire! ${randomRugby}`;
+                    tip = `It's tighter than the 2003 World Cup final at the top! ${leader.nickname} and ${second.nickname} are level on ${leader.points} points - ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}${tournamentStats}With ${remainingMatches} matches still to play, this one's going down to the wire like England vs Australia in Sydney! Every prediction counts now - one perfect score could swing it all. ${randomRugby}`;
                 } else if (gap <= 3) {
-                    tip = `${leader.nickname} leads with ${leader.points} points but ${second.nickname} is breathing down their neck like a Gloucester flanker hunting a fly-half! Only ${gap} point${gap > 1 ? 's' : ''} in it. ${matchAnalysis}${tournamentStats}One good round of predictions could change everything. ${randomRugby}`;
+                    tip = `${leader.nickname} leads with ${leader.points} points but ${second.nickname} is breathing down their neck like a Gloucester flanker hunting a fly-half! Only ${gap} point${gap > 1 ? 's' : ''} separating them. ${matchAnalysis}${predictionAnalysis}${tournamentStats}With ${remainingMatches} matches left, one good round of predictions could change everything. This is proper squeaky-bum time, as they say! ${randomRugby}`;
                 } else if (gap <= 6) {
-                    tip = `${leader.nickname} is building a decent lead on ${leader.points} points, but ${second.nickname} on ${second.points} won't give up without a fight - ${randomGloucester}. ${matchAnalysis}${tournamentStats}Still plenty of rugby to be played! ${randomRugby}`;
+                    tip = `${leader.nickname} is building a handy lead on ${leader.points} points, but ${second.nickname} on ${second.points} won't give up without a fight - ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}${tournamentStats}Still ${remainingMatches} matches to play, which means plenty of points up for grabs. A couple of perfect scores and this leaderboard could look very different. ${randomRugby}`;
+                } else if (gap <= 10) {
+                    tip = `${leader.nickname} is pulling clear on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs to find form quickly. ${matchAnalysis}${predictionAnalysis}${tournamentStats}But don't count anyone out yet - remember Japan beating South Africa at the 2015 World Cup? Anything's possible in this game! ${randomRugby}`;
                 } else {
-                    tip = `${leader.nickname} is running away with it on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs a serious comeback. ${matchAnalysis}${tournamentStats}But remember, anything can happen in rugby - just ask the '95 All Blacks! ${randomRugby}`;
+                    tip = `${leader.nickname} is running away with it on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs a serious comeback worthy of the 1999 French team against the All Blacks. ${matchAnalysis}${predictionAnalysis}${tournamentStats}The gap looks big, but ${remainingMatches} matches means up to ${remainingMatches * 11} points still available. Stranger things have happened - ${randomGloucester2}! ${randomRugby}`;
                 }
             }
             
@@ -3542,6 +4022,85 @@
 
         // Current filter state
         let currentFilter = 'all';
+        let selectedRound = 1;
+
+        // Initialize the round selector dropdown
+        function initRoundSelector() {
+            const select = document.getElementById('roundSelect');
+            if (!select) return;
+            
+            // Get unique rounds from matches
+            const rounds = [...new Set(matches.map(m => m.round))].sort((a, b) => a - b);
+            
+            // Determine the default round based on current date/tournament progress
+            selectedRound = getDefaultRound();
+            
+            // Get the first match date for each round
+            const roundDates = {};
+            rounds.forEach(r => {
+                const roundMatches = matches.filter(m => m.round === r);
+                if (roundMatches.length > 0) {
+                    // Get the first match date in this round
+                    roundDates[r] = roundMatches[0].date || 'TBD';
+                }
+            });
+            
+            // Populate dropdown with round and date
+            select.innerHTML = rounds.map(r => {
+                const dateStr = roundDates[r] || 'TBD';
+                return `<option value="${r}" ${r === selectedRound ? 'selected' : ''}>Round ${r} (${dateStr})</option>`;
+            }).join('');
+        }
+
+        // Get the default round to show (similar logic to old "This Weekend")
+        // Logic: Show the round that contains the most recent incomplete match,
+        // or if all matches are complete, show the most recent completed round.
+        // If no matches have been played, show the first round.
+        function getDefaultRound() {
+            const now = new Date();
+            
+            // Find rounds with their completion status
+            const roundStatus = {};
+            matches.forEach(m => {
+                if (!roundStatus[m.round]) {
+                    roundStatus[m.round] = { total: 0, completed: 0, hasIncomplete: false };
+                }
+                roundStatus[m.round].total++;
+                if (m.actualScore1 !== null && m.actualScore2 !== null) {
+                    roundStatus[m.round].completed++;
+                } else {
+                    roundStatus[m.round].hasIncomplete = true;
+                }
+            });
+            
+            const rounds = Object.keys(roundStatus).map(Number).sort((a, b) => a - b);
+            
+            // Find the first round that has incomplete matches (current/upcoming round)
+            for (const round of rounds) {
+                if (roundStatus[round].hasIncomplete) {
+                    return round;
+                }
+            }
+            
+            // All matches complete - return the last round
+            return rounds.length > 0 ? rounds[rounds.length - 1] : 1;
+        }
+
+        // Handle round select dropdown change
+        function onRoundSelectChange() {
+            const select = document.getElementById('roundSelect');
+            selectedRound = parseInt(select.value);
+            
+            // Automatically switch to round filter when dropdown is changed
+            currentFilter = 'round';
+            
+            // Update button states
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.round-filter-group .filter-btn').classList.add('active');
+            
+            // Refresh the view
+            showSummary();
+        }
 
         // Filter matches based on selected filter
         function filterMatches(filterType) {
@@ -3557,46 +4116,10 @@
 
         // Get filtered matches based on current filter
         function getFilteredMatches() {
-            const now = new Date();
-            
             if (currentFilter === 'completed') {
                 return matches.filter(m => m.actualScore1 !== null && m.actualScore2 !== null);
-            } else if (currentFilter === 'weekend') {
-                // Find the most recent or upcoming weekend (Friday to Sunday)
-                const dayOfWeek = now.getDay(); // 0 = Sunday, 5 = Friday, 6 = Saturday
-                
-                let startDate = new Date(now);
-                let endDate = new Date(now);
-                
-                if (dayOfWeek === 0) {
-                    // It's Sunday - show this weekend (Friday to today)
-                    startDate.setDate(now.getDate() - 2); // Go back to Friday
-                    endDate = now;
-                } else if (dayOfWeek === 6) {
-                    // It's Saturday - show this weekend (yesterday to tomorrow)
-                    startDate.setDate(now.getDate() - 1); // Friday
-                    endDate.setDate(now.getDate() + 1); // Sunday
-                } else if (dayOfWeek === 5) {
-                    // It's Friday - show this weekend (today to Sunday)
-                    startDate = now;
-                    endDate.setDate(now.getDate() + 2); // Sunday
-                } else if (dayOfWeek < 5) {
-                    // Monday to Thursday - show upcoming weekend
-                    const daysUntilFriday = 5 - dayOfWeek;
-                    startDate.setDate(now.getDate() + daysUntilFriday);
-                    endDate.setDate(startDate.getDate() + 2);
-                } else {
-                    // Shouldn't happen but default to this week
-                    startDate.setDate(now.getDate() - dayOfWeek + 5);
-                    endDate.setDate(startDate.getDate() + 2);
-                }
-                
-                // Filter matches by date (simplified - checking if match falls in Feb, Mar based on fixture dates)
-                return matches.filter(m => {
-                    // For the actual implementation, you'd parse the actual dates
-                    // For now, we'll show Round 1 for "this weekend" as an example
-                    return m.round === 1;
-                });
+            } else if (currentFilter === 'round') {
+                return matches.filter(m => m.round === selectedRound);
             }
             
             return matches; // 'all'
@@ -3629,8 +4152,9 @@
             let html = '<div class="summary-container">';
             html += '<table class="summary-table">';
             
-            // Header row: Competitor | Match 1 | Match 2 | ... | Predicted Tries | Total
+            // Header row: Rank | Competitor | Match 1 | Match 2 | ... | Predicted Tries | Total
             html += '<thead><tr>';
+            html += '<th class="rank-col">#</th>';
             html += '<th class="competitor-col">Competitor</th>';
             filteredMatches.forEach(match => {
                 const hasResult = match.actualScore1 !== null && match.actualScore2 !== null;
@@ -3649,8 +4173,11 @@
                     </div>
                 </th>`;
             });
-            html += '<th>Tries</th>';
-            html += '<th>Pts</th>';
+            // Only show Tries column if not filtering by weekend
+            if (currentFilter !== 'round') {
+                html += '<th class="tries-col">Tries</th>';
+            }
+            html += '<th class="pts-col">Total Pts</th>';
             html += '</tr></thead>';
             
             html += '<tbody>';
@@ -3665,9 +4192,27 @@
                 .sort((a, b) => b.totalPoints - a.totalPoints);
             
             // Row for each competitor
-            sortedUsers.forEach(user => {
-                html += '<tr>';
-                html += `<td class="competitor-name">${user.nickname}</td>`;
+            sortedUsers.forEach((user, index) => {
+                // Calculate rank (handle ties)
+                let rank = index + 1;
+                if (index > 0 && sortedUsers[index - 1].totalPoints === user.totalPoints) {
+                    // Same points as previous user, find the first user with this score
+                    for (let i = index - 1; i >= 0; i--) {
+                        if (sortedUsers[i].totalPoints === user.totalPoints) {
+                            rank = i + 1;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                
+                // Check if this is the current logged in user
+                const isCurrentUser = user.username === currentUsername;
+                const rowClass = isCurrentUser ? 'current-user-row' : '';
+                
+                html += `<tr class="${rowClass}">`;
+                html += `<td class="rank-col">${rank}</td>`;
+                html += `<td class="competitor-name">${user.nickname}${isCurrentUser ? ' <span style="font-size: 0.8em; opacity: 0.7;">(you)</span>' : ''}</td>`;
                 
                 // Column for each match
                 filteredMatches.forEach(match => {
@@ -3737,31 +4282,33 @@
                     }
                 });
                 
-                // Predicted tries column with calculated projection
-                const userTries = users[user.username].totalTries;
-                let predictedTriesDisplay = '-';
-                let projectedTries = null;
-                
-                if (userTries !== null && userTries !== undefined) {
-                    // Calculate average tries per game from user's predictions and project to 15 games
-                    const userPredictions = users[user.username].predictions;
-                    const numPredictions = Object.keys(userPredictions).length;
+                // Predicted tries column with calculated projection (only if not weekend filter)
+                if (currentFilter !== 'round') {
+                    const userTries = users[user.username].totalTries;
+                    let predictedTriesDisplay = '-';
+                    let projectedTries = null;
                     
-                    if (numPredictions > 0 && completedMatches > 0) {
-                        // Calculate average actual tries per completed match
-                        const avgTriesPerMatch = totalActualTries / completedMatches;
-                        // Project to full tournament
-                        projectedTries = Math.round(avgTriesPerMatch * totalMatches);
-                        predictedTriesDisplay = `<div class="tooltip-container">${userTries}<div class="tooltip"><span class="tooltip-line">User prediction: ${userTries}</span><span class="tooltip-line">Avg tries/match: ${avgTriesPerMatch.toFixed(1)}</span><span class="tooltip-line">Projected total: ${projectedTries}</span></div></div>`;
-                    } else {
-                        predictedTriesDisplay = userTries;
+                    if (userTries !== null && userTries !== undefined) {
+                        // Calculate average tries per game from user's predictions and project to 15 games
+                        const userPredictions = users[user.username].predictions;
+                        const numPredictions = Object.keys(userPredictions).length;
+                        
+                        if (numPredictions > 0 && completedMatches > 0) {
+                            // Calculate average actual tries per completed match
+                            const avgTriesPerMatch = totalActualTries / completedMatches;
+                            // Project to full tournament
+                            projectedTries = Math.round(avgTriesPerMatch * totalMatches);
+                            predictedTriesDisplay = `<div class="tooltip-container">${userTries}<div class="tooltip"><span class="tooltip-line">User prediction: ${userTries}</span><span class="tooltip-line">Avg tries/match: ${avgTriesPerMatch.toFixed(1)}</span><span class="tooltip-line">Projected total: ${projectedTries}</span></div></div>`;
+                        } else {
+                            predictedTriesDisplay = userTries;
+                        }
                     }
+                    
+                    html += `<td class="tries-col">${predictedTriesDisplay}</td>`;
                 }
                 
-                html += `<td style="text-align: center;">${predictedTriesDisplay}</td>`;
-                
-                // Total points column
-                html += `<td style="font-weight: 800; font-size: 1.1rem; color: var(--bright-gold);">${user.totalPoints}</td>`;
+                // Total points column (sticky on right)
+                html += `<td class="pts-col">${user.totalPoints}</td>`;
                 html += '</tr>';
             });
             
