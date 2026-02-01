@@ -718,7 +718,8 @@
             border-top-color: var(--gold);
         }
 
-        .tooltip-container:hover .tooltip {
+        .tooltip-container:hover .tooltip,
+        .tooltip-container.tooltip-active .tooltip {
             visibility: visible;
             opacity: 1;
         }
@@ -1010,6 +1011,35 @@
         .summary-container {
             animation: fadeIn 0.8s ease-out;
             overflow-x: auto;
+            position: relative;
+        }
+
+        .scroll-hint {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            background: rgba(212, 175, 55, 0.15);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 5px;
+            color: var(--gold);
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .scroll-hint.hidden {
+            display: none;
+        }
+
+        .scroll-hint-arrow {
+            animation: bounceRight 1s ease-in-out infinite;
+        }
+
+        @keyframes bounceRight {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(5px); }
         }
 
         .summary-filters {
@@ -1080,7 +1110,7 @@
             border-top-right-radius: 5px;
             border-bottom-right-radius: 5px;
             flex: 1;
-            min-width: 0;
+            min-width: 180px;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23d4af37' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 1rem center;
@@ -1155,22 +1185,30 @@
         /* Sticky competitor name column */
         .summary-table th.competitor-col {
             text-align: left;
-            min-width: 120px;
+            width: 100px;
+            min-width: 100px;
+            max-width: 100px;
             position: sticky;
             left: 40px;
             background: var(--gold);
             z-index: 12;
-            white-space: nowrap;
         }
 
         .summary-table td.competitor-name {
             text-align: left;
             font-weight: 700;
+            font-size: 0.8rem;
             position: sticky;
             left: 40px;
             background: rgba(26, 77, 46, 0.98);
             z-index: 11;
             border-right: 2px solid rgba(212, 175, 55, 0.3);
+            width: 100px;
+            min-width: 100px;
+            max-width: 100px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.3;
         }
 
         /* Sticky points column on the right */
@@ -1830,11 +1868,13 @@
 
         .admin-tabs {
             margin-bottom: 0;
+            justify-content: space-evenly;
         }
 
         .admin-tabs .tab {
             border-color: var(--red);
             background: rgba(231, 76, 60, 0.1);
+            flex: 1;
         }
 
         .admin-tabs .tab:hover {
@@ -1941,6 +1981,62 @@
 
         .btn-warning:hover {
             background: #e67e22;
+        }
+
+        /* Database Recovery styles */
+        .recovery-section {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .recovery-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+
+        .recovery-card h3 {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 1.5rem;
+            color: var(--bright-gold);
+            margin-bottom: 1rem;
+            letter-spacing: 0.05em;
+        }
+
+        .recovery-card p {
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+        }
+
+        .recovery-card ul {
+            margin: 0.75rem 0 0.75rem 1.5rem;
+            line-height: 1.8;
+        }
+
+        .recovery-card ul li {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .recovery-danger {
+            border-color: rgba(231, 76, 60, 0.5);
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .sql-preview {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 5px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            line-height: 1.4;
+            overflow-x: auto;
+            white-space: pre;
+            max-height: 400px;
+            overflow-y: auto;
+            color: #a0d0a0;
         }
 
         /* Lock toggle */
@@ -2310,6 +2406,7 @@
                 <div class="tabs admin-tabs">
                     <button class="tab" onclick="showTab('competitors')">Competitor Management</button>
                     <button class="tab" onclick="showTab('results')">Fixture Setup</button>
+                    <button class="tab" onclick="showTab('recovery')">Database Recovery</button>
                 </div>
             </div>
 
@@ -2442,6 +2539,23 @@
                             <button class="btn-cancel" onclick="closeBulkImport()">Cancel</button>
                             <button onclick="processBulkImport()">Import Fixtures</button>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Database Recovery Tab (Admin Only) -->
+            <div id="recoveryTab" class="prediction-section hidden" style="margin-top: 4rem;">
+                <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
+                    <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Database Recovery</h2>
+                    <p style="margin-bottom: 1rem;">Copy the SQL below and run it in your Supabase SQL Editor to recreate the database schema.</p>
+                </div>
+
+                <div class="recovery-section">
+                    <div class="recovery-card">
+                        <h3>Schema SQL</h3>
+                        <p>Copy this SQL and paste it into the Supabase SQL Editor to recreate all tables:</p>
+                        <pre class="sql-preview" id="sqlPreview"></pre>
+                        <button class="btn-small" onclick="copySqlToClipboard()" style="margin-top: 1rem;">Copy SQL to Clipboard</button>
                     </div>
                 </div>
             </div>
@@ -3875,7 +3989,7 @@
             // Update saved indicators for matches that already have predictions
             updateSavedIndicators();
         }
-        
+
         // Update the saved tick indicators for all matches
         function updateSavedIndicators() {
             const userData = users[currentUsername];
@@ -4138,7 +4252,16 @@
                 "hungrier than a young Olly Morgan chasing a high ball",
                 "more unpredictable than a Friday night under the lights at Kingsholm",
                 "with the power of the Cherry and Whites in their Heineken Cup days",
-                "as fearless as Marcel Garvey running at a full defence"
+                "as fearless as Marcel Garvey running at a full defence",
+                "with the footwork of Terry Fanolua dancing through tackles",
+                "hitting harder than Junior Paramore on a rampaging burst",
+                "showing the consistency of Andy Gomarsall's box kicking",
+                "as reliable as Henry Paul pulling the strings at fly-half",
+                "more clinical than Ludovic Mercier slotting kicks from the touchline",
+                "with the vision of Ryan Lamb spotting gaps in the defence",
+                "as explosive as Lesley Vainikolo in full flight down the wing",
+                "tougher than the Kingsholm pitch after a week of West Country rain",
+                "showing the never-say-die attitude of the 2006-07 EDF Energy Cup winners"
             ];
             
             const rugbyRefs = [
@@ -4163,7 +4286,17 @@
                 "As tense as England vs Australia in the 1991 World Cup final.",
                 "Showing the grit of Wales in their 2019 Grand Slam campaign.",
                 "Like the French in 1999 - capable of producing magic when least expected!",
-                "More exciting than Lomu's demolition of England in '95."
+                "More exciting than Lomu's demolition of England in '95.",
+                "With the tactical nous of Clive Woodward's 2003 masterclass.",
+                "As thrilling as Brian O'Driscoll carving through defences in his prime.",
+                "Showing the leadership of Martin Johnson lifting the Webb Ellis Cup.",
+                "More physical than the Lions vs All Blacks in 2017 - proper Test match stuff!",
+                "With the kicking game of Dan Carter orchestrating from fly-half.",
+                "As dramatic as that 2023 World Cup final - edge of your seat stuff!",
+                "Reminds me of Scotland's famous Calcutta Cup wins at Twickenham.",
+                "Playing with the passion of a packed Principality Stadium on match day.",
+                "More intense than the 1997 Lions series in South Africa - legendary!",
+                "Showing the finishing of Shane Williams at his devastating best."
             ];
             
             const randomGloucester = gloucesterRefs[Math.floor(Math.random() * gloucesterRefs.length)];
@@ -4641,10 +4774,156 @@
             
             html += '</tbody>';
             html += '</table>';
+            html += '<div class="scroll-hint hidden" id="scrollHint"><span>Scroll right to see full table</span><span class="scroll-hint-arrow">→</span></div>';
             html += '</div>';
-            
+
             container.innerHTML = html;
             updateLeaderboard();
+            checkTableOverflow();
+        }
+
+        function checkTableOverflow() {
+            const container = document.querySelector('.summary-container');
+            const scrollHint = document.getElementById('scrollHint');
+            if (!container || !scrollHint) return;
+
+            // Show hint if table is wider than container
+            if (container.scrollWidth > container.clientWidth) {
+                scrollHint.classList.remove('hidden');
+            } else {
+                scrollHint.classList.add('hidden');
+            }
+
+            // Hide hint when user scrolls to the end
+            container.addEventListener('scroll', function() {
+                const isScrolledToEnd = container.scrollLeft + container.clientWidth >= container.scrollWidth - 10;
+                if (isScrolledToEnd) {
+                    scrollHint.classList.add('hidden');
+                }
+            });
+
+            // Enable touch tooltips for mobile
+            initTouchTooltips();
+        }
+
+        function initTouchTooltips() {
+            // Add click/touch handlers for tooltip containers
+            document.querySelectorAll('.summary-container .tooltip-container').forEach(container => {
+                container.addEventListener('click', function(e) {
+                    e.stopPropagation();
+
+                    // Close any other open tooltips
+                    document.querySelectorAll('.tooltip-container.tooltip-active').forEach(el => {
+                        if (el !== container) {
+                            el.classList.remove('tooltip-active');
+                        }
+                    });
+
+                    // Toggle this tooltip
+                    container.classList.toggle('tooltip-active');
+                });
+            });
+
+            // Close tooltips when clicking elsewhere
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.tooltip-container')) {
+                    document.querySelectorAll('.tooltip-container.tooltip-active').forEach(el => {
+                        el.classList.remove('tooltip-active');
+                    });
+                }
+            });
+        }
+
+        // Database Recovery Functions
+        const SCHEMA_SQL = `-- Drop existing tables (in correct order due to foreign keys)
+DROP TABLE IF EXISTS predictions;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS matches;
+DROP TABLE IF EXISTS admin_emails;
+DROP TABLE IF EXISTS settings;
+
+-- Create users table
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    nickname VARCHAR(255),
+    email VARCHAR(255),
+    password_hash VARCHAR(255),
+    total_tries INTEGER,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create matches table
+CREATE TABLE matches (
+    id INTEGER PRIMARY KEY,
+    round INTEGER NOT NULL,
+    date VARCHAR(50),
+    time VARCHAR(10),
+    team1 VARCHAR(100) NOT NULL,
+    team2 VARCHAR(100) NOT NULL,
+    actual_score1 INTEGER,
+    actual_score2 INTEGER,
+    actual_tries1 INTEGER,
+    actual_tries2 INTEGER
+);
+
+-- Create predictions table
+CREATE TABLE predictions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    match_id INTEGER NOT NULL,
+    team1_score INTEGER,
+    team2_score INTEGER,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, match_id)
+);
+
+-- Create admin_emails table
+CREATE TABLE admin_emails (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL
+);
+
+-- Create settings table
+CREATE TABLE settings (
+    id SERIAL PRIMARY KEY,
+    key VARCHAR(255) UNIQUE NOT NULL,
+    value TEXT
+);
+
+-- Enable Row Level Security (optional - adjust as needed)
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE predictions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admin_emails ENABLE ROW LEVEL SECURITY;
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for public access (adjust based on your security needs)
+CREATE POLICY "Allow all access to users" ON users FOR ALL USING (true);
+CREATE POLICY "Allow all access to predictions" ON predictions FOR ALL USING (true);
+CREATE POLICY "Allow all access to matches" ON matches FOR ALL USING (true);
+CREATE POLICY "Allow all access to admin_emails" ON admin_emails FOR ALL USING (true);
+CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
+
+        function initRecoveryTab() {
+            // Display the SQL in the preview
+            document.getElementById('sqlPreview').textContent = SCHEMA_SQL;
+        }
+
+        function copySqlToClipboard() {
+            navigator.clipboard.writeText(SCHEMA_SQL).then(() => {
+                alert('SQL copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = SCHEMA_SQL;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('SQL copied to clipboard!');
+            });
         }
 
         // Tab switching
@@ -4654,6 +4933,7 @@
             document.getElementById('summaryTab').classList.add('hidden');
             document.getElementById('competitorsTab').classList.add('hidden');
             document.getElementById('resultsTab').classList.add('hidden');
+            document.getElementById('recoveryTab').classList.add('hidden');
 
             // Update tab buttons
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
@@ -4667,7 +4947,7 @@
             } else if (tabName === 'summary') {
                 document.getElementById('summaryTab').classList.remove('hidden');
                 event.target.classList.add('active');
-                showSummary();
+                refreshSummaryData();
             } else if (tabName === 'competitors') {
                 if (!isCurrentUserAdmin()) return;
                 document.getElementById('competitorsTab').classList.remove('hidden');
@@ -4679,6 +4959,45 @@
                 event.target.classList.add('active');
                 updateLockToggleUI();
                 renderAdminMatches();
+            } else if (tabName === 'recovery') {
+                if (!isCurrentUserAdmin()) return;
+                document.getElementById('recoveryTab').classList.remove('hidden');
+                event.target.classList.add('active');
+                initRecoveryTab();
+            }
+        }
+
+        async function refreshSummaryData() {
+            try {
+                // Show a subtle loading state on the summary container
+                const container = document.getElementById('matchSummary');
+                if (container) {
+                    container.style.opacity = '0.6';
+                }
+
+                // Fetch fresh data from Supabase
+                const [loadedUsers, loadedMatches] = await Promise.all([
+                    Storage.getUsers(),
+                    Storage.getMatches()
+                ]);
+
+                // Update local data
+                users = loadedUsers;
+                if (loadedMatches && loadedMatches.length > 0) {
+                    matches.length = 0;
+                    loadedMatches.forEach(m => matches.push(m));
+                }
+
+                // Restore opacity and show summary
+                if (container) {
+                    container.style.opacity = '1';
+                }
+                showSummary();
+
+            } catch (error) {
+                console.error('Error refreshing summary data:', error);
+                // Still show summary with existing data if refresh fails
+                showSummary();
             }
         }
 
