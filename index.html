@@ -787,53 +787,6 @@
             animation: fadeIn 0.8s ease-out;
         }
 
-        .leaderboard-table {
-            width: 100%;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            overflow: hidden;
-            border: 2px solid var(--gold);
-            backdrop-filter: blur(10px);
-        }
-
-        .leaderboard-table thead {
-            background: var(--gold);
-            color: var(--deep-green);
-        }
-
-        .leaderboard-table th {
-            padding: 1.5rem 1rem;
-            font-family: 'Bebas Neue', cursive;
-            font-size: 1.5rem;
-            letter-spacing: 0.1em;
-            text-align: left;
-        }
-
-        .leaderboard-table td {
-            padding: 1.2rem 1rem;
-            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-            font-size: 1.1rem;
-        }
-
-        .leaderboard-table tr {
-            transition: all 0.3s ease;
-        }
-
-        .leaderboard-table tbody tr:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .rank {
-            font-family: 'Bebas Neue', cursive;
-            font-size: 2rem;
-            color: var(--gold);
-            font-weight: 800;
-        }
-
-        .rank.first {
-            color: var(--bright-gold);
-            font-size: 2.5rem;
-        }
 
         .points {
             font-weight: 800;
@@ -2441,27 +2394,13 @@
 
                 <div id="summaryContainer"></div>
 
-                <!-- Leaderboard at bottom -->
+                <!-- Stats and Tips at bottom -->
                 <div style="margin-top: 3rem;">
                     <!-- Estimated Tries Stats -->
                     <div id="triesStatsContainer" class="tries-stats-box"></div>
-                    
+
                     <!-- Trev's Tips -->
                     <div id="trevsTipsContainer" class="trevs-tips-box"></div>
-                    
-                    <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2.5rem; color: var(--bright-gold); margin-bottom: 1.5rem; letter-spacing: 0.1em; text-align: center;">Leaderboard</h2>
-                    <table class="leaderboard-table">
-                        <thead>
-                            <tr>
-                                <th>Rank</th>
-                                <th>Competitor</th>
-                                <th>Points</th>
-                                <th>Tries Prediction</th>
-                            </tr>
-                        </thead>
-                        <tbody id="leaderboardBody">
-                        </tbody>
-                    </table>
                 </div>
             </div>
 
@@ -2899,6 +2838,28 @@
 
         // Loading state
         let isLoading = true;
+
+        // Cookie helper functions
+        function setCookie(name, value, days = 365) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+            document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
+        }
+
+        function getCookie(name) {
+            const nameEQ = name + "=";
+            const ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length, c.length));
+            }
+            return null;
+        }
+
+        function deleteCookie(name) {
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+        }
 
         // Initialize data from supabaseClient
         async function initializeData() {
@@ -3612,8 +3573,9 @@
             
             showLoginFeedback('Password updated successfully! Welcome back, ' + toTitleCase(users[passwordResetUsername].nickname), 'success');
             currentUsername = passwordResetUsername;
+            setCookie('rugbyPredictorUser', currentUsername);
             passwordResetUsername = null;
-            
+
             setTimeout(() => {
                 showApp();
             }, 800);
@@ -3748,6 +3710,7 @@
             // Successful login
             showLoginFeedback('Login successful! Welcome back, ' + toTitleCase(users[username].nickname), 'success');
             currentUsername = username;
+            setCookie('rugbyPredictorUser', username);
             setTimeout(() => {
                 showApp();
             }, 800);
@@ -3820,7 +3783,8 @@
             }
             
             currentUsername = username;
-            
+            setCookie('rugbyPredictorUser', username);
+
             setTimeout(() => {
                 showApp();
             }, 1000);
@@ -3848,6 +3812,7 @@
         // Logout
         function logout() {
             currentUsername = null;
+            deleteCookie('rugbyPredictorUser');
             document.getElementById('loginView').classList.remove('hidden');
             document.getElementById('appView').classList.add('hidden');
             
@@ -4145,23 +4110,7 @@
 
         // Update leaderboard
         function updateLeaderboard() {
-            const leaderboardData = Object.keys(users).map(username => ({
-                nickname: toTitleCase(users[username].nickname || username),
-                points: calculatePoints(username),
-                totalTries: users[username].totalTries || '-'
-            })).sort((a, b) => b.points - a.points);
-
-            const tbody = document.getElementById('leaderboardBody');
-            tbody.innerHTML = leaderboardData.map((user, index) => `
-                <tr>
-                    <td><span class="rank ${index === 0 ? 'first' : ''}">${index + 1}</span></td>
-                    <td>${user.nickname}</td>
-                    <td><span class="points">${user.points}</span></td>
-                    <td>${user.totalTries}</td>
-                </tr>
-            `).join('');
-            
-            // Update tries stats
+            // Update tries stats and Trev's Tips
             updateTriesStats();
         }
 
@@ -4635,7 +4584,7 @@
             });
             // Only show Tries column if not filtering by weekend
             if (currentFilter !== 'round') {
-                html += '<th class="tries-col">Tries</th>';
+                html += '<th class="tries-col">Predicted Tries</th>';
             }
             html += '<th class="pts-col">Total Pts</th>';
             html += '</tr></thead>';
@@ -5004,6 +4953,13 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
         // Initialize on load - load data from Supabase first
         initializeData().then(() => {
             init();
+
+            // Check for saved user cookie and auto-login
+            const savedUsername = getCookie('rugbyPredictorUser');
+            if (savedUsername && users[savedUsername]) {
+                currentUsername = savedUsername;
+                showApp();
+            }
         });
     </script>
 </body>
