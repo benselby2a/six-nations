@@ -4512,14 +4512,42 @@
             const randomRugby = rugbyRefs[Math.floor(Math.random() * rugbyRefs.length)];
             const randomGloucester2 = gloucesterRefs[Math.floor(Math.random() * gloucesterRefs.length)];
             const nextMatch = matches.find(m => m.actualScore1 === null || m.actualScore2 === null);
+            const historicRefs = {
+                'England|France': 'England 25–17 France in 2003',
+                'England|Ireland': 'England 24–28 Ireland in 2006',
+                'England|Scotland': 'England 43–3 Scotland in 2001',
+                'England|Wales': 'Wales 11–9 England in 2005',
+                'France|Ireland': 'France 25–27 Ireland in 2000',
+                'France|Italy': 'Italy 3–39 France in 2007',
+                'France|Scotland': 'France 46–19 Scotland in 2007',
+                'France|Wales': 'Wales 29–12 France in 2008',
+                'Ireland|Italy': 'Italy 24–51 Ireland in 2007',
+                'Ireland|Scotland': 'Ireland 34–13 Scotland in 2008',
+                'Ireland|Wales': 'Wales 15–17 Ireland in 2009',
+                'Italy|Scotland': 'Scotland 17–37 Italy in 2007',
+                'Italy|Wales': 'Wales 47–8 Italy in 2008',
+                'England|Italy': 'Italy 19–23 England in 2008',
+                'Scotland|Wales': 'Wales 30–15 Scotland in 2008'
+            };
+            const matchKey = nextMatch ? [nextMatch.team1, nextMatch.team2].sort().join('|') : '';
             const nextFixtureText = nextMatch
-                ? `Next up: ${nextMatch.team1} vs ${nextMatch.team2} on ${nextMatch.date} at ${nextMatch.time}.`
+                ? `Next up we have ${nextMatch.team1} vs ${nextMatch.team2} on ${nextMatch.date} at ${nextMatch.time}.`
                 : '';
+            const historicRef = matchKey && historicRefs[matchKey]
+                ? [
+                    `I remember the classic ${historicRefs[matchKey]}.`,
+                    `Will it match the classic ${historicRefs[matchKey]}?`,
+                    `Could it beat the classic ${historicRefs[matchKey]}?`,
+                    `Hard to top the classic ${historicRefs[matchKey]}.`,
+                    `That ${historicRefs[matchKey]} clash set the bar — can this one rise to it?`
+                ][Math.floor(Math.random() * 5)]
+                : '';
+            const nextFixtureWithHistory = `${nextFixtureText} ${historicRef}`.trim();
             
             if (completedMatches.length === 0) {
-                tip = `No matches played yet, but the tension is building like the 2003 World Cup final in extra time! Get your predictions in sharpish - this isn't a Gloucester training session where you can take your time. The tournament kicks off soon and every point counts. Make sure you've got all your scores in before kick-off - no late changes allowed once the whistle blows! Remember, predicting a draw gets you bonus points, and if you nail the exact score, you'll be celebrating like Gloucester winning the Premiership. ${nextFixtureText}`;
+                tip = `No matches played yet, but the tension is building like the 2003 World Cup final in extra time! Get your predictions in sharpish - this isn't a Gloucester training session where you can take your time. The tournament kicks off soon and every point counts. Make sure you've got all your scores in before kick-off - no late changes allowed once the whistle blows! Remember, predicting a draw gets you bonus points, and if you nail the exact score, you'll be celebrating like Gloucester winning the Premiership. ${nextFixtureWithHistory}`;
             } else if (leaderboardData.length === 1) {
-                tip = `${leaderboardData[0].nickname} is currently the only competitor - ${randomGloucester}! Bit lonely at the top though, like being the only person who remembers Gloucester's Powergen Cup wins. Get some mates involved and make this a proper competition! The more the merrier, as they say down at Kingsholm on match day. ${nextFixtureText}`;
+                tip = `${leaderboardData[0].nickname} is currently the only competitor - ${randomGloucester}! Bit lonely at the top though, like being the only person who remembers Gloucester's Powergen Cup wins. Get some mates involved and make this a proper competition! The more the merrier, as they say down at Kingsholm on match day. ${nextFixtureWithHistory}`;
             } else {
                 const leader = leaderboardData[0];
                 const second = leaderboardData[1];
@@ -4614,15 +4642,15 @@
                 }
                 
                 if (gap === 0) {
-                    tip = `It's tighter than the 2003 World Cup final at the top! ${leader.nickname} and ${second.nickname} are level on ${leader.points} points - ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}${tournamentStats}With ${remainingMatches} matches still to play, this one's going down to the wire like England vs Australia in Sydney! Every prediction counts now - one perfect score could swing it all. ${nextFixtureText}`;
+                    tip = `It's tighter than the 2003 World Cup final at the top! ${leader.nickname} and ${second.nickname} are level on ${leader.points} points - ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}${tournamentStats}With ${remainingMatches} matches still to play, this one's going down to the wire like England vs Australia in Sydney! Every prediction counts now - one perfect score could swing it all. ${nextFixtureWithHistory}`;
                 } else if (gap <= 3) {
-                    tip = `${leader.nickname} leads with ${leader.points} points but ${second.nickname} is breathing down their neck like a Gloucester flanker hunting a fly-half! Only ${gap} point${gap > 1 ? 's' : ''} separating them. ${matchAnalysis}${predictionAnalysis}${tournamentStats}With ${remainingMatches} matches left, one good round of predictions could change everything. This is proper squeaky-bum time, as they say! ${nextFixtureText}`;
+                    tip = `${leader.nickname} leads with ${leader.points} points but ${second.nickname} is breathing down their neck like a Gloucester flanker hunting a fly-half! Only ${gap} point${gap > 1 ? 's' : ''} separating them. ${matchAnalysis}${predictionAnalysis}${tournamentStats}With ${remainingMatches} matches left, one good round of predictions could change everything. This is proper squeaky-bum time, as they say! ${nextFixtureWithHistory}`;
                 } else if (gap <= 6) {
-                    tip = `${leader.nickname} is building a handy lead on ${leader.points} points, but ${second.nickname} on ${second.points} won't give up without a fight - ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}${tournamentStats}Still ${remainingMatches} matches to play, which means plenty of points up for grabs. A couple of perfect scores and this leaderboard could look very different. ${nextFixtureText}`;
+                    tip = `${leader.nickname} is building a handy lead on ${leader.points} points, but ${second.nickname} on ${second.points} won't give up without a fight - ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}${tournamentStats}Still ${remainingMatches} matches to play, which means plenty of points up for grabs. A couple of perfect scores and this leaderboard could look very different. ${nextFixtureWithHistory}`;
                 } else if (gap <= 10) {
-                    tip = `${leader.nickname} is pulling clear on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs to find form quickly. ${matchAnalysis}${predictionAnalysis}${tournamentStats}But don't count anyone out yet - remember Japan beating South Africa at the 2015 World Cup? Anything's possible in this game! ${nextFixtureText}`;
+                    tip = `${leader.nickname} is pulling clear on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs to find form quickly. ${matchAnalysis}${predictionAnalysis}${tournamentStats}But don't count anyone out yet - remember Japan beating South Africa at the 2015 World Cup? Anything's possible in this game! ${nextFixtureWithHistory}`;
                 } else {
-                    tip = `${leader.nickname} is running away with it on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs a serious comeback worthy of the 1999 French team against the All Blacks. ${matchAnalysis}${predictionAnalysis}${tournamentStats}The gap looks big, but ${remainingMatches} matches means up to ${remainingMatches * 11} points still available. Stranger things have happened - ${randomGloucester2}! ${nextFixtureText}`;
+                    tip = `${leader.nickname} is running away with it on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs a serious comeback worthy of the 1999 French team against the All Blacks. ${matchAnalysis}${predictionAnalysis}${tournamentStats}The gap looks big, but ${remainingMatches} matches means up to ${remainingMatches * 11} points still available. Stranger things have happened - ${randomGloucester2}! ${nextFixtureWithHistory}`;
                 }
             }
             
