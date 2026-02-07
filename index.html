@@ -1414,6 +1414,91 @@
             font-style: italic;
         }
 
+        /* Joker styles - My Predictions page */
+        .joker-selection {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid rgba(212, 175, 55, 0.2);
+            text-align: center;
+        }
+
+        .joker-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            background: rgba(212, 175, 55, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .joker-label:hover {
+            border-color: var(--gold);
+            background: rgba(212, 175, 55, 0.2);
+        }
+
+        .joker-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .joker-icon {
+            font-size: 1.2rem;
+        }
+
+        .joker-text {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--bright-gold);
+        }
+
+        .match-card.joker-selected {
+            border-color: var(--bright-gold);
+            background: rgba(212, 175, 55, 0.15);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+        }
+
+        .match-card.joker-selected .joker-label {
+            background: rgba(212, 175, 55, 0.3);
+            border-color: var(--bright-gold);
+        }
+
+        /* Joker styles - Match Summary table */
+        .joker-cell {
+            background: rgba(212, 175, 55, 0.1) !important;
+        }
+
+        .joker-indicator {
+            font-size: 0.8rem;
+            margin-left: 0.25rem;
+        }
+
+        .joker-eligible-header {
+            background: rgba(212, 175, 55, 0.15) !important;
+        }
+
+        .joker-eligible-badge {
+            font-size: 0.65rem;
+            color: var(--bright-gold);
+            background: rgba(212, 175, 55, 0.3);
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            margin-bottom: 0.3rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .tooltip-line.joker-bonus {
+            color: var(--bright-gold);
+            font-weight: 700;
+        }
+
         /* User info */
         .user-info {
             display: flex;
@@ -2084,6 +2169,57 @@
             animation: fadeIn 0.3s ease-out;
         }
 
+        /* Guest login styles */
+        .guest-login-divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+        }
+
+        .guest-login-divider::before,
+        .guest-login-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(212, 175, 55, 0.3);
+        }
+
+        .guest-login-divider span {
+            padding: 0 1rem;
+        }
+
+        .guest-login-btn {
+            width: 100%;
+            padding: 1rem;
+            background: transparent;
+            border: 2px solid rgba(212, 175, 55, 0.5);
+            color: var(--gold);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .guest-login-btn:hover {
+            background: rgba(212, 175, 55, 0.15);
+            border-color: var(--gold);
+        }
+
+        .guest-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--white);
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            margin-left: 0.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
         /* Modal styles */
         .modal {
             position: fixed;
@@ -2311,6 +2447,12 @@
                     </div>
                     <button onclick="registerNewUser()">Create Account</button>
                 </div>
+
+                <!-- Guest Login -->
+                <div class="guest-login-divider">
+                    <span>or</span>
+                </div>
+                <button class="guest-login-btn" onclick="loginAsGuest()">View Scores as Guest</button>
             </div>
         </div>
 
@@ -2345,7 +2487,7 @@
                 </div>
                 <div class="user-info">
                     <div class="username" id="currentUser"></div>
-                    <button class="logout-btn" onclick="logout()">Logout</button>
+                    <button class="logout-btn" id="logoutBtn" onclick="logout()">Logout</button>
                 </div>
             </div>
 
@@ -2486,13 +2628,26 @@
             <div id="recoveryTab" class="prediction-section hidden" style="margin-top: 4rem;">
                 <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Database Recovery</h2>
-                    <p style="margin-bottom: 1rem;">Copy the SQL below and run it in your Supabase SQL Editor to recreate the database schema.</p>
+                    <p style="margin-bottom: 1rem;">Copy the SQL below and run it in your Supabase SQL Editor to recreate the database with all current data.</p>
                 </div>
 
                 <div class="recovery-section">
                     <div class="recovery-card">
-                        <h3>Schema SQL</h3>
-                        <p>Copy this SQL and paste it into the Supabase SQL Editor to recreate all tables:</p>
+                        <h3>Database SQL Export</h3>
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="includeDataCheckbox" checked onchange="updateRecoverySQL()" style="width: 18px; height: 18px; cursor: pointer;">
+                                <span>Include current data (users, predictions, settings)</span>
+                            </label>
+                        </div>
+                        <p id="recoveryDescription">This SQL will recreate all tables and restore:</p>
+                        <ul id="recoveryList" style="margin: 0.5rem 0 1rem 1.5rem; line-height: 1.6;">
+                            <li>All matches and fixtures</li>
+                            <li>All user accounts (usernames, emails, password hashes)</li>
+                            <li>All predictions</li>
+                            <li>Admin email list</li>
+                            <li>App settings</li>
+                        </ul>
                         <pre class="sql-preview" id="sqlPreview"></pre>
                         <button class="btn-small" onclick="copySqlToClipboard()" style="margin-top: 1rem;">Copy SQL to Clipboard</button>
                     </div>
@@ -2835,6 +2990,7 @@
         let currentUsername = null;
         let adminEmails = [];
         let appSettings = { predictionsLocked: false };
+        let isGuest = false;
 
         // Loading state
         let isLoading = true;
@@ -3647,6 +3803,13 @@
             }
         }
 
+        // Login as guest (view only)
+        function loginAsGuest() {
+            isGuest = true;
+            currentUsername = null;
+            showAppAsGuest();
+        }
+
         // Login existing user
         async function loginExisting() {
             const email = document.getElementById('existingEmail').value.trim().toLowerCase();
@@ -3812,29 +3975,35 @@
         // Logout
         function logout() {
             currentUsername = null;
+            isGuest = false;
             deleteCookie('rugbyPredictorUser');
             document.getElementById('loginView').classList.remove('hidden');
             document.getElementById('appView').classList.add('hidden');
-            
+
+            // Reset logout button text
+            const logoutBtn = document.getElementById('logoutBtn');
+            logoutBtn.textContent = 'Logout';
+
             // Clear all login form fields
             document.getElementById('existingEmail').value = '';
             document.getElementById('existingPassword').value = '';
             document.getElementById('nickname').value = '';
             document.getElementById('email').value = '';
             document.getElementById('newPassword').value = '';
-            
+
             // Reset to existing user form
             showLoginForm('existing');
         }
 
         // Show app
         function showApp() {
+            isGuest = false;
             document.getElementById('loginView').classList.add('hidden');
             document.getElementById('appView').classList.remove('hidden');
-            
+
             const user = users[currentUsername];
             let displayName = toTitleCase(user.nickname || currentUsername);
-            
+
             // Add admin badge if user is admin
             if (isCurrentUserAdmin()) {
                 displayName += '<span class="admin-badge">Admin</span>';
@@ -3844,21 +4013,55 @@
                 // Hide admin tabs
                 document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
             }
-            
+
             document.getElementById('currentUser').innerHTML = displayName;
-            
+
+            // Show all tabs for logged-in users
+            document.querySelector('.tabs:not(.admin-tabs)').classList.remove('hidden');
+            document.getElementById('logoutBtn').classList.remove('hidden');
+
             // Load user's saved theme
             loadUserTheme();
-            
+
             // Update lock toggle UI
             updateLockToggleUI();
-            
+
             // Initialize round selector dropdown
             initRoundSelector();
-            
+
             renderMatches(); // Render the prediction inputs first
             loadPredictions(); // Then populate with saved predictions
             showSummary(); // Load summary by default (includes leaderboard)
+        }
+
+        // Show app as guest (view only mode)
+        function showAppAsGuest() {
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('appView').classList.remove('hidden');
+
+            document.getElementById('currentUser').innerHTML = 'Guest <span class="guest-badge">View Only</span>';
+
+            // Hide tabs - guests can only see summary
+            document.querySelector('.tabs:not(.admin-tabs)').classList.add('hidden');
+            document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
+
+            // Change logout button to "Sign In"
+            const logoutBtn = document.getElementById('logoutBtn');
+            logoutBtn.textContent = 'Sign In';
+            logoutBtn.classList.remove('hidden');
+
+            // Initialize round selector dropdown
+            initRoundSelector();
+
+            // Hide all tabs except summary
+            document.getElementById('predictionsTab').classList.add('hidden');
+            document.getElementById('summaryTab').classList.remove('hidden');
+            document.getElementById('competitorsTab').classList.add('hidden');
+            document.getElementById('resultsTab').classList.add('hidden');
+            document.getElementById('recoveryTab').classList.add('hidden');
+
+            // Show summary
+            showSummary();
         }
 
         // Render matches
@@ -4075,27 +4278,37 @@
                 const actualResult = getResult(match.actualScore1, match.actualScore2);
                 const predictedResult = getResult(prediction.team1, prediction.team2);
 
+                let matchPoints = 0;
+
                 // 3 points for correct result (win/draw prediction)
                 if (actualResult === predictedResult) {
-                    totalPoints += 3;
+                    matchPoints += 3;
 
-                    // Bonus 3 points for correctly predicting a draw
-                    if (actualResult === 'draw' && predictedResult === 'draw') {
-                        totalPoints += 3;
-                    }
-
-                    // Check for perfect score
+                    // Check for perfect score OR within 5 points
                     const team1Diff = Math.abs(prediction.team1 - match.actualScore1);
                     const team2Diff = Math.abs(prediction.team2 - match.actualScore2);
 
                     if (team1Diff === 0 && team2Diff === 0) {
-                        // Perfect score - 5 bonus points
-                        totalPoints += 5;
-                    } else if (team1Diff <= 5 || team2Diff <= 5) {
-                        // Bonus point if either score is within 5 points and result is correct
-                        totalPoints += 1;
+                        // Perfect score - 3 bonus points
+                        matchPoints += 3;
+                    } else {
+                        // 1 extra point for each team score within 5 points (max 2)
+                        if (team1Diff <= 5) matchPoints += 1;
+                        if (team2Diff <= 5) matchPoints += 1;
+                    }
+
+                    // Bonus 2 points for correctly predicting a draw
+                    if (actualResult === 'draw') {
+                        matchPoints += 2;
                     }
                 }
+
+                // Double points if this is the user's joker match
+                if (user.jokerMatchId === match.id) {
+                    matchPoints *= 2;
+                }
+
+                totalPoints += matchPoints;
             });
 
             return totalPoints;
@@ -4569,9 +4782,11 @@
                 const hasResult = match.actualScore1 !== null && match.actualScore2 !== null;
                 const hasTries = match.actualTries1 !== null && match.actualTries2 !== null;
                 const totalMatchTries = hasTries ? match.actualTries1 + match.actualTries2 : null;
-                html += `<th class="match-header-cell">
+                const jokerBadge = match.jokerEligible ? '<div class="joker-eligible-badge">🃏 Joker Eligible</div>' : '';
+                html += `<th class="match-header-cell ${match.jokerEligible ? 'joker-eligible-header' : ''}">
                     <div class="match-header-cell-inner">
                         <div class="match-header-top">
+                            ${jokerBadge}
                             <div class="match-teams">${getFlag(match.team1)} ${match.team1}<br>vs<br>${getFlag(match.team2)} ${match.team2}</div>
                             <div class="match-date">${match.date} - ${match.time}</div>
                         </div>
@@ -4636,57 +4851,76 @@
                     let pointsEarned = 0;
                     let pointsClass = 'points-0';
                     let tooltipContent = '';
-                    
+                    const isJoker = users[user.username].jokerMatchId === match.id;
+
                     if (hasResult) {
                         const actualResult = getResult(match.actualScore1, match.actualScore2);
                         const predictedResult = getResult(pred.team1, pred.team2);
-                        
+
                         const team1Diff = Math.abs(pred.team1 - match.actualScore1);
                         const team2Diff = Math.abs(pred.team2 - match.actualScore2);
-                        
+
                         // Build tooltip content
                         tooltipContent += `<span class="tooltip-line">Predicted: ${pred.team1} - ${pred.team2}</span>`;
                         tooltipContent += `<span class="tooltip-line">Actual: ${match.actualScore1} - ${match.actualScore2}</span>`;
-                        
+
                         if (actualResult === predictedResult) {
                             pointsEarned = 3;
                             pointsClass = 'points-3';
                             tooltipContent += `<span class="tooltip-line correct">✓ Correct result: +3 pts</span>`;
-                            
-                            // Bonus for correctly predicting a draw
-                            if (actualResult === 'draw' && predictedResult === 'draw') {
-                                pointsEarned += 3;
-                                tooltipContent += `<span class="tooltip-line bonus">★ Draw bonus: +3 pts</span>`;
-                            }
-                            
-                            // Check for perfect score
+
+                            // Check for perfect score OR within 5 points
                             if (team1Diff === 0 && team2Diff === 0) {
-                                pointsEarned += 5;
+                                pointsEarned += 3;
                                 pointsClass = 'points-perfect';
-                                tooltipContent += `<span class="tooltip-line bonus">🎯 Perfect score: +5 pts</span>`;
-                            } else if (team1Diff <= 5 || team2Diff <= 5) {
-                                pointsEarned += 1;
-                                pointsClass = 'points-4';
-                                tooltipContent += `<span class="tooltip-line bonus">★ Score within 5: +1 bonus</span>`;
+                                tooltipContent += `<span class="tooltip-line bonus">🎯 Perfect score: +3 pts</span>`;
+                            } else {
+                                // 1 extra point for each team score within 5 points (max 2)
+                                if (team1Diff <= 5) {
+                                    pointsEarned += 1;
+                                    tooltipContent += `<span class="tooltip-line bonus">★ ${match.team1} score within 5: +1 pt</span>`;
+                                }
+                                if (team2Diff <= 5) {
+                                    pointsEarned += 1;
+                                    tooltipContent += `<span class="tooltip-line bonus">★ ${match.team2} score within 5: +1 pt</span>`;
+                                }
+                                if (team1Diff <= 5 || team2Diff <= 5) {
+                                    pointsClass = 'points-4';
+                                }
+                            }
+
+                            // Bonus 2 points for correctly predicting a draw
+                            if (actualResult === 'draw') {
+                                pointsEarned += 2;
+                                tooltipContent += `<span class="tooltip-line bonus">★ Draw bonus: +2 pts</span>`;
                             }
                         } else {
                             tooltipContent += `<span class="tooltip-line incorrect">✗ Wrong result: 0 pts</span>`;
                         }
-                        
+
+                        // Apply joker doubling
+                        if (isJoker) {
+                            tooltipContent += `<span class="tooltip-line joker-bonus">🃏 Joker: ${pointsEarned} × 2 = ${pointsEarned * 2} pts</span>`;
+                            pointsEarned *= 2;
+                        }
+
                         tooltipContent += `<span class="tooltip-line" style="margin-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 0.5rem;">Total: ${pointsEarned} pts</span>`;
                     }
-                    
+
+                    const jokerIndicator = isJoker ? '<span class="joker-indicator">🃏</span>' : '';
+                    const jokerCellClass = isJoker ? 'prediction-cell joker-cell' : 'prediction-cell';
+
                     if (hasResult) {
-                        html += `<td class="prediction-cell">
+                        html += `<td class="${jokerCellClass}">
                             <div class="tooltip-container">
-                                <div>${pred.team1} - ${pred.team2}</div>
+                                <div>${pred.team1} - ${pred.team2} ${jokerIndicator}</div>
                                 <span class="points-earned ${pointsClass}">${pointsEarned} pts</span>
                                 <div class="tooltip">${tooltipContent}</div>
                             </div>
                         </td>`;
                     } else {
-                        html += `<td class="prediction-cell">
-                            <div>${pred.team1} - ${pred.team2}</div>
+                        html += `<td class="${jokerCellClass}">
+                            <div>${pred.team1} - ${pred.team2} ${jokerIndicator}</div>
                         </td>`;
                     }
                 });
@@ -4784,7 +5018,8 @@
         }
 
         // Database Recovery Functions
-        const SCHEMA_SQL = `-- Drop existing tables (in correct order due to foreign keys)
+        function generateSchemaSQL() {
+            return `-- Drop existing tables (in correct order due to foreign keys)
 DROP TABLE IF EXISTS predictions;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS matches;
@@ -4799,6 +5034,7 @@ CREATE TABLE users (
     email VARCHAR(255),
     password_hash VARCHAR(255),
     total_tries INTEGER,
+    joker_match_id INTEGER,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -4813,7 +5049,8 @@ CREATE TABLE matches (
     actual_score1 INTEGER,
     actual_score2 INTEGER,
     actual_tries1 INTEGER,
-    actual_tries2 INTEGER
+    actual_tries2 INTEGER,
+    joker_eligible BOOLEAN DEFAULT FALSE
 );
 
 -- Create predictions table
@@ -4853,20 +5090,119 @@ CREATE POLICY "Allow all access to predictions" ON predictions FOR ALL USING (tr
 CREATE POLICY "Allow all access to matches" ON matches FOR ALL USING (true);
 CREATE POLICY "Allow all access to admin_emails" ON admin_emails FOR ALL USING (true);
 CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
+        }
+
+        function generateDataSQL() {
+            let sql = '';
+
+            // Helper to escape single quotes in SQL strings
+            const esc = (str) => str ? str.replace(/'/g, "''") : '';
+
+            // Generate matches INSERT statements
+            if (matches.length > 0) {
+                sql += '\n-- Insert matches data\n';
+                matches.forEach(m => {
+                    sql += `INSERT INTO matches (id, round, date, time, team1, team2, actual_score1, actual_score2, actual_tries1, actual_tries2, joker_eligible) VALUES (${m.id}, ${m.round}, '${esc(m.date)}', '${esc(m.time)}', '${esc(m.team1)}', '${esc(m.team2)}', ${m.actualScore1 === null ? 'NULL' : m.actualScore1}, ${m.actualScore2 === null ? 'NULL' : m.actualScore2}, ${m.actualTries1 === null ? 'NULL' : m.actualTries1}, ${m.actualTries2 === null ? 'NULL' : m.actualTries2}, ${m.jokerEligible ? 'TRUE' : 'FALSE'});\n`;
+                });
+            }
+
+            // Generate admin_emails INSERT statements
+            if (adminEmails.length > 0) {
+                sql += '\n-- Insert admin emails\n';
+                adminEmails.forEach(email => {
+                    sql += `INSERT INTO admin_emails (email) VALUES ('${esc(email)}');\n`;
+                });
+            }
+
+            // Generate settings INSERT statements
+            sql += '\n-- Insert settings\n';
+            sql += `INSERT INTO settings (key, value) VALUES ('predictionsLocked', '${appSettings.predictionsLocked}');\n`;
+
+            // Generate users INSERT statements
+            const userList = Object.keys(users);
+            if (userList.length > 0) {
+                sql += '\n-- Insert users\n';
+                userList.forEach((username, index) => {
+                    const u = users[username];
+                    const oderId = index + 1;
+                    sql += `INSERT INTO users (id, username, nickname, email, password_hash, total_tries, joker_match_id) VALUES (${oderId}, '${esc(username)}', '${esc(u.nickname)}', '${esc(u.email)}', '${esc(u.passwordHash)}', ${u.totalTries === null || u.totalTries === undefined ? 'NULL' : u.totalTries}, ${u.jokerMatchId === null || u.jokerMatchId === undefined ? 'NULL' : u.jokerMatchId});\n`;
+                });
+
+                // Generate predictions INSERT statements
+                sql += '\n-- Insert predictions\n';
+                userList.forEach((username, userIndex) => {
+                    const userId = userIndex + 1;
+                    const predictions = users[username].predictions || {};
+                    Object.keys(predictions).forEach(matchId => {
+                        const pred = predictions[matchId];
+                        sql += `INSERT INTO predictions (user_id, match_id, team1_score, team2_score) VALUES (${userId}, ${matchId}, ${pred.team1}, ${pred.team2});\n`;
+                    });
+                });
+
+                // Reset the sequence for users table
+                sql += '\n-- Reset sequences\n';
+                sql += `SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));\n`;
+                sql += `SELECT setval('predictions_id_seq', (SELECT MAX(id) FROM predictions));\n`;
+                sql += `SELECT setval('admin_emails_id_seq', (SELECT MAX(id) FROM admin_emails));\n`;
+                sql += `SELECT setval('settings_id_seq', (SELECT MAX(id) FROM settings));\n`;
+            }
+
+            return sql;
+        }
+
+        function generateFullSQL(includeData = true) {
+            if (includeData) {
+                return generateSchemaSQL() + '\n' + generateDataSQL();
+            } else {
+                return generateSchemaSQL();
+            }
+        }
+
+        function updateRecoverySQL() {
+            const includeData = document.getElementById('includeDataCheckbox').checked;
+            const sql = generateFullSQL(includeData);
+            document.getElementById('sqlPreview').textContent = sql;
+
+            // Update description and list based on checkbox
+            const description = document.getElementById('recoveryDescription');
+            const list = document.getElementById('recoveryList');
+
+            if (includeData) {
+                description.textContent = 'This SQL will recreate all tables and restore:';
+                list.innerHTML = `
+                    <li>All matches and fixtures</li>
+                    <li>All user accounts (usernames, emails, password hashes)</li>
+                    <li>All predictions</li>
+                    <li>Admin email list</li>
+                    <li>App settings</li>
+                `;
+            } else {
+                description.textContent = 'This SQL will recreate empty tables only:';
+                list.innerHTML = `
+                    <li>Empty matches table</li>
+                    <li>Empty users table</li>
+                    <li>Empty predictions table</li>
+                    <li>Empty admin_emails table</li>
+                    <li>Empty settings table</li>
+                `;
+            }
+        }
 
         function initRecoveryTab() {
-            // Display the SQL in the preview
-            document.getElementById('sqlPreview').textContent = SCHEMA_SQL;
+            // Display the SQL based on checkbox state
+            updateRecoverySQL();
         }
 
         function copySqlToClipboard() {
-            navigator.clipboard.writeText(SCHEMA_SQL).then(() => {
+            const includeData = document.getElementById('includeDataCheckbox').checked;
+            const sql = generateFullSQL(includeData);
+            navigator.clipboard.writeText(sql).then(() => {
                 alert('SQL copied to clipboard!');
             }).catch(err => {
                 console.error('Failed to copy:', err);
                 // Fallback for older browsers
                 const textarea = document.createElement('textarea');
-                textarea.value = SCHEMA_SQL;
+                textarea.value = sql;
                 document.body.appendChild(textarea);
                 textarea.select();
                 document.execCommand('copy');
