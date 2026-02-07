@@ -124,8 +124,20 @@
             background: #2a2a8a !important;
         }
 
+        [data-theme="retro"] .summary-table th.rank-col,
+        [data-theme="retro"] .summary-table th.pts-col {
+            background: #2a2a8a !important;
+            color: #e0e0e0 !important;
+        }
+
         [data-theme="retro"] .summary-table td.competitor-name {
             background: #0a0a12 !important;
+        }
+
+        [data-theme="retro"] .summary-table td.rank-col,
+        [data-theme="retro"] .summary-table td.pts-col {
+            background: #0a0a12 !important;
+            color: #e0e0e0 !important;
         }
 
         [data-theme="retro"] .match-header-cell .match-result {
@@ -232,8 +244,20 @@
             background: #2c3e50 !important;
         }
 
+        [data-theme="dark"] .summary-table th.rank-col,
+        [data-theme="dark"] .summary-table th.pts-col {
+            background: #2c3e50 !important;
+            color: #ecf0f1 !important;
+        }
+
         [data-theme="dark"] .summary-table td.competitor-name {
             background: rgba(15, 15, 26, 0.95) !important;
+        }
+
+        [data-theme="dark"] .summary-table td.rank-col,
+        [data-theme="dark"] .summary-table td.pts-col {
+            background: rgba(15, 15, 26, 0.95) !important;
+            color: #f1c40f !important;
         }
 
         [data-theme="dark"] .match-header-cell .match-result {
@@ -1138,13 +1162,14 @@
         /* Sticky competitor name column */
         .summary-table th.competitor-col {
             text-align: left;
-            width: 100px;
-            min-width: 100px;
-            max-width: 100px;
+            width: 140px;
+            min-width: 140px;
+            max-width: 180px;
             position: sticky;
             left: 40px;
             background: var(--gold);
-            z-index: 12;
+            z-index: 20;
+            box-shadow: 2px 0 6px rgba(0, 0, 0, 0.25);
         }
 
         .summary-table td.competitor-name {
@@ -1154,14 +1179,15 @@
             position: sticky;
             left: 40px;
             background: rgba(26, 77, 46, 0.98);
-            z-index: 11;
+            z-index: 19;
             border-right: 2px solid rgba(212, 175, 55, 0.3);
-            width: 100px;
-            min-width: 100px;
-            max-width: 100px;
+            width: 140px;
+            min-width: 140px;
+            max-width: 180px;
             word-wrap: break-word;
             overflow-wrap: break-word;
             line-height: 1.3;
+            box-shadow: 2px 0 6px rgba(0, 0, 0, 0.25);
         }
 
         /* Sticky points column on the right */
@@ -1314,23 +1340,61 @@
             font-size: 0.9rem;
         }
 
-        .points-earned {
-            display: block;
+        .pred-score {
             font-weight: 700;
-            margin-top: 0.2rem;
-            font-size: 0.85rem;
         }
 
-        .points-0 {
-            color: #e74c3c;
-        }
-
-        .points-3 {
+        .pred-score-win {
             color: #2ecc71;
         }
 
-        .points-4 {
+        .pred-score-lose {
+            color: #f2a3a3;
+        }
+
+        .pred-score-tie {
             color: var(--bright-gold);
+        }
+
+        .points-earned {
+            display: inline-block;
+            font-weight: 700;
+            margin-top: 0.35rem;
+            font-size: 0.72rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid #3a4a64;
+            background: #1a2434;
+            color: #f4f7fb;
+            letter-spacing: 0.02em;
+        }
+
+        .points-0 {
+            background: #4a2f35;
+            border-color: #6a3b44;
+            color: #f6d7db;
+        }
+
+        .points-3 {
+            background: #1f5a4f;
+            border-color: #2d7a6a;
+            color: #d7f3ee;
+        }
+
+        .points-4 {
+            background: #2a4f74;
+            border-color: #3a6b9b;
+            color: #deecff;
+        }
+
+        .points-perfect {
+            background: #3b5f8d;
+            border-color: #4f79b0;
+            color: #ecf5ff;
+        }
+
+        .points-placeholder {
+            visibility: hidden;
         }
 
         .points-perfect {
@@ -1469,13 +1533,13 @@
         }
 
         /* Joker styles - Match Summary table */
-        .joker-cell {
-            background: rgba(212, 175, 55, 0.1) !important;
-        }
-
         .joker-indicator {
             font-size: 0.8rem;
             margin-left: 0.25rem;
+        }
+
+        .joker-score {
+            font-weight: 700;
         }
 
         .joker-eligible-header {
@@ -1626,8 +1690,8 @@
             
             .summary-table th.competitor-col,
             .summary-table td.competitor-name {
-                min-width: 80px;
-                max-width: 100px;
+                min-width: 110px;
+                max-width: 140px;
                 padding: 0.5rem;
                 font-size: 0.8rem;
                 left: 30px;
@@ -2403,7 +2467,6 @@
         <header>
             <h1>Six Nations</h1>
             <div class="subtitle">Prediction Challenge 2026</div>
-            <div class="admin-subtitle" id="adminSubtitle"></div>
         </header>
 
         <!-- Login View -->
@@ -2760,6 +2823,7 @@
                         email: user.email,
                         passwordHash: user.password_hash,
                         totalTries: user.total_tries,
+                        jokerMatchId: user.joker_match_id,
                         predictions: {}  // Will be populated separately
                     };
                 });
@@ -2807,7 +2871,8 @@
                             nickname: userData.nickname,
                             email: userData.email,
                             password_hash: userData.passwordHash,
-                            total_tries: userData.totalTries
+                            total_tries: userData.totalTries,
+                            joker_match_id: userData.jokerMatchId
                         })
                         .eq('username', username);
                     
@@ -2821,7 +2886,8 @@
                             nickname: userData.nickname,
                             email: userData.email,
                             password_hash: userData.passwordHash,
-                            total_tries: userData.totalTries
+                            total_tries: userData.totalTries,
+                            joker_match_id: userData.jokerMatchId
                         });
                     
                     if (error) console.error('Error inserting user:', error);
@@ -3073,29 +3139,6 @@
         function init() {
             renderMatches();
             renderAdminMatches();
-            updateAdminSubtitle();
-        }
-
-        // Update the admin subtitle with admin display names
-        function updateAdminSubtitle() {
-            const adminNames = [];
-            
-            // Find all users who are admins
-            Object.keys(users).forEach(username => {
-                const user = users[username];
-                if (user.email && adminEmails.includes(user.email.toLowerCase())) {
-                    adminNames.push(toTitleCase(user.nickname || username));
-                }
-            });
-            
-            const subtitleEl = document.getElementById('adminSubtitle');
-            if (subtitleEl) {
-                if (adminNames.length > 0) {
-                    subtitleEl.textContent = 'Hosted by ' + adminNames.join(' & ');
-                } else {
-                    subtitleEl.textContent = '';
-                }
-            }
         }
 
         // Toggle predictions lock
@@ -3175,6 +3218,8 @@
         // Parse a display date (e.g., "Sat, Feb 7") to ISO format for date input (e.g., "2026-02-07")
         function parseDateForInput(dateStr) {
             if (!dateStr || dateStr === 'TBD') return '';
+            // Already ISO format
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
             
             const months = {
                 'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
@@ -3455,10 +3500,12 @@
                 if (team2SelectEl) match.team2 = team2SelectEl.value;
                 
                 // Convert date input to display format
-                if (dateEl && dateEl.value) {
-                    match.date = formatDateForDisplay(dateEl.value);
-                } else if (dateEl) {
-                    match.date = 'TBD';
+                if (dateEl) {
+                    if (dateEl.value) {
+                        match.date = formatDateForDisplay(dateEl.value);
+                    } else if (!match.date || match.date === 'TBD') {
+                        match.date = 'TBD';
+                    }
                 }
                 
                 // Store time in HH:MM format
@@ -4464,11 +4511,15 @@
             const randomGloucester = gloucesterRefs[Math.floor(Math.random() * gloucesterRefs.length)];
             const randomRugby = rugbyRefs[Math.floor(Math.random() * rugbyRefs.length)];
             const randomGloucester2 = gloucesterRefs[Math.floor(Math.random() * gloucesterRefs.length)];
+            const nextMatch = matches.find(m => m.actualScore1 === null || m.actualScore2 === null);
+            const nextFixtureText = nextMatch
+                ? `Next up: ${nextMatch.team1} vs ${nextMatch.team2} on ${nextMatch.date} at ${nextMatch.time}.`
+                : '';
             
             if (completedMatches.length === 0) {
-                tip = `No matches played yet, but the tension is building like the 2003 World Cup final in extra time! Get your predictions in sharpish - this isn't a Gloucester training session where you can take your time. The tournament kicks off soon and every point counts. Make sure you've got all your scores in before kick-off - no late changes allowed once the whistle blows! Remember, predicting a draw gets you bonus points, and if you nail the exact score, you'll be celebrating like Gloucester winning the Premiership. ${randomRugby}`;
+                tip = `No matches played yet, but the tension is building like the 2003 World Cup final in extra time! Get your predictions in sharpish - this isn't a Gloucester training session where you can take your time. The tournament kicks off soon and every point counts. Make sure you've got all your scores in before kick-off - no late changes allowed once the whistle blows! Remember, predicting a draw gets you bonus points, and if you nail the exact score, you'll be celebrating like Gloucester winning the Premiership. ${nextFixtureText}`;
             } else if (leaderboardData.length === 1) {
-                tip = `${leaderboardData[0].nickname} is currently the only competitor - ${randomGloucester}! Bit lonely at the top though, like being the only person who remembers Gloucester's Powergen Cup wins. Get some mates involved and make this a proper competition! The more the merrier, as they say down at Kingsholm on match day. ${randomRugby}`;
+                tip = `${leaderboardData[0].nickname} is currently the only competitor - ${randomGloucester}! Bit lonely at the top though, like being the only person who remembers Gloucester's Powergen Cup wins. Get some mates involved and make this a proper competition! The more the merrier, as they say down at Kingsholm on match day. ${nextFixtureText}`;
             } else {
                 const leader = leaderboardData[0];
                 const second = leaderboardData[1];
@@ -4563,15 +4614,15 @@
                 }
                 
                 if (gap === 0) {
-                    tip = `It's tighter than the 2003 World Cup final at the top! ${leader.nickname} and ${second.nickname} are level on ${leader.points} points - ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}${tournamentStats}With ${remainingMatches} matches still to play, this one's going down to the wire like England vs Australia in Sydney! Every prediction counts now - one perfect score could swing it all. ${randomRugby}`;
+                    tip = `It's tighter than the 2003 World Cup final at the top! ${leader.nickname} and ${second.nickname} are level on ${leader.points} points - ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}${tournamentStats}With ${remainingMatches} matches still to play, this one's going down to the wire like England vs Australia in Sydney! Every prediction counts now - one perfect score could swing it all. ${nextFixtureText}`;
                 } else if (gap <= 3) {
-                    tip = `${leader.nickname} leads with ${leader.points} points but ${second.nickname} is breathing down their neck like a Gloucester flanker hunting a fly-half! Only ${gap} point${gap > 1 ? 's' : ''} separating them. ${matchAnalysis}${predictionAnalysis}${tournamentStats}With ${remainingMatches} matches left, one good round of predictions could change everything. This is proper squeaky-bum time, as they say! ${randomRugby}`;
+                    tip = `${leader.nickname} leads with ${leader.points} points but ${second.nickname} is breathing down their neck like a Gloucester flanker hunting a fly-half! Only ${gap} point${gap > 1 ? 's' : ''} separating them. ${matchAnalysis}${predictionAnalysis}${tournamentStats}With ${remainingMatches} matches left, one good round of predictions could change everything. This is proper squeaky-bum time, as they say! ${nextFixtureText}`;
                 } else if (gap <= 6) {
-                    tip = `${leader.nickname} is building a handy lead on ${leader.points} points, but ${second.nickname} on ${second.points} won't give up without a fight - ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}${tournamentStats}Still ${remainingMatches} matches to play, which means plenty of points up for grabs. A couple of perfect scores and this leaderboard could look very different. ${randomRugby}`;
+                    tip = `${leader.nickname} is building a handy lead on ${leader.points} points, but ${second.nickname} on ${second.points} won't give up without a fight - ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}${tournamentStats}Still ${remainingMatches} matches to play, which means plenty of points up for grabs. A couple of perfect scores and this leaderboard could look very different. ${nextFixtureText}`;
                 } else if (gap <= 10) {
-                    tip = `${leader.nickname} is pulling clear on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs to find form quickly. ${matchAnalysis}${predictionAnalysis}${tournamentStats}But don't count anyone out yet - remember Japan beating South Africa at the 2015 World Cup? Anything's possible in this game! ${randomRugby}`;
+                    tip = `${leader.nickname} is pulling clear on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs to find form quickly. ${matchAnalysis}${predictionAnalysis}${tournamentStats}But don't count anyone out yet - remember Japan beating South Africa at the 2015 World Cup? Anything's possible in this game! ${nextFixtureText}`;
                 } else {
-                    tip = `${leader.nickname} is running away with it on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs a serious comeback worthy of the 1999 French team against the All Blacks. ${matchAnalysis}${predictionAnalysis}${tournamentStats}The gap looks big, but ${remainingMatches} matches means up to ${remainingMatches * 11} points still available. Stranger things have happened - ${randomGloucester2}! ${randomRugby}`;
+                    tip = `${leader.nickname} is running away with it on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs a serious comeback worthy of the 1999 French team against the All Blacks. ${matchAnalysis}${predictionAnalysis}${tournamentStats}The gap looks big, but ${remainingMatches} matches means up to ${remainingMatches * 11} points still available. Stranger things have happened - ${randomGloucester2}! ${nextFixtureText}`;
                 }
             }
             
@@ -4624,10 +4675,14 @@
                                 }
                             }
 
+                            const isJoker = user.jokerMatchId === match.id;
+                            const jokerBadge = isJoker ? ' <span class="joker-indicator">🃏</span>' : '';
+                            const scoreClass = isJoker ? 'predicted-score joker-score' : 'predicted-score';
+
                             return `
                                 <div class="prediction-row">
                                     <div><strong>${match.team1} vs ${match.team2}</strong><br><small style="opacity: 0.7;">${match.date}</small></div>
-                                    <div class="predicted-score">${pred.team1} - ${pred.team2}</div>
+                                    <div class="${scoreClass}">${pred.team1} - ${pred.team2}${jokerBadge}</div>
                                     <div style="color: ${statusColor}; font-weight: 600;">${statusText}</div>
                                 </div>
                             `;
@@ -4836,7 +4891,7 @@
                 
                 html += `<tr class="${rowClass}">`;
                 html += `<td class="rank-col">${rank}</td>`;
-                html += `<td class="competitor-name">${user.nickname}${isCurrentUser ? ' <span style="font-size: 0.8em; opacity: 0.7;">(you)</span>' : ''}</td>`;
+                html += `<td class="competitor-name">${user.nickname}</td>`;
                 
                 // Column for each match
                 filteredMatches.forEach(match => {
@@ -4908,20 +4963,50 @@
                     }
 
                     const jokerIndicator = isJoker ? '<span class="joker-indicator">🃏</span>' : '';
+                    const jokerScoreClass = isJoker ? 'joker-score' : '';
                     const jokerCellClass = isJoker ? 'prediction-cell joker-cell' : 'prediction-cell';
+                    const score1 = pred.team1;
+                    const score2 = pred.team2;
+                    let score1Class = 'pred-score';
+                    let score2Class = 'pred-score';
+                    if (score1 > score2) {
+                        score1Class += ' pred-score-win';
+                        score2Class += ' pred-score-lose';
+                    } else if (score2 > score1) {
+                        score1Class += ' pred-score-lose';
+                        score2Class += ' pred-score-win';
+                    } else {
+                        score1Class += ' pred-score-tie';
+                        score2Class += ' pred-score-tie';
+                    }
+
+                    if (isJoker) {
+                        tooltipContent += `<span class="tooltip-line joker-bonus">🃏 Joker selection: points are doubled</span>`;
+                    }
 
                     if (hasResult) {
                         html += `<td class="${jokerCellClass}">
                             <div class="tooltip-container">
-                                <div>${pred.team1} - ${pred.team2} ${jokerIndicator}</div>
+                                <div class="${jokerScoreClass}"><span class="${score1Class}">${score1}</span> - <span class="${score2Class}">${score2}</span> ${jokerIndicator}</div>
                                 <span class="points-earned ${pointsClass}">${pointsEarned} pts</span>
                                 <div class="tooltip">${tooltipContent}</div>
                             </div>
                         </td>`;
                     } else {
-                        html += `<td class="${jokerCellClass}">
-                            <div>${pred.team1} - ${pred.team2} ${jokerIndicator}</div>
-                        </td>`;
+                        if (isJoker) {
+                            html += `<td class="${jokerCellClass}">
+                                <div class="tooltip-container">
+                                    <div class="${jokerScoreClass}"><span class="${score1Class}">${score1}</span> - <span class="${score2Class}">${score2}</span> ${jokerIndicator}</div>
+                                    <span class="points-earned points-placeholder">&nbsp;</span>
+                                    <div class="tooltip">${tooltipContent}</div>
+                                </div>
+                            </td>`;
+                        } else {
+                            html += `<td class="${jokerCellClass}">
+                                <div class="${jokerScoreClass}"><span class="${score1Class}">${score1}</span> - <span class="${score2Class}">${score2}</span> ${jokerIndicator}</div>
+                                <span class="points-earned points-placeholder">&nbsp;</span>
+                            </td>`;
+                        }
                     }
                 });
                 
