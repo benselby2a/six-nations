@@ -2237,7 +2237,7 @@
         .guest-login-divider {
             display: flex;
             align-items: center;
-            margin: 1.5rem 0;
+            margin: 0 0 1.5rem;
             color: rgba(255, 255, 255, 0.5);
             font-size: 0.9rem;
         }
@@ -2257,6 +2257,7 @@
         .guest-login-btn {
             width: 100%;
             padding: 1rem;
+            margin-bottom: 1.5rem;
             background: transparent;
             border: 2px solid rgba(212, 175, 55, 0.5);
             color: var(--gold);
@@ -2474,6 +2475,12 @@
             <div class="login-section">
                 <h2>Join The Game</h2>
                 <div id="loginFeedback" class="login-feedback hidden"></div>
+
+                <!-- Guest Login -->
+                <button class="guest-login-btn" onclick="loginAsGuest()">View Scores as Guest</button>
+                <div class="guest-login-divider">
+                    <span>or</span>
+                </div>
                 
                 <!-- Toggle buttons -->
                 <div class="login-toggle">
@@ -2510,12 +2517,6 @@
                     </div>
                     <button onclick="registerNewUser()">Create Account</button>
                 </div>
-
-                <!-- Guest Login -->
-                <div class="guest-login-divider">
-                    <span>or</span>
-                </div>
-                <button class="guest-login-btn" onclick="loginAsGuest()">View Scores as Guest</button>
             </div>
         </div>
 
