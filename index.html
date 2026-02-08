@@ -5249,7 +5249,7 @@
                 return s;
             }
 
-            let xml = '<?xml version="1.0"?>\n<?mso-application progid="Excel.Sheet"?>\n';
+            let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<?mso-application progid="Excel.Sheet"?>\n';
             xml += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n';
 
             xml += '<Styles>\n';
@@ -5453,11 +5453,11 @@
 
             xml += '</Worksheet>\n</Workbook>';
 
-            const blob = new Blob([xml], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const blob = new Blob(['\uFEFF', xml], { type: 'application/vnd.ms-excel' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `SixNations_Summary_${now.toISOString().slice(0,10)}.xlsx`;
+            a.download = `SixNations_Summary_${now.toISOString().slice(0,10)}.xls`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
