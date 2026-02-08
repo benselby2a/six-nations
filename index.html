@@ -5216,33 +5216,18 @@
 
             function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-            // Colour palette matching the website
+            // Printer-friendly palette
             const C = {
-                deepGreen: '#0D2818',
-                pitchGreen: '#1A4D2E',
-                gold: '#D4AF37',
-                brightGold: '#FFD700',
-                white: '#FAFAFA',
-                rowBorder: '#2D6B45',
-                goldBorder: '#B8960C',
-                // Point badge colours from website CSS
-                pts0Bg: '#4A2F35', pts0Fg: '#F6D7DB', pts0Bd: '#6A3B44',
-                pts3Bg: '#1F5A4F', pts3Fg: '#D7F3EE', pts3Bd: '#2D7A6A',
-                pts4Bg: '#2A4F74', pts4Fg: '#DEECFF', pts4Bd: '#3A6B9B',
-                ptsPBg: '#3B5F8D', ptsPFg: '#9B59B6', ptsPBd: '#4F79B0',
-                // Prediction score colours
-                win: '#2ECC71', lose: '#F2A3A3',
-                // Result badge
-                resultBg: '#1B7A42',
-                // Joker
-                jokerBg: '#3D3510', jokerFg: '#FFD700', jokerBd: '#6B5B0A',
-                // Pending / no-pred
-                pendingBg: '#162A1E', pendingFg: '#7A8A7E',
-                noPredBg: '#0F1F15', noPredFg: '#4A5A4E',
-                // Current user row highlight
-                userRowBg: '#2B3D1E',
-                // Tries
-                triesBg: '#1A3A28', triesFg: '#D4AF37',
+                black: '#111111',
+                gray: '#666666',
+                lightGray: '#DADADA',
+                border: '#BEBEBE',
+                white: '#FFFFFF',
+                // Highlight colors for scores/points
+                winBg: '#DFF3E4',
+                winFg: '#0B6B2C',
+                pointsBg: '#FFF1B8',
+                pointsFg: '#5A4A00',
             };
 
             // --- Build styles ---
@@ -5270,53 +5255,51 @@
             xml += '<Style ss:ID="Default"><Font ss:Size="10" ss:FontName="Calibri"/></Style>\n';
 
             // Title
-            xml += mkStyle('sTitle', { font:'Bebas Neue', size:18, bold:true, fg:C.brightGold, bg:C.deepGreen, hAlign:'Left' });
-            xml += mkStyle('sSubtitle', { size:10, fg:C.gold, bg:C.deepGreen, hAlign:'Left' });
+            xml += mkStyle('sTitle', { font:'Bebas Neue', size:18, bold:true, fg:C.black, hAlign:'Left' });
+            xml += mkStyle('sSubtitle', { size:10, fg:C.gray, hAlign:'Left' });
 
-            // Header row (gold bg, dark text) — team names
-            xml += mkStyle('sHead', { size:9, bold:true, fg:C.deepGreen, bg:C.gold, wrap:true, bb:C.deepGreen, bbW:2, br:C.goldBorder });
-            xml += mkStyle('sHeadLeft', { size:9, bold:true, fg:C.deepGreen, bg:C.gold, hAlign:'Left', bb:C.deepGreen, bbW:2, br:C.goldBorder });
+            // Header row — team names
+            xml += mkStyle('sHead', { size:9, bold:true, fg:C.black, wrap:true, bb:C.border, br:C.border });
+            xml += mkStyle('sHeadLeft', { size:9, bold:true, fg:C.black, hAlign:'Left', bb:C.border, br:C.border });
             // Rank header
-            xml += mkStyle('sHeadRank', { size:9, bold:true, fg:C.deepGreen, bg:C.gold, bb:C.deepGreen, bbW:2, br:C.goldBorder });
+            xml += mkStyle('sHeadRank', { size:9, bold:true, fg:C.black, bb:C.border, br:C.border });
             // Score header (thicker right border)
-            xml += mkStyle('sHeadScore', { size:9, bold:true, fg:C.deepGreen, bg:C.gold, bb:C.deepGreen, bbW:2, br:C.brightGold, brW:2 });
+            xml += mkStyle('sHeadScore', { size:9, bold:true, fg:C.black, bb:C.border, br:C.border, brW:2 });
 
-            // Actual result sub-header row (dark green bg, white text)
-            xml += mkStyle('sActual', { size:9, bold:true, fg:'#FFFFFF', bg:C.pitchGreen, bb:C.gold, br:C.rowBorder });
-            xml += mkStyle('sActualResult', { size:11, bold:true, fg:C.win, bg:C.pitchGreen, bb:C.gold, br:C.rowBorder });
-            xml += mkStyle('sActualTBD', { size:9, fg:C.pendingFg, bg:C.pitchGreen, bb:C.gold, br:C.rowBorder });
+            // Actual result sub-header row
+            xml += mkStyle('sActual', { size:9, bold:true, fg:C.black, bb:C.border, br:C.border });
+            xml += mkStyle('sActualResult', { size:11, bold:true, fg:C.winFg, bg:C.winBg, bb:C.border, br:C.border });
+            xml += mkStyle('sActualTBD', { size:9, fg:C.gray, bb:C.border, br:C.border });
             // Empty actual cells for rank/name/score cols
-            xml += mkStyle('sActualLeft', { size:9, fg:C.pitchGreen, bg:C.pitchGreen, bb:C.gold, br:C.rowBorder });
-            xml += mkStyle('sActualScore', { size:9, fg:C.pitchGreen, bg:C.pitchGreen, bb:C.gold, br:C.brightGold, brW:2 });
+            xml += mkStyle('sActualLeft', { size:9, fg:C.gray, bb:C.border, br:C.border });
+            xml += mkStyle('sActualScore', { size:9, fg:C.gray, bb:C.border, br:C.border, brW:2 });
 
             // --- Data row cells ---
 
-            // Rank cell (dark green bg, gold text)
-            xml += mkStyle('sRank', { size:11, bold:true, fg:C.gold, bg:C.pitchGreen, bb:C.rowBorder, br:C.rowBorder });
+            // Rank cell
+            xml += mkStyle('sRank', { size:11, bold:true, fg:C.black, bb:C.border, br:C.border });
             // Name cell
-            xml += mkStyle('sName', { size:10, bold:true, fg:C.white, bg:C.pitchGreen, hAlign:'Left', bb:C.rowBorder, br:C.rowBorder });
-            // Score/total points cell (bright gold, thick right border)
-            xml += mkStyle('sScore', { size:12, bold:true, fg:C.brightGold, bg:C.pitchGreen, bb:C.rowBorder, br:C.brightGold, brW:2 });
+            xml += mkStyle('sName', { size:10, bold:true, fg:C.black, hAlign:'Left', bb:C.border, br:C.border });
+            // Score/total points cell (highlighted)
+            xml += mkStyle('sScore', { size:12, bold:true, fg:C.pointsFg, bg:C.pointsBg, bb:C.border, br:C.border, brW:2 });
 
-            // Prediction cells — 0 pts (pinkish red tones)
-            xml += mkStyle('sPred0', { size:10, fg:C.pts0Fg, bg:C.pts0Bg, wrap:true, bb:C.pts0Bd, br:C.pts0Bd });
-            // 3 pts (teal green)
-            xml += mkStyle('sPred3', { size:10, fg:C.pts3Fg, bg:C.pts3Bg, wrap:true, bb:C.pts3Bd, br:C.pts3Bd });
-            // 4 pts (blue)
-            xml += mkStyle('sPred4', { size:10, fg:C.pts4Fg, bg:C.pts4Bg, wrap:true, bb:C.pts4Bd, br:C.pts4Bd });
-            // Perfect / 6+ pts (purple/bold blue)
-            xml += mkStyle('sPredP', { size:10, bold:true, fg:C.ptsPFg, bg:C.ptsPBg, wrap:true, bb:C.ptsPBd, br:C.ptsPBd });
-            // Joker cell (gold on dark gold)
-            xml += mkStyle('sJoker', { size:10, bold:true, fg:C.jokerFg, bg:C.jokerBg, wrap:true, bb:C.jokerBd, br:C.jokerBd });
+            // Prediction cells — 0 pts
+            xml += mkStyle('sPred0', { size:10, fg:C.black, wrap:true, bb:C.border, br:C.border });
+            // 3+ pts (winning guesses)
+            xml += mkStyle('sPred3', { size:10, fg:C.winFg, bg:C.winBg, wrap:true, bb:C.border, br:C.border });
+            xml += mkStyle('sPred4', { size:10, fg:C.winFg, bg:C.winBg, wrap:true, bb:C.border, br:C.border });
+            xml += mkStyle('sPredP', { size:10, bold:true, fg:C.winFg, bg:C.winBg, wrap:true, bb:C.border, br:C.border });
+            // Joker cell (highlighted)
+            xml += mkStyle('sJoker', { size:10, bold:true, fg:C.pointsFg, bg:C.pointsBg, wrap:true, bb:C.border, br:C.border });
             // Pending (no result yet)
-            xml += mkStyle('sPending', { size:10, fg:C.pendingFg, bg:C.pendingBg, wrap:true, bb:C.rowBorder, br:C.rowBorder });
+            xml += mkStyle('sPending', { size:10, fg:C.gray, wrap:true, bb:C.border, br:C.border });
             // No prediction
-            xml += mkStyle('sNoPred', { size:10, fg:C.noPredFg, bg:C.noPredBg, bb:C.rowBorder, br:C.rowBorder });
+            xml += mkStyle('sNoPred', { size:10, fg:C.gray, bb:C.border, br:C.border });
             // Tries column
-            xml += mkStyle('sTries', { size:10, fg:C.triesFg, bg:C.triesBg, bb:C.rowBorder, br:C.rowBorder });
+            xml += mkStyle('sTries', { size:10, fg:C.black, bb:C.border, br:C.border });
             // Tries header
-            xml += mkStyle('sHeadTries', { size:9, bold:true, fg:C.deepGreen, bg:C.gold, wrap:true, bb:C.deepGreen, bbW:2, br:C.goldBorder });
-            xml += mkStyle('sActualTries', { size:9, fg:C.pitchGreen, bg:C.pitchGreen, bb:C.gold, br:C.rowBorder });
+            xml += mkStyle('sHeadTries', { size:9, bold:true, fg:C.black, wrap:true, bb:C.border, br:C.border });
+            xml += mkStyle('sActualTries', { size:9, fg:C.gray, bb:C.border, br:C.border });
 
             xml += '</Styles>\n';
 
@@ -5324,11 +5307,11 @@
             xml += '<Worksheet ss:Name="Match Summary">\n<Table ss:DefaultRowHeight="20">\n';
 
             // Column widths: Rank, Name, Score, then each match, then Tries
-            xml += '<Column ss:Width="35"/>\n';
-            xml += '<Column ss:Width="120"/>\n';
+            xml += '<Column ss:Width="28"/>\n';
+            xml += '<Column ss:Width="90"/>\n';
+            xml += '<Column ss:Width="40"/>\n';
+            allMatches.forEach(() => { xml += '<Column ss:Width="70"/>\n'; });
             xml += '<Column ss:Width="50"/>\n';
-            allMatches.forEach(() => { xml += '<Column ss:Width="115"/>\n'; });
-            xml += '<Column ss:Width="70"/>\n';
 
             const totalCols = 3 + allMatches.length + 1;
 
