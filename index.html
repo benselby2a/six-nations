@@ -5223,10 +5223,7 @@
                 lightGray: '#DADADA',
                 border: '#BEBEBE',
                 white: '#FFFFFF',
-                // Highlight colors for scores/points
-                winBg: '#DFF3E4',
                 winFg: '#0B6B2C',
-                pointsBg: '#FFF1B8',
                 pointsFg: '#5A4A00',
             };
 
@@ -5268,7 +5265,7 @@
 
             // Actual result sub-header row
             xml += mkStyle('sActual', { size:9, bold:true, fg:C.black, bb:C.border, br:C.border });
-            xml += mkStyle('sActualResult', { size:11, bold:true, fg:C.winFg, bg:C.winBg, bb:C.border, br:C.border });
+            xml += mkStyle('sActualResult', { size:11, bold:true, fg:C.winFg, bb:C.border, br:C.border });
             xml += mkStyle('sActualTBD', { size:9, fg:C.gray, bb:C.border, br:C.border });
             // Empty actual cells for rank/name/score cols
             xml += mkStyle('sActualLeft', { size:9, fg:C.gray, bb:C.border, br:C.border });
@@ -5281,16 +5278,16 @@
             // Name cell
             xml += mkStyle('sName', { size:10, bold:true, fg:C.black, hAlign:'Left', bb:C.border, br:C.border });
             // Score/total points cell (highlighted)
-            xml += mkStyle('sScore', { size:12, bold:true, fg:C.pointsFg, bg:C.pointsBg, bb:C.border, br:C.border, brW:2 });
+            xml += mkStyle('sScore', { size:12, bold:true, fg:C.pointsFg, bb:C.border, br:C.border, brW:2 });
 
             // Prediction cells — 0 pts
             xml += mkStyle('sPred0', { size:10, fg:C.black, wrap:true, bb:C.border, br:C.border });
             // 3+ pts (winning guesses)
-            xml += mkStyle('sPred3', { size:10, fg:C.winFg, bg:C.winBg, wrap:true, bb:C.border, br:C.border });
-            xml += mkStyle('sPred4', { size:10, fg:C.winFg, bg:C.winBg, wrap:true, bb:C.border, br:C.border });
-            xml += mkStyle('sPredP', { size:10, bold:true, fg:C.winFg, bg:C.winBg, wrap:true, bb:C.border, br:C.border });
+            xml += mkStyle('sPred3', { size:10, fg:C.winFg, wrap:true, bb:C.border, br:C.border });
+            xml += mkStyle('sPred4', { size:10, fg:C.winFg, wrap:true, bb:C.border, br:C.border });
+            xml += mkStyle('sPredP', { size:10, bold:true, fg:C.winFg, wrap:true, bb:C.border, br:C.border });
             // Joker cell (highlighted)
-            xml += mkStyle('sJoker', { size:10, bold:true, fg:C.pointsFg, bg:C.pointsBg, wrap:true, bb:C.border, br:C.border });
+            xml += mkStyle('sJoker', { size:10, bold:true, fg:C.pointsFg, wrap:true, bb:C.border, br:C.border });
             // Pending (no result yet)
             xml += mkStyle('sPending', { size:10, fg:C.gray, wrap:true, bb:C.border, br:C.border });
             // No prediction
