@@ -1024,6 +1024,37 @@
             gap: 1rem;
             margin-top: 1.5rem;
             flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .export-btn {
+            padding: 0.8rem 1.5rem;
+            background: rgba(46, 204, 113, 0.15);
+            border: 2px solid rgba(46, 204, 113, 0.4);
+            color: #2ecc71;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .export-btn:hover {
+            background: rgba(46, 204, 113, 0.25);
+            border-color: #2ecc71;
+            color: #fff;
+        }
+
+        .export-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
         }
 
         .filter-btn {
@@ -1169,7 +1200,6 @@
             left: 40px;
             background: var(--gold);
             z-index: 20;
-            box-shadow: 2px 0 6px rgba(0, 0, 0, 0.25);
         }
 
         .summary-table td.competitor-name {
@@ -1180,25 +1210,24 @@
             left: 40px;
             background: rgba(26, 77, 46, 0.98);
             z-index: 19;
-            border-right: 2px solid rgba(212, 175, 55, 0.3);
+            border-right: none;
             width: 140px;
             min-width: 140px;
             max-width: 180px;
             word-wrap: break-word;
             overflow-wrap: break-word;
             line-height: 1.3;
-            box-shadow: 2px 0 6px rgba(0, 0, 0, 0.25);
         }
 
-        /* Sticky points column on the right */
+        /* Sticky points column (3rd from left, after rank + competitor) */
         .summary-table th.pts-col,
         .summary-table td.pts-col {
             position: sticky;
-            right: 0;
+            left: 180px;
             z-index: 12;
             min-width: 50px;
             text-align: center;
-            box-shadow: -2px 0 4px rgba(0, 0, 0, 0.2);
+            box-shadow: 2px 0 6px rgba(0, 0, 0, 0.25);
         }
 
         .summary-table th.pts-col {
@@ -1664,7 +1693,15 @@
             .summary-filters {
                 gap: 0.5rem;
             }
-            
+
+            .export-btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.8rem;
+                margin-left: 0;
+                flex: 1 1 100%;
+                justify-content: center;
+            }
+
             .round-filter-group {
                 flex: 1 1 100%;
             }
@@ -1702,8 +1739,9 @@
                 min-width: 40px;
                 padding: 0.5rem 0.3rem;
                 font-size: 0.9rem;
+                left: 140px;
             }
-            
+
             .summary-table td {
                 padding: 0.5rem;
                 font-size: 0.8rem;
@@ -1824,6 +1862,7 @@
                 min-width: 36px;
                 padding: 0.35rem 0.25rem;
                 font-size: 0.8rem;
+                left: 114px;
             }
 
             .summary-table td {
@@ -2634,6 +2673,10 @@
                             <select id="roundSelect" class="round-select" onchange="onRoundSelectChange()">
                             </select>
                         </div>
+                        <button class="export-btn" onclick="exportToExcel()" title="Export to Excel spreadsheet">
+                            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6zm2-6h2.5l1.5 2.5L13.5 14H16l-2.5 3.5L16 21h-2.5L12 18.5 10.5 21H8l2.5-3.5L8 14z"/></svg>
+                            Export
+                        </button>
                     </div>
                 </div>
 
@@ -4897,10 +4940,11 @@
             let html = '<div class="summary-container">';
             html += '<table class="summary-table">';
             
-            // Header row: Rank | Competitor | Match 1 | Match 2 | ... | Predicted Tries | Total
+            // Header row: Rank | Competitor | Score | Match 1 | Match 2 | ... | Predicted Tries
             html += '<thead><tr>';
             html += '<th class="rank-col">#</th>';
             html += '<th class="competitor-col">Competitor</th>';
+            html += '<th class="pts-col">Score</th>';
             filteredMatches.forEach(match => {
                 const hasResult = match.actualScore1 !== null && match.actualScore2 !== null;
                 const hasTries = match.actualTries1 !== null && match.actualTries2 !== null;
@@ -4924,7 +4968,6 @@
             if (currentFilter !== 'round') {
                 html += '<th class="tries-col">Predicted Tries</th>';
             }
-            html += '<th class="pts-col">Total Pts</th>';
             html += '</tr></thead>';
             
             html += '<tbody>';
@@ -4960,7 +5003,8 @@
                 html += `<tr class="${rowClass}">`;
                 html += `<td class="rank-col">${rank}</td>`;
                 html += `<td class="competitor-name">${user.nickname}</td>`;
-                
+                html += `<td class="pts-col">${user.totalPoints}</td>`;
+
                 // Column for each match
                 filteredMatches.forEach(match => {
                     const pred = users[user.username].predictions[match.id];
@@ -5103,8 +5147,6 @@
                     html += `<td class="tries-col">${predictedTriesDisplay}</td>`;
                 }
                 
-                // Total points column (sticky on right)
-                html += `<td class="pts-col">${user.totalPoints}</td>`;
                 html += '</tr>';
             });
             
@@ -5140,6 +5182,278 @@
 
             // Enable touch tooltips for mobile
             initTouchTooltips();
+        }
+
+        function exportToExcel() {
+            const allMatches = matches;
+
+            const sortedUsers = Object.keys(users)
+                .map(username => ({
+                    username,
+                    nickname: toTitleCase(users[username].nickname || username),
+                    totalPoints: calculatePoints(username)
+                }))
+                .sort((a, b) => b.totalPoints - a.totalPoints);
+
+            function getMatchPoints(username, match) {
+                const pred = users[username].predictions[match.id];
+                const hasResult = match.actualScore1 !== null && match.actualScore2 !== null;
+                if (!pred || !hasResult) return null;
+                let pts = 0;
+                const actualResult = getResult(match.actualScore1, match.actualScore2);
+                const predictedResult = getResult(pred.team1, pred.team2);
+                const t1Diff = Math.abs(pred.team1 - match.actualScore1);
+                const t2Diff = Math.abs(pred.team2 - match.actualScore2);
+                if (actualResult === predictedResult) {
+                    pts = 3;
+                    if (t1Diff === 0 && t2Diff === 0) { pts += 3; }
+                    else { if (t1Diff <= 5) pts += 1; if (t2Diff <= 5) pts += 1; }
+                    if (actualResult === 'draw') pts += 2;
+                }
+                if (users[username].jokerMatchId === match.id) pts *= 2;
+                return pts;
+            }
+
+            function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+            // Colour palette matching the website
+            const C = {
+                deepGreen: '#0D2818',
+                pitchGreen: '#1A4D2E',
+                gold: '#D4AF37',
+                brightGold: '#FFD700',
+                white: '#FAFAFA',
+                rowBorder: '#2D6B45',
+                goldBorder: '#B8960C',
+                // Point badge colours from website CSS
+                pts0Bg: '#4A2F35', pts0Fg: '#F6D7DB', pts0Bd: '#6A3B44',
+                pts3Bg: '#1F5A4F', pts3Fg: '#D7F3EE', pts3Bd: '#2D7A6A',
+                pts4Bg: '#2A4F74', pts4Fg: '#DEECFF', pts4Bd: '#3A6B9B',
+                ptsPBg: '#3B5F8D', ptsPFg: '#9B59B6', ptsPBd: '#4F79B0',
+                // Prediction score colours
+                win: '#2ECC71', lose: '#F2A3A3',
+                // Result badge
+                resultBg: '#1B7A42',
+                // Joker
+                jokerBg: '#3D3510', jokerFg: '#FFD700', jokerBd: '#6B5B0A',
+                // Pending / no-pred
+                pendingBg: '#162A1E', pendingFg: '#7A8A7E',
+                noPredBg: '#0F1F15', noPredFg: '#4A5A4E',
+                // Current user row highlight
+                userRowBg: '#2B3D1E',
+                // Tries
+                triesBg: '#1A3A28', triesFg: '#D4AF37',
+            };
+
+            // --- Build styles ---
+            function mkStyle(id, opts) {
+                let s = `<Style ss:ID="${id}">`;
+                s += `<Font ss:FontName="${opts.font||'Calibri'}" ss:Size="${opts.size||10}"`;
+                if (opts.bold) s += ' ss:Bold="1"';
+                if (opts.fg) s += ` ss:Color="${opts.fg}"`;
+                s += '/>';
+                if (opts.bg) s += `<Interior ss:Color="${opts.bg}" ss:Pattern="Solid"/>`;
+                s += `<Alignment ss:Horizontal="${opts.hAlign||'Center'}" ss:Vertical="Center"${opts.wrap?' ss:WrapText="1"':''}/>`;
+                s += '<Borders>';
+                if (opts.bb) s += `<Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="${opts.bbW||1}" ss:Color="${opts.bb}"/>`;
+                if (opts.br) s += `<Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="${opts.brW||1}" ss:Color="${opts.br}"/>`;
+                if (opts.bl) s += `<Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="${opts.blW||1}" ss:Color="${opts.bl}"/>`;
+                if (opts.bt) s += `<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="${opts.btW||1}" ss:Color="${opts.bt}"/>`;
+                s += '</Borders></Style>\n';
+                return s;
+            }
+
+            let xml = '<?xml version="1.0"?>\n<?mso-application progid="Excel.Sheet"?>\n';
+            xml += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n';
+
+            xml += '<Styles>\n';
+            xml += '<Style ss:ID="Default"><Font ss:Size="10" ss:FontName="Calibri"/></Style>\n';
+
+            // Title
+            xml += mkStyle('sTitle', { font:'Bebas Neue', size:18, bold:true, fg:C.brightGold, bg:C.deepGreen, hAlign:'Left' });
+            xml += mkStyle('sSubtitle', { size:10, fg:C.gold, bg:C.deepGreen, hAlign:'Left' });
+
+            // Header row (gold bg, dark text) — team names
+            xml += mkStyle('sHead', { size:9, bold:true, fg:C.deepGreen, bg:C.gold, wrap:true, bb:C.deepGreen, bbW:2, br:C.goldBorder });
+            xml += mkStyle('sHeadLeft', { size:9, bold:true, fg:C.deepGreen, bg:C.gold, hAlign:'Left', bb:C.deepGreen, bbW:2, br:C.goldBorder });
+            // Rank header
+            xml += mkStyle('sHeadRank', { size:9, bold:true, fg:C.deepGreen, bg:C.gold, bb:C.deepGreen, bbW:2, br:C.goldBorder });
+            // Score header (thicker right border)
+            xml += mkStyle('sHeadScore', { size:9, bold:true, fg:C.deepGreen, bg:C.gold, bb:C.deepGreen, bbW:2, br:C.brightGold, brW:2 });
+
+            // Actual result sub-header row (dark green bg, white text)
+            xml += mkStyle('sActual', { size:9, bold:true, fg:'#FFFFFF', bg:C.pitchGreen, bb:C.gold, br:C.rowBorder });
+            xml += mkStyle('sActualResult', { size:11, bold:true, fg:C.win, bg:C.pitchGreen, bb:C.gold, br:C.rowBorder });
+            xml += mkStyle('sActualTBD', { size:9, fg:C.pendingFg, bg:C.pitchGreen, bb:C.gold, br:C.rowBorder });
+            // Empty actual cells for rank/name/score cols
+            xml += mkStyle('sActualLeft', { size:9, fg:C.pitchGreen, bg:C.pitchGreen, bb:C.gold, br:C.rowBorder });
+            xml += mkStyle('sActualScore', { size:9, fg:C.pitchGreen, bg:C.pitchGreen, bb:C.gold, br:C.brightGold, brW:2 });
+
+            // --- Data row cells ---
+
+            // Rank cell (dark green bg, gold text)
+            xml += mkStyle('sRank', { size:11, bold:true, fg:C.gold, bg:C.pitchGreen, bb:C.rowBorder, br:C.rowBorder });
+            // Name cell
+            xml += mkStyle('sName', { size:10, bold:true, fg:C.white, bg:C.pitchGreen, hAlign:'Left', bb:C.rowBorder, br:C.rowBorder });
+            // Score/total points cell (bright gold, thick right border)
+            xml += mkStyle('sScore', { size:12, bold:true, fg:C.brightGold, bg:C.pitchGreen, bb:C.rowBorder, br:C.brightGold, brW:2 });
+
+            // Prediction cells — 0 pts (pinkish red tones)
+            xml += mkStyle('sPred0', { size:10, fg:C.pts0Fg, bg:C.pts0Bg, wrap:true, bb:C.pts0Bd, br:C.pts0Bd });
+            // 3 pts (teal green)
+            xml += mkStyle('sPred3', { size:10, fg:C.pts3Fg, bg:C.pts3Bg, wrap:true, bb:C.pts3Bd, br:C.pts3Bd });
+            // 4 pts (blue)
+            xml += mkStyle('sPred4', { size:10, fg:C.pts4Fg, bg:C.pts4Bg, wrap:true, bb:C.pts4Bd, br:C.pts4Bd });
+            // Perfect / 6+ pts (purple/bold blue)
+            xml += mkStyle('sPredP', { size:10, bold:true, fg:C.ptsPFg, bg:C.ptsPBg, wrap:true, bb:C.ptsPBd, br:C.ptsPBd });
+            // Joker cell (gold on dark gold)
+            xml += mkStyle('sJoker', { size:10, bold:true, fg:C.jokerFg, bg:C.jokerBg, wrap:true, bb:C.jokerBd, br:C.jokerBd });
+            // Pending (no result yet)
+            xml += mkStyle('sPending', { size:10, fg:C.pendingFg, bg:C.pendingBg, wrap:true, bb:C.rowBorder, br:C.rowBorder });
+            // No prediction
+            xml += mkStyle('sNoPred', { size:10, fg:C.noPredFg, bg:C.noPredBg, bb:C.rowBorder, br:C.rowBorder });
+            // Tries column
+            xml += mkStyle('sTries', { size:10, fg:C.triesFg, bg:C.triesBg, bb:C.rowBorder, br:C.rowBorder });
+            // Tries header
+            xml += mkStyle('sHeadTries', { size:9, bold:true, fg:C.deepGreen, bg:C.gold, wrap:true, bb:C.deepGreen, bbW:2, br:C.goldBorder });
+            xml += mkStyle('sActualTries', { size:9, fg:C.pitchGreen, bg:C.pitchGreen, bb:C.gold, br:C.rowBorder });
+
+            xml += '</Styles>\n';
+
+            // --- Worksheet ---
+            xml += '<Worksheet ss:Name="Match Summary">\n<Table ss:DefaultRowHeight="20">\n';
+
+            // Column widths: Rank, Name, Score, then each match, then Tries
+            xml += '<Column ss:Width="35"/>\n';
+            xml += '<Column ss:Width="120"/>\n';
+            xml += '<Column ss:Width="50"/>\n';
+            allMatches.forEach(() => { xml += '<Column ss:Width="115"/>\n'; });
+            xml += '<Column ss:Width="70"/>\n';
+
+            const totalCols = 3 + allMatches.length + 1;
+
+            // Row 1: Title
+            xml += '<Row ss:Height="32">';
+            xml += `<Cell ss:StyleID="sTitle" ss:MergeAcross="${totalCols - 1}"><Data ss:Type="String">Six Nations Guesser — Match Summary</Data></Cell>`;
+            xml += '</Row>\n';
+
+            // Row 2: Date
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+            xml += '<Row ss:Height="20">';
+            xml += `<Cell ss:StyleID="sSubtitle" ss:MergeAcross="${totalCols - 1}"><Data ss:Type="String">Exported ${esc(dateStr)}</Data></Cell>`;
+            xml += '</Row>\n';
+
+            // Row 3: Spacer
+            xml += '<Row ss:Height="6"></Row>\n';
+
+            // Row 4: Header — Rank | Name | Score | match headers… | Tries
+            xml += '<Row ss:Height="55">';
+            xml += '<Cell ss:StyleID="sHeadRank"><Data ss:Type="String">#</Data></Cell>';
+            xml += '<Cell ss:StyleID="sHeadLeft"><Data ss:Type="String">Name</Data></Cell>';
+            xml += '<Cell ss:StyleID="sHeadScore"><Data ss:Type="String">Score</Data></Cell>';
+            allMatches.forEach(m => {
+                xml += `<Cell ss:StyleID="sHead"><Data ss:Type="String">${esc(m.team1)} vs ${esc(m.team2)}\n${esc(m.date)} ${esc(m.time)}</Data></Cell>`;
+            });
+            xml += '<Cell ss:StyleID="sHeadTries"><Data ss:Type="String">Predicted\nTries</Data></Cell>';
+            xml += '</Row>\n';
+
+            // Row 5: Actual results
+            xml += '<Row ss:Height="22">';
+            xml += '<Cell ss:StyleID="sActualLeft"><Data ss:Type="String"></Data></Cell>';
+            xml += '<Cell ss:StyleID="sActualLeft"><Data ss:Type="String">Actual Result</Data></Cell>';
+            xml += '<Cell ss:StyleID="sActualScore"><Data ss:Type="String"></Data></Cell>';
+            allMatches.forEach(m => {
+                const hasResult = m.actualScore1 !== null && m.actualScore2 !== null;
+                const hasTries = m.actualTries1 !== null && m.actualTries2 !== null;
+                if (hasResult) {
+                    let txt = `${m.actualScore1} - ${m.actualScore2}`;
+                    if (hasTries) txt += `  (${m.actualTries1 + m.actualTries2} tries)`;
+                    xml += `<Cell ss:StyleID="sActualResult"><Data ss:Type="String">${esc(txt)}</Data></Cell>`;
+                } else {
+                    xml += '<Cell ss:StyleID="sActualTBD"><Data ss:Type="String">TBD</Data></Cell>';
+                }
+            });
+            xml += '<Cell ss:StyleID="sActualTries"><Data ss:Type="String"></Data></Cell>';
+            xml += '</Row>\n';
+
+            // --- Data rows ---
+            sortedUsers.forEach((user, index) => {
+                let rank = index + 1;
+                if (index > 0 && sortedUsers[index - 1].totalPoints === user.totalPoints) {
+                    for (let i = index - 1; i >= 0; i--) {
+                        if (sortedUsers[i].totalPoints === user.totalPoints) rank = i + 1; else break;
+                    }
+                }
+
+                xml += '<Row ss:Height="26">';
+                xml += `<Cell ss:StyleID="sRank"><Data ss:Type="Number">${rank}</Data></Cell>`;
+                xml += `<Cell ss:StyleID="sName"><Data ss:Type="String">${esc(user.nickname)}</Data></Cell>`;
+                xml += `<Cell ss:StyleID="sScore"><Data ss:Type="Number">${user.totalPoints}</Data></Cell>`;
+
+                allMatches.forEach(match => {
+                    const pred = users[user.username].predictions[match.id];
+                    const hasResult = match.actualScore1 !== null && match.actualScore2 !== null;
+                    const isJoker = users[user.username].jokerMatchId === match.id;
+
+                    if (!pred) {
+                        xml += '<Cell ss:StyleID="sNoPred"><Data ss:Type="String">—</Data></Cell>';
+                        return;
+                    }
+
+                    const pts = getMatchPoints(user.username, match);
+                    const predLabel = `${pred.team1} - ${pred.team2}`;
+                    const jokerTag = isJoker ? '  \uD83C\uDCCF' : '';
+
+                    if (!hasResult) {
+                        // Match not played yet
+                        const style = isJoker ? 'sJoker' : 'sPending';
+                        xml += `<Cell ss:StyleID="${style}"><Data ss:Type="String">${esc(predLabel)}${jokerTag}</Data></Cell>`;
+                    } else {
+                        // Match complete — pick style based on points
+                        let style;
+                        if (isJoker) {
+                            style = 'sJoker';
+                        } else if (pts >= 6) {
+                            style = 'sPredP';
+                        } else if (pts >= 4) {
+                            style = 'sPred4';
+                        } else if (pts >= 3) {
+                            style = 'sPred3';
+                        } else {
+                            style = 'sPred0';
+                        }
+                        xml += `<Cell ss:StyleID="${style}"><Data ss:Type="String">${esc(predLabel)}${jokerTag}\n${pts} pts</Data></Cell>`;
+                    }
+                });
+
+                // Predicted Tries
+                const userTries = users[user.username].totalTries;
+                xml += `<Cell ss:StyleID="sTries"><Data ss:Type="${userTries != null ? 'Number' : 'String'}">${userTries != null ? userTries : '—'}</Data></Cell>`;
+
+                xml += '</Row>\n';
+            });
+
+            xml += '</Table>\n';
+
+            // Freeze panes: 5 header rows, 3 left columns
+            xml += '<WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">\n';
+            xml += '<FreezePanes/><FrozenNoSplit/>\n';
+            xml += '<SplitHorizontal>5</SplitHorizontal><TopRowBottomPane>5</TopRowBottomPane>\n';
+            xml += '<SplitVertical>3</SplitVertical><LeftColumnRightPane>3</LeftColumnRightPane>\n';
+            xml += '</WorksheetOptions>\n';
+
+            xml += '</Worksheet>\n</Workbook>';
+
+            const blob = new Blob([xml], { type: 'application/vnd.ms-excel' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `SixNations_Summary_${now.toISOString().slice(0,10)}.xls`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
 
         function initTouchTooltips() {
