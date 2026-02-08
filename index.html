@@ -5225,6 +5225,10 @@
                 white: '#FFFFFF',
                 winFg: '#0B6B2C',
                 pointsFg: '#5A4A00',
+                pendingHomeWin: '#1F7A1F',
+                pendingAwayWin: '#B23A2B',
+                pendingDraw: '#1F5FA3',
+                exactBg: '#C6EFCE',
             };
 
             // --- Build styles ---
@@ -5286,10 +5290,19 @@
             xml += mkStyle('sPred3', { size:10, fg:C.winFg, wrap:true, bb:C.border, br:C.border });
             xml += mkStyle('sPred4', { size:10, fg:C.winFg, wrap:true, bb:C.border, br:C.border });
             xml += mkStyle('sPredP', { size:10, bold:true, fg:C.winFg, wrap:true, bb:C.border, br:C.border });
+            // Exact scoreline (green background)
+            xml += mkStyle('sPredExact', { size:10, bold:true, fg:C.black, bg:C.exactBg, wrap:true, bb:C.border, br:C.border });
+            xml += mkStyle('sJokerExact', { size:10, bold:true, fg:C.black, bg:C.exactBg, wrap:true, bb:C.border, br:C.border });
             // Joker cell (highlighted)
             xml += mkStyle('sJoker', { size:10, bold:true, fg:C.pointsFg, wrap:true, bb:C.border, br:C.border });
             // Pending (no result yet)
             xml += mkStyle('sPending', { size:10, fg:C.gray, wrap:true, bb:C.border, br:C.border });
+            xml += mkStyle('sPendingHomeWin', { size:10, fg:C.pendingHomeWin, wrap:true, bb:C.border, br:C.border });
+            xml += mkStyle('sPendingAwayWin', { size:10, fg:C.pendingAwayWin, wrap:true, bb:C.border, br:C.border });
+            xml += mkStyle('sPendingDraw', { size:10, fg:C.pendingDraw, wrap:true, bb:C.border, br:C.border });
+            xml += mkStyle('sJokerPendingHomeWin', { size:10, bold:true, fg:C.pendingHomeWin, wrap:true, bb:C.border, br:C.border });
+            xml += mkStyle('sJokerPendingAwayWin', { size:10, bold:true, fg:C.pendingAwayWin, wrap:true, bb:C.border, br:C.border });
+            xml += mkStyle('sJokerPendingDraw', { size:10, bold:true, fg:C.pendingDraw, wrap:true, bb:C.border, br:C.border });
             // No prediction
             xml += mkStyle('sNoPred', { size:10, fg:C.gray, bb:C.border, br:C.border });
             // Tries column
@@ -5387,13 +5400,25 @@
 
                     if (!hasResult) {
                         // Match not played yet
-                        const style = isJoker ? 'sJoker' : 'sPending';
+                        const predictedResult = getResult(pred.team1, pred.team2);
+                        let style;
+                        if (isJoker) {
+                            if (predictedResult === 'win') style = 'sJokerPendingHomeWin';
+                            else if (predictedResult === 'lose') style = 'sJokerPendingAwayWin';
+                            else style = 'sJokerPendingDraw';
+                        } else {
+                            if (predictedResult === 'win') style = 'sPendingHomeWin';
+                            else if (predictedResult === 'lose') style = 'sPendingAwayWin';
+                            else style = 'sPendingDraw';
+                        }
                         xml += `<Cell ss:StyleID="${style}"><Data ss:Type="String">${esc(predLabel)}${jokerTag}</Data></Cell>`;
                     } else {
                         // Match complete — pick style based on points
                         let style;
                         if (isJoker) {
                             style = 'sJoker';
+                        } else if (pred.team1 === match.actualScore1 && pred.team2 === match.actualScore2) {
+                            style = 'sPredExact';
                         } else if (pts >= 6) {
                             style = 'sPredP';
                         } else if (pts >= 4) {
@@ -5402,6 +5427,9 @@
                             style = 'sPred3';
                         } else {
                             style = 'sPred0';
+                        }
+                        if (isJoker && pred.team1 === match.actualScore1 && pred.team2 === match.actualScore2) {
+                            style = 'sJokerExact';
                         }
                         xml += `<Cell ss:StyleID="${style}"><Data ss:Type="String">${esc(predLabel)}${jokerTag}\n${pts} pts</Data></Cell>`;
                     }
@@ -5425,11 +5453,11 @@
 
             xml += '</Worksheet>\n</Workbook>';
 
-            const blob = new Blob([xml], { type: 'application/vnd.ms-excel' });
+            const blob = new Blob([xml], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `SixNations_Summary_${now.toISOString().slice(0,10)}.xls`;
+            a.download = `SixNations_Summary_${now.toISOString().slice(0,10)}.xlsx`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
