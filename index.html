@@ -1029,28 +1029,22 @@
             align-items: center;
         }
 
-        .summary-header-row {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
         .export-btn {
-            padding: 0.35rem 0.75rem;
+            padding: 0.8rem 1.5rem;
             background: rgba(46, 204, 113, 0.15);
-            border: 1px solid rgba(46, 204, 113, 0.4);
+            border: 2px solid rgba(46, 204, 113, 0.4);
             color: #2ecc71;
-            font-size: 0.7rem;
+            font-size: 0.95rem;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.03em;
             cursor: pointer;
-            border-radius: 4px;
+            border-radius: 5px;
             transition: all 0.3s ease;
+            margin-left: auto;
             display: flex;
             align-items: center;
-            gap: 0.3rem;
+            gap: 0.5rem;
         }
 
         .export-btn:hover {
@@ -1060,8 +1054,8 @@
         }
 
         .export-btn svg {
-            width: 14px;
-            height: 14px;
+            width: 18px;
+            height: 18px;
             fill: currentColor;
         }
 
@@ -1703,8 +1697,11 @@
             }
 
             .export-btn {
-                padding: 0.3rem 0.6rem;
-                font-size: 0.65rem;
+                padding: 0.6rem 1rem;
+                font-size: 0.8rem;
+                margin-left: 0;
+                flex: 1 1 100%;
+                justify-content: center;
             }
 
             .round-filter-group {
@@ -2666,13 +2663,7 @@
             <!-- Summary Tab -->
             <div id="summaryTab" style="margin-top: 2rem;">
                 <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
-                    <div class="summary-header-row">
-                        <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2.5rem; color: var(--bright-gold); margin: 0; letter-spacing: 0.1em;">Match Summary</h2>
-                        <button class="export-btn" onclick="exportToPDF()" title="Export to PDF">
-                            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM6 20V4h6v6h6v10H6z"/></svg>
-                            Export
-                        </button>
-                    </div>
+                    <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2.5rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Match Summary</h2>
 
                     <!-- Filters -->
                     <div class="summary-filters">
@@ -2684,6 +2675,10 @@
                             <select id="roundSelect" class="round-select" onchange="onRoundSelectChange()">
                             </select>
                         </div>
+                        <button class="export-btn" onclick="exportToPDF()" title="Export to PDF">
+                            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM6 20V4h6v6h6v10H6z"/></svg>
+                            Export
+                        </button>
                     </div>
                 </div>
 
@@ -5272,12 +5267,6 @@
                 estimatedTotalTries = Math.round((totalActualTries / completedTriesMatches) * totalMatchCount);
             }
 
-            // --- Build tries header label ---
-            let triesHeaderLabel = 'Predicted\nTries';
-            if (completedTriesMatches > 0) {
-                triesHeaderLabel += '\n' + totalActualTries + ' actual / ' + estimatedTotalTries + ' est.';
-            }
-
             // --- Build header row ---
             const headerRow = [
                 { content: '#', styles: { halign: 'center' } },
@@ -5287,7 +5276,7 @@
                     content: m.team1 + ' vs ' + m.team2 + '\n' + m.date + ' ' + m.time,
                     styles: { halign: 'center' }
                 })),
-                { content: triesHeaderLabel, styles: { halign: 'center' } }
+                { content: 'Predicted\nTries', styles: { halign: 'center' } }
             ];
 
             // --- Build actual results row ---
