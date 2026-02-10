@@ -6,6 +6,8 @@
     <title>Six Nations Predictor</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;600;800&family=VT323&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
     <style>
         /* Default Theme (Classic) */
         :root {
@@ -2673,8 +2675,8 @@
                             <select id="roundSelect" class="round-select" onchange="onRoundSelectChange()">
                             </select>
                         </div>
-                        <button class="export-btn" onclick="exportToExcel()" title="Export to Excel spreadsheet">
-                            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6zm2-6h2.5l1.5 2.5L13.5 14H16l-2.5 3.5L16 21h-2.5L12 18.5 10.5 21H8l2.5-3.5L8 14z"/></svg>
+                        <button class="export-btn" onclick="exportToPDF()" title="Export to PDF">
+                            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM6 20V4h6v6h6v10H6z"/></svg>
                             Export
                         </button>
                     </div>
@@ -5184,7 +5186,7 @@
             initTouchTooltips();
         }
 
-        function exportToExcel() {
+        function exportToPDF() {
             const allMatches = matches;
 
             const sortedUsers = Object.keys(users)
@@ -5214,7 +5216,12 @@
                 return pts;
             }
 
-            function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+            function hexToRgb(hex) {
+                const r = parseInt(hex.slice(1, 3), 16);
+                const g = parseInt(hex.slice(3, 5), 16);
+                const b = parseInt(hex.slice(5, 7), 16);
+                return [r, g, b];
+            }
 
             // Printer-friendly palette
             const C = {
@@ -5231,147 +5238,56 @@
                 exactBg: '#C6EFCE',
             };
 
-            // --- Build styles ---
-            function mkStyle(id, opts) {
-                let s = `<Style ss:ID="${id}">`;
-                s += `<Font ss:FontName="${opts.font||'Calibri'}" ss:Size="${opts.size||10}"`;
-                if (opts.bold) s += ' ss:Bold="1"';
-                if (opts.fg) s += ` ss:Color="${opts.fg}"`;
-                s += '/>';
-                if (opts.bg) s += `<Interior ss:Color="${opts.bg}" ss:Pattern="Solid"/>`;
-                s += `<Alignment ss:Horizontal="${opts.hAlign||'Center'}" ss:Vertical="Center"${opts.wrap?' ss:WrapText="1"':''}/>`;
-                s += '<Borders>';
-                if (opts.bb) s += `<Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="${opts.bbW||1}" ss:Color="${opts.bb}"/>`;
-                if (opts.br) s += `<Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="${opts.brW||1}" ss:Color="${opts.br}"/>`;
-                if (opts.bl) s += `<Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="${opts.blW||1}" ss:Color="${opts.bl}"/>`;
-                if (opts.bt) s += `<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="${opts.btW||1}" ss:Color="${opts.bt}"/>`;
-                s += '</Borders></Style>\n';
-                return s;
-            }
-
-            let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<?mso-application progid="Excel.Sheet"?>\n';
-            xml += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n';
-
-            xml += '<Styles>\n';
-            xml += '<Style ss:ID="Default"><Font ss:Size="10" ss:FontName="Calibri"/></Style>\n';
+            // --- Initialise PDF ---
+            const { jsPDF } = window.jspdf;
+            const format = allMatches.length > 8 ? 'a3' : 'a4';
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: format });
 
             // Title
-            xml += mkStyle('sTitle', { font:'Bebas Neue', size:18, bold:true, fg:C.black, hAlign:'Left' });
-            xml += mkStyle('sSubtitle', { size:10, fg:C.gray, hAlign:'Left' });
-
-            // Header row — team names
-            xml += mkStyle('sHead', { size:9, bold:true, fg:C.black, wrap:true, bb:C.border, br:C.border });
-            xml += mkStyle('sHeadLeft', { size:9, bold:true, fg:C.black, hAlign:'Left', bb:C.border, br:C.border });
-            // Rank header
-            xml += mkStyle('sHeadRank', { size:9, bold:true, fg:C.black, bb:C.border, br:C.border });
-            // Score header (thicker right border)
-            xml += mkStyle('sHeadScore', { size:9, bold:true, fg:C.black, bb:C.border, br:C.border, brW:2 });
-
-            // Actual result sub-header row
-            xml += mkStyle('sActual', { size:9, bold:true, fg:C.black, bb:C.border, br:C.border });
-            xml += mkStyle('sActualResult', { size:11, bold:true, fg:C.winFg, bb:C.border, br:C.border });
-            xml += mkStyle('sActualTBD', { size:9, fg:C.gray, bb:C.border, br:C.border });
-            // Empty actual cells for rank/name/score cols
-            xml += mkStyle('sActualLeft', { size:9, fg:C.gray, bb:C.border, br:C.border });
-            xml += mkStyle('sActualScore', { size:9, fg:C.gray, bb:C.border, br:C.border, brW:2 });
-
-            // --- Data row cells ---
-
-            // Rank cell
-            xml += mkStyle('sRank', { size:11, bold:true, fg:C.black, bb:C.border, br:C.border });
-            // Name cell
-            xml += mkStyle('sName', { size:10, bold:true, fg:C.black, hAlign:'Left', bb:C.border, br:C.border });
-            // Score/total points cell (highlighted)
-            xml += mkStyle('sScore', { size:12, bold:true, fg:C.pointsFg, bb:C.border, br:C.border, brW:2 });
-
-            // Prediction cells — 0 pts
-            xml += mkStyle('sPred0', { size:10, fg:C.black, wrap:true, bb:C.border, br:C.border });
-            // 3+ pts (winning guesses)
-            xml += mkStyle('sPred3', { size:10, fg:C.winFg, wrap:true, bb:C.border, br:C.border });
-            xml += mkStyle('sPred4', { size:10, fg:C.winFg, wrap:true, bb:C.border, br:C.border });
-            xml += mkStyle('sPredP', { size:10, bold:true, fg:C.winFg, wrap:true, bb:C.border, br:C.border });
-            // Exact scoreline (green background)
-            xml += mkStyle('sPredExact', { size:10, bold:true, fg:C.black, bg:C.exactBg, wrap:true, bb:C.border, br:C.border });
-            xml += mkStyle('sJokerExact', { size:10, bold:true, fg:C.black, bg:C.exactBg, wrap:true, bb:C.border, br:C.border });
-            // Joker cell (highlighted)
-            xml += mkStyle('sJoker', { size:10, bold:true, fg:C.pointsFg, wrap:true, bb:C.border, br:C.border });
-            // Pending (no result yet)
-            xml += mkStyle('sPending', { size:10, fg:C.gray, wrap:true, bb:C.border, br:C.border });
-            xml += mkStyle('sPendingHomeWin', { size:10, fg:C.pendingHomeWin, wrap:true, bb:C.border, br:C.border });
-            xml += mkStyle('sPendingAwayWin', { size:10, fg:C.pendingAwayWin, wrap:true, bb:C.border, br:C.border });
-            xml += mkStyle('sPendingDraw', { size:10, fg:C.pendingDraw, wrap:true, bb:C.border, br:C.border });
-            xml += mkStyle('sJokerPendingHomeWin', { size:10, bold:true, fg:C.pendingHomeWin, wrap:true, bb:C.border, br:C.border });
-            xml += mkStyle('sJokerPendingAwayWin', { size:10, bold:true, fg:C.pendingAwayWin, wrap:true, bb:C.border, br:C.border });
-            xml += mkStyle('sJokerPendingDraw', { size:10, bold:true, fg:C.pendingDraw, wrap:true, bb:C.border, br:C.border });
-            // No prediction
-            xml += mkStyle('sNoPred', { size:10, fg:C.gray, bb:C.border, br:C.border });
-            // Tries column
-            xml += mkStyle('sTries', { size:10, fg:C.black, bb:C.border, br:C.border });
-            // Tries header
-            xml += mkStyle('sHeadTries', { size:9, bold:true, fg:C.black, wrap:true, bb:C.border, br:C.border });
-            xml += mkStyle('sActualTries', { size:9, fg:C.gray, bb:C.border, br:C.border });
-
-            xml += '</Styles>\n';
-
-            // --- Worksheet ---
-            xml += '<Worksheet ss:Name="Match Summary">\n<Table ss:DefaultRowHeight="20">\n';
-
-            // Column widths: Rank, Name, Score, then each match, then Tries
-            xml += '<Column ss:Width="28"/>\n';
-            xml += '<Column ss:Width="90"/>\n';
-            xml += '<Column ss:Width="40"/>\n';
-            allMatches.forEach(() => { xml += '<Column ss:Width="70"/>\n'; });
-            xml += '<Column ss:Width="50"/>\n';
-
-            const totalCols = 3 + allMatches.length + 1;
-
-            // Row 1: Title
-            xml += '<Row ss:Height="32">';
-            xml += `<Cell ss:StyleID="sTitle" ss:MergeAcross="${totalCols - 1}"><Data ss:Type="String">Six Nations Guesser — Match Summary</Data></Cell>`;
-            xml += '</Row>\n';
-
-            // Row 2: Date
             const now = new Date();
-            const dateStr = now.toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-            xml += '<Row ss:Height="20">';
-            xml += `<Cell ss:StyleID="sSubtitle" ss:MergeAcross="${totalCols - 1}"><Data ss:Type="String">Exported ${esc(dateStr)}</Data></Cell>`;
-            xml += '</Row>\n';
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Six Nations Guesser \u2014 Match Summary', 14, 15);
 
-            // Row 3: Spacer
-            xml += '<Row ss:Height="6"></Row>\n';
+            const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(102, 102, 102);
+            doc.text('Exported ' + dateStr, 14, 22);
+            doc.setTextColor(0, 0, 0);
 
-            // Row 4: Header — Rank | Name | Score | match headers… | Tries
-            xml += '<Row ss:Height="55">';
-            xml += '<Cell ss:StyleID="sHeadRank"><Data ss:Type="String">#</Data></Cell>';
-            xml += '<Cell ss:StyleID="sHeadLeft"><Data ss:Type="String">Name</Data></Cell>';
-            xml += '<Cell ss:StyleID="sHeadScore"><Data ss:Type="String">Score</Data></Cell>';
-            allMatches.forEach(m => {
-                xml += `<Cell ss:StyleID="sHead"><Data ss:Type="String">${esc(m.team1)} vs ${esc(m.team2)}\n${esc(m.date)} ${esc(m.time)}</Data></Cell>`;
-            });
-            xml += '<Cell ss:StyleID="sHeadTries"><Data ss:Type="String">Predicted\nTries</Data></Cell>';
-            xml += '</Row>\n';
+            // --- Build header row ---
+            const headerRow = [
+                { content: '#', styles: { halign: 'center' } },
+                { content: 'Name', styles: { halign: 'left' } },
+                { content: 'Score', styles: { halign: 'center' } },
+                ...allMatches.map(m => ({
+                    content: m.team1 + ' vs ' + m.team2 + '\n' + m.date + ' ' + m.time,
+                    styles: { halign: 'center' }
+                })),
+                { content: 'Predicted\nTries', styles: { halign: 'center' } }
+            ];
 
-            // Row 5: Actual results
-            xml += '<Row ss:Height="22">';
-            xml += '<Cell ss:StyleID="sActualLeft"><Data ss:Type="String"></Data></Cell>';
-            xml += '<Cell ss:StyleID="sActualLeft"><Data ss:Type="String">Actual Result</Data></Cell>';
-            xml += '<Cell ss:StyleID="sActualScore"><Data ss:Type="String"></Data></Cell>';
-            allMatches.forEach(m => {
-                const hasResult = m.actualScore1 !== null && m.actualScore2 !== null;
-                const hasTries = m.actualTries1 !== null && m.actualTries2 !== null;
-                if (hasResult) {
-                    let txt = `${m.actualScore1} - ${m.actualScore2}`;
-                    if (hasTries) txt += `  (${m.actualTries1 + m.actualTries2} tries)`;
-                    xml += `<Cell ss:StyleID="sActualResult"><Data ss:Type="String">${esc(txt)}</Data></Cell>`;
-                } else {
-                    xml += '<Cell ss:StyleID="sActualTBD"><Data ss:Type="String">TBD</Data></Cell>';
-                }
-            });
-            xml += '<Cell ss:StyleID="sActualTries"><Data ss:Type="String"></Data></Cell>';
-            xml += '</Row>\n';
+            // --- Build actual results row ---
+            const actualRow = [
+                { content: '', styles: { textColor: hexToRgb(C.gray) } },
+                { content: 'Actual Result', styles: { textColor: hexToRgb(C.gray), halign: 'left' } },
+                { content: '', styles: { textColor: hexToRgb(C.gray) } },
+                ...allMatches.map(m => {
+                    const hasResult = m.actualScore1 !== null && m.actualScore2 !== null;
+                    const hasTries = m.actualTries1 !== null && m.actualTries2 !== null;
+                    if (hasResult) {
+                        let txt = m.actualScore1 + ' - ' + m.actualScore2;
+                        if (hasTries) txt += '  (' + (m.actualTries1 + m.actualTries2) + ' tries)';
+                        return { content: txt, styles: { textColor: hexToRgb(C.winFg), fontStyle: 'bold', fontSize: 7 } };
+                    }
+                    return { content: 'TBD', styles: { textColor: hexToRgb(C.gray) } };
+                }),
+                { content: '', styles: { textColor: hexToRgb(C.gray) } }
+            ];
 
-            // --- Data rows ---
-            sortedUsers.forEach((user, index) => {
+            // --- Build data rows ---
+            const dataRows = sortedUsers.map((user, index) => {
                 let rank = index + 1;
                 if (index > 0 && sortedUsers[index - 1].totalPoints === user.totalPoints) {
                     for (let i = index - 1; i >= 0; i--) {
@@ -5379,10 +5295,11 @@
                     }
                 }
 
-                xml += '<Row ss:Height="26">';
-                xml += `<Cell ss:StyleID="sRank"><Data ss:Type="Number">${rank}</Data></Cell>`;
-                xml += `<Cell ss:StyleID="sName"><Data ss:Type="String">${esc(user.nickname)}</Data></Cell>`;
-                xml += `<Cell ss:StyleID="sScore"><Data ss:Type="Number">${user.totalPoints}</Data></Cell>`;
+                const row = [
+                    { content: String(rank), styles: { fontStyle: 'bold', halign: 'center' } },
+                    { content: user.nickname, styles: { fontStyle: 'bold', halign: 'left' } },
+                    { content: String(user.totalPoints), styles: { fontStyle: 'bold', textColor: hexToRgb(C.pointsFg), fontSize: 8 } },
+                ];
 
                 allMatches.forEach(match => {
                     const pred = users[user.username].predictions[match.id];
@@ -5390,78 +5307,121 @@
                     const isJoker = users[user.username].jokerMatchId === match.id;
 
                     if (!pred) {
-                        xml += '<Cell ss:StyleID="sNoPred"><Data ss:Type="String">—</Data></Cell>';
+                        row.push({ content: '\u2014', styles: { textColor: hexToRgb(C.gray) } });
                         return;
                     }
 
                     const pts = getMatchPoints(user.username, match);
-                    const predLabel = `${pred.team1} - ${pred.team2}`;
-                    const jokerTag = isJoker ? '  \uD83C\uDCCF' : '';
+                    const predLabel = pred.team1 + ' - ' + pred.team2;
+                    const jokerTag = isJoker ? '  [J]' : '';
 
                     if (!hasResult) {
-                        // Match not played yet
                         const predictedResult = getResult(pred.team1, pred.team2);
-                        let style;
-                        if (isJoker) {
-                            if (predictedResult === 'win') style = 'sJokerPendingHomeWin';
-                            else if (predictedResult === 'lose') style = 'sJokerPendingAwayWin';
-                            else style = 'sJokerPendingDraw';
-                        } else {
-                            if (predictedResult === 'win') style = 'sPendingHomeWin';
-                            else if (predictedResult === 'lose') style = 'sPendingAwayWin';
-                            else style = 'sPendingDraw';
-                        }
-                        xml += `<Cell ss:StyleID="${style}"><Data ss:Type="String">${esc(predLabel)}${jokerTag}</Data></Cell>`;
+                        let textColor;
+                        if (predictedResult === 'win') textColor = hexToRgb(C.pendingHomeWin);
+                        else if (predictedResult === 'lose') textColor = hexToRgb(C.pendingAwayWin);
+                        else textColor = hexToRgb(C.pendingDraw);
+
+                        row.push({
+                            content: predLabel + jokerTag,
+                            styles: { textColor: textColor, fontStyle: isJoker ? 'bold' : 'normal' }
+                        });
                     } else {
-                        // Match complete — pick style based on points
-                        let style;
-                        if (isJoker) {
-                            style = 'sJoker';
-                        } else if (pred.team1 === match.actualScore1 && pred.team2 === match.actualScore2) {
-                            style = 'sPredExact';
+                        let textColor = hexToRgb(C.black);
+                        let fillColor = null;
+                        let fontStyle = 'normal';
+                        const isExact = pred.team1 === match.actualScore1 && pred.team2 === match.actualScore2;
+
+                        if (isJoker && isExact) {
+                            fillColor = hexToRgb(C.exactBg);
+                            fontStyle = 'bold';
+                        } else if (isExact) {
+                            fillColor = hexToRgb(C.exactBg);
+                            fontStyle = 'bold';
+                        } else if (isJoker) {
+                            textColor = hexToRgb(C.pointsFg);
+                            fontStyle = 'bold';
                         } else if (pts >= 6) {
-                            style = 'sPredP';
-                        } else if (pts >= 4) {
-                            style = 'sPred4';
+                            textColor = hexToRgb(C.winFg);
+                            fontStyle = 'bold';
                         } else if (pts >= 3) {
-                            style = 'sPred3';
-                        } else {
-                            style = 'sPred0';
+                            textColor = hexToRgb(C.winFg);
                         }
-                        if (isJoker && pred.team1 === match.actualScore1 && pred.team2 === match.actualScore2) {
-                            style = 'sJokerExact';
-                        }
-                        xml += `<Cell ss:StyleID="${style}"><Data ss:Type="String">${esc(predLabel)}${jokerTag}\n${pts} pts</Data></Cell>`;
+
+                        const cellStyles = { textColor: textColor, fontStyle: fontStyle };
+                        if (fillColor) cellStyles.fillColor = fillColor;
+
+                        row.push({
+                            content: predLabel + jokerTag + '\n' + pts + ' pts',
+                            styles: cellStyles
+                        });
                     }
                 });
 
                 // Predicted Tries
                 const userTries = users[user.username].totalTries;
-                xml += `<Cell ss:StyleID="sTries"><Data ss:Type="${userTries != null ? 'Number' : 'String'}">${userTries != null ? userTries : '—'}</Data></Cell>`;
+                row.push({
+                    content: userTries != null ? String(userTries) : '\u2014',
+                    styles: { textColor: hexToRgb(C.black) }
+                });
 
-                xml += '</Row>\n';
+                return row;
             });
 
-            xml += '</Table>\n';
+            // --- Render table ---
+            const lastMatchCol = 3 + allMatches.length;
+            const colStyles = {
+                0: { cellWidth: 8 },
+                1: { cellWidth: 25 },
+                2: { cellWidth: 12 },
+            };
+            colStyles[lastMatchCol] = { cellWidth: 14 };
 
-            // Freeze panes: 5 header rows, 3 left columns
-            xml += '<WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">\n';
-            xml += '<FreezePanes/><FrozenNoSplit/>\n';
-            xml += '<SplitHorizontal>5</SplitHorizontal><TopRowBottomPane>5</TopRowBottomPane>\n';
-            xml += '<SplitVertical>3</SplitVertical><LeftColumnRightPane>3</LeftColumnRightPane>\n';
-            xml += '</WorksheetOptions>\n';
+            doc.autoTable({
+                head: [headerRow],
+                body: [actualRow, ...dataRows],
+                startY: 28,
+                theme: 'grid',
+                styles: {
+                    fontSize: 6.5,
+                    cellPadding: 1.5,
+                    lineColor: hexToRgb(C.border),
+                    lineWidth: 0.2,
+                    halign: 'center',
+                    valign: 'middle',
+                    overflow: 'linebreak',
+                    font: 'helvetica',
+                },
+                headStyles: {
+                    fillColor: hexToRgb(C.white),
+                    textColor: hexToRgb(C.black),
+                    fontStyle: 'bold',
+                    fontSize: 6,
+                    halign: 'center',
+                    lineColor: hexToRgb(C.border),
+                    lineWidth: 0.3,
+                },
+                columnStyles: colStyles,
+                didParseCell: function(data) {
+                    // Thicker right border on Score column to separate fixed columns from matches
+                    if (data.column.index === 2) {
+                        data.cell.styles.lineWidth = { bottom: 0.2, top: 0.2, left: 0.2, right: 0.5 };
+                    }
+                    // Thicker bottom border on actual results row (first body row)
+                    if (data.section === 'body' && data.row.index === 0) {
+                        const lw = data.cell.styles.lineWidth;
+                        if (typeof lw === 'object') {
+                            lw.bottom = 0.5;
+                        } else {
+                            data.cell.styles.lineWidth = { bottom: 0.5, top: 0.2, left: 0.2, right: data.column.index === 2 ? 0.5 : 0.2 };
+                        }
+                    }
+                },
+                margin: { top: 10, left: 8, right: 8 },
+            });
 
-            xml += '</Worksheet>\n</Workbook>';
-
-            const blob = new Blob(['\uFEFF', xml], { type: 'application/vnd.ms-excel' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `SixNations_Summary_${now.toISOString().slice(0,10)}.xls`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            // --- Download ---
+            doc.save('SixNations_Summary_' + now.toISOString().slice(0, 10) + '.pdf');
         }
 
         function initTouchTooltips() {
