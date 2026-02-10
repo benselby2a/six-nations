@@ -5231,10 +5231,12 @@
                 border: '#BEBEBE',
                 white: '#FFFFFF',
                 winFg: '#0B6B2C',
+                loseFg: '#C0392B',
+                drawFg: '#D4820A',
                 pointsFg: '#5A4A00',
                 pendingHomeWin: '#1F7A1F',
                 pendingAwayWin: '#B23A2B',
-                pendingDraw: '#1F5FA3',
+                pendingDraw: '#D4820A',
                 exactBg: '#C6EFCE',
             };
 
@@ -5256,6 +5258,9 @@
             doc.text('Exported ' + dateStr, 14, 22);
             doc.setTextColor(0, 0, 0);
 
+            // --- Calculate actual tries total ---
+            const totalActualTries = getTotalActualTries();
+
             // --- Build header row ---
             const headerRow = [
                 { content: '#', styles: { halign: 'center' } },
@@ -5265,7 +5270,7 @@
                     content: m.team1 + ' vs ' + m.team2 + '\n' + m.date + ' ' + m.time,
                     styles: { halign: 'center' }
                 })),
-                { content: 'Predicted\nTries', styles: { halign: 'center' } }
+                { content: 'Predicted\nTries' + (totalActualTries > 0 ? '\n(' + totalActualTries + ' actual)' : ''), styles: { halign: 'center' } }
             ];
 
             // --- Build actual results row ---
@@ -5279,11 +5284,16 @@
                     if (hasResult) {
                         let txt = m.actualScore1 + ' - ' + m.actualScore2;
                         if (hasTries) txt += '  (' + (m.actualTries1 + m.actualTries2) + ' tries)';
-                        return { content: txt, styles: { textColor: hexToRgb(C.winFg), fontStyle: 'bold', fontSize: 7 } };
+                        // Color by result: green for home win score, draw orange
+                        let resultColor;
+                        if (m.actualScore1 > m.actualScore2) resultColor = hexToRgb(C.winFg);
+                        else if (m.actualScore1 < m.actualScore2) resultColor = hexToRgb(C.loseFg);
+                        else resultColor = hexToRgb(C.drawFg);
+                        return { content: txt, styles: { textColor: resultColor, fontStyle: 'bold', fontSize: 7 } };
                     }
                     return { content: 'TBD', styles: { textColor: hexToRgb(C.gray) } };
                 }),
-                { content: '', styles: { textColor: hexToRgb(C.gray) } }
+                { content: totalActualTries > 0 ? String(totalActualTries) + ' so far' : '', styles: { textColor: hexToRgb(C.gray), fontStyle: 'bold', fontSize: 6 } }
             ];
 
             // --- Build data rows ---
@@ -5316,10 +5326,11 @@
                     const jokerTag = isJoker ? '  [J]' : '';
 
                     if (!hasResult) {
+                        // Pending match — color by predicted result
                         const predictedResult = getResult(pred.team1, pred.team2);
                         let textColor;
-                        if (predictedResult === 'win') textColor = hexToRgb(C.pendingHomeWin);
-                        else if (predictedResult === 'lose') textColor = hexToRgb(C.pendingAwayWin);
+                        if (predictedResult === 'team1') textColor = hexToRgb(C.pendingHomeWin);
+                        else if (predictedResult === 'team2') textColor = hexToRgb(C.pendingAwayWin);
                         else textColor = hexToRgb(C.pendingDraw);
 
                         row.push({
@@ -5327,26 +5338,35 @@
                             styles: { textColor: textColor, fontStyle: isJoker ? 'bold' : 'normal' }
                         });
                     } else {
-                        let textColor = hexToRgb(C.black);
+                        // Completed match — color by whether prediction was correct
+                        const actualResult = getResult(match.actualScore1, match.actualScore2);
+                        const predictedResult = getResult(pred.team1, pred.team2);
+                        const isExact = pred.team1 === match.actualScore1 && pred.team2 === match.actualScore2;
                         let fillColor = null;
                         let fontStyle = 'normal';
-                        const isExact = pred.team1 === match.actualScore1 && pred.team2 === match.actualScore2;
+                        let textColor;
 
-                        if (isJoker && isExact) {
-                            fillColor = hexToRgb(C.exactBg);
-                            fontStyle = 'bold';
-                        } else if (isExact) {
-                            fillColor = hexToRgb(C.exactBg);
-                            fontStyle = 'bold';
-                        } else if (isJoker) {
-                            textColor = hexToRgb(C.pointsFg);
-                            fontStyle = 'bold';
-                        } else if (pts >= 6) {
+                        if (actualResult === predictedResult) {
+                            // Correct result prediction — green
                             textColor = hexToRgb(C.winFg);
-                            fontStyle = 'bold';
-                        } else if (pts >= 3) {
-                            textColor = hexToRgb(C.winFg);
+                            if (isExact) {
+                                fillColor = hexToRgb(C.exactBg);
+                                fontStyle = 'bold';
+                            } else if (pts >= 6 || isJoker) {
+                                fontStyle = 'bold';
+                            }
+                        } else {
+                            // Wrong result prediction — red
+                            textColor = hexToRgb(C.loseFg);
                         }
+
+                        // Draw predictions get orange tint
+                        if (actualResult === 'draw' && predictedResult === 'draw') {
+                            textColor = hexToRgb(C.drawFg);
+                            fontStyle = 'bold';
+                        }
+
+                        if (isJoker) fontStyle = 'bold';
 
                         const cellStyles = { textColor: textColor, fontStyle: fontStyle };
                         if (fillColor) cellStyles.fillColor = fillColor;
