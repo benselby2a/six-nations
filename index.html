@@ -1594,6 +1594,47 @@
             font-weight: 700;
         }
 
+        /* Supported teams picker */
+        .team-flags-picker {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .team-flag-option {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.4rem 0.7rem;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+        }
+
+        .team-flag-option:hover {
+            border-color: rgba(212, 175, 55, 0.5);
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .team-flag-option.selected {
+            border-color: var(--bright-gold);
+            background: rgba(212, 175, 55, 0.2);
+            box-shadow: 0 0 8px rgba(212, 175, 55, 0.3);
+        }
+
+        .team-flag-option .flag-emoji {
+            font-size: 1.2rem;
+        }
+
+        .supported-team-flags {
+            margin-right: 0.3rem;
+            font-size: 0.9rem;
+        }
+
         /* User info */
         .user-info {
             display: flex;
@@ -2581,7 +2622,7 @@
                     <button onclick="loginExisting()">Login</button>
                 </div>
 
-                <!-- New User Form 
+                <!-- New User Form
                 <div id="newUserForm" class="login-form hidden">
                     <div class="input-group">
                         <label for="nickname">Display Name</label>
@@ -2594,6 +2635,10 @@
                     <div class="input-group">
                         <label for="newPassword">Password</label>
                         <input type="password" id="newPassword" placeholder="Create a password" onkeypress="handleLoginKeyPress(event, 'new')">
+                    </div>
+                    <div class="input-group">
+                        <label>Supported Teams (up to 2)</label>
+                        <div class="team-flags-picker" id="registerTeamsPicker"></div>
                     </div>
                     <button onclick="registerNewUser()">Create Account</button>
                 </div> -->
@@ -2739,6 +2784,7 @@
                                 <th>Away Team</th>
                                 <th>Score</th>
                                 <th>Tries</th>
+                                <th>Joker</th>
                                 <th>Scores Captured</th>
                                 <th>Actions</th>
                             </tr>
@@ -2808,25 +2854,25 @@
         // 2026 Six Nations fixtures (kick-off times in GMT)
         const matches = [
             // Round 1
-            { id: 1, round: 1, date: 'Thu, Feb 5', time: '20:10', team1: 'France', team2: 'Ireland', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null },
-            { id: 2, round: 1, date: 'Sat, Feb 7', time: '14:10', team1: 'Italy', team2: 'Scotland', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null },
-            { id: 3, round: 1, date: 'Sat, Feb 7', time: '16:40', team1: 'England', team2: 'Wales', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null },
+            { id: 1, round: 1, date: 'Thu, Feb 5', time: '20:10', team1: 'France', team2: 'Ireland', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null, jokerEligible: false },
+            { id: 2, round: 1, date: 'Sat, Feb 7', time: '14:10', team1: 'Italy', team2: 'Scotland', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null, jokerEligible: false },
+            { id: 3, round: 1, date: 'Sat, Feb 7', time: '16:40', team1: 'England', team2: 'Wales', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null, jokerEligible: false },
             // Round 2
-            { id: 4, round: 2, date: 'Sat, Feb 14', time: '14:10', team1: 'Ireland', team2: 'Italy', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null },
-            { id: 5, round: 2, date: 'Sat, Feb 14', time: '16:40', team1: 'Scotland', team2: 'England', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null },
-            { id: 6, round: 2, date: 'Sun, Feb 15', time: '15:10', team1: 'Wales', team2: 'France', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null },
+            { id: 4, round: 2, date: 'Sat, Feb 14', time: '14:10', team1: 'Ireland', team2: 'Italy', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null, jokerEligible: false },
+            { id: 5, round: 2, date: 'Sat, Feb 14', time: '16:40', team1: 'Scotland', team2: 'England', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null, jokerEligible: false },
+            { id: 6, round: 2, date: 'Sun, Feb 15', time: '15:10', team1: 'Wales', team2: 'France', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null, jokerEligible: false },
             // Round 3
-            { id: 7, round: 3, date: 'Sat, Feb 21', time: '14:10', team1: 'England', team2: 'Ireland', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null },
-            { id: 8, round: 3, date: 'Sat, Feb 21', time: '16:40', team1: 'Wales', team2: 'Scotland', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null },
-            { id: 9, round: 3, date: 'Sun, Feb 22', time: '15:10', team1: 'France', team2: 'Italy', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null },
+            { id: 7, round: 3, date: 'Sat, Feb 21', time: '14:10', team1: 'England', team2: 'Ireland', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null, jokerEligible: false },
+            { id: 8, round: 3, date: 'Sat, Feb 21', time: '16:40', team1: 'Wales', team2: 'Scotland', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null, jokerEligible: false },
+            { id: 9, round: 3, date: 'Sun, Feb 22', time: '15:10', team1: 'France', team2: 'Italy', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null, jokerEligible: false },
             // Round 4
-            { id: 10, round: 4, date: 'Fri, Mar 6', time: '20:10', team1: 'Ireland', team2: 'Wales', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null },
-            { id: 11, round: 4, date: 'Sat, Mar 7', time: '14:10', team1: 'Scotland', team2: 'France', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null },
-            { id: 12, round: 4, date: 'Sat, Mar 7', time: '16:40', team1: 'Italy', team2: 'England', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null },
+            { id: 10, round: 4, date: 'Fri, Mar 6', time: '20:10', team1: 'Ireland', team2: 'Wales', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null, jokerEligible: false },
+            { id: 11, round: 4, date: 'Sat, Mar 7', time: '14:10', team1: 'Scotland', team2: 'France', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null, jokerEligible: false },
+            { id: 12, round: 4, date: 'Sat, Mar 7', time: '16:40', team1: 'Italy', team2: 'England', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null, jokerEligible: false },
             // Round 5
-            { id: 13, round: 5, date: 'Sat, Mar 14', time: '14:10', team1: 'Ireland', team2: 'Scotland', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null },
-            { id: 14, round: 5, date: 'Sat, Mar 14', time: '16:40', team1: 'Wales', team2: 'Italy', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null },
-            { id: 15, round: 5, date: 'Sat, Mar 14', time: '20:10', team1: 'France', team2: 'England', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null }
+            { id: 13, round: 5, date: 'Sat, Mar 14', time: '14:10', team1: 'Ireland', team2: 'Scotland', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null, jokerEligible: false },
+            { id: 14, round: 5, date: 'Sat, Mar 14', time: '16:40', team1: 'Wales', team2: 'Italy', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null, jokerEligible: false },
+            { id: 15, round: 5, date: 'Sat, Mar 14', time: '20:10', team1: 'France', team2: 'England', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null, jokerEligible: false }
         ];
 
         // Country flags mapping
@@ -2842,6 +2888,48 @@
         // Helper function to get flag for a team
         function getFlag(team) {
             return countryFlags[team] || '';
+        }
+
+        // Render a team flags picker into a container
+        function renderTeamFlagsPicker(containerId, selectedTeams) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const teams = Object.keys(countryFlags);
+            container.innerHTML = teams.map(team => {
+                const isSelected = selectedTeams && selectedTeams.includes(team);
+                return `<div class="team-flag-option ${isSelected ? 'selected' : ''}" data-team="${team}" onclick="toggleTeamFlag(this, '${containerId}')">
+                    <span class="flag-emoji">${getFlag(team)}</span>
+                    <span>${team}</span>
+                </div>`;
+            }).join('');
+        }
+
+        // Toggle a team flag selection (max 2)
+        function toggleTeamFlag(el, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const isSelected = el.classList.contains('selected');
+            if (isSelected) {
+                el.classList.remove('selected');
+            } else {
+                const selectedCount = container.querySelectorAll('.team-flag-option.selected').length;
+                if (selectedCount >= 2) return; // Max 2
+                el.classList.add('selected');
+            }
+        }
+
+        // Get selected teams from a picker
+        function getSelectedTeams(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return [];
+            return Array.from(container.querySelectorAll('.team-flag-option.selected')).map(el => el.dataset.team);
+        }
+
+        // Get flag emojis string for display next to a user's name
+        function getUserFlags(username) {
+            const teams = users[username] && users[username].supportedTeams ? users[username].supportedTeams : [];
+            if (teams.length === 0) return '';
+            return '<span class="supported-team-flags">' + teams.map(t => getFlag(t)).join('') + '</span> ';
         }
 
         // Helper function to convert string to Title Case (Camel Case for display)
@@ -2909,6 +2997,7 @@
                         passwordHash: user.password_hash,
                         totalTries: user.total_tries,
                         jokerMatchId: user.joker_match_id,
+                        supportedTeams: user.supported_teams ? user.supported_teams.split(',') : [],
                         predictions: {}  // Will be populated separately
                     };
                 });
@@ -2957,7 +3046,8 @@
                             email: userData.email,
                             password_hash: userData.passwordHash,
                             total_tries: userData.totalTries,
-                            joker_match_id: userData.jokerMatchId
+                            joker_match_id: userData.jokerMatchId,
+                            supported_teams: userData.supportedTeams && userData.supportedTeams.length > 0 ? userData.supportedTeams.join(',') : null
                         })
                         .eq('username', username);
                     
@@ -2972,7 +3062,8 @@
                             email: userData.email,
                             password_hash: userData.passwordHash,
                             total_tries: userData.totalTries,
-                            joker_match_id: userData.jokerMatchId
+                            joker_match_id: userData.jokerMatchId,
+                            supported_teams: userData.supportedTeams && userData.supportedTeams.length > 0 ? userData.supportedTeams.join(',') : null
                         });
                     
                     if (error) console.error('Error inserting user:', error);
@@ -3052,10 +3143,11 @@
                     actualScore1: m.actual_score1,
                     actualScore2: m.actual_score2,
                     actualTries1: m.actual_tries1,
-                    actualTries2: m.actual_tries2
+                    actualTries2: m.actual_tries2,
+                    jokerEligible: m.joker_eligible || false
                 }));
             },
-            
+
             saveMatches: async (matchesData) => {
                 // Delete all existing matches and re-insert
                 await supabaseClient.from('matches').delete().neq('id', 0);
@@ -3070,9 +3162,10 @@
                     actual_score1: m.actualScore1,
                     actual_score2: m.actualScore2,
                     actual_tries1: m.actualTries1,
-                    actual_tries2: m.actualTries2
+                    actual_tries2: m.actualTries2,
+                    joker_eligible: m.jokerEligible || false
                 }));
-                
+
                 const { error } = await supabaseClient.from('matches').insert(rows);
                 if (error) console.error('Error saving matches:', error);
             },
@@ -3289,6 +3382,9 @@
                     <td>
                         <input type="number" id="actual-tries2-${match.id}" min="0" placeholder="-" value="${match.actualTries2 !== null ? match.actualTries2 : ''}" onblur="autoSaveResults()">
                     </td>
+                    <td style="text-align: center;">
+                        <input type="checkbox" id="joker-eligible-${match.id}" ${match.jokerEligible ? 'checked' : ''} onchange="autoSaveResults()">
+                    </td>
                     <td class="saved-cell" id="result-saved-${match.id}"></td>
                     <td>
                         <button class="btn-small btn-danger" onclick="deleteMatch(${match.id})" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">✕</button>
@@ -3357,9 +3453,10 @@
                 actualScore1: null,
                 actualScore2: null,
                 actualTries1: null,
-                actualTries2: null
+                actualTries2: null,
+                jokerEligible: false
             };
-            
+
             matches.push(newMatch);
             await Storage.saveMatches(matches);
             renderAdminMatches();
@@ -3519,7 +3616,8 @@
                     actualScore1: null,
                     actualScore2: null,
                     actualTries1: null,
-                    actualTries2: null
+                    actualTries2: null,
+                    jokerEligible: false
                 });
             });
             
@@ -3578,9 +3676,11 @@
                 const team2ScoreEl = document.getElementById(`actual-team2-${match.id}`);
                 const team1TriesEl = document.getElementById(`actual-tries1-${match.id}`);
                 const team2TriesEl = document.getElementById(`actual-tries2-${match.id}`);
-                
+                const jokerEligibleEl = document.getElementById(`joker-eligible-${match.id}`);
+
                 // Update fixture details
                 if (roundEl) match.round = parseInt(roundEl.value) || 1;
+                if (jokerEligibleEl) match.jokerEligible = jokerEligibleEl.checked;
                 if (team1SelectEl) match.team1 = team1SelectEl.value;
                 if (team2SelectEl) match.team2 = team2SelectEl.value;
                 
@@ -3662,12 +3762,16 @@
                 return;
             }
 
+            const teams = Object.keys(countryFlags);
+            const teamOptions = teams.map(t => `<option value="${t}">${getFlag(t)} ${t}</option>`).join('');
+
             let html = `
                 <table class="admin-table">
                     <thead>
                         <tr>
                             <th>Email</th>
                             <th>Display Name</th>
+                            <th>Supported Teams</th>
                             <th>Admin</th>
                             <th>Actions</th>
                         </tr>
@@ -3680,10 +3784,21 @@
                 const isAdmin = adminEmails.includes(user.email?.toLowerCase());
                 const safeUsername = username.replace(/'/g, "\\'");
                 const needsReset = user.passwordResetRequired ? '<span style="color: #f39c12; font-size: 0.8rem;"> (Reset Required)</span>' : '';
+                const userTeams = user.supportedTeams || [];
                 html += `
                     <tr id="user-row-${username}">
                         <td>${user.email || 'N/A'}${needsReset}</td>
                         <td><input type="text" id="edit-nickname-${username}" value="${user.nickname || ''}" style="max-width: 150px;"></td>
+                        <td>
+                            <select id="edit-team1-${username}" style="font-size: 0.85rem; margin-bottom: 0.25rem;">
+                                <option value="">None</option>
+                                ${teams.map(t => `<option value="${t}" ${userTeams[0] === t ? 'selected' : ''}>${getFlag(t)} ${t}</option>`).join('')}
+                            </select><br>
+                            <select id="edit-team2-${username}" style="font-size: 0.85rem;">
+                                <option value="">None</option>
+                                ${teams.map(t => `<option value="${t}" ${userTeams[1] === t ? 'selected' : ''}>${getFlag(t)} ${t}</option>`).join('')}
+                            </select>
+                        </td>
                         <td>
                             <input type="checkbox" id="edit-admin-${username}" ${isAdmin ? 'checked' : ''} onchange="toggleUserAdmin('${safeUsername}')">
                         </td>
@@ -3719,6 +3834,13 @@
             }
 
             users[username].nickname = nickname;
+
+            // Read supported teams from dropdowns
+            const team1El = document.getElementById(`edit-team1-${username}`);
+            const team2El = document.getElementById(`edit-team2-${username}`);
+            const team1 = team1El ? team1El.value : '';
+            const team2 = team2El ? team2El.value : '';
+            users[username].supportedTeams = [team1, team2].filter(Boolean);
 
             await Storage.saveUser(username, users[username]);
             alert('User updated successfully!');
@@ -4057,13 +4179,17 @@
             // Hash the password
             const passwordHash = await hashPassword(password);
 
+            // Get selected supported teams
+            const supportedTeams = getSelectedTeams('registerTeamsPicker');
+
             // Create new user with hashed password
             users[username] = {
                 nickname: nickname,
                 email: email,
                 passwordHash: passwordHash,
                 predictions: {},
-                totalTries: null
+                totalTries: null,
+                supportedTeams: supportedTeams
             };
 
             await Storage.saveUser(username, users[username]);
@@ -4249,8 +4375,22 @@
                 const disabledStyle = appSettings.predictionsLocked ? 'opacity: 0.6; cursor: not-allowed;' : '';
                 const onBlurHandler = appSettings.predictionsLocked ? '' : 'onblur="autoSavePredictions()"';
 
+                const isJoker = users[currentUsername] && users[currentUsername].jokerMatchId === match.id;
+                const jokerCardClass = isJoker ? ' joker-selected' : '';
+                const jokerSection = match.jokerEligible ? `
+                    <div class="joker-selection">
+                        <label class="joker-label">
+                            <input type="radio" name="jokerMatch" class="joker-checkbox" value="${match.id}"
+                                ${isJoker ? 'checked' : ''} ${disabledAttr}
+                                onchange="selectJoker(${match.id})" style="${disabledStyle}">
+                            <span class="joker-icon">🃏</span>
+                            <span class="joker-text">Joker (2x points)</span>
+                        </label>
+                    </div>
+                ` : '';
+
                 html += `
-                    <div class="match-card">
+                    <div class="match-card${jokerCardClass}" id="match-card-${match.id}">
                         <div class="match-header">${match.date} - ${match.time} <span class="match-saved-indicator" id="saved-${match.id}"></span></div>
                         <div class="match-teams">
                             <div class="team">
@@ -4265,6 +4405,7 @@
                                 <input type="number" class="score-input" id="team2-${match.id}" min="0" placeholder="0" ${disabledAttr} ${onBlurHandler} style="${disabledStyle}">
                             </div>
                         </div>
+                        ${jokerSection}
                     </div>
                 `;
             });
@@ -4345,6 +4486,16 @@
             updateOutstandingBanner();
         }
         
+        // Select joker match
+        async function selectJoker(matchId) {
+            if (appSettings.predictionsLocked) return;
+            users[currentUsername].jokerMatchId = matchId;
+            await Storage.saveUser(currentUsername, users[currentUsername]);
+            // Re-render to update card highlight and re-populate inputs
+            renderMatches();
+            loadPredictions();
+        }
+
         // Update the outstanding predictions banner
         function updateOutstandingBanner() {
             const banner = document.getElementById('outstandingBanner');
@@ -5004,7 +5155,7 @@
                 
                 html += `<tr class="${rowClass}">`;
                 html += `<td class="rank-col">${rank}</td>`;
-                html += `<td class="competitor-name">${user.nickname}</td>`;
+                html += `<td class="competitor-name">${getUserFlags(user.username)}${user.nickname}</td>`;
                 html += `<td class="pts-col">${user.totalPoints}</td>`;
 
                 // Column for each match
@@ -5223,6 +5374,13 @@
                 return [r, g, b];
             }
 
+            const countryAbbr = { 'England': 'ENG', 'France': 'FRA', 'Ireland': 'IRE', 'Italy': 'ITA', 'Scotland': 'SCO', 'Wales': 'WAL' };
+            function getPdfUserFlags(username) {
+                const teams = users[username] && users[username].supportedTeams ? users[username].supportedTeams : [];
+                if (teams.length === 0) return '';
+                return teams.map(t => countryAbbr[t] || t).join('/') + ' ';
+            }
+
             // Printer-friendly palette
             const C = {
                 black: '#111111',
@@ -5313,7 +5471,7 @@
 
                 const row = [
                     { content: String(rank), styles: { fontStyle: 'bold', halign: 'center' } },
-                    { content: user.nickname, styles: { fontStyle: 'bold', halign: 'left' } },
+                    { content: getPdfUserFlags(user.username) + user.nickname, styles: { fontStyle: 'bold', halign: 'left' } },
                     { content: String(user.totalPoints), styles: { fontStyle: 'bold', textColor: hexToRgb(C.pointsFg), fontSize: 8 } },
                 ];
 
@@ -5496,6 +5654,7 @@ CREATE TABLE users (
     password_hash VARCHAR(255),
     total_tries INTEGER,
     joker_match_id INTEGER,
+    supported_teams VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -5586,7 +5745,8 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
                 userList.forEach((username, index) => {
                     const u = users[username];
                     const oderId = index + 1;
-                    sql += `INSERT INTO users (id, username, nickname, email, password_hash, total_tries, joker_match_id) VALUES (${oderId}, '${esc(username)}', '${esc(u.nickname)}', '${esc(u.email)}', '${esc(u.passwordHash)}', ${u.totalTries === null || u.totalTries === undefined ? 'NULL' : u.totalTries}, ${u.jokerMatchId === null || u.jokerMatchId === undefined ? 'NULL' : u.jokerMatchId});\n`;
+                    const supportedTeamsVal = u.supportedTeams && u.supportedTeams.length > 0 ? `'${esc(u.supportedTeams.join(','))}'` : 'NULL';
+                    sql += `INSERT INTO users (id, username, nickname, email, password_hash, total_tries, joker_match_id, supported_teams) VALUES (${oderId}, '${esc(username)}', '${esc(u.nickname)}', '${esc(u.email)}', '${esc(u.passwordHash)}', ${u.totalTries === null || u.totalTries === undefined ? 'NULL' : u.totalTries}, ${u.jokerMatchId === null || u.jokerMatchId === undefined ? 'NULL' : u.jokerMatchId}, ${supportedTeamsVal});\n`;
                 });
 
                 // Generate predictions INSERT statements
