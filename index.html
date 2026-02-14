@@ -2745,7 +2745,7 @@
             </div>
 
             <!-- Competitor Management Tab (Admin Only) -->
-            <div id="competitorsTab" class="prediction-section hidden">
+            <div id="competitorsTab" class="prediction-section hidden" style="margin-top: 2rem;">
                 <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Competitor Management</h2>
                     <p style="margin-bottom: 1rem;">Manage competitor accounts - edit details or remove users</p>
@@ -2755,7 +2755,7 @@
             </div>
 
             <!-- Fixture Setup Tab (Admin Only) -->
-            <div id="resultsTab" class="prediction-section hidden">
+            <div id="resultsTab" class="prediction-section hidden" style="margin-top: 2rem;">
                 <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Fixture Setup</h2>
                     <p style="margin-bottom: 1rem;">Manage fixtures, enter match details and results. Changes save automatically.</p>
@@ -3787,7 +3787,7 @@
                 const userTeams = user.supportedTeams || [];
                 html += `
                     <tr id="user-row-${username}">
-                        <td>${user.email || 'N/A'}${needsReset}</td>
+                        <td><input type="email" id="edit-email-${username}" value="${user.email || ''}" style="max-width: 200px;">${needsReset}</td>
                         <td><input type="text" id="edit-nickname-${username}" value="${user.nickname || ''}" style="max-width: 150px;"></td>
                         <td>
                             <select id="edit-team1-${username}" style="font-size: 0.85rem; margin-bottom: 0.25rem;">
@@ -3818,14 +3818,20 @@
         // Save changes to a user
         async function saveUserChanges(username) {
             const nickname = document.getElementById(`edit-nickname-${username}`).value.trim();
+            const newEmail = document.getElementById(`edit-email-${username}`).value.trim().toLowerCase();
 
             if (!nickname) {
                 alert('Display name is required.');
                 return;
             }
 
+            if (!newEmail) {
+                alert('Email is required.');
+                return;
+            }
+
             // Check if nickname is taken by another user
-            const existingUser = Object.keys(users).find(u => 
+            const existingUser = Object.keys(users).find(u =>
                 u !== username && users[u].nickname && users[u].nickname.toLowerCase() === nickname.toLowerCase()
             );
             if (existingUser) {
@@ -3833,7 +3839,24 @@
                 return;
             }
 
+            // Check if email is taken by another user
+            const existingEmail = Object.keys(users).find(u =>
+                u !== username && users[u].email && users[u].email.toLowerCase() === newEmail
+            );
+            if (existingEmail) {
+                alert('This email is already in use by another user.');
+                return;
+            }
+
+            // Update admin emails list if email changed and user was an admin
+            const oldEmail = users[username].email?.toLowerCase();
+            if (oldEmail && oldEmail !== newEmail && adminEmails.includes(oldEmail)) {
+                adminEmails = adminEmails.map(e => e === oldEmail ? newEmail : e);
+                await Storage.saveAdminEmails(adminEmails);
+            }
+
             users[username].nickname = nickname;
+            users[username].email = newEmail;
 
             // Read supported teams from dropdowns
             const team1El = document.getElementById(`edit-team1-${username}`);
@@ -3844,7 +3867,7 @@
 
             await Storage.saveUser(username, users[username]);
             alert('User updated successfully!');
-            
+
             // Update current user display if editing self
             if (username === currentUsername) {
                 document.getElementById('currentUser').textContent = toTitleCase(nickname);
