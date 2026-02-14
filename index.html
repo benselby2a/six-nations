@@ -5460,26 +5460,25 @@
 
             // --- Build actual results row ---
             const actualRow = [
-                { content: '', styles: { textColor: hexToRgb(C.gray) } },
-                { content: 'Actual Result', styles: { textColor: hexToRgb(C.gray), halign: 'left' } },
-                { content: '', styles: { textColor: hexToRgb(C.gray) } },
+                { content: '', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold' } },
+                { content: 'Actual Result', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', halign: 'left' } },
+                { content: '', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold' } },
                 ...allMatches.map(m => {
                     const hasResult = m.actualScore1 !== null && m.actualScore2 !== null;
                     const hasTries = m.actualTries1 !== null && m.actualTries2 !== null;
                     if (hasResult) {
                         let txt = m.actualScore1 + ' - ' + m.actualScore2;
                         if (hasTries) txt += '  (' + (m.actualTries1 + m.actualTries2) + ' tries)';
-                        // Color by result: green for home win score, draw orange
-                        let resultColor;
-                        if (m.actualScore1 > m.actualScore2) resultColor = hexToRgb(C.winFg);
-                        else if (m.actualScore1 < m.actualScore2) resultColor = hexToRgb(C.loseFg);
-                        else resultColor = hexToRgb(C.drawFg);
-                        return { content: txt, styles: { textColor: resultColor, fontStyle: 'bold', fontSize: 8 } };
+                        return { content: txt, styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', fontSize: 8 } };
                     }
-                    return { content: 'TBD', styles: { textColor: hexToRgb(C.gray) } };
+                    return { content: 'TBD', styles: { textColor: hexToRgb(C.gray), fontStyle: 'bold' } };
                 }),
-                { content: completedTriesMatches > 0 ? totalActualTries + ' (' + estimatedTotalTries + ')' : '', styles: { textColor: hexToRgb(C.gray), fontStyle: 'bold', fontSize: 7 } }
+                { content: completedTriesMatches > 0 ? totalActualTries + ' (' + estimatedTotalTries + ')' : '', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', fontSize: 7 } }
             ];
+
+            // --- Maps for cells that need multi-color rendering ---
+            const pendingScoreCells = {};
+            const completedScoreCells = {};
 
             // --- Build data rows ---
             const dataRows = sortedUsers.map((user, index) => {
@@ -5511,49 +5510,27 @@
                     const jokerTag = isJoker ? '  [J]' : '';
 
                     if (!hasResult) {
-                        // Pending match — color by predicted result
-                        const predictedResult = getResult(pred.team1, pred.team2);
-                        let textColor;
-                        if (predictedResult === 'team1') textColor = hexToRgb(C.pendingHomeWin);
-                        else if (predictedResult === 'team2') textColor = hexToRgb(C.pendingAwayWin);
-                        else textColor = hexToRgb(C.pendingDraw);
-
+                        // Pending match — scores colored individually via didDrawCell
+                        const colIdx = row.length;
+                        const bodyRowIdx = index + 1; // +1 because actual results row is body row 0
+                        pendingScoreCells[bodyRowIdx + '-' + colIdx] = { team1: pred.team1, team2: pred.team2, joker: isJoker };
                         row.push({
                             content: predLabel + jokerTag,
-                            styles: { textColor: textColor, fontStyle: isJoker ? 'bold' : 'normal' }
+                            styles: { textColor: [255, 255, 255], fontStyle: isJoker ? 'bold' : 'normal' }
                         });
                     } else {
-                        // Completed match — color by whether prediction was correct
-                        const actualResult = getResult(match.actualScore1, match.actualScore2);
-                        const predictedResult = getResult(pred.team1, pred.team2);
+                        // Completed match — scores colored individually via didDrawCell
                         const isExact = pred.team1 === match.actualScore1 && pred.team2 === match.actualScore2;
                         let fillColor = null;
-                        let fontStyle = 'normal';
-                        let textColor;
+                        if (isExact) fillColor = hexToRgb(C.exactBg);
 
-                        if (actualResult === predictedResult) {
-                            // Correct result prediction — green
-                            textColor = hexToRgb(C.winFg);
-                            if (isExact) {
-                                fillColor = hexToRgb(C.exactBg);
-                                fontStyle = 'bold';
-                            } else if (pts >= 6 || isJoker) {
-                                fontStyle = 'bold';
-                            }
-                        } else {
-                            // Wrong result prediction — red
-                            textColor = hexToRgb(C.loseFg);
-                        }
+                        const colIdx = row.length;
+                        const bodyRowIdx = index + 1;
+                        completedScoreCells[bodyRowIdx + '-' + colIdx] = {
+                            team1: pred.team1, team2: pred.team2, pts: pts, joker: isJoker
+                        };
 
-                        // Draw predictions get orange tint
-                        if (actualResult === 'draw' && predictedResult === 'draw') {
-                            textColor = hexToRgb(C.drawFg);
-                            fontStyle = 'bold';
-                        }
-
-                        if (isJoker) fontStyle = 'bold';
-
-                        const cellStyles = { textColor: textColor, fontStyle: fontStyle };
+                        const cellStyles = { textColor: [255, 255, 255], fontStyle: isJoker ? 'bold' : 'normal' };
                         if (fillColor) cellStyles.fillColor = fillColor;
 
                         row.push({
@@ -5628,6 +5605,93 @@
                             lw.bottom = 0.5;
                         } else {
                             data.cell.styles.lineWidth = { bottom: 0.5, top: 0.2, left: 0.2, right: data.column.index === 2 ? 0.5 : 0.2 };
+                        }
+                    }
+                },
+                didDrawCell: function(data) {
+                    if (data.section !== 'body') return;
+                    const key = data.row.index + '-' + data.column.index;
+                    const pending = pendingScoreCells[key];
+                    const completed = completedScoreCells[key];
+                    if (!pending && !completed) return;
+
+                    const cell = data.cell;
+                    const fontSize = cell.styles.fontSize;
+                    const scoreData = pending || completed;
+
+                    // Determine colors for each score based on higher/lower
+                    let color1, color2;
+                    if (scoreData.team1 > scoreData.team2) {
+                        color1 = hexToRgb(C.winFg);
+                        color2 = hexToRgb(C.loseFg);
+                    } else if (scoreData.team1 < scoreData.team2) {
+                        color1 = hexToRgb(C.loseFg);
+                        color2 = hexToRgb(C.winFg);
+                    } else {
+                        color1 = hexToRgb(C.drawFg);
+                        color2 = hexToRgb(C.drawFg);
+                    }
+
+                    const score1 = String(scoreData.team1);
+                    const score2 = String(scoreData.team2);
+                    const sep = ' - ';
+                    const jokerTag = scoreData.joker ? '  [J]' : '';
+                    const scoreFontStyle = scoreData.joker ? 'bold' : 'normal';
+
+                    doc.setFontSize(fontSize);
+                    doc.setFont('helvetica', scoreFontStyle);
+
+                    const w1 = doc.getTextWidth(score1);
+                    const wSep = doc.getTextWidth(sep);
+                    const w2 = doc.getTextWidth(score2);
+                    const wJ = jokerTag ? doc.getTextWidth(jokerTag) : 0;
+                    const totalW = w1 + wSep + w2 + wJ;
+
+                    if (completed) {
+                        // Two-line cell: scores on top, points below
+                        const lineH = fontSize * 0.35;
+                        const topY = cell.y + cell.height / 2 - lineH * 0.5;
+                        const bottomY = topY + lineH + fontSize * 0.1;
+                        const x = cell.x + (cell.width - totalW) / 2;
+
+                        doc.setTextColor(...color1);
+                        doc.text(score1, x, topY);
+
+                        doc.setTextColor(...hexToRgb(C.gray));
+                        doc.text(sep, x + w1, topY);
+
+                        doc.setTextColor(...color2);
+                        doc.text(score2, x + w1 + wSep, topY);
+
+                        if (jokerTag) {
+                            doc.setTextColor(...hexToRgb(C.gray));
+                            doc.text(jokerTag, x + w1 + wSep + w2, topY);
+                        }
+
+                        // Points line in black, bold if > 3
+                        const ptsText = scoreData.pts + ' pts';
+                        const ptsFontStyle = scoreData.pts > 3 ? 'bold' : 'normal';
+                        doc.setFont('helvetica', ptsFontStyle);
+                        doc.setTextColor(...hexToRgb(C.black));
+                        const wPts = doc.getTextWidth(ptsText);
+                        doc.text(ptsText, cell.x + (cell.width - wPts) / 2, bottomY);
+                    } else {
+                        // Single-line cell (pending)
+                        const x = cell.x + (cell.width - totalW) / 2;
+                        const y = cell.y + cell.height / 2 + fontSize * 0.35;
+
+                        doc.setTextColor(...color1);
+                        doc.text(score1, x, y);
+
+                        doc.setTextColor(...hexToRgb(C.gray));
+                        doc.text(sep, x + w1, y);
+
+                        doc.setTextColor(...color2);
+                        doc.text(score2, x + w1 + wSep, y);
+
+                        if (jokerTag) {
+                            doc.setTextColor(...hexToRgb(C.gray));
+                            doc.text(jokerTag, x + w1 + wSep + w2, y);
                         }
                     }
                 },
