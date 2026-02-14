@@ -37,6 +37,19 @@
             return countryFlags[team] || '';
         }
 
+        // 3-letter abbreviations for compact summary headers
+        function getTeamAbbr(team) {
+            const abbr = {
+                England: 'ENG',
+                France: 'FRA',
+                Ireland: 'IRE',
+                Italy: 'ITA',
+                Scotland: 'SCO',
+                Wales: 'WAL'
+            };
+            return abbr[team] || team;
+        }
+
         // Render a team flags picker into a container
         function renderTeamFlagsPicker(containerId, selectedTeams) {
             const container = document.getElementById(containerId);
@@ -2302,7 +2315,7 @@
                     <div class="match-header-cell-inner">
                         <div class="match-header-top">
                             ${jokerBadge}
-                            <div class="match-teams">${getFlag(match.team1)} ${match.team1}<br>vs<br>${getFlag(match.team2)} ${match.team2}</div>
+                            <div class="match-teams">${getFlag(match.team1)} ${getTeamAbbr(match.team1)}<br>vs<br>${getFlag(match.team2)} ${getTeamAbbr(match.team2)}</div>
                             <div class="match-date">${match.date} - ${match.time}</div>
                         </div>
                         <div class="match-header-bottom">

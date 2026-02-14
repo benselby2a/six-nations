@@ -1563,19 +1563,23 @@
         }
 
         .joker-eligible-header {
-            background: rgba(212, 175, 55, 0.15) !important;
+            background: transparent !important;
         }
 
         .joker-eligible-badge {
-            font-size: 0.65rem;
-            color: var(--bright-gold);
-            background: rgba(212, 175, 55, 0.3);
-            padding: 0.15rem 0.4rem;
-            border-radius: 3px;
+            font-size: 0.78rem;
+            color: var(--white);
+            background: transparent;
+            border: none;
+            padding: 0;
+            border-radius: 0;
             margin-bottom: 0.3rem;
-            font-weight: 700;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.04em;
+            line-height: 1.1;
+            text-shadow: none;
+            display: block;
         }
 
         .tooltip-line.joker-bonus {
@@ -1959,6 +1963,11 @@
                 min-width: 70px !important;
                 padding: 0.2rem !important;
                 font-size: 0.68rem;
+            }
+
+            .joker-eligible-badge {
+                font-size: 0.66rem;
+                padding: 0.16rem 0.35rem;
             }
 
             .match-header-cell-inner {
