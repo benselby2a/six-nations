@@ -2684,24 +2684,6 @@
             </div>
         </div>
 
-        <!-- Password Reset Modal -->
-        <div id="passwordResetModal" class="modal hidden">
-            <div class="modal-content">
-                <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1.5rem; letter-spacing: 0.1em;">Set Password</h2>
-                <p style="margin-bottom: 1.5rem;">Your password was removed by an administrator. You can set a new password now, or cancel and continue without one.</p>
-                <div class="input-group">
-                    <label for="newPasswordReset">New Password</label>
-                    <input type="password" id="newPasswordReset" placeholder="Enter new password" onkeypress="handlePasswordResetKeyPress(event)">
-                </div>
-                <div class="input-group">
-                    <label for="confirmPasswordReset">Confirm Password</label>
-                    <input type="password" id="confirmPasswordReset" placeholder="Confirm new password" onkeypress="handlePasswordResetKeyPress(event)">
-                </div>
-                <button onclick="submitPasswordReset()">Set New Password</button>
-                <button class="btn-cancel" onclick="cancelPasswordReset()">Cancel</button>
-            </div>
-        </div>
-
         <!-- Profile Modal -->
         <div id="profileModal" class="modal hidden">
             <div class="modal-content">
@@ -2872,7 +2854,7 @@
                                 <th>Away Team</th>
                                 <th>Score</th>
                                 <th>Tries</th>
-                                <th>Joker</th>
+                                <th>Joker Eligible</th>
                                 <th>Scores Captured</th>
                                 <th>Actions</th>
                             </tr>
@@ -3581,7 +3563,7 @@
             const match = matches.find(m => m.id === matchId);
             if (!match) return;
             
-            if (!confirm(`Are you sure you want to delete the fixture: ${match.team1} vs ${match.team2}?`)) {
+            if (!confirm(`Are you sure you want to delete this fixture?\n\n${match.team1} vs ${match.team2}\n${match.date} at ${match.time}\n\nThis cannot be undone.`)) {
                 return;
             }
             
@@ -4057,40 +4039,21 @@
             }
 
             const displayName = toTitleCase(users[username].nickname || username);
-            if (!confirm(`Are you sure you want to remove the password for ${displayName}? Their password will be cleared, and they will get an option to set a new password next time they log in.`)) {
+            if (!confirm(`Are you sure you want to remove the password for ${displayName}? Their password will be cleared.`)) {
                 return;
             }
 
-            // Remove existing password so next login can offer optional password setup
+            // Remove existing password
             users[username].passwordHash = null;
             delete users[username].password;
             await Storage.saveUser(username, users[username]);
             
-            alert(`Password removed for ${displayName}. They can choose to set a new password the next time they log in.`);
+            alert(`Password removed for ${displayName}.`);
             renderCompetitorManagement();
         }
 
-        // Variable to track which user is resetting their password
-        let passwordResetUsername = null;
         let profileInitialState = null;
         let profileHasInteracted = false;
-
-        // Show password reset modal
-        function showPasswordResetModal(username) {
-            passwordResetUsername = username;
-            document.getElementById('passwordResetModal').classList.remove('hidden');
-            document.getElementById('newPasswordReset').value = '';
-            document.getElementById('confirmPasswordReset').value = '';
-            document.getElementById('newPasswordReset').focus();
-        }
-
-        // Cancel password reset
-        function cancelPasswordReset() {
-            passwordResetUsername = null;
-            document.getElementById('passwordResetModal').classList.add('hidden');
-            document.getElementById('newPasswordReset').value = '';
-            document.getElementById('confirmPasswordReset').value = '';
-        }
 
         function normalizeTeamSelection(teams) {
             return [...(teams || [])].sort((a, b) => a.localeCompare(b));
@@ -4130,63 +4093,6 @@
         function markProfileInteraction() {
             profileHasInteracted = true;
             updateProfileSaveReminder();
-        }
-
-        // Handle enter key on password reset form
-        function handlePasswordResetKeyPress(event) {
-            if (event.key === 'Enter') {
-                submitPasswordReset();
-            }
-        }
-
-        // Submit new password
-        async function submitPasswordReset() {
-            const resetUsername = passwordResetUsername;
-            const appIsVisible = !document.getElementById('appView').classList.contains('hidden');
-            const alreadyLoggedInAsUser = currentUsername === resetUsername && appIsVisible;
-            const newPassword = document.getElementById('newPasswordReset').value;
-            const confirmPassword = document.getElementById('confirmPasswordReset').value;
-
-            if (!newPassword || !confirmPassword) {
-                alert('Please enter and confirm your new password.');
-                return;
-            }
-
-            if (newPassword !== confirmPassword) {
-                alert('Passwords do not match. Please try again.');
-                return;
-            }
-
-            if (newPassword.length < 4) {
-                alert('Password must be at least 4 characters long.');
-                return;
-            }
-
-            // Hash the new password
-            const passwordHash = await hashPassword(newPassword);
-
-            // Update the user's password hash
-            users[resetUsername].passwordHash = passwordHash;
-            delete users[resetUsername].password; // Remove any legacy plain text password
-            await Storage.saveUser(resetUsername, users[resetUsername]);
-
-            // Close modal
-            document.getElementById('passwordResetModal').classList.add('hidden');
-            passwordResetUsername = null;
-
-            if (alreadyLoggedInAsUser) {
-                alert('Password set successfully.');
-                return;
-            }
-
-            // If triggered during login flow, continue login
-            showLoginFeedback('Password updated successfully. Welcome back, ' + toTitleCase(users[resetUsername].nickname) + '.', 'success');
-            currentUsername = resetUsername;
-            setCookie('rugbyPredictorUser', currentUsername);
-
-            setTimeout(() => {
-                showApp();
-            }, 800);
         }
 
         // Profile functions
@@ -4475,13 +4381,6 @@
             setCookie('rugbyPredictorUser', username);
             setTimeout(() => {
                 showApp();
-                if (!hasPassword) {
-                    setTimeout(() => {
-                        if (confirm('This account currently has no password. Would you like to set one now?')) {
-                            showPasswordResetModal(username);
-                        }
-                    }, 100);
-                }
             }, 800);
         }
 
@@ -4630,6 +4529,18 @@
 
             // Initialize round selector dropdown
             initRoundSelector();
+
+            // Always land on Match Summary after login.
+            document.getElementById('predictionsTab').classList.add('hidden');
+            document.getElementById('summaryTab').classList.remove('hidden');
+            document.getElementById('competitorsTab').classList.add('hidden');
+            document.getElementById('resultsTab').classList.add('hidden');
+            document.getElementById('recoveryTab').classList.add('hidden');
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            const summaryTabBtn = Array.from(document.querySelectorAll('.tab')).find(
+                tab => tab.textContent.trim() === 'Match Summary'
+            );
+            if (summaryTabBtn) summaryTabBtn.classList.add('active');
 
             renderMatches(); // Render the prediction inputs first
             loadPredictions(); // Then populate with saved predictions
