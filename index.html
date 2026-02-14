@@ -5471,7 +5471,8 @@
             initTouchTooltips();
         }
 
-        function exportToPDF() {
+        function exportToPDF(options = {}) {
+            const { openInBrowser = false } = options;
             const allMatches = matches;
 
             const sortedUsers = Object.keys(users)
@@ -5537,45 +5538,98 @@
                 estimatedTotalTries = Math.round((totalActualTries / completedTriesMatches) * totalMatchCount);
             }
 
-            // --- Build header row ---
-            const headerRow = [
+            // --- Build header rows (fixture header spans Home/Away score columns) ---
+            const teamAbbr = {
+                England: 'ENG',
+                France: 'FRA',
+                Ireland: 'IRE',
+                Italy: 'ITA',
+                Scotland: 'SCO',
+                Wales: 'WAL'
+            };
+
+            const headerRowTop = [
                 { content: '#', styles: { halign: 'center' } },
                 { content: 'Name', styles: { halign: 'left' } },
                 { content: 'Score', styles: { halign: 'center' } },
                 ...allMatches.map(m => ({
-                    content: m.team1 + ' vs ' + m.team2 + '\n' + m.date + ' ' + m.time,
+                    content: m.date + '\n' + m.time,
+                    colSpan: 2,
                     styles: {
                         halign: 'center',
+                        overflow: 'visible',
+                        fontSize: 5.5,
                         fillColor: m.round % 2 === 0 ? [255, 255, 255] : [242, 242, 242]
                     }
                 })),
                 { content: 'Predicted\nTries', styles: { halign: 'center' } }
             ];
 
-            // --- Build actual results row ---
-            const actualRow = [
+            const headerRowBottom = [
+                { content: '', styles: { halign: 'center' } },
+                { content: '', styles: { halign: 'left' } },
+                { content: '', styles: { halign: 'center' } },
+                ...allMatches.flatMap(m => ([
+                    { content: teamAbbr[m.team1] || m.team1, styles: { halign: 'center', fontSize: 5.2 } },
+                    { content: teamAbbr[m.team2] || m.team2, styles: { halign: 'center', fontSize: 5.2 } }
+                ])),
+                { content: '', styles: { halign: 'center' } }
+            ];
+
+            // --- Build actual results rows ---
+            const actualScoresRow = [
                 { content: '', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold' } },
-                { content: 'Actual Result', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', halign: 'left' } },
+                { content: 'Actual Scores', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', halign: 'left' } },
                 { content: '', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold' } },
                 ...allMatches.map(m => {
                     const hasResult = m.actualScore1 !== null && m.actualScore2 !== null;
-                    const hasTries = m.actualTries1 !== null && m.actualTries2 !== null;
+                    const home = hasResult ? String(m.actualScore1) : '';
+                    const away = hasResult ? String(m.actualScore2) : '';
+                    let homeColor = hexToRgb(C.gray);
+                    let awayColor = hexToRgb(C.gray);
                     if (hasResult) {
-                        let txt = m.actualScore1 + ' - ' + m.actualScore2;
-                        if (hasTries) txt += '  (' + (m.actualTries1 + m.actualTries2) + ' tries)';
-                        return { content: txt, styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', fontSize: 8 } };
+                        if (m.actualScore1 > m.actualScore2) {
+                            homeColor = hexToRgb(C.winFg);
+                            awayColor = hexToRgb(C.loseFg);
+                        } else if (m.actualScore1 < m.actualScore2) {
+                            homeColor = hexToRgb(C.loseFg);
+                            awayColor = hexToRgb(C.winFg);
+                        } else {
+                            homeColor = hexToRgb(C.drawFg);
+                            awayColor = hexToRgb(C.drawFg);
+                        }
                     }
-                    return { content: 'TBD', styles: { textColor: hexToRgb(C.gray), fontStyle: 'bold' } };
-                }),
-                { content: completedTriesMatches > 0 ? totalActualTries + ' (' + estimatedTotalTries + ')' : '', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', fontSize: 7 } }
+                    return [
+                        { content: home, styles: { textColor: homeColor, fontStyle: 'bold', fontSize: 6, halign: 'center' } },
+                        { content: away, styles: { textColor: awayColor, fontStyle: 'bold', fontSize: 6, halign: 'center' } }
+                    ];
+                }).flat(),
+                { content: '', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', fontSize: 6.5 } }
             ];
 
-            // --- Maps for cells that need multi-color rendering ---
-            const pendingScoreCells = {};
-            const completedScoreCells = {};
+            const actualTriesRow = [
+                { content: '', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold' } },
+                { content: 'Actual Tries', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', halign: 'left' } },
+                { content: '', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold' } },
+                ...allMatches.map(m => {
+                    const homeTries = m.actualTries1 !== null ? String(m.actualTries1) : '';
+                    const awayTries = m.actualTries2 !== null ? String(m.actualTries2) : '';
+                    return [
+                        {
+                            content: homeTries,
+                            styles: { textColor: m.actualTries1 !== null ? hexToRgb(C.black) : hexToRgb(C.gray), fontStyle: 'bold', fontSize: 6, halign: 'center' }
+                        },
+                        {
+                            content: awayTries,
+                            styles: { textColor: m.actualTries2 !== null ? hexToRgb(C.black) : hexToRgb(C.gray), fontStyle: 'bold', fontSize: 6, halign: 'center' }
+                        }
+                    ];
+                }).flat(),
+                { content: completedTriesMatches > 0 ? totalActualTries + ' (' + estimatedTotalTries + ')' : '', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', fontSize: 6.5 } }
+            ];
 
-            // --- Build data rows ---
-            const dataRows = sortedUsers.map((user, index) => {
+            // --- Build data rows (scores row + merged points row per user) ---
+            const dataRows = sortedUsers.flatMap((user, index) => {
                 let rank = index + 1;
                 if (index > 0 && sortedUsers[index - 1].totalPoints === user.totalPoints) {
                     for (let i = index - 1; i >= 0; i--) {
@@ -5583,124 +5637,133 @@
                     }
                 }
 
-                const row = [
+                const scoreRow = [
                     { content: String(rank), styles: { fontStyle: 'bold', halign: 'center' } },
                     { content: user.nickname, styles: { fontStyle: 'bold', halign: 'left' } },
                     { content: String(user.totalPoints), styles: { fontStyle: 'bold', textColor: hexToRgb(C.pointsFg), fontSize: 9 } },
+                ];
+
+                const pointsRow = [
+                    { content: '', styles: { textColor: hexToRgb(C.gray) } },
+                    { content: '', styles: { textColor: hexToRgb(C.gray) } },
+                    { content: '', styles: { textColor: hexToRgb(C.gray) } },
                 ];
 
                 allMatches.forEach(match => {
                     const pred = users[user.username].predictions[match.id];
                     const hasResult = match.actualScore1 !== null && match.actualScore2 !== null;
                     const isJoker = users[user.username].jokerMatchId === match.id;
+                    const pts = getMatchPoints(user.username, match);
 
                     if (!pred) {
-                        row.push({ content: '\u2014', styles: { textColor: hexToRgb(C.gray) } });
+                        scoreRow.push({ content: '\u2014', styles: { textColor: hexToRgb(C.gray), fontSize: 6 } });
+                        scoreRow.push({ content: '\u2014', styles: { textColor: hexToRgb(C.gray), fontSize: 6 } });
+                        pointsRow.push({ content: '\u2014', colSpan: 2, styles: { textColor: hexToRgb(C.gray), fontSize: 5.5, halign: 'center' } });
                         return;
                     }
 
-                    const pts = getMatchPoints(user.username, match);
-                    const predLabel = pred.team1 + ' - ' + pred.team2;
-                    const jokerTag = isJoker ? '  [J]' : '';
-
-                    if (!hasResult) {
-                        // Pending match — scores colored individually via didDrawCell
-                        const colIdx = row.length;
-                        const bodyRowIdx = index + 1; // +1 because actual results row is body row 0
-                        pendingScoreCells[bodyRowIdx + '-' + colIdx] = { team1: pred.team1, team2: pred.team2, joker: isJoker };
-                        row.push({
-                            content: predLabel + jokerTag,
-                            styles: { textColor: [255, 255, 255], fontStyle: isJoker ? 'bold' : 'normal' }
-                        });
+                    let homeColor = hexToRgb(C.black);
+                    let awayColor = hexToRgb(C.black);
+                    if (pred.team1 > pred.team2) {
+                        homeColor = hexToRgb(C.winFg);
+                        awayColor = hexToRgb(C.loseFg);
+                    } else if (pred.team1 < pred.team2) {
+                        homeColor = hexToRgb(C.loseFg);
+                        awayColor = hexToRgb(C.winFg);
                     } else {
-                        // Completed match — scores colored individually via didDrawCell
-                        const isExact = pred.team1 === match.actualScore1 && pred.team2 === match.actualScore2;
-                        let fillColor = null;
-                        if (isExact) fillColor = hexToRgb(C.exactBg);
-
-                        const colIdx = row.length;
-                        const bodyRowIdx = index + 1;
-                        completedScoreCells[bodyRowIdx + '-' + colIdx] = {
-                            team1: pred.team1, team2: pred.team2, pts: pts, joker: isJoker
-                        };
-
-                        const cellStyles = { textColor: [255, 255, 255], fontStyle: isJoker ? 'bold' : 'normal' };
-                        if (fillColor) cellStyles.fillColor = fillColor;
-
-                        row.push({
-                            content: predLabel + jokerTag + '\n' + pts + ' pts',
-                            styles: cellStyles
-                        });
+                        homeColor = hexToRgb(C.drawFg);
+                        awayColor = hexToRgb(C.drawFg);
                     }
+
+                    const homeStyles = { textColor: homeColor, fontSize: 6.5, fontStyle: isJoker ? 'bold' : 'normal' };
+                    const awayStyles = { textColor: awayColor, fontSize: 6.5, fontStyle: isJoker ? 'bold' : 'normal' };
+
+                    if (hasResult && pred.team1 === match.actualScore1 && pred.team2 === match.actualScore2) {
+                        homeStyles.fillColor = hexToRgb(C.exactBg);
+                        awayStyles.fillColor = hexToRgb(C.exactBg);
+                    }
+
+                    scoreRow.push({ content: String(pred.team1) + (isJoker ? '*' : ''), styles: homeStyles });
+                    scoreRow.push({ content: String(pred.team2) + (isJoker ? '*' : ''), styles: awayStyles });
+
+                    const ptsText = pts === null ? '' : `${pts} pts`;
+                    const ptsColor = pts === null
+                        ? hexToRgb(C.gray)
+                        : pts === 0
+                            ? [184, 92, 0] // dark orange
+                            : hexToRgb('#1F5FBF'); // blue
+                    pointsRow.push({
+                        content: ptsText,
+                        colSpan: 2,
+                        styles: {
+                            textColor: ptsColor,
+                            fontSize: 5.5,
+                            halign: 'center',
+                            fontStyle: pts !== null && pts > 3 ? 'bold' : 'normal'
+                        }
+                    });
                 });
 
                 // Predicted Tries
                 const userTries = users[user.username].totalTries;
-                row.push({
+                scoreRow.push({
                     content: userTries != null ? String(userTries) : '\u2014',
                     styles: { textColor: hexToRgb(C.black) }
                 });
+                pointsRow.push({
+                    content: '',
+                    styles: { textColor: hexToRgb(C.gray) }
+                });
 
-                return row;
+                return [scoreRow, pointsRow];
             });
 
             // --- Render table ---
             const pageWidth = doc.internal.pageSize.getWidth();
             const marginLR = 6;
             const tableWidth = pageWidth - marginLR * 2;
-            const fixedWidth = 8 + 28 + 13 + 16; // rank + name + score + tries
-            const matchColWidth = Math.max(14, (tableWidth - fixedWidth) / allMatches.length);
-            const lastMatchCol = 3 + allMatches.length;
+            const scoreColumnCount = allMatches.length * 2;
+            const fixedWidth = 7 + 24 + 11 + 12; // rank + name + score + tries
+            const matchColWidth = Math.max(6.4, (tableWidth - fixedWidth) / scoreColumnCount);
+            const triesColIndex = 3 + scoreColumnCount;
             const colStyles = {
-                0: { cellWidth: 8 },
-                1: { cellWidth: 28 },
-                2: { cellWidth: 13 },
+                0: { cellWidth: 7 },
+                1: { cellWidth: 24 },
+                2: { cellWidth: 11 },
             };
-            for (let i = 3; i < lastMatchCol; i++) {
+            for (let i = 3; i < triesColIndex; i++) {
                 colStyles[i] = { cellWidth: matchColWidth };
             }
-            colStyles[lastMatchCol] = { cellWidth: 16 };
+            colStyles[triesColIndex] = { cellWidth: 12 };
 
             doc.autoTable({
-                head: [headerRow],
-                body: [actualRow, ...dataRows],
+                head: [headerRowTop, headerRowBottom],
+                body: [actualScoresRow, actualTriesRow, ...dataRows],
                 startY: 28,
                 theme: 'grid',
                 tableWidth: tableWidth,
                 styles: {
-                    fontSize: 8,
-                    cellPadding: 1.5,
+                    fontSize: 6.5,
+                    cellPadding: 0.8,
                     lineColor: hexToRgb(C.border),
                     lineWidth: 0.2,
                     halign: 'center',
                     valign: 'middle',
-                    overflow: 'linebreak',
+                    overflow: 'visible',
                     font: 'helvetica',
                 },
                 headStyles: {
                     fillColor: hexToRgb(C.white),
                     textColor: hexToRgb(C.black),
                     fontStyle: 'bold',
-                    fontSize: 7,
+                    fontSize: 5.5,
+                    cellPadding: 0.6,
                     halign: 'center',
                     lineColor: hexToRgb(C.border),
                     lineWidth: 0.3,
                 },
                 columnStyles: colStyles,
                 didParseCell: function(data) {
-                    if (data.section === 'body') {
-                        const key = data.row.index + '-' + data.column.index;
-                        // Score/points cells are custom-painted in didDrawCell.
-                        // Clear default text to prevent duplicate white text artifacts.
-                        if (pendingScoreCells[key] || completedScoreCells[key]) {
-                            data.cell.text = [];
-                        }
-                        // Completed score cells render two lines (score + points), so reserve height.
-                        if (completedScoreCells[key]) {
-                            data.cell.styles.minCellHeight = 12;
-                        }
-                    }
-
                     // Subtle striping for user rows (skip the "Actual Result" row at index 0).
                     // Keep any explicit per-cell fill (e.g. exact-score highlight) untouched.
                     if (data.section === 'body' && data.row.index > 0) {
@@ -5714,8 +5777,26 @@
                     if (data.column.index === 2) {
                         data.cell.styles.lineWidth = { bottom: 0.2, top: 0.2, left: 0.2, right: 0.5 };
                     }
-                    // Thicker bottom border on actual results row (first body row)
-                    if (data.section === 'body' && data.row.index === 0) {
+                    // Thicker separators after each Away score column.
+                    if (data.column.index >= 3 && data.column.index < triesColIndex && ((data.column.index - 3) % 2 === 1)) {
+                        const lw = data.cell.styles.lineWidth;
+                        if (typeof lw === 'object') {
+                            lw.right = 0.5;
+                        } else {
+                            data.cell.styles.lineWidth = { bottom: 0.2, top: 0.2, left: 0.2, right: 0.5 };
+                        }
+                    }
+                    // Thicker separators before each Home score column.
+                    if (data.column.index >= 3 && data.column.index < triesColIndex && ((data.column.index - 3) % 2 === 0)) {
+                        const lw = data.cell.styles.lineWidth;
+                        if (typeof lw === 'object') {
+                            lw.left = 0.5;
+                        } else {
+                            data.cell.styles.lineWidth = { bottom: 0.2, top: 0.2, left: 0.5, right: 0.2 };
+                        }
+                    }
+                    // Thicker bottom border after the actual rows block.
+                    if (data.section === 'body' && data.row.index === 1) {
                         const lw = data.cell.styles.lineWidth;
                         if (typeof lw === 'object') {
                             lw.bottom = 0.5;
@@ -5724,98 +5805,17 @@
                         }
                     }
                 },
-                didDrawCell: function(data) {
-                    if (data.section !== 'body') return;
-                    const key = data.row.index + '-' + data.column.index;
-                    const pending = pendingScoreCells[key];
-                    const completed = completedScoreCells[key];
-                    if (!pending && !completed) return;
-
-                    const cell = data.cell;
-                    const fontSize = cell.styles.fontSize;
-                    const scoreData = pending || completed;
-
-                    // Determine colors for each score based on higher/lower
-                    let color1, color2;
-                    if (scoreData.team1 > scoreData.team2) {
-                        color1 = hexToRgb(C.winFg);
-                        color2 = hexToRgb(C.loseFg);
-                    } else if (scoreData.team1 < scoreData.team2) {
-                        color1 = hexToRgb(C.loseFg);
-                        color2 = hexToRgb(C.winFg);
-                    } else {
-                        color1 = hexToRgb(C.drawFg);
-                        color2 = hexToRgb(C.drawFg);
-                    }
-
-                    const score1 = String(scoreData.team1);
-                    const score2 = String(scoreData.team2);
-                    const sep = ' - ';
-                    const jokerTag = scoreData.joker ? '  [J]' : '';
-                    const scoreFontStyle = scoreData.joker ? 'bold' : 'normal';
-
-                    doc.setFontSize(fontSize);
-                    doc.setFont('helvetica', scoreFontStyle);
-
-                    const w1 = doc.getTextWidth(score1);
-                    const wSep = doc.getTextWidth(sep);
-                    const w2 = doc.getTextWidth(score2);
-                    const wJ = jokerTag ? doc.getTextWidth(jokerTag) : 0;
-                    const totalW = w1 + wSep + w2 + wJ;
-
-                    if (completed) {
-                        // Two-line cell: scores on top, points below
-                        const baselineGap = fontSize * 0.6;
-                        const topY = cell.y + (cell.height - baselineGap) / 2 + fontSize * 0.35;
-                        const bottomY = topY + baselineGap;
-                        const x = cell.x + (cell.width - totalW) / 2;
-
-                        doc.setTextColor(...color1);
-                        doc.text(score1, x, topY);
-
-                        doc.setTextColor(...hexToRgb(C.gray));
-                        doc.text(sep, x + w1, topY);
-
-                        doc.setTextColor(...color2);
-                        doc.text(score2, x + w1 + wSep, topY);
-
-                        if (jokerTag) {
-                            doc.setTextColor(...hexToRgb(C.gray));
-                            doc.text(jokerTag, x + w1 + wSep + w2, topY);
-                        }
-
-                        // Points line in black, bold if > 3
-                        const ptsText = scoreData.pts + ' pts';
-                        const ptsFontStyle = scoreData.pts > 3 ? 'bold' : 'normal';
-                        doc.setFont('helvetica', ptsFontStyle);
-                        doc.setTextColor(...hexToRgb(C.black));
-                        const wPts = doc.getTextWidth(ptsText);
-                        doc.text(ptsText, cell.x + (cell.width - wPts) / 2, bottomY);
-                    } else {
-                        // Single-line cell (pending)
-                        const x = cell.x + (cell.width - totalW) / 2;
-                        const y = cell.y + cell.height / 2 + fontSize * 0.3;
-
-                        doc.setTextColor(...color1);
-                        doc.text(score1, x, y);
-
-                        doc.setTextColor(...hexToRgb(C.gray));
-                        doc.text(sep, x + w1, y);
-
-                        doc.setTextColor(...color2);
-                        doc.text(score2, x + w1 + wSep, y);
-
-                        if (jokerTag) {
-                            doc.setTextColor(...hexToRgb(C.gray));
-                            doc.text(jokerTag, x + w1 + wSep + w2, y);
-                        }
-                    }
-                },
                 margin: { top: 10, left: marginLR, right: marginLR },
             });
 
             // --- Download ---
-            doc.save('SixNations_Summary_' + now.toISOString().slice(0, 10) + '.pdf');
+            const filename = 'SixNations_Summary_' + now.toISOString().slice(0, 10) + '.pdf';
+            if (openInBrowser) {
+                const blobUrl = doc.output('bloburl');
+                window.location.href = blobUrl;
+                return;
+            }
+            doc.save(filename);
         }
 
         function initTouchTooltips() {
@@ -6119,6 +6119,13 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
         // Initialize on load - load data from Supabase first
         initializeData().then(() => {
             init();
+
+            // Direct PDF URL support: index.html?export=pdf
+            const params = new URLSearchParams(window.location.search);
+            if ((params.get('export') || '').toLowerCase() === 'pdf') {
+                exportToPDF({ openInBrowser: true });
+                return;
+            }
 
             // Check for saved user cookie and auto-login
             const savedUsername = (getCookie('rugbyPredictorUser') || '').trim().toLowerCase();
