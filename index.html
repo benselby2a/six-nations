@@ -1675,6 +1675,18 @@
             font-style: italic;
         }
 
+        .profile-save-reminder {
+            background: rgba(192, 57, 43, 0.2);
+            border: 1px solid rgba(231, 76, 60, 0.65);
+            color: #ffd7d3;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
         .logout-btn {
             width: auto;
             padding: 0.4rem 1rem;
@@ -2675,8 +2687,8 @@
         <!-- Password Reset Modal -->
         <div id="passwordResetModal" class="modal hidden">
             <div class="modal-content">
-                <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1.5rem; letter-spacing: 0.1em;">Password Reset Required</h2>
-                <p style="margin-bottom: 1.5rem;">Your password has been reset by an administrator. Please enter a new password to continue.</p>
+                <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1.5rem; letter-spacing: 0.1em;">Set Password</h2>
+                <p style="margin-bottom: 1.5rem;">Your password was removed by an administrator. You can set a new password now, or cancel and continue without one.</p>
                 <div class="input-group">
                     <label for="newPasswordReset">New Password</label>
                     <input type="password" id="newPasswordReset" placeholder="Enter new password" onkeypress="handlePasswordResetKeyPress(event)">
@@ -2694,47 +2706,46 @@
         <div id="profileModal" class="modal hidden">
             <div class="modal-content">
                 <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1.5rem; letter-spacing: 0.1em;">Profile Settings</h2>
+                <div class="profile-save-reminder hidden" id="profileSaveReminder" style="display: none;">Remember to click Save Changes to apply any updates.</div>
 
                 <div class="input-group">
                     <label for="profileUsername">Username</label>
                     <input type="text" id="profileUsername" readonly style="opacity: 0.6; cursor: default;">
-                    <span class="profile-hint">This is what you use to log in</span>
+                    <span class="profile-hint">This is what you use to log in.</span>
                 </div>
 
                 <div class="input-group">
                     <label for="profileDisplayName">Display Name</label>
                     <input type="text" id="profileDisplayName" placeholder="Your display name">
-                    <span class="profile-hint">How your name appears on the leaderboard</span>
+                    <span class="profile-hint">How your name appears on the leaderboard.</span>
                 </div>
 
                 <div class="input-group">
                     <label>Supported Teams (up to 2)</label>
                     <div class="team-flags-picker" id="profileTeamsPicker"></div>
-                    <span class="profile-hint">Optionally show which team(s) you're supporting in the competition</span>
+                    <span class="profile-hint">Optionally show which team(s) you're supporting in the competition.</span>
                 </div>
 
                 <div class="profile-divider"></div>
 
                 <div class="input-group">
                     <label>Change Password</label>
-                    <span class="profile-hint" style="margin-bottom: 0.5rem;">Leave blank to keep your current password</span>
+                    <span class="profile-hint" id="profilePasswordHint" style="margin-bottom: 0.5rem;">Leave blank to keep your current password.</span>
                 </div>
                 <div class="input-group">
                     <label for="profileCurrentPassword">Current Password</label>
-                    <input type="password" id="profileCurrentPassword" placeholder="Enter current password">
+                    <input type="password" id="profileCurrentPassword" placeholder="Enter current password" autocomplete="off">
                 </div>
                 <div class="input-group">
                     <label for="profileNewPassword">New Password</label>
-                    <input type="password" id="profileNewPassword" placeholder="Enter new password">
+                    <input type="password" id="profileNewPassword" placeholder="Enter new password" autocomplete="new-password">
                 </div>
                 <div class="input-group">
                     <label for="profileConfirmPassword">Confirm New Password</label>
-                    <input type="password" id="profileConfirmPassword" placeholder="Confirm new password">
+                    <input type="password" id="profileConfirmPassword" placeholder="Confirm new password" autocomplete="new-password">
                 </div>
 
                 <div id="profileFeedback" class="login-feedback hidden"></div>
-
-                <span class="profile-hint hidden" id="profileSaveReminder" style="text-align: center; margin-bottom: 0.5rem;">Remember to click Save Changes to apply any updates</span>
                 <button onclick="saveProfile()">Save Changes</button>
                 <button class="btn-cancel" onclick="closeProfile()">Cancel</button>
             </div>
@@ -2777,7 +2788,7 @@
 
                 <div class="tries-section" id="triesSection">
                     <h3>Total Tournament Tries</h3>
-                    <p style="margin-bottom: 0.75rem; font-size: 0.95rem; opacity: 0.8;">Predict the total tries scored across all matches</p>
+                    <p style="margin-bottom: 0.75rem; font-size: 0.95rem; opacity: 0.8;">Predict the total tries scored across all matches.</p>
                     <input type="number" class="tries-input" id="totalTries" min="0" placeholder="000">
                 </div>
             </div>
@@ -2825,7 +2836,7 @@
             <div id="competitorsTab" class="prediction-section hidden" style="margin-top: 2rem;">
                 <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Competitor Management</h2>
-                    <p style="margin-bottom: 1rem;">Manage competitor accounts - edit details or remove users</p>
+                    <p style="margin-bottom: 1rem;">Manage competitor accounts - edit details or remove users.</p>
                 </div>
 
                 <div id="competitorManagementContainer"></div>
@@ -2842,7 +2853,7 @@
                 <div class="lock-toggle">
                     <label>
                         <strong style="color: var(--gold);">LOCK PREDICTIONS</strong>
-                        <p style="font-size: 0.9rem; opacity: 0.8; margin-top: 0.3rem;">When enabled, competitors cannot change their predictions</p>
+                        <p style="font-size: 0.9rem; opacity: 0.8; margin-top: 0.3rem;">When enabled, competitors cannot change their predictions.</p>
                     </label>
                     <div id="lockToggle" class="toggle-switch" onclick="togglePredictionsLock()"></div>
                 </div>
@@ -2994,8 +3005,7 @@
                 el.classList.add('selected');
             }
             if (containerId === 'profileTeamsPicker') {
-                const reminder = document.getElementById('profileSaveReminder');
-                if (reminder) reminder.classList.remove('hidden');
+                markProfileInteraction();
             }
         }
 
@@ -3072,7 +3082,10 @@
                 // Convert array to object keyed by username
                 const usersObj = {};
                 data.forEach(user => {
-                    usersObj[user.username] = {
+                    const normalizedUsername = (user.username || '').trim().toLowerCase();
+                    if (!normalizedUsername) return;
+
+                    usersObj[normalizedUsername] = {
                         nickname: user.nickname,
                         passwordHash: user.password_hash,
                         totalTries: user.total_tries,
@@ -3091,7 +3104,7 @@
                     // Map user_id to username
                     const userIdToUsername = {};
                     data.forEach(user => {
-                        userIdToUsername[user.id] = user.username;
+                        userIdToUsername[user.id] = (user.username || '').trim().toLowerCase();
                     });
                     
                     predictions.forEach(pred => {
@@ -3110,6 +3123,9 @@
             
             // Save a single user (for registration/updates)
             saveUser: async (username, userData) => {
+                username = (username || '').trim().toLowerCase();
+                if (!username) return;
+
                 // Check if user exists
                 const { data: existing } = await supabaseClient
                     .from('users')
@@ -3150,6 +3166,10 @@
 
             // Rename a user (update username in DB)
             renameUser: async (oldUsername, newUsername) => {
+                oldUsername = (oldUsername || '').trim().toLowerCase();
+                newUsername = (newUsername || '').trim().toLowerCase();
+                if (!oldUsername || !newUsername) return;
+
                 const { error } = await supabaseClient
                     .from('users')
                     .update({ username: newUsername })
@@ -3160,6 +3180,9 @@
 
             // Save predictions for a user
             savePredictions: async (username, predictions, totalTries) => {
+                username = (username || '').trim().toLowerCase();
+                if (!username) return;
+
                 // Get user ID
                 const { data: user } = await supabaseClient
                     .from('users')
@@ -3198,6 +3221,9 @@
             
             // Delete a user
             deleteUser: async (username) => {
+                username = (username || '').trim().toLowerCase();
+                if (!username) return;
+
                 const { error } = await supabaseClient
                     .from('users')
                     .delete()
@@ -3269,7 +3295,9 @@
                     return [];
                 }
 
-                return data.map(row => row.username);
+                return data
+                    .map(row => (row.username || '').trim().toLowerCase())
+                    .filter(Boolean);
             },
 
             saveAdminUsernames: async (usernames) => {
@@ -3277,7 +3305,12 @@
                 await supabaseClient.from('admin_usernames').delete().neq('username', '');
 
                 if (usernames.length > 0) {
-                    const rows = usernames.map(username => ({ username }));
+                    const normalized = [...new Set(
+                        usernames
+                            .map(username => (username || '').trim().toLowerCase())
+                            .filter(Boolean)
+                    )];
+                    const rows = normalized.map(username => ({ username }));
                     const { error } = await supabaseClient.from('admin_usernames').insert(rows);
                     if (error) console.error('Error saving admin usernames:', error);
                 }
@@ -3735,7 +3768,7 @@
             renderMatches();
             showSummary();
             
-            alert(`Successfully imported ${newFixtures.length} fixtures!`);
+            alert(`Successfully imported ${newFixtures.length} fixtures.`);
         }
 
         // Helper to normalize team names from various formats
@@ -3842,7 +3875,7 @@
         // Render competitor management table
         function renderCompetitorManagement() {
             const container = document.getElementById('competitorManagementContainer');
-            const allUsers = Object.keys(users);
+            const allUsers = Object.keys(users).sort((a, b) => a.localeCompare(b));
             
             if (allUsers.length === 0) {
                 container.innerHTML = '<p style="text-align: center; font-size: 1.2rem; opacity: 0.7;">No competitors registered yet.</p>';
@@ -3870,11 +3903,10 @@
                 const user = users[username];
                 const isAdmin = adminUsernames.includes(username);
                 const safeUsername = username.replace(/'/g, "\\'");
-                const needsReset = user.passwordResetRequired ? '<span style="color: #f39c12; font-size: 0.8rem;"> (Reset Required)</span>' : '';
                 const userTeams = user.supportedTeams || [];
                 html += `
                     <tr id="user-row-${username}">
-                        <td><input type="text" id="edit-username-${username}" value="${username}" style="max-width: 150px;">${needsReset}</td>
+                        <td><input type="text" id="edit-username-${username}" value="${username}" style="max-width: 150px;"></td>
                         <td><input type="text" id="edit-nickname-${username}" value="${user.nickname || ''}" style="max-width: 150px;"></td>
                         <td>
                             <select id="edit-team1-${username}" style="font-size: 0.85rem; margin-bottom: 0.25rem;">
@@ -3969,7 +4001,7 @@
             users[newUsername].supportedTeams = [team1, team2].filter(Boolean);
 
             await Storage.saveUser(newUsername, users[newUsername]);
-            alert('User updated successfully!');
+            alert('User updated successfully.');
 
             // Update current user display if editing self
             if (newUsername === currentUsername) {
@@ -4033,20 +4065,23 @@
             }
 
             const displayName = toTitleCase(users[username].nickname || username);
-            if (!confirm(`Are you sure you want to reset the password for ${displayName}? They will be prompted to create a new password on their next login.`)) {
+            if (!confirm(`Are you sure you want to remove the password for ${displayName}? Their password will be cleared, and they will get an option to set a new password next time they log in.`)) {
                 return;
             }
 
-            // Set flag to require password reset on next login
-            users[username].passwordResetRequired = true;
+            // Remove existing password so next login can offer optional password setup
+            users[username].passwordHash = null;
+            delete users[username].password;
             await Storage.saveUser(username, users[username]);
             
-            alert(`Password reset initiated for ${displayName}. They will be prompted to set a new password on their next login.`);
+            alert(`Password removed for ${displayName}. They can choose to set a new password the next time they log in.`);
             renderCompetitorManagement();
         }
 
         // Variable to track which user is resetting their password
         let passwordResetUsername = null;
+        let profileInitialState = null;
+        let profileHasInteracted = false;
 
         // Show password reset modal
         function showPasswordResetModal(username) {
@@ -4065,6 +4100,46 @@
             document.getElementById('confirmPasswordReset').value = '';
         }
 
+        function normalizeTeamSelection(teams) {
+            return [...(teams || [])].sort((a, b) => a.localeCompare(b));
+        }
+
+        function getProfileFormState() {
+            return {
+                nickname: document.getElementById('profileDisplayName').value.trim(),
+                currentPassword: document.getElementById('profileCurrentPassword').value,
+                newPassword: document.getElementById('profileNewPassword').value,
+                confirmPassword: document.getElementById('profileConfirmPassword').value,
+                supportedTeams: normalizeTeamSelection(getSelectedTeams('profileTeamsPicker'))
+            };
+        }
+
+        function updateProfileSaveReminder() {
+            const reminder = document.getElementById('profileSaveReminder');
+            if (!reminder) return;
+            if (!profileInitialState || !profileHasInteracted) {
+                reminder.classList.add('hidden');
+                reminder.style.display = 'none';
+                return;
+            }
+
+            const currentState = getProfileFormState();
+            const hasChanges =
+                currentState.nickname !== profileInitialState.nickname ||
+                currentState.currentPassword !== profileInitialState.currentPassword ||
+                currentState.newPassword !== profileInitialState.newPassword ||
+                currentState.confirmPassword !== profileInitialState.confirmPassword ||
+                currentState.supportedTeams.join('|') !== profileInitialState.supportedTeams.join('|');
+
+            reminder.classList.toggle('hidden', !hasChanges);
+            reminder.style.display = hasChanges ? 'block' : 'none';
+        }
+
+        function markProfileInteraction() {
+            profileHasInteracted = true;
+            updateProfileSaveReminder();
+        }
+
         // Handle enter key on password reset form
         function handlePasswordResetKeyPress(event) {
             if (event.key === 'Enter') {
@@ -4074,6 +4149,9 @@
 
         // Submit new password
         async function submitPasswordReset() {
+            const resetUsername = passwordResetUsername;
+            const appIsVisible = !document.getElementById('appView').classList.contains('hidden');
+            const alreadyLoggedInAsUser = currentUsername === resetUsername && appIsVisible;
             const newPassword = document.getElementById('newPasswordReset').value;
             const confirmPassword = document.getElementById('confirmPasswordReset').value;
 
@@ -4095,19 +4173,24 @@
             // Hash the new password
             const passwordHash = await hashPassword(newPassword);
 
-            // Update the user's password hash and clear the reset flag
-            users[passwordResetUsername].passwordHash = passwordHash;
-            delete users[passwordResetUsername].password; // Remove any legacy plain text password
-            users[passwordResetUsername].passwordResetRequired = false;
-            await Storage.saveUser(passwordResetUsername, users[passwordResetUsername]);
+            // Update the user's password hash
+            users[resetUsername].passwordHash = passwordHash;
+            delete users[resetUsername].password; // Remove any legacy plain text password
+            await Storage.saveUser(resetUsername, users[resetUsername]);
 
-            // Close modal and log in
+            // Close modal
             document.getElementById('passwordResetModal').classList.add('hidden');
-            
-            showLoginFeedback('Password updated successfully! Welcome back, ' + toTitleCase(users[passwordResetUsername].nickname), 'success');
-            currentUsername = passwordResetUsername;
-            setCookie('rugbyPredictorUser', currentUsername);
             passwordResetUsername = null;
+
+            if (alreadyLoggedInAsUser) {
+                alert('Password set successfully.');
+                return;
+            }
+
+            // If triggered during login flow, continue login
+            showLoginFeedback('Password updated successfully. Welcome back, ' + toTitleCase(users[resetUsername].nickname) + '.', 'success');
+            currentUsername = resetUsername;
+            setCookie('rugbyPredictorUser', currentUsername);
 
             setTimeout(() => {
                 showApp();
@@ -4118,42 +4201,64 @@
         function openProfile() {
             if (!currentUsername || !users[currentUsername]) return;
             const user = users[currentUsername];
+            const hasExistingPassword = !!(user.passwordHash || user.password);
+            const currentPasswordInput = document.getElementById('profileCurrentPassword');
+            const passwordHint = document.getElementById('profilePasswordHint');
 
             document.getElementById('profileUsername').value = currentUsername;
             document.getElementById('profileDisplayName').value = user.nickname || '';
-            document.getElementById('profileCurrentPassword').value = '';
+            currentPasswordInput.value = '';
             document.getElementById('profileNewPassword').value = '';
             document.getElementById('profileConfirmPassword').value = '';
+
+            if (hasExistingPassword) {
+                currentPasswordInput.disabled = false;
+                currentPasswordInput.placeholder = 'Enter current password';
+                currentPasswordInput.title = '';
+                passwordHint.textContent = 'Leave blank to keep your current password.';
+            } else {
+                currentPasswordInput.disabled = true;
+                currentPasswordInput.placeholder = 'No current password set';
+                currentPasswordInput.title = 'There is no current password set';
+                passwordHint.textContent = 'No current password is set. Enter a new password below to add one, or leave blank to keep no password.';
+            }
 
             const feedbackEl = document.getElementById('profileFeedback');
             feedbackEl.classList.add('hidden');
             feedbackEl.className = 'login-feedback hidden';
-
-            document.getElementById('profileSaveReminder').classList.add('hidden');
+            const profileReminder = document.getElementById('profileSaveReminder');
+            profileReminder.classList.add('hidden');
+            profileReminder.style.display = 'none';
+            profileHasInteracted = false;
 
             renderTeamFlagsPicker('profileTeamsPicker', user.supportedTeams || []);
             document.getElementById('profileModal').classList.remove('hidden');
 
-            // Show save reminder when any field changes
-            const showReminder = () => document.getElementById('profileSaveReminder').classList.remove('hidden');
-            document.getElementById('profileDisplayName').oninput = showReminder;
-            document.getElementById('profileCurrentPassword').oninput = showReminder;
-            document.getElementById('profileNewPassword').oninput = showReminder;
-            document.getElementById('profileConfirmPassword').oninput = showReminder;
+            profileInitialState = getProfileFormState();
+
+            document.getElementById('profileDisplayName').oninput = markProfileInteraction;
+            document.getElementById('profileCurrentPassword').oninput = markProfileInteraction;
+            document.getElementById('profileNewPassword').oninput = markProfileInteraction;
+            document.getElementById('profileConfirmPassword').oninput = markProfileInteraction;
         }
 
         function closeProfile() {
             document.getElementById('profileModal').classList.add('hidden');
+            const profileReminder = document.getElementById('profileSaveReminder');
+            profileReminder.classList.add('hidden');
+            profileReminder.style.display = 'none';
+            profileInitialState = null;
+            profileHasInteracted = false;
         }
 
         async function saveProfile() {
             const user = users[currentUsername];
+            const hasExistingPassword = !!(user.passwordHash || user.password);
             const nickname = document.getElementById('profileDisplayName').value.trim();
             const currentPassword = document.getElementById('profileCurrentPassword').value;
             const newPassword = document.getElementById('profileNewPassword').value;
             const confirmPassword = document.getElementById('profileConfirmPassword').value;
             const feedbackEl = document.getElementById('profileFeedback');
-            const hasExistingPassword = !!(user.passwordHash || user.password);
 
             feedbackEl.classList.add('hidden');
             feedbackEl.className = 'login-feedback hidden';
@@ -4176,18 +4281,21 @@
                 return;
             }
 
-            // Handle password change if any password fields are filled
-            if (currentPassword || newPassword || confirmPassword) {
-                if (hasExistingPassword && !currentPassword) {
-                    feedbackEl.textContent = 'Please enter your current password.';
-                    feedbackEl.classList.remove('hidden');
-                    feedbackEl.classList.add('error');
-                    return;
-                }
+            // Handle password change
+            const isChangingPassword = hasExistingPassword
+                ? !!(currentPassword || newPassword || confirmPassword)
+                : !!(newPassword || confirmPassword);
 
+            if (isChangingPassword) {
                 if (hasExistingPassword) {
-                    let isValid = false;
+                    if (!currentPassword) {
+                        feedbackEl.textContent = 'Please enter your current password.';
+                        feedbackEl.classList.remove('hidden');
+                        feedbackEl.classList.add('error');
+                        return;
+                    }
 
+                    let isValid = false;
                     if (user.passwordHash) {
                         isValid = await verifyPassword(currentPassword, user.passwordHash);
                     } else if (user.password) {
@@ -4330,7 +4438,7 @@
             feedbackEl.className = 'login-feedback hidden';
 
             if (!username) {
-                showLoginFeedback('Please enter your username', 'error');
+                showLoginFeedback('Please enter your username.', 'error');
                 return;
             }
 
@@ -4340,43 +4448,28 @@
                 return;
             }
 
-            const user = users[username];
-            const hasStoredPassword = !!(user.passwordHash || user.password);
-            const hasNoPasswordSet = !hasStoredPassword;
-
-            if (hasStoredPassword && !password) {
-                showLoginFeedback('Please enter both username and password', 'error');
-                return;
-            }
-
-            if (hasNoPasswordSet && password) {
-                showLoginFeedback('No password is set for this account yet. Leave password blank to log in.', 'info');
-                return;
-            }
-
-            // Check if password reset is required
-            if (user.passwordResetRequired) {
-                showPasswordResetModal(username);
+            const hasPassword = !!(users[username].passwordHash || users[username].password);
+            if (hasPassword && !password) {
+                showLoginFeedback('Please enter both username and password.', 'error');
                 return;
             }
 
             // Check password - support both hashed and legacy plain text passwords
             let passwordValid = false;
-            if (user.passwordHash) {
+            if (!hasPassword) {
+                passwordValid = true;
+            } else if (users[username].passwordHash) {
                 // New hashed password
-                passwordValid = await verifyPassword(password, user.passwordHash);
-            } else if (user.password) {
+                passwordValid = await verifyPassword(password, users[username].passwordHash);
+            } else if (users[username].password) {
                 // Legacy plain text password - migrate to hash on successful login
-                if (user.password === password) {
+                if (users[username].password === password) {
                     passwordValid = true;
                     // Migrate to hashed password
-                    user.passwordHash = await hashPassword(password);
-                    delete user.password;
-                    await Storage.saveUser(username, user);
+                    users[username].passwordHash = await hashPassword(password);
+                    delete users[username].password;
+                    await Storage.saveUser(username, users[username]);
                 }
-            } else {
-                // Users with no password hash can log in by leaving password blank
-                passwordValid = password === '';
             }
 
             if (!passwordValid) {
@@ -4385,17 +4478,17 @@
             }
 
             // Successful login
-            showLoginFeedback('Login successful! Welcome back, ' + toTitleCase(user.nickname), 'success');
+            showLoginFeedback('Login successful. Welcome back, ' + toTitleCase(users[username].nickname) + '.', 'success');
             currentUsername = username;
             setCookie('rugbyPredictorUser', username);
             setTimeout(() => {
                 showApp();
-
-                if (hasNoPasswordSet) {
-                    const shouldSetPassword = confirm('You do not have a password set yet. Would you like to set one now?');
-                    if (shouldSetPassword) {
-                        openProfile();
-                    }
+                if (!hasPassword) {
+                    setTimeout(() => {
+                        if (confirm('This account currently has no password. Would you like to set one now?')) {
+                            showPasswordResetModal(username);
+                        }
+                    }, 100);
                 }
             }, 800);
         }
@@ -4408,13 +4501,13 @@
 
             // Validation
             if (!username || !nickname || !password) {
-                showLoginFeedback('Please fill in all fields', 'error');
+                showLoginFeedback('Please fill in all fields.', 'error');
                 return;
             }
 
             // Username format validation
             if (!/^[a-z0-9]+$/.test(username)) {
-                showLoginFeedback('Username can only contain letters and numbers', 'error');
+                showLoginFeedback('Username can only contain letters and numbers.', 'error');
                 return;
             }
 
@@ -4457,9 +4550,9 @@
             if (isFirstUser) {
                 adminUsernames.push(username);
                 await Storage.saveAdminUsernames(adminUsernames);
-                showLoginFeedback('Account created! As the first user, you are now an Admin. Welcome, ' + toTitleCase(nickname) + '!', 'info');
+                showLoginFeedback('Account created. As the first user, you are now an Admin. Welcome, ' + toTitleCase(nickname) + '.', 'info');
             } else {
-                showLoginFeedback('Competitor account created! Welcome, ' + toTitleCase(nickname) + '!', 'info');
+                showLoginFeedback('Competitor account created. Welcome, ' + toTitleCase(nickname) + '.', 'info');
             }
 
             currentUsername = username;
@@ -6242,7 +6335,7 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
             init();
 
             // Check for saved user cookie and auto-login
-            const savedUsername = getCookie('rugbyPredictorUser');
+            const savedUsername = (getCookie('rugbyPredictorUser') || '').trim().toLowerCase();
             if (savedUsername && users[savedUsername]) {
                 currentUsername = savedUsername;
                 showApp();
