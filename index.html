@@ -5100,37 +5100,10 @@
             const randomRugby = rugbyRefs[Math.floor(Math.random() * rugbyRefs.length)];
             const randomGloucester2 = gloucesterRefs[Math.floor(Math.random() * gloucesterRefs.length)];
             const nextMatch = matches.find(m => m.actualScore1 === null || m.actualScore2 === null);
-            const historicRefs = {
-                'England|France': 'England 25–17 France in 2003',
-                'England|Ireland': 'England 24–28 Ireland in 2006',
-                'England|Scotland': 'England 43–3 Scotland in 2001',
-                'England|Wales': 'Wales 11–9 England in 2005',
-                'France|Ireland': 'France 25–27 Ireland in 2000',
-                'France|Italy': 'Italy 3–39 France in 2007',
-                'France|Scotland': 'France 46–19 Scotland in 2007',
-                'France|Wales': 'Wales 29–12 France in 2008',
-                'Ireland|Italy': 'Italy 24–51 Ireland in 2007',
-                'Ireland|Scotland': 'Ireland 34–13 Scotland in 2008',
-                'Ireland|Wales': 'Wales 15–17 Ireland in 2009',
-                'Italy|Scotland': 'Scotland 17–37 Italy in 2007',
-                'Italy|Wales': 'Wales 47–8 Italy in 2008',
-                'England|Italy': 'Italy 19–23 England in 2008',
-                'Scotland|Wales': 'Wales 30–15 Scotland in 2008'
-            };
-            const matchKey = nextMatch ? [nextMatch.team1, nextMatch.team2].sort().join('|') : '';
             const nextFixtureText = nextMatch
                 ? `Next up we have ${nextMatch.team1} vs ${nextMatch.team2} on ${nextMatch.date} at ${nextMatch.time}.`
                 : '';
-            const historicRef = matchKey && historicRefs[matchKey]
-                ? [
-                    `I remember the classic ${historicRefs[matchKey]}.`,
-                    `Will it match the classic ${historicRefs[matchKey]}?`,
-                    `Could it beat the classic ${historicRefs[matchKey]}?`,
-                    `Hard to top the classic ${historicRefs[matchKey]}.`,
-                    `That ${historicRefs[matchKey]} clash set the bar — can this one rise to it?`
-                ][Math.floor(Math.random() * 5)]
-                : '';
-            const nextFixtureWithHistory = `${nextFixtureText} ${historicRef}`.trim();
+            const nextFixtureWithHistory = nextFixtureText;
             
             if (completedMatches.length === 0) {
                 tip = `No matches played yet, but the tension is building like the 2003 World Cup final in extra time! Get your predictions in sharpish - this isn't a Gloucester training session where you can take your time. The tournament kicks off soon and every point counts. Make sure you've got all your scores in before kick-off - no late changes allowed once the whistle blows! Remember, predicting a draw gets you bonus points, and if you nail the exact score, you'll be celebrating like Gloucester winning the Premiership. ${nextFixtureWithHistory}`;
