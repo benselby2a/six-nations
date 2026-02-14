@@ -4666,6 +4666,24 @@
             showSummary();
         }
 
+        function getOutstandingPredictionStatus(username) {
+            const userData = users[username];
+            const completedPredictions = userData && userData.predictions ? Object.keys(userData.predictions).length : 0;
+            const outstandingCount = matches.length - completedPredictions;
+            const hasTries = !!(userData && userData.totalTries !== null && userData.totalTries !== undefined);
+            return { outstandingCount, hasTries };
+        }
+
+        function buildOutstandingBannerText(outstandingCount, hasTries) {
+            if (outstandingCount > 0 && !hasTries) {
+                return `<span class="outstanding-banner-count">${outstandingCount}</span> match prediction${outstandingCount !== 1 ? 's' : ''} and <span class="outstanding-banner-count">total tries</span> still to enter`;
+            }
+            if (outstandingCount > 0) {
+                return `<span class="outstanding-banner-count">${outstandingCount}</span> match prediction${outstandingCount !== 1 ? 's' : ''} still to enter`;
+            }
+            return `<span class="outstanding-banner-count">Total tries</span> prediction still to enter`;
+        }
+
         // Render matches
         function renderMatches() {
             const container = document.getElementById('matchesContainer');
@@ -4673,11 +4691,7 @@
             let html = '';
             
             // Calculate outstanding predictions
-            const userData = users[currentUsername];
-            const completedPredictions = userData && userData.predictions ? Object.keys(userData.predictions).length : 0;
-            const totalMatches = matches.length;
-            const outstandingCount = totalMatches - completedPredictions;
-            const hasTries = userData && userData.totalTries !== null && userData.totalTries !== undefined;
+            const { outstandingCount, hasTries } = getOutstandingPredictionStatus(currentUsername);
             
             // Show lock status banner at top
             if (appSettings.predictionsLocked) {
@@ -4688,17 +4702,9 @@
             
             // Show outstanding predictions banner if there are any
             if (!appSettings.predictionsLocked && (outstandingCount > 0 || !hasTries)) {
-                let outstandingText = '';
-                if (outstandingCount > 0 && !hasTries) {
-                    outstandingText = `<span class="outstanding-banner-count">${outstandingCount}</span> match prediction${outstandingCount !== 1 ? 's' : ''} and <span class="outstanding-banner-count">total tries</span> still to enter`;
-                } else if (outstandingCount > 0) {
-                    outstandingText = `<span class="outstanding-banner-count">${outstandingCount}</span> match prediction${outstandingCount !== 1 ? 's' : ''} still to enter`;
-                } else {
-                    outstandingText = `<span class="outstanding-banner-count">Total tries</span> prediction still to enter`;
-                }
                 html += `<div id="outstandingBanner" class="outstanding-banner">
                     <span class="outstanding-banner-icon">⚠️</span>
-                    <span class="outstanding-banner-text">${outstandingText}</span>
+                    <span class="outstanding-banner-text">${buildOutstandingBannerText(outstandingCount, hasTries)}</span>
                 </div>`;
             } else if (!appSettings.predictionsLocked) {
                 // Add hidden banner that can be shown later if predictions are removed
@@ -4845,11 +4851,7 @@
             const banner = document.getElementById('outstandingBanner');
             if (!banner) return;
             
-            const userData = users[currentUsername];
-            const completedPredictions = userData && userData.predictions ? Object.keys(userData.predictions).length : 0;
-            const totalMatches = matches.length;
-            const outstandingCount = totalMatches - completedPredictions;
-            const hasTries = userData && userData.totalTries !== null && userData.totalTries !== undefined;
+            const { outstandingCount, hasTries } = getOutstandingPredictionStatus(currentUsername);
             
             if (appSettings.predictionsLocked || (outstandingCount === 0 && hasTries)) {
                 banner.style.display = 'none';
@@ -4857,17 +4859,8 @@
             }
             
             banner.style.display = 'flex';
-            
-            let outstandingText = '';
-            if (outstandingCount > 0 && !hasTries) {
-                outstandingText = `<span class="outstanding-banner-count">${outstandingCount}</span> match prediction${outstandingCount !== 1 ? 's' : ''} and <span class="outstanding-banner-count">total tries</span> still to enter`;
-            } else if (outstandingCount > 0) {
-                outstandingText = `<span class="outstanding-banner-count">${outstandingCount}</span> match prediction${outstandingCount !== 1 ? 's' : ''} still to enter`;
-            } else {
-                outstandingText = `<span class="outstanding-banner-count">Total tries</span> prediction still to enter`;
-            }
-            
-            banner.querySelector('.outstanding-banner-text').innerHTML = outstandingText;
+
+            banner.querySelector('.outstanding-banner-text').innerHTML = buildOutstandingBannerText(outstandingCount, hasTries);
         }
 
         // Save predictions
@@ -4886,56 +4879,51 @@
             }
         }
 
+        // Shared scoring logic used across leaderboard, summary, and PDF export.
+        function calculateMatchPoints(prediction, match, isJoker = false) {
+            if (!prediction || match.actualScore1 === null || match.actualScore2 === null) {
+                return null;
+            }
+
+            const actualResult = getResult(match.actualScore1, match.actualScore2);
+            const predictedResult = getResult(prediction.team1, prediction.team2);
+            let points = 0;
+
+            if (actualResult === predictedResult) {
+                points += 3;
+
+                const team1Diff = Math.abs(prediction.team1 - match.actualScore1);
+                const team2Diff = Math.abs(prediction.team2 - match.actualScore2);
+
+                if (team1Diff === 0 && team2Diff === 0) {
+                    points += 3;
+                } else {
+                    if (team1Diff <= 5) points += 1;
+                    if (team2Diff <= 5) points += 1;
+                }
+
+                if (actualResult === 'draw') {
+                    points += 2;
+                }
+            }
+
+            if (isJoker) {
+                points *= 2;
+            }
+
+            return points;
+        }
+
         // Calculate points based on scoring rules
         function calculatePoints(username) {
             const user = users[username];
+            if (!user) return 0;
             let totalPoints = 0;
 
             matches.forEach(match => {
-                // Skip matches that haven't been played yet
-                if (match.actualScore1 === null || match.actualScore2 === null) {
-                    return;
-                }
-
                 const prediction = user.predictions[match.id];
-                if (!prediction) {
-                    return;
-                }
-
-                const actualResult = getResult(match.actualScore1, match.actualScore2);
-                const predictedResult = getResult(prediction.team1, prediction.team2);
-
-                let matchPoints = 0;
-
-                // 3 points for correct result (win/draw prediction)
-                if (actualResult === predictedResult) {
-                    matchPoints += 3;
-
-                    // Check for perfect score OR within 5 points
-                    const team1Diff = Math.abs(prediction.team1 - match.actualScore1);
-                    const team2Diff = Math.abs(prediction.team2 - match.actualScore2);
-
-                    if (team1Diff === 0 && team2Diff === 0) {
-                        // Perfect score - 3 bonus points
-                        matchPoints += 3;
-                    } else {
-                        // 1 extra point for each team score within 5 points (max 2)
-                        if (team1Diff <= 5) matchPoints += 1;
-                        if (team2Diff <= 5) matchPoints += 1;
-                    }
-
-                    // Bonus 2 points for correctly predicting a draw
-                    if (actualResult === 'draw') {
-                        matchPoints += 2;
-                    }
-                }
-
-                // Double points if this is the user's joker match
-                if (user.jokerMatchId === match.id) {
-                    matchPoints *= 2;
-                }
-
-                totalPoints += matchPoints;
+                const matchPoints = calculateMatchPoints(prediction, match, user.jokerMatchId === match.id);
+                if (matchPoints !== null) totalPoints += matchPoints;
             });
 
             return totalPoints;
@@ -5569,21 +5557,7 @@
 
             function getMatchPoints(username, match) {
                 const pred = users[username].predictions[match.id];
-                const hasResult = match.actualScore1 !== null && match.actualScore2 !== null;
-                if (!pred || !hasResult) return null;
-                let pts = 0;
-                const actualResult = getResult(match.actualScore1, match.actualScore2);
-                const predictedResult = getResult(pred.team1, pred.team2);
-                const t1Diff = Math.abs(pred.team1 - match.actualScore1);
-                const t2Diff = Math.abs(pred.team2 - match.actualScore2);
-                if (actualResult === predictedResult) {
-                    pts = 3;
-                    if (t1Diff === 0 && t2Diff === 0) { pts += 3; }
-                    else { if (t1Diff <= 5) pts += 1; if (t2Diff <= 5) pts += 1; }
-                    if (actualResult === 'draw') pts += 2;
-                }
-                if (users[username].jokerMatchId === match.id) pts *= 2;
-                return pts;
+                return calculateMatchPoints(pred, match, users[username].jokerMatchId === match.id);
             }
 
             function hexToRgb(hex) {
@@ -5643,7 +5617,10 @@
                 { content: 'Score', styles: { halign: 'center' } },
                 ...allMatches.map(m => ({
                     content: m.team1 + ' vs ' + m.team2 + '\n' + m.date + ' ' + m.time,
-                    styles: { halign: 'center' }
+                    styles: {
+                        halign: 'center',
+                        fillColor: m.round % 2 === 0 ? [255, 255, 255] : [242, 242, 242]
+                    }
                 })),
                 { content: 'Predicted\nTries', styles: { halign: 'center' } }
             ];
@@ -5784,6 +5761,28 @@
                 },
                 columnStyles: colStyles,
                 didParseCell: function(data) {
+                    if (data.section === 'body') {
+                        const key = data.row.index + '-' + data.column.index;
+                        // Score/points cells are custom-painted in didDrawCell.
+                        // Clear default text to prevent duplicate white text artifacts.
+                        if (pendingScoreCells[key] || completedScoreCells[key]) {
+                            data.cell.text = [];
+                        }
+                        // Completed score cells render two lines (score + points), so reserve height.
+                        if (completedScoreCells[key]) {
+                            data.cell.styles.minCellHeight = 12;
+                        }
+                    }
+
+                    // Subtle striping for user rows (skip the "Actual Result" row at index 0).
+                    // Keep any explicit per-cell fill (e.g. exact-score highlight) untouched.
+                    if (data.section === 'body' && data.row.index > 0) {
+                        const hasExplicitFill = Array.isArray(data.cell.styles.fillColor);
+                        if (!hasExplicitFill && data.row.index % 2 === 0) {
+                            data.cell.styles.fillColor = [248, 248, 248];
+                        }
+                    }
+
                     // Thicker right border on Score column to separate fixed columns from matches
                     if (data.column.index === 2) {
                         data.cell.styles.lineWidth = { bottom: 0.2, top: 0.2, left: 0.2, right: 0.5 };
@@ -5839,9 +5838,9 @@
 
                     if (completed) {
                         // Two-line cell: scores on top, points below
-                        const lineH = fontSize * 0.35;
-                        const topY = cell.y + cell.height / 2 - lineH * 0.5;
-                        const bottomY = topY + lineH + fontSize * 0.1;
+                        const baselineGap = fontSize * 0.6;
+                        const topY = cell.y + (cell.height - baselineGap) / 2 + fontSize * 0.35;
+                        const bottomY = topY + baselineGap;
                         const x = cell.x + (cell.width - totalW) / 2;
 
                         doc.setTextColor(...color1);
@@ -5868,7 +5867,7 @@
                     } else {
                         // Single-line cell (pending)
                         const x = cell.x + (cell.width - totalW) / 2;
-                        const y = cell.y + cell.height / 2 + fontSize * 0.35;
+                        const y = cell.y + cell.height / 2 + fontSize * 0.3;
 
                         doc.setTextColor(...color1);
                         doc.text(score1, x, y);
