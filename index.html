@@ -2612,8 +2612,8 @@
                 <!-- Existing User Form -->
                 <div id="existingUserForm" class="login-form">
                     <div class="input-group">
-                        <label for="existingEmail">Email Address</label>
-                        <input type="email" id="existingEmail" placeholder="Enter your email address" onkeypress="handleLoginKeyPress(event, 'existing')">
+                        <label for="existingUsername">Username</label>
+                        <input type="text" id="existingUsername" placeholder="Enter your username" onkeypress="handleLoginKeyPress(event, 'existing')">
                     </div>
                     <div class="input-group">
                         <label for="existingPassword">Password</label>
@@ -2625,12 +2625,12 @@
                 <!-- New User Form
                 <div id="newUserForm" class="login-form hidden">
                     <div class="input-group">
-                        <label for="nickname">Display Name</label>
-                        <input type="text" id="nickname" placeholder="How you'll appear on the leaderboard" onkeypress="handleLoginKeyPress(event, 'new')">
+                        <label for="newUsername">Username</label>
+                        <input type="text" id="newUsername" placeholder="Choose a username" onkeypress="handleLoginKeyPress(event, 'new')">
                     </div>
                     <div class="input-group">
-                        <label for="email">Email Address</label>
-                        <input type="email" id="email" placeholder="your.email@example.com" onkeypress="handleLoginKeyPress(event, 'new')">
+                        <label for="nickname">Display Name</label>
+                        <input type="text" id="nickname" placeholder="How you'll appear on the leaderboard" onkeypress="handleLoginKeyPress(event, 'new')">
                     </div>
                     <div class="input-group">
                         <label for="newPassword">Password</label>
@@ -2837,9 +2837,9 @@
                         <p id="recoveryDescription">This SQL will recreate all tables and restore:</p>
                         <ul id="recoveryList" style="margin: 0.5rem 0 1rem 1.5rem; line-height: 1.6;">
                             <li>All matches and fixtures</li>
-                            <li>All user accounts (usernames, emails, password hashes)</li>
+                            <li>All user accounts (usernames, password hashes)</li>
                             <li>All predictions</li>
-                            <li>Admin email list</li>
+                            <li>Admin usernames list</li>
                             <li>App settings</li>
                         </ul>
                         <pre class="sql-preview" id="sqlPreview"></pre>
@@ -2993,7 +2993,6 @@
                 data.forEach(user => {
                     usersObj[user.username] = {
                         nickname: user.nickname,
-                        email: user.email,
                         passwordHash: user.password_hash,
                         totalTries: user.total_tries,
                         jokerMatchId: user.joker_match_id,
@@ -3043,7 +3042,6 @@
                         .from('users')
                         .update({
                             nickname: userData.nickname,
-                            email: userData.email,
                             password_hash: userData.passwordHash,
                             total_tries: userData.totalTries,
                             joker_match_id: userData.jokerMatchId,
@@ -3059,7 +3057,6 @@
                         .insert({
                             username: username,
                             nickname: userData.nickname,
-                            email: userData.email,
                             password_hash: userData.passwordHash,
                             total_tries: userData.totalTries,
                             joker_match_id: userData.jokerMatchId,
@@ -3069,7 +3066,17 @@
                     if (error) console.error('Error inserting user:', error);
                 }
             },
-            
+
+            // Rename a user (update username in DB)
+            renameUser: async (oldUsername, newUsername) => {
+                const { error } = await supabaseClient
+                    .from('users')
+                    .update({ username: newUsername })
+                    .eq('username', oldUsername);
+
+                if (error) console.error('Error renaming user:', error);
+            },
+
             // Save predictions for a user
             savePredictions: async (username, predictions, totalTries) => {
                 // Get user ID
@@ -3170,28 +3177,28 @@
                 if (error) console.error('Error saving matches:', error);
             },
             
-            // Admin emails
-            getAdminEmails: async () => {
+            // Admin usernames
+            getAdminUsernames: async () => {
                 const { data, error } = await supabaseClient
-                    .from('admin_emails')
-                    .select('email');
-                
+                    .from('admin_usernames')
+                    .select('username');
+
                 if (error) {
-                    console.error('Error fetching admin emails:', error);
+                    console.error('Error fetching admin usernames:', error);
                     return [];
                 }
-                
-                return data.map(row => row.email);
+
+                return data.map(row => row.username);
             },
-            
-            saveAdminEmails: async (emails) => {
+
+            saveAdminUsernames: async (usernames) => {
                 // Delete all and re-insert
-                await supabaseClient.from('admin_emails').delete().neq('email', '');
-                
-                if (emails.length > 0) {
-                    const rows = emails.map(email => ({ email }));
-                    const { error } = await supabaseClient.from('admin_emails').insert(rows);
-                    if (error) console.error('Error saving admin emails:', error);
+                await supabaseClient.from('admin_usernames').delete().neq('username', '');
+
+                if (usernames.length > 0) {
+                    const rows = usernames.map(username => ({ username }));
+                    const { error } = await supabaseClient.from('admin_usernames').insert(rows);
+                    if (error) console.error('Error saving admin usernames:', error);
                 }
             },
             
@@ -3232,7 +3239,7 @@
         // In-memory state (loaded from storage on init)
         let users = {};
         let currentUsername = null;
-        let adminEmails = [];
+        let adminUsernames = [];
         let appSettings = { predictionsLocked: false };
         let isGuest = false;
 
@@ -3270,13 +3277,13 @@
                 // Load all data in parallel
                 const [loadedUsers, loadedAdmins, loadedSettings, loadedMatches] = await Promise.all([
                     Storage.getUsers(),
-                    Storage.getAdminEmails(),
+                    Storage.getAdminUsernames(),
                     Storage.getSettings(),
                     Storage.getMatches()
                 ]);
                 
                 users = loadedUsers;
-                adminEmails = loadedAdmins;
+                adminUsernames = loadedAdmins;
                 appSettings = loadedSettings;
                 
                 // Load matches from database or use defaults
@@ -3309,8 +3316,7 @@
         // Check if current user is admin
         function isCurrentUserAdmin() {
             if (!currentUsername || !users[currentUsername]) return false;
-            const userEmail = users[currentUsername].email;
-            return userEmail && adminEmails.includes(userEmail.toLowerCase());
+            return adminUsernames.includes(currentUsername);
         }
 
         // Initialize app
@@ -3769,7 +3775,7 @@
                 <table class="admin-table">
                     <thead>
                         <tr>
-                            <th>Email</th>
+                            <th>Username</th>
                             <th>Display Name</th>
                             <th>Supported Teams</th>
                             <th>Admin</th>
@@ -3781,13 +3787,13 @@
 
             allUsers.forEach(username => {
                 const user = users[username];
-                const isAdmin = adminEmails.includes(user.email?.toLowerCase());
+                const isAdmin = adminUsernames.includes(username);
                 const safeUsername = username.replace(/'/g, "\\'");
                 const needsReset = user.passwordResetRequired ? '<span style="color: #f39c12; font-size: 0.8rem;"> (Reset Required)</span>' : '';
                 const userTeams = user.supportedTeams || [];
                 html += `
                     <tr id="user-row-${username}">
-                        <td><input type="email" id="edit-email-${username}" value="${user.email || ''}" style="max-width: 200px;">${needsReset}</td>
+                        <td><input type="text" id="edit-username-${username}" value="${username}" style="max-width: 150px;">${needsReset}</td>
                         <td><input type="text" id="edit-nickname-${username}" value="${user.nickname || ''}" style="max-width: 150px;"></td>
                         <td>
                             <select id="edit-team1-${username}" style="font-size: 0.85rem; margin-bottom: 0.25rem;">
@@ -3817,16 +3823,27 @@
 
         // Save changes to a user
         async function saveUserChanges(username) {
+            const newUsername = document.getElementById(`edit-username-${username}`).value.trim().toLowerCase();
             const nickname = document.getElementById(`edit-nickname-${username}`).value.trim();
-            const newEmail = document.getElementById(`edit-email-${username}`).value.trim().toLowerCase();
+
+            if (!newUsername) {
+                alert('Username is required.');
+                return;
+            }
+
+            if (!/^[a-z0-9]+$/.test(newUsername)) {
+                alert('Username can only contain letters and numbers.');
+                return;
+            }
 
             if (!nickname) {
                 alert('Display name is required.');
                 return;
             }
 
-            if (!newEmail) {
-                alert('Email is required.');
+            // Check if new username is taken by another user
+            if (newUsername !== username && users[newUsername]) {
+                alert('This username is already taken by another user.');
                 return;
             }
 
@@ -3839,59 +3856,65 @@
                 return;
             }
 
-            // Check if email is taken by another user
-            const existingEmail = Object.keys(users).find(u =>
-                u !== username && users[u].email && users[u].email.toLowerCase() === newEmail
-            );
-            if (existingEmail) {
-                alert('This email is already in use by another user.');
-                return;
-            }
-
-            // Update admin emails list if email changed and user was an admin
-            const oldEmail = users[username].email?.toLowerCase();
-            if (oldEmail && oldEmail !== newEmail && adminEmails.includes(oldEmail)) {
-                adminEmails = adminEmails.map(e => e === oldEmail ? newEmail : e);
-                await Storage.saveAdminEmails(adminEmails);
-            }
-
-            users[username].nickname = nickname;
-            users[username].email = newEmail;
-
             // Read supported teams from dropdowns
             const team1El = document.getElementById(`edit-team1-${username}`);
             const team2El = document.getElementById(`edit-team2-${username}`);
             const team1 = team1El ? team1El.value : '';
             const team2 = team2El ? team2El.value : '';
-            users[username].supportedTeams = [team1, team2].filter(Boolean);
 
-            await Storage.saveUser(username, users[username]);
+            if (newUsername !== username) {
+                // Username changed - update DB username, re-key local data, update admin list
+                await Storage.renameUser(username, newUsername);
+
+                // Update admin usernames list
+                const adminIndex = adminUsernames.indexOf(username);
+                if (adminIndex !== -1) {
+                    adminUsernames[adminIndex] = newUsername;
+                    await Storage.saveAdminUsernames(adminUsernames);
+                }
+
+                // Re-key in local users object
+                users[newUsername] = users[username];
+                delete users[username];
+
+                // Update current session if editing self
+                if (currentUsername === username) {
+                    currentUsername = newUsername;
+                    setCookie('rugbyPredictorUser', newUsername);
+                }
+            }
+
+            users[newUsername].nickname = nickname;
+            users[newUsername].supportedTeams = [team1, team2].filter(Boolean);
+
+            await Storage.saveUser(newUsername, users[newUsername]);
             alert('User updated successfully!');
 
             // Update current user display if editing self
-            if (username === currentUsername) {
+            if (newUsername === currentUsername) {
                 document.getElementById('currentUser').textContent = toTitleCase(nickname);
             }
+
+            // Re-render to update row IDs and input IDs
+            renderCompetitorManagement();
         }
 
         // Toggle user admin status
         async function toggleUserAdmin(username) {
             const user = users[username];
-            if (!user || !user.email) return;
+            if (!user) return;
 
-            const email = user.email.toLowerCase();
-            const isCurrentlyAdmin = adminEmails.includes(email);
+            const isCurrentlyAdmin = adminUsernames.includes(username);
 
             if (isCurrentlyAdmin) {
                 // Remove from admins
-                adminEmails = adminEmails.filter(e => e !== email);
+                adminUsernames = adminUsernames.filter(u => u !== username);
             } else {
                 // Add to admins
-                adminEmails.push(email);
+                adminUsernames.push(username);
             }
 
-            await Storage.saveAdminEmails(adminEmails);
-            updateAdminSubtitle();
+            await Storage.saveAdminUsernames(adminUsernames);
         }
 
         // Delete a user
@@ -3912,17 +3935,13 @@
             }
 
             // Remove from admin list if they were an admin
-            const userEmail = users[username].email;
-            if (userEmail) {
-                adminEmails = adminEmails.filter(e => e.toLowerCase() !== userEmail.toLowerCase());
-                await Storage.saveAdminEmails(adminEmails);
-            }
+            adminUsernames = adminUsernames.filter(u => u !== username);
+            await Storage.saveAdminUsernames(adminUsernames);
 
             delete users[username];
             await Storage.deleteUser(username);
             renderCompetitorManagement();
             updateLeaderboard();
-            updateAdminSubtitle();
         }
 
         // Reset a user's password
@@ -4089,7 +4108,7 @@
 
         // Login existing user
         async function loginExisting() {
-            const email = document.getElementById('existingEmail').value.trim().toLowerCase();
+            const username = document.getElementById('existingUsername').value.trim().toLowerCase();
             const password = document.getElementById('existingPassword').value;
             const feedbackEl = document.getElementById('loginFeedback');
 
@@ -4097,26 +4116,14 @@
             feedbackEl.classList.add('hidden');
             feedbackEl.className = 'login-feedback hidden';
 
-            if (!email || !password) {
-                showLoginFeedback('Please enter both email and password', 'error');
+            if (!username || !password) {
+                showLoginFeedback('Please enter both username and password', 'error');
                 return;
             }
-
-            // Basic email validation
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                showLoginFeedback('Please enter a valid email address', 'error');
-                return;
-            }
-
-            // Find user by email
-            const username = Object.keys(users).find(u => 
-                users[u].email && users[u].email.toLowerCase() === email
-            );
 
             // Check if user exists
-            if (!username) {
-                showLoginFeedback('Email not found. Please create a new account.', 'error');
+            if (!users[username]) {
+                showLoginFeedback('Username not found. Please check and try again.', 'error');
                 return;
             }
 
@@ -4158,35 +4165,31 @@
 
         // Register new user
         async function registerNewUser() {
+            const username = document.getElementById('newUsername').value.trim().toLowerCase();
             const nickname = document.getElementById('nickname').value.trim();
-            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('newPassword').value;
 
             // Validation
-            if (!nickname || !email || !password) {
+            if (!username || !nickname || !password) {
                 showLoginFeedback('Please fill in all fields', 'error');
                 return;
             }
 
-            // Basic email validation
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                showLoginFeedback('Please enter a valid email address', 'error');
+            // Username format validation
+            if (!/^[a-z0-9]+$/.test(username)) {
+                showLoginFeedback('Username can only contain letters and numbers', 'error');
                 return;
             }
 
-            // Check if email already exists
-            const existingEmailUser = Object.keys(users).find(u => 
-                users[u].email && users[u].email.toLowerCase() === email.toLowerCase()
-            );
-            if (existingEmailUser) {
-                showLoginFeedback('An account with this email already exists. Please login instead.', 'error');
+            // Check if username already exists
+            if (users[username]) {
+                showLoginFeedback('This username is already taken. Please choose another.', 'error');
                 return;
             }
 
             // Check if nickname already exists
-            const existingUser = Object.keys(users).find(username => 
-                users[username].nickname && users[username].nickname.toLowerCase() === nickname.toLowerCase()
+            const existingUser = Object.keys(users).find(u =>
+                users[u].nickname && users[u].nickname.toLowerCase() === nickname.toLowerCase()
             );
             if (existingUser) {
                 showLoginFeedback('This display name is already taken. Please choose another.', 'error');
@@ -4195,9 +4198,6 @@
 
             // Check if this is the first user - they become admin automatically
             const isFirstUser = Object.keys(users).length === 0;
-
-            // Generate username from email (before @ symbol)
-            const username = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
 
             // Hash the password
             const passwordHash = await hashPassword(password);
@@ -4208,7 +4208,6 @@
             // Create new user with hashed password
             users[username] = {
                 nickname: nickname,
-                email: email,
                 passwordHash: passwordHash,
                 predictions: {},
                 totalTries: null,
@@ -4216,16 +4215,16 @@
             };
 
             await Storage.saveUser(username, users[username]);
-            
+
             // Make first user an admin
             if (isFirstUser) {
-                adminEmails.push(email.toLowerCase());
-                await Storage.saveAdminEmails(adminEmails);
+                adminUsernames.push(username);
+                await Storage.saveAdminUsernames(adminUsernames);
                 showLoginFeedback('Account created! As the first user, you are now an Admin. Welcome, ' + toTitleCase(nickname) + '!', 'info');
             } else {
                 showLoginFeedback('Competitor account created! Welcome, ' + toTitleCase(nickname) + '!', 'info');
             }
-            
+
             currentUsername = username;
             setCookie('rugbyPredictorUser', username);
 
@@ -4266,10 +4265,10 @@
             logoutBtn.textContent = 'Logout';
 
             // Clear all login form fields
-            document.getElementById('existingEmail').value = '';
+            document.getElementById('existingUsername').value = '';
             document.getElementById('existingPassword').value = '';
+            document.getElementById('newUsername').value = '';
             document.getElementById('nickname').value = '';
-            document.getElementById('email').value = '';
             document.getElementById('newPassword').value = '';
 
             // Reset to existing user form
@@ -5423,8 +5422,7 @@
 
             // --- Initialise PDF ---
             const { jsPDF } = window.jspdf;
-            const format = allMatches.length > 8 ? 'a3' : 'a4';
-            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: format });
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
             // Title
             const now = new Date();
@@ -5476,11 +5474,11 @@
                         if (m.actualScore1 > m.actualScore2) resultColor = hexToRgb(C.winFg);
                         else if (m.actualScore1 < m.actualScore2) resultColor = hexToRgb(C.loseFg);
                         else resultColor = hexToRgb(C.drawFg);
-                        return { content: txt, styles: { textColor: resultColor, fontStyle: 'bold', fontSize: 7 } };
+                        return { content: txt, styles: { textColor: resultColor, fontStyle: 'bold', fontSize: 8 } };
                     }
                     return { content: 'TBD', styles: { textColor: hexToRgb(C.gray) } };
                 }),
-                { content: completedTriesMatches > 0 ? totalActualTries + ' / ' + estimatedTotalTries + ' est.' : '', styles: { textColor: hexToRgb(C.gray), fontStyle: 'bold', fontSize: 6 } }
+                { content: completedTriesMatches > 0 ? totalActualTries + ' (' + estimatedTotalTries + ')' : '', styles: { textColor: hexToRgb(C.gray), fontStyle: 'bold', fontSize: 7 } }
             ];
 
             // --- Build data rows ---
@@ -5494,8 +5492,8 @@
 
                 const row = [
                     { content: String(rank), styles: { fontStyle: 'bold', halign: 'center' } },
-                    { content: getPdfUserFlags(user.username) + user.nickname, styles: { fontStyle: 'bold', halign: 'left' } },
-                    { content: String(user.totalPoints), styles: { fontStyle: 'bold', textColor: hexToRgb(C.pointsFg), fontSize: 8 } },
+                    { content: user.nickname, styles: { fontStyle: 'bold', halign: 'left' } },
+                    { content: String(user.totalPoints), styles: { fontStyle: 'bold', textColor: hexToRgb(C.pointsFg), fontSize: 9 } },
                 ];
 
                 allMatches.forEach(match => {
@@ -5576,21 +5574,30 @@
             });
 
             // --- Render table ---
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const marginLR = 6;
+            const tableWidth = pageWidth - marginLR * 2;
+            const fixedWidth = 8 + 28 + 13 + 16; // rank + name + score + tries
+            const matchColWidth = Math.max(14, (tableWidth - fixedWidth) / allMatches.length);
             const lastMatchCol = 3 + allMatches.length;
             const colStyles = {
                 0: { cellWidth: 8 },
-                1: { cellWidth: 25 },
-                2: { cellWidth: 12 },
+                1: { cellWidth: 28 },
+                2: { cellWidth: 13 },
             };
-            colStyles[lastMatchCol] = { cellWidth: 20 };
+            for (let i = 3; i < lastMatchCol; i++) {
+                colStyles[i] = { cellWidth: matchColWidth };
+            }
+            colStyles[lastMatchCol] = { cellWidth: 16 };
 
             doc.autoTable({
                 head: [headerRow],
                 body: [actualRow, ...dataRows],
                 startY: 28,
                 theme: 'grid',
+                tableWidth: tableWidth,
                 styles: {
-                    fontSize: 6.5,
+                    fontSize: 8,
                     cellPadding: 1.5,
                     lineColor: hexToRgb(C.border),
                     lineWidth: 0.2,
@@ -5603,7 +5610,7 @@
                     fillColor: hexToRgb(C.white),
                     textColor: hexToRgb(C.black),
                     fontStyle: 'bold',
-                    fontSize: 6,
+                    fontSize: 7,
                     halign: 'center',
                     lineColor: hexToRgb(C.border),
                     lineWidth: 0.3,
@@ -5624,7 +5631,7 @@
                         }
                     }
                 },
-                margin: { top: 10, left: 8, right: 8 },
+                margin: { top: 10, left: marginLR, right: marginLR },
             });
 
             // --- Download ---
@@ -5665,7 +5672,7 @@
 DROP TABLE IF EXISTS predictions;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS matches;
-DROP TABLE IF EXISTS admin_emails;
+DROP TABLE IF EXISTS admin_usernames;
 DROP TABLE IF EXISTS settings;
 
 -- Create users table
@@ -5673,7 +5680,6 @@ CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(255) UNIQUE NOT NULL,
     nickname VARCHAR(255),
-    email VARCHAR(255),
     password_hash VARCHAR(255),
     total_tries INTEGER,
     joker_match_id INTEGER,
@@ -5707,10 +5713,10 @@ CREATE TABLE predictions (
     UNIQUE(user_id, match_id)
 );
 
--- Create admin_emails table
-CREATE TABLE admin_emails (
+-- Create admin_usernames table
+CREATE TABLE admin_usernames (
     id SERIAL PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL
+    username VARCHAR(255) UNIQUE NOT NULL
 );
 
 -- Create settings table
@@ -5724,14 +5730,14 @@ CREATE TABLE settings (
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE predictions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
-ALTER TABLE admin_emails ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admin_usernames ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for public access (adjust based on your security needs)
 CREATE POLICY "Allow all access to users" ON users FOR ALL USING (true);
 CREATE POLICY "Allow all access to predictions" ON predictions FOR ALL USING (true);
 CREATE POLICY "Allow all access to matches" ON matches FOR ALL USING (true);
-CREATE POLICY "Allow all access to admin_emails" ON admin_emails FOR ALL USING (true);
+CREATE POLICY "Allow all access to admin_usernames" ON admin_usernames FOR ALL USING (true);
 CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
         }
 
@@ -5749,11 +5755,11 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
                 });
             }
 
-            // Generate admin_emails INSERT statements
-            if (adminEmails.length > 0) {
-                sql += '\n-- Insert admin emails\n';
-                adminEmails.forEach(email => {
-                    sql += `INSERT INTO admin_emails (email) VALUES ('${esc(email)}');\n`;
+            // Generate admin_usernames INSERT statements
+            if (adminUsernames.length > 0) {
+                sql += '\n-- Insert admin usernames\n';
+                adminUsernames.forEach(u => {
+                    sql += `INSERT INTO admin_usernames (username) VALUES ('${esc(u)}');\n`;
                 });
             }
 
@@ -5769,7 +5775,7 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
                     const u = users[username];
                     const oderId = index + 1;
                     const supportedTeamsVal = u.supportedTeams && u.supportedTeams.length > 0 ? `'${esc(u.supportedTeams.join(','))}'` : 'NULL';
-                    sql += `INSERT INTO users (id, username, nickname, email, password_hash, total_tries, joker_match_id, supported_teams) VALUES (${oderId}, '${esc(username)}', '${esc(u.nickname)}', '${esc(u.email)}', '${esc(u.passwordHash)}', ${u.totalTries === null || u.totalTries === undefined ? 'NULL' : u.totalTries}, ${u.jokerMatchId === null || u.jokerMatchId === undefined ? 'NULL' : u.jokerMatchId}, ${supportedTeamsVal});\n`;
+                    sql += `INSERT INTO users (id, username, nickname, password_hash, total_tries, joker_match_id, supported_teams) VALUES (${oderId}, '${esc(username)}', '${esc(u.nickname)}', '${esc(u.passwordHash)}', ${u.totalTries === null || u.totalTries === undefined ? 'NULL' : u.totalTries}, ${u.jokerMatchId === null || u.jokerMatchId === undefined ? 'NULL' : u.jokerMatchId}, ${supportedTeamsVal});\n`;
                 });
 
                 // Generate predictions INSERT statements
@@ -5787,7 +5793,7 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
                 sql += '\n-- Reset sequences\n';
                 sql += `SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));\n`;
                 sql += `SELECT setval('predictions_id_seq', (SELECT MAX(id) FROM predictions));\n`;
-                sql += `SELECT setval('admin_emails_id_seq', (SELECT MAX(id) FROM admin_emails));\n`;
+                sql += `SELECT setval('admin_usernames_id_seq', (SELECT MAX(id) FROM admin_usernames));\n`;
                 sql += `SELECT setval('settings_id_seq', (SELECT MAX(id) FROM settings));\n`;
             }
 
@@ -5815,9 +5821,9 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
                 description.textContent = 'This SQL will recreate all tables and restore:';
                 list.innerHTML = `
                     <li>All matches and fixtures</li>
-                    <li>All user accounts (usernames, emails, password hashes)</li>
+                    <li>All user accounts (usernames, password hashes)</li>
                     <li>All predictions</li>
-                    <li>Admin email list</li>
+                    <li>Admin usernames list</li>
                     <li>App settings</li>
                 `;
             } else {
@@ -5826,7 +5832,7 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
                     <li>Empty matches table</li>
                     <li>Empty users table</li>
                     <li>Empty predictions table</li>
-                    <li>Empty admin_emails table</li>
+                    <li>Empty admin_usernames table</li>
                     <li>Empty settings table</li>
                 `;
             }
