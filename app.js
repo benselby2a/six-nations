@@ -941,11 +941,6 @@
         function renderCompetitorManagement() {
             const container = document.getElementById('competitorManagementContainer');
             const allUsers = Object.keys(users).sort((a, b) => a.localeCompare(b));
-            
-            if (allUsers.length === 0) {
-                container.innerHTML = '<p style="text-align: center; font-size: 1.2rem; opacity: 0.7;">No competitors registered yet.</p>';
-                return;
-            }
 
             const teams = Object.keys(countryFlags);
 
@@ -961,6 +956,29 @@
                         </tr>
                     </thead>
                     <tbody>
+                        <tr style="background: rgba(52, 152, 219, 0.08);">
+                            <td><input type="text" id="new-username-admin" placeholder="username" style="max-width: 150px;"></td>
+                            <td>
+                                <input type="text" id="new-nickname-admin" placeholder="Display name" style="max-width: 150px;">
+                                <input type="password" id="new-password-admin" placeholder="Password (optional)" style="max-width: 150px; margin-top: 0.25rem;">
+                            </td>
+                            <td>
+                                <select id="new-team1-admin" style="font-size: 0.85rem; margin-bottom: 0.25rem;">
+                                    <option value="">None</option>
+                                    ${teams.map(t => `<option value="${t}">${getFlag(t)} ${t}</option>`).join('')}
+                                </select><br>
+                                <select id="new-team2-admin" style="font-size: 0.85rem;">
+                                    <option value="">None</option>
+                                    ${teams.map(t => `<option value="${t}">${getFlag(t)} ${t}</option>`).join('')}
+                                </select>
+                            </td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" id="new-admin-admin">
+                            </td>
+                            <td>
+                                <button class="btn-small btn-success" onclick="addCompetitorFromAdmin()">Add Competitor</button>
+                            </td>
+                        </tr>
             `;
 
             allUsers.forEach(username => {
@@ -996,6 +1014,70 @@
 
             html += '</tbody></table>';
             container.innerHTML = html;
+        }
+
+        // Add a new competitor from admin management screen
+        async function addCompetitorFromAdmin() {
+            const username = (document.getElementById('new-username-admin').value || '').trim().toLowerCase();
+            const nickname = (document.getElementById('new-nickname-admin').value || '').trim();
+            const password = document.getElementById('new-password-admin').value || '';
+            const team1 = (document.getElementById('new-team1-admin').value || '').trim();
+            const team2 = (document.getElementById('new-team2-admin').value || '').trim();
+            const makeAdmin = !!document.getElementById('new-admin-admin').checked;
+
+            if (!username) {
+                alert('Username is required.');
+                return;
+            }
+
+            if (!/^[a-z0-9]+$/.test(username)) {
+                alert('Username can only contain letters and numbers.');
+                return;
+            }
+
+            if (users[username]) {
+                alert('This username is already taken.');
+                return;
+            }
+
+            if (!nickname) {
+                alert('Display name is required.');
+                return;
+            }
+
+            const existingNickname = Object.keys(users).find(u =>
+                users[u].nickname && users[u].nickname.toLowerCase() === nickname.toLowerCase()
+            );
+            if (existingNickname) {
+                alert('This display name is already taken.');
+                return;
+            }
+
+            if (password && password.length < 4) {
+                alert('If set, password must be at least 4 characters long.');
+                return;
+            }
+
+            const supportedTeams = [team1, team2].filter(Boolean);
+            const newUser = {
+                nickname,
+                passwordHash: password ? await hashPassword(password) : null,
+                predictions: {},
+                totalTries: null,
+                supportedTeams
+            };
+
+            users[username] = newUser;
+            await Storage.saveUser(username, newUser);
+
+            if (makeAdmin && !adminUsernames.includes(username)) {
+                adminUsernames.push(username);
+                await Storage.saveAdminUsernames(adminUsernames);
+            }
+
+            alert(`Competitor ${toTitleCase(nickname)} added.`);
+            renderCompetitorManagement();
+            updateLeaderboard();
         }
 
         // Save changes to a user
