@@ -4153,6 +4153,7 @@
             const newPassword = document.getElementById('profileNewPassword').value;
             const confirmPassword = document.getElementById('profileConfirmPassword').value;
             const feedbackEl = document.getElementById('profileFeedback');
+            const hasExistingPassword = !!(user.passwordHash || user.password);
 
             feedbackEl.classList.add('hidden');
             feedbackEl.className = 'login-feedback hidden';
@@ -4177,19 +4178,28 @@
 
             // Handle password change if any password fields are filled
             if (currentPassword || newPassword || confirmPassword) {
-                if (!currentPassword) {
+                if (hasExistingPassword && !currentPassword) {
                     feedbackEl.textContent = 'Please enter your current password.';
                     feedbackEl.classList.remove('hidden');
                     feedbackEl.classList.add('error');
                     return;
                 }
 
-                const isValid = await verifyPassword(currentPassword, user.passwordHash);
-                if (!isValid) {
-                    feedbackEl.textContent = 'Current password is incorrect.';
-                    feedbackEl.classList.remove('hidden');
-                    feedbackEl.classList.add('error');
-                    return;
+                if (hasExistingPassword) {
+                    let isValid = false;
+
+                    if (user.passwordHash) {
+                        isValid = await verifyPassword(currentPassword, user.passwordHash);
+                    } else if (user.password) {
+                        isValid = user.password === currentPassword;
+                    }
+
+                    if (!isValid) {
+                        feedbackEl.textContent = 'Current password is incorrect.';
+                        feedbackEl.classList.remove('hidden');
+                        feedbackEl.classList.add('error');
+                        return;
+                    }
                 }
 
                 if (!newPassword) {
@@ -4214,6 +4224,7 @@
                 }
 
                 user.passwordHash = await hashPassword(newPassword);
+                delete user.password;
             }
 
             // Update display name and teams
@@ -4318,8 +4329,8 @@
             feedbackEl.classList.add('hidden');
             feedbackEl.className = 'login-feedback hidden';
 
-            if (!username || !password) {
-                showLoginFeedback('Please enter both username and password', 'error');
+            if (!username) {
+                showLoginFeedback('Please enter your username', 'error');
                 return;
             }
 
@@ -4329,26 +4340,43 @@
                 return;
             }
 
+            const user = users[username];
+            const hasStoredPassword = !!(user.passwordHash || user.password);
+            const hasNoPasswordSet = !hasStoredPassword;
+
+            if (hasStoredPassword && !password) {
+                showLoginFeedback('Please enter both username and password', 'error');
+                return;
+            }
+
+            if (hasNoPasswordSet && password) {
+                showLoginFeedback('No password is set for this account yet. Leave password blank to log in.', 'info');
+                return;
+            }
+
             // Check if password reset is required
-            if (users[username].passwordResetRequired) {
+            if (user.passwordResetRequired) {
                 showPasswordResetModal(username);
                 return;
             }
 
             // Check password - support both hashed and legacy plain text passwords
             let passwordValid = false;
-            if (users[username].passwordHash) {
+            if (user.passwordHash) {
                 // New hashed password
-                passwordValid = await verifyPassword(password, users[username].passwordHash);
-            } else if (users[username].password) {
+                passwordValid = await verifyPassword(password, user.passwordHash);
+            } else if (user.password) {
                 // Legacy plain text password - migrate to hash on successful login
-                if (users[username].password === password) {
+                if (user.password === password) {
                     passwordValid = true;
                     // Migrate to hashed password
-                    users[username].passwordHash = await hashPassword(password);
-                    delete users[username].password;
-                    await Storage.saveUser(username, users[username]);
+                    user.passwordHash = await hashPassword(password);
+                    delete user.password;
+                    await Storage.saveUser(username, user);
                 }
+            } else {
+                // Users with no password hash can log in by leaving password blank
+                passwordValid = password === '';
             }
 
             if (!passwordValid) {
@@ -4357,11 +4385,18 @@
             }
 
             // Successful login
-            showLoginFeedback('Login successful! Welcome back, ' + toTitleCase(users[username].nickname), 'success');
+            showLoginFeedback('Login successful! Welcome back, ' + toTitleCase(user.nickname), 'success');
             currentUsername = username;
             setCookie('rugbyPredictorUser', username);
             setTimeout(() => {
                 showApp();
+
+                if (hasNoPasswordSet) {
+                    const shouldSetPassword = confirm('You do not have a password set yet. Would you like to set one now?');
+                    if (shouldSetPassword) {
+                        openProfile();
+                    }
+                }
             }, 800);
         }
 
