@@ -655,8 +655,11 @@
             match.round = roundVal;
             match.team1 = team1Val;
             match.team2 = team2Val;
-            match.date = dateVal ? formatDateForDisplay(dateVal) : 'TBD';
-            match.time = timeVal || 'TBD';
+            // Preserve existing date/time unless the admin explicitly changes them.
+            match.date = dateVal
+                ? formatDateForDisplay(dateVal)
+                : (match.date || 'TBD');
+            match.time = timeVal || match.time || 'TBD';
             match.jokerEligible = jokerVal;
 
             match.actualScore1 = score1Val === '' ? null : parseInt(score1Val, 10);
@@ -964,7 +967,7 @@
                 if (dateEl) {
                     if (dateEl.value) {
                         match.date = formatDateForDisplay(dateEl.value);
-                    } else if (!match.date || match.date === 'TBD') {
+                    } else if (!match.date) {
                         match.date = 'TBD';
                     }
                 }
@@ -972,7 +975,7 @@
                 // Store time in HH:MM format
                 if (timeEl && timeEl.value) {
                     match.time = timeEl.value;
-                } else if (timeEl) {
+                } else if (timeEl && !match.time) {
                     match.time = 'TBD';
                 }
                 
