@@ -223,7 +223,7 @@
             <div id="resultsTab" class="prediction-section hidden" style="margin-top: 2rem;">
                 <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Fixture Setup</h2>
-                    <p style="margin-bottom: 1rem;">Manage fixtures, enter match details and results. Changes save automatically.</p>
+                    <p style="margin-bottom: 1rem;">Manage fixtures and results. Click a row or Edit to update all fixture fields.</p>
                 </div>
 
                 <!-- Lock Predictions Toggle -->
@@ -240,17 +240,9 @@
                         <thead>
                             <tr>
                                 <th>Rnd</th>
-                                <th>Date</th>
-                                <th>Time</th>
-                                <th>Home Team</th>
+                                <th>Fixture</th>
+                                <th>Date/Time</th>
                                 <th>Score</th>
-                                <th>Tries</th>
-                                <th></th>
-                                <th>Away Team</th>
-                                <th>Score</th>
-                                <th>Tries</th>
-                                <th>Joker Eligible</th>
-                                <th>Scores Captured</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -278,6 +270,59 @@
                         <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: flex-end;">
                             <button class="btn-cancel" onclick="closeBulkImport()">Cancel</button>
                             <button onclick="processBulkImport()">Import Fixtures</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit Fixture Modal -->
+                <div id="editFixtureModal" class="modal hidden">
+                    <div class="modal-content" style="max-width: 760px;">
+                        <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Edit Fixture</h2>
+                        <div class="fixture-edit-grid">
+                            <div class="input-group">
+                                <label for="edit-fixture-round">Round</label>
+                                <input type="number" id="edit-fixture-round" min="1" max="10">
+                            </div>
+                            <div class="input-group">
+                                <label for="edit-fixture-date">Date</label>
+                                <input type="date" id="edit-fixture-date">
+                            </div>
+                            <div class="input-group">
+                                <label for="edit-fixture-time">Time</label>
+                                <input type="time" id="edit-fixture-time">
+                            </div>
+                            <div class="input-group">
+                                <label for="edit-fixture-team1">Home Team</label>
+                                <select id="edit-fixture-team1"></select>
+                            </div>
+                            <div class="input-group">
+                                <label for="edit-fixture-score1">Home Score</label>
+                                <input type="number" id="edit-fixture-score1" min="0" placeholder="-">
+                            </div>
+                            <div class="input-group">
+                                <label for="edit-fixture-tries1">Home Tries</label>
+                                <input type="number" id="edit-fixture-tries1" min="0" placeholder="-">
+                            </div>
+                            <div class="input-group">
+                                <label for="edit-fixture-team2">Away Team</label>
+                                <select id="edit-fixture-team2"></select>
+                            </div>
+                            <div class="input-group">
+                                <label for="edit-fixture-score2">Away Score</label>
+                                <input type="number" id="edit-fixture-score2" min="0" placeholder="-">
+                            </div>
+                            <div class="input-group">
+                                <label for="edit-fixture-tries2">Away Tries</label>
+                                <input type="number" id="edit-fixture-tries2" min="0" placeholder="-">
+                            </div>
+                            <div class="input-group" style="display: flex; align-items: center; gap: 0.6rem;">
+                                <input type="checkbox" id="edit-fixture-joker">
+                                <label for="edit-fixture-joker" style="margin: 0;">Joker Eligible</label>
+                            </div>
+                        </div>
+                        <div class="fixture-modal-actions">
+                            <button class="btn-cancel" onclick="closeEditFixtureModal()">Cancel</button>
+                            <button onclick="saveFixtureEdits()">Save</button>
                         </div>
                     </div>
                 </div>

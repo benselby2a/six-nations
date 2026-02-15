@@ -1704,6 +1704,10 @@
 
         /* Responsive */
         @media (max-width: 768px) {
+            .fixture-edit-grid {
+                grid-template-columns: 1fr;
+            }
+
             h1 {
                 font-size: 2.5rem;
             }
@@ -2218,9 +2222,65 @@
             background: rgba(255, 255, 255, 0.05);
         }
 
+        .fixture-row-readonly {
+            cursor: pointer;
+        }
+
         .admin-table input {
             width: 100%;
             max-width: 200px;
+        }
+
+        .capture-status {
+            display: inline-block;
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .capture-status.captured {
+            background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+            border: 1px solid rgba(46, 204, 113, 0.45);
+        }
+
+        .capture-status.pending {
+            background: rgba(231, 76, 60, 0.18);
+            color: #ff9f8f;
+            border: 1px solid rgba(231, 76, 60, 0.45);
+        }
+
+        .fixture-edit-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.8rem;
+        }
+
+        .fixture-edit-grid .input-group {
+            margin-bottom: 0;
+        }
+
+        .fixture-modal-actions {
+            margin-top: 1.2rem;
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+
+        .fixture-modal-actions button {
+            width: 170px;
+            min-width: 170px;
+            height: 44px;
+            padding: 0.85rem 1rem;
+            margin-top: 0;
+            box-sizing: border-box;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
         }
 
         /* Admin action buttons */
@@ -2496,6 +2556,10 @@
 
         .btn-cancel:hover {
             background: rgba(212, 175, 55, 0.1);
+        }
+
+        #editFixtureModal .fixture-modal-actions .btn-cancel {
+            margin-top: 0;
         }
 
         /* Results table styles */

@@ -421,6 +421,7 @@
         let adminUsernames = [];
         let appSettings = { predictionsLocked: false };
         let isGuest = false;
+        let editingFixtureId = null;
 
         // Loading state
         let isLoading = true;
@@ -527,58 +528,122 @@
         // Render admin matches for entering results
         function renderAdminMatches() {
             const container = document.getElementById('adminMatchesContainer');
-            const teams = ['England', 'France', 'Ireland', 'Italy', 'Scotland', 'Wales'];
-            
-            container.innerHTML = matches.map(match => {
-                // Parse existing date to get ISO format for date input
-                const dateForInput = parseDateForInput(match.date);
-                
-                return `
-                <tr>
+            if (!container) return;
+
+            if (matches.length === 0) {
+                container.innerHTML = `<tr><td colspan="5" style="text-align:center; opacity:0.8;">No fixtures configured yet.</td></tr>`;
+                return;
+            }
+
+            const toScoreText = (match) => {
+                if (match.actualScore1 === null || match.actualScore2 === null) return 'Pending';
+                return `${getTeamAbbr(match.team1)} ${match.actualScore1} - ${match.actualScore2} ${getTeamAbbr(match.team2)}`;
+            };
+
+            const hasScoreSaved = (match) =>
+                match.actualScore1 !== null &&
+                match.actualScore2 !== null;
+
+            container.innerHTML = matches.map(match => `
+                <tr class="fixture-row-readonly" onclick="openEditFixtureModal(${match.id})">
+                    <td>${match.round || '-'}</td>
+                    <td>${getFlag(match.team1)} ${getTeamAbbr(match.team1)} vs ${getFlag(match.team2)} ${getTeamAbbr(match.team2)}</td>
+                    <td>${match.date || 'TBD'}${match.time ? ` ${match.time}` : ''}</td>
                     <td>
-                        <input type="number" id="round-${match.id}" value="${match.round}" min="1" max="10" style="width: 50px;" onblur="autoSaveResults()">
+                        <span class="capture-status ${hasScoreSaved(match) ? 'captured' : 'pending'}">
+                            ${toScoreText(match)}
+                        </span>
                     </td>
                     <td>
-                        <input type="date" id="date-${match.id}" value="${dateForInput}" style="width: 140px;" onchange="autoSaveResults()">
-                    </td>
-                    <td>
-                        <input type="time" id="time-${match.id}" value="${match.time || ''}" style="width: 100px;" onchange="autoSaveResults()">
-                    </td>
-                    <td>
-                        <select id="team1-select-${match.id}" onchange="autoSaveResults()">
-                            ${teams.map(t => `<option value="${t}" ${match.team1 === t ? 'selected' : ''}>${getFlag(t)} ${t}</option>`).join('')}
-                        </select>
-                    </td>
-                    <td>
-                        <input type="number" id="actual-team1-${match.id}" min="0" placeholder="-" value="${match.actualScore1 !== null ? match.actualScore1 : ''}" onblur="autoSaveResults()">
-                    </td>
-                    <td>
-                        <input type="number" id="actual-tries1-${match.id}" min="0" placeholder="-" value="${match.actualTries1 !== null ? match.actualTries1 : ''}" onblur="autoSaveResults()">
-                    </td>
-                    <td class="vs-cell">vs</td>
-                    <td>
-                        <select id="team2-select-${match.id}" onchange="autoSaveResults()">
-                            ${teams.map(t => `<option value="${t}" ${match.team2 === t ? 'selected' : ''}>${getFlag(t)} ${t}</option>`).join('')}
-                        </select>
-                    </td>
-                    <td>
-                        <input type="number" id="actual-team2-${match.id}" min="0" placeholder="-" value="${match.actualScore2 !== null ? match.actualScore2 : ''}" onblur="autoSaveResults()">
-                    </td>
-                    <td>
-                        <input type="number" id="actual-tries2-${match.id}" min="0" placeholder="-" value="${match.actualTries2 !== null ? match.actualTries2 : ''}" onblur="autoSaveResults()">
-                    </td>
-                    <td style="text-align: center;">
-                        <input type="checkbox" id="joker-eligible-${match.id}" ${match.jokerEligible ? 'checked' : ''} onchange="autoSaveResults()">
-                    </td>
-                    <td class="saved-cell" id="result-saved-${match.id}"></td>
-                    <td>
-                        <button class="btn-small btn-danger" onclick="deleteMatch(${match.id})" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">✕</button>
+                        <button class="btn-small btn-success" onclick="event.stopPropagation(); openEditFixtureModal(${match.id})">Edit</button>
+                        <button class="btn-small btn-danger" onclick="event.stopPropagation(); deleteMatch(${match.id})">Remove</button>
                     </td>
                 </tr>
-            `}).join('');
-            
-            // Update saved indicators
-            updateResultSavedIndicators();
+            `).join('');
+        }
+
+        function openEditFixtureModal(matchId) {
+            const match = matches.find(m => m.id === matchId);
+            const modal = document.getElementById('editFixtureModal');
+            if (!match || !modal) return;
+
+            editingFixtureId = matchId;
+            const teams = ['England', 'France', 'Ireland', 'Italy', 'Scotland', 'Wales'];
+
+            const team1Select = document.getElementById('edit-fixture-team1');
+            const team2Select = document.getElementById('edit-fixture-team2');
+            if (team1Select && team2Select) {
+                const teamOptions = teams.map(t => `<option value="${t}">${getFlag(t)} ${t}</option>`).join('');
+                team1Select.innerHTML = teamOptions;
+                team2Select.innerHTML = teamOptions;
+                team1Select.value = match.team1 || 'England';
+                team2Select.value = match.team2 || 'France';
+            }
+
+            document.getElementById('edit-fixture-round').value = match.round || 1;
+            document.getElementById('edit-fixture-date').value = parseDateForInput(match.date || '');
+            document.getElementById('edit-fixture-time').value = (match.time && match.time !== 'TBD') ? match.time : '';
+            document.getElementById('edit-fixture-score1').value = match.actualScore1 !== null ? match.actualScore1 : '';
+            document.getElementById('edit-fixture-score2').value = match.actualScore2 !== null ? match.actualScore2 : '';
+            document.getElementById('edit-fixture-tries1').value = match.actualTries1 !== null ? match.actualTries1 : '';
+            document.getElementById('edit-fixture-tries2').value = match.actualTries2 !== null ? match.actualTries2 : '';
+            document.getElementById('edit-fixture-joker').checked = !!match.jokerEligible;
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeEditFixtureModal() {
+            editingFixtureId = null;
+            const modal = document.getElementById('editFixtureModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function saveFixtureEdits() {
+            if (editingFixtureId === null) return;
+            const match = matches.find(m => m.id === editingFixtureId);
+            if (!match) return;
+
+            const roundVal = parseInt(document.getElementById('edit-fixture-round').value, 10);
+            const dateVal = document.getElementById('edit-fixture-date').value;
+            const timeVal = (document.getElementById('edit-fixture-time').value || '').trim();
+            const team1Val = document.getElementById('edit-fixture-team1').value;
+            const team2Val = document.getElementById('edit-fixture-team2').value;
+            const score1Val = document.getElementById('edit-fixture-score1').value;
+            const score2Val = document.getElementById('edit-fixture-score2').value;
+            const tries1Val = document.getElementById('edit-fixture-tries1').value;
+            const tries2Val = document.getElementById('edit-fixture-tries2').value;
+            const jokerVal = document.getElementById('edit-fixture-joker').checked;
+
+            if (!roundVal || roundVal < 1) {
+                alert('Round must be at least 1.');
+                return;
+            }
+            if (!team1Val || !team2Val) {
+                alert('Home and away teams are required.');
+                return;
+            }
+            if (team1Val === team2Val) {
+                alert('Home and away teams cannot be the same.');
+                return;
+            }
+
+            match.round = roundVal;
+            match.team1 = team1Val;
+            match.team2 = team2Val;
+            match.date = dateVal ? formatDateForDisplay(dateVal) : 'TBD';
+            match.time = timeVal || 'TBD';
+            match.jokerEligible = jokerVal;
+
+            match.actualScore1 = score1Val === '' ? null : parseInt(score1Val, 10);
+            match.actualScore2 = score2Val === '' ? null : parseInt(score2Val, 10);
+            match.actualTries1 = tries1Val === '' ? null : parseInt(tries1Val, 10);
+            match.actualTries2 = tries2Val === '' ? null : parseInt(tries2Val, 10);
+
+            await Storage.saveMatches(matches);
+            closeEditFixtureModal();
+            renderAdminMatches();
+            renderMatches();
+            showSummary();
         }
 
         // Parse a display date (e.g., "Sat, Feb 7") to ISO format for date input (e.g., "2026-02-07")
@@ -646,6 +711,7 @@
             await Storage.saveMatches(matches);
             renderAdminMatches();
             renderMatches();
+            openEditFixtureModal(newMatch.id);
         }
 
         // Delete a match
@@ -2381,6 +2447,14 @@
             const totalMatches = matches.length;
 
             let html = '<div class="summary-container">';
+            const isNarrowScreen = window.innerWidth <= 768;
+            const scrollHintText = isNarrowScreen
+                ? 'Scroll right to see full table. On phone, rotate to landscape for the best view.'
+                : 'Scroll right to see full table';
+            const scrollHintMarkup = `<div class="scroll-hint hidden" id="scrollHint"><span>${scrollHintText}</span><span class="scroll-hint-arrow">→</span></div>`;
+            if (currentFilter === 'all') {
+                html += scrollHintMarkup;
+            }
             html += '<table class="summary-table">';
             
             // Header row: Rank | Competitor | Score | Match 1 | Match 2 | ... | Predicted Tries
@@ -2595,7 +2669,9 @@
             
             html += '</tbody>';
             html += '</table>';
-            html += '<div class="scroll-hint hidden" id="scrollHint"><span>Scroll right to see full table</span><span class="scroll-hint-arrow">→</span></div>';
+            if (currentFilter !== 'all') {
+                html += scrollHintMarkup;
+            }
             html += '</div>';
 
             container.innerHTML = html;
