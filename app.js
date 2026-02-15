@@ -424,6 +424,7 @@
         let editingFixtureId = null;
         let adminPredictionUsername = null;
         const THEME_COOKIE_NAME = 'rugbyPredictorTheme';
+        const THEME_STORAGE_KEY = 'rugbyPredictorTheme';
         const COOKIE_FALLBACK_PREFIX = 'rugbyPredictorCookieFallback:';
 
         // Loading state
@@ -1529,27 +1530,42 @@
                 document.documentElement.setAttribute('data-theme', normalizedTheme);
             }
 
+            // Update the selector immediately
+            const selector = document.getElementById('themeSelect');
+            if (selector) {
+                selector.value = normalizedTheme;
+            }
+
             // Save theme to cookie so it persists across page reloads
             setCookie(THEME_COOKIE_NAME, normalizedTheme);
+            try {
+                localStorage.setItem(THEME_STORAGE_KEY, normalizedTheme);
+            } catch (error) {
+                // Ignore storage errors.
+            }
             
             // Save to user's account if logged in
             if (currentUsername && users[currentUsername]) {
                 users[currentUsername].theme = normalizedTheme;
-                await Storage.saveUser(currentUsername, users[currentUsername]);
-            }
-            
-            // Update the selector
-            const selector = document.getElementById('themeSelect');
-            if (selector) {
-                selector.value = normalizedTheme;
+                try {
+                    await Storage.saveUser(currentUsername, users[currentUsername]);
+                } catch (error) {
+                    console.error('Failed to persist theme to user profile:', error);
+                }
             }
         }
 
         // Load user's saved theme
         function loadUserTheme() {
+            let storageTheme = '';
+            try {
+                storageTheme = (localStorage.getItem(THEME_STORAGE_KEY) || '').trim().toLowerCase();
+            } catch (error) {
+                storageTheme = '';
+            }
             const cookieTheme = (getCookie(THEME_COOKIE_NAME) || '').trim().toLowerCase();
             const userTheme = currentUsername && users[currentUsername] ? users[currentUsername].theme : null;
-            changeTheme(cookieTheme || userTheme || 'classic');
+            changeTheme(storageTheme || cookieTheme || userTheme || 'classic');
         }
 
         // Calculate total actual tries in tournament
@@ -3625,12 +3641,14 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
             init();
 
             // Apply previously selected theme from cookie immediately on load
-            const savedTheme = (getCookie(THEME_COOKIE_NAME) || '').trim().toLowerCase();
-            if (savedTheme) {
-                changeTheme(savedTheme);
-            } else {
-                changeTheme('classic');
+            let savedStorageTheme = '';
+            try {
+                savedStorageTheme = (localStorage.getItem(THEME_STORAGE_KEY) || '').trim().toLowerCase();
+            } catch (error) {
+                savedStorageTheme = '';
             }
+            const savedTheme = (getCookie(THEME_COOKIE_NAME) || '').trim().toLowerCase();
+            changeTheme(savedStorageTheme || savedTheme || 'classic');
 
             // Direct PDF URL support: index.html?export=pdf
             const params = new URLSearchParams(window.location.search);
