@@ -2317,6 +2317,24 @@
             background: #e67e22;
         }
 
+        .competitor-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            min-width: 140px;
+        }
+
+        .competitor-actions .btn-small {
+            width: 100%;
+            margin: 0;
+            padding: 0.5rem 0.65rem;
+            font-size: 0.78rem;
+            letter-spacing: 0.02em;
+            text-transform: none;
+            white-space: normal;
+            line-height: 1.2;
+        }
+
         /* Database Recovery styles */
         .recovery-section {
             display: flex;

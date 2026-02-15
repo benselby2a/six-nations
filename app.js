@@ -1042,7 +1042,9 @@
                                 <input type="checkbox" id="new-admin-admin">
                             </td>
                             <td>
-                                <button class="btn-small btn-success" onclick="addCompetitorFromAdmin()">Add Competitor</button>
+                                <div class="competitor-actions">
+                                    <button class="btn-small btn-success" onclick="addCompetitorFromAdmin()">Add Competitor</button>
+                                </div>
                             </td>
                         </tr>
             `;
@@ -1070,9 +1072,11 @@
                             <input type="checkbox" id="edit-admin-${username}" ${isAdmin ? 'checked' : ''} onchange="toggleUserAdmin('${safeUsername}')">
                         </td>
                         <td>
-                            <button class="btn-small btn-success" onclick="saveUserChanges('${safeUsername}')">Save</button>
-                            <button class="btn-small btn-warning" onclick="resetUserPassword('${safeUsername}')">Reset Password</button>
-                            <button class="btn-small btn-danger" onclick="deleteUser('${safeUsername}')">Delete</button>
+                            <div class="competitor-actions">
+                                <button class="btn-small btn-success" onclick="saveUserChanges('${safeUsername}')">Save</button>
+                                <button class="btn-small btn-warning" onclick="resetUserPassword('${safeUsername}')">Reset Password</button>
+                                <button class="btn-small btn-danger" onclick="deleteUser('${safeUsername}')">Delete</button>
+                            </div>
                         </td>
                     </tr>
                 `;
