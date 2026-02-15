@@ -424,15 +424,26 @@
         let editingFixtureId = null;
         let adminPredictionUsername = null;
         const THEME_COOKIE_NAME = 'rugbyPredictorTheme';
+        const COOKIE_FALLBACK_PREFIX = 'rugbyPredictorCookieFallback:';
 
         // Loading state
         let isLoading = true;
 
         // Cookie helper functions
         function setCookie(name, value, days = 365) {
+            try {
+                localStorage.setItem(`${COOKIE_FALLBACK_PREFIX}${name}`, String(value));
+            } catch (error) {
+                // Ignore storage errors and continue with normal cookie write attempt.
+            }
+
+            if (window.location.protocol === 'file:') {
+                return;
+            }
+
             const expires = new Date();
             expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-            document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
+            document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
         }
 
         function getCookie(name) {
@@ -443,10 +454,21 @@
                 while (c.charAt(0) === ' ') c = c.substring(1, c.length);
                 if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length, c.length));
             }
-            return null;
+
+            try {
+                return localStorage.getItem(`${COOKIE_FALLBACK_PREFIX}${name}`);
+            } catch (error) {
+                return null;
+            }
         }
 
         function deleteCookie(name) {
+            try {
+                localStorage.removeItem(`${COOKIE_FALLBACK_PREFIX}${name}`);
+            } catch (error) {
+                // Ignore storage cleanup errors.
+            }
+
             document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
         }
 
