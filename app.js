@@ -423,6 +423,7 @@
         let isGuest = false;
         let editingFixtureId = null;
         let adminPredictionUsername = null;
+        const THEME_COOKIE_NAME = 'rugbyPredictorTheme';
 
         // Loading state
         let isLoading = true;
@@ -1497,33 +1498,36 @@
 
         // Change theme
         async function changeTheme(theme) {
+            const normalizedTheme = ['classic', 'retro', 'dark'].includes(theme) ? theme : 'classic';
+
             // Apply theme to document
-            if (theme === 'classic') {
+            if (normalizedTheme === 'classic') {
                 document.documentElement.removeAttribute('data-theme');
             } else {
-                document.documentElement.setAttribute('data-theme', theme);
+                document.documentElement.setAttribute('data-theme', normalizedTheme);
             }
+
+            // Save theme to cookie so it persists across page reloads
+            setCookie(THEME_COOKIE_NAME, normalizedTheme);
             
             // Save to user's account if logged in
             if (currentUsername && users[currentUsername]) {
-                users[currentUsername].theme = theme;
+                users[currentUsername].theme = normalizedTheme;
                 await Storage.saveUser(currentUsername, users[currentUsername]);
             }
             
             // Update the selector
             const selector = document.getElementById('themeSelect');
             if (selector) {
-                selector.value = theme;
+                selector.value = normalizedTheme;
             }
         }
 
         // Load user's saved theme
         function loadUserTheme() {
-            if (currentUsername && users[currentUsername] && users[currentUsername].theme) {
-                changeTheme(users[currentUsername].theme);
-            } else {
-                changeTheme('classic');
-            }
+            const cookieTheme = (getCookie(THEME_COOKIE_NAME) || '').trim().toLowerCase();
+            const userTheme = currentUsername && users[currentUsername] ? users[currentUsername].theme : null;
+            changeTheme(cookieTheme || userTheme || 'classic');
         }
 
         // Calculate total actual tries in tournament
@@ -2378,11 +2382,24 @@
                 "with the vision of Ryan Lamb spotting gaps in the defence",
                 "as explosive as Lesley Vainikolo in full flight down the wing",
                 "tougher than the Kingsholm pitch after a week of West Country rain",
-                "showing the never-say-die attitude of the 2006-07 EDF Energy Cup winners"
+                "showing the never-say-die attitude of the 2006-07 EDF Energy Cup winners",
+                "as fired up as Kingsholm on derby day against Bath",
+                "with the composure of Greig Laidlaw knocking over late pressure kicks in Cherry and White",
+                "as clinical as Charlie Sharples finishing in the corner at full pace",
+                "like Gloucester in full flow during those Heineken Cup nights under the lights"
+            ];
+
+            const worldCupClassicRefs = [
+                "the 1995 World Cup final in Johannesburg",
+                "France's stunning comeback against New Zealand in the 1999 World Cup semi-final",
+                "Jonny Wilkinson's 2003 World Cup final drop goal in Sydney",
+                "France v New Zealand in the 2007 World Cup quarter-final in Cardiff",
+                "the 2007 World Cup final arm wrestle between South Africa and England"
             ];
             
             const randomGloucester = gloucesterRefs[Math.floor(Math.random() * gloucesterRefs.length)];
             const randomGloucester2 = gloucesterRefs[Math.floor(Math.random() * gloucesterRefs.length)];
+            const randomWorldCupClassic = worldCupClassicRefs[Math.floor(Math.random() * worldCupClassicRefs.length)];
             const nextMatch = matches.find(m => m.actualScore1 === null || m.actualScore2 === null);
             const nextFixtureText = nextMatch
                 ? `Next up we have ${nextMatch.team1} vs ${nextMatch.team2} on ${nextMatch.date} at ${nextMatch.time}.`
@@ -2390,7 +2407,7 @@
             const nextFixtureWithHistory = nextFixtureText;
             
             if (completedMatches.length === 0) {
-                tip = `No matches played yet, but the tension is building like the 2003 World Cup final in extra time! Get your predictions in sharpish - this isn't a Gloucester training session where you can take your time. The tournament kicks off soon and every point counts. Make sure you've got all your scores in before kick-off - no late changes allowed once the whistle blows! Remember, predicting a draw gets you bonus points, and if you nail the exact score, you'll be celebrating like Gloucester winning the Premiership. ${nextFixtureWithHistory}`;
+                tip = `No matches played yet, but the tension is building like ${randomWorldCupClassic}! Get your predictions in sharpish - this isn't a Gloucester training session where you can take your time. The tournament kicks off soon and every point counts. Make sure you've got all your scores in before kick-off - no late changes allowed once the whistle blows! Remember, predicting a draw gets you bonus points, and if you nail the exact score, you'll be celebrating like Gloucester winning the Premiership. ${nextFixtureWithHistory}`;
             } else if (leaderboardData.length === 1) {
                 tip = `${leaderboardData[0].nickname} is currently the only competitor - ${randomGloucester}! Bit lonely at the top though, like being the only person who remembers Gloucester's Powergen Cup wins. Get some mates involved and make this a proper competition! The more the merrier, as they say down at Kingsholm on match day. ${nextFixtureWithHistory}`;
             } else {
@@ -2398,6 +2415,42 @@
                 const second = leaderboardData[1];
                 const gap = leader.points - second.points;
                 const remainingMatches = matches.length - completedMatches.length;
+                const scoreGroups = {};
+                leaderboardData.forEach(entry => {
+                    if (!scoreGroups[entry.points]) scoreGroups[entry.points] = [];
+                    scoreGroups[entry.points].push(entry.nickname);
+                });
+
+                const multiWayTies = Object.keys(scoreGroups)
+                    .map(points => ({ points: parseInt(points, 10), names: scoreGroups[points] }))
+                    .filter(group => group.names.length >= 3)
+                    .sort((a, b) => b.points - a.points);
+
+                let tieAnalysis = '';
+                if (multiWayTies.length > 0) {
+                    const tie = multiWayTies[0];
+                    tieAnalysis = `${tie.names.join(', ')} are all locked together on ${tie.points} points - that's a proper ${tie.names.length}-way tie. `;
+                    if (multiWayTies.length > 1) {
+                        tieAnalysis += `And it's not just them - there are multiple score ties right across the table. `;
+                    }
+                }
+
+                let bottomTableAnalysis = '';
+                if (leaderboardData.length >= 4) {
+                    const bottomSlice = leaderboardData.slice(-3);
+                    const bottomNames = bottomSlice.map(entry => entry.nickname).join(', ');
+                    const lastEntry = leaderboardData[leaderboardData.length - 1];
+                    const secondLast = leaderboardData[leaderboardData.length - 2];
+                    const aboveBottom = leaderboardData[leaderboardData.length - 4];
+
+                    if (lastEntry.points === secondLast.points) {
+                        bottomTableAnalysis = `Down near the bottom it's tight between ${bottomNames}, all scrapping for every point. `;
+                    } else if (aboveBottom && (aboveBottom.points - lastEntry.points) <= 3) {
+                        bottomTableAnalysis = `Even at the foot of the table it's close - ${bottomNames} are only a good prediction away from climbing places. `;
+                    } else {
+                        bottomTableAnalysis = `${bottomNames} are chasing hard from the lower end of the table and one strong round could shake everything up. `;
+                    }
+                }
                 
                 // Build match analysis with more detail
                 let matchAnalysis = '';
@@ -2487,15 +2540,15 @@
                 }
                 
                 if (gap === 0) {
-                    tip = `It's tighter than the 2003 World Cup final at the top! ${leader.nickname} and ${second.nickname} are level on ${leader.points} points - ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}${tournamentStats}With ${remainingMatches} matches still to play, this one's going down to the wire like England vs Australia in Sydney! Every prediction counts now - one perfect score could swing it all. ${nextFixtureWithHistory}`;
+                    tip = `It's tighter than the 2003 World Cup final at the top! ${leader.nickname} and ${second.nickname} are level on ${leader.points} points - ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}${tournamentStats}${tieAnalysis}${bottomTableAnalysis}With ${remainingMatches} matches still to play, this one's going down to the wire like England vs Australia in Sydney! Every prediction counts now - one perfect score could swing it all. ${nextFixtureWithHistory}`;
                 } else if (gap <= 3) {
-                    tip = `${leader.nickname} leads with ${leader.points} points but ${second.nickname} is breathing down their neck like a Gloucester flanker hunting a fly-half! Only ${gap} point${gap > 1 ? 's' : ''} separating them. ${matchAnalysis}${predictionAnalysis}${tournamentStats}With ${remainingMatches} matches left, one good round of predictions could change everything. This is proper squeaky-bum time, as they say! ${nextFixtureWithHistory}`;
+                    tip = `${leader.nickname} leads with ${leader.points} points but ${second.nickname} is breathing down their neck like a Gloucester flanker hunting a fly-half! Only ${gap} point${gap > 1 ? 's' : ''} separating them. ${matchAnalysis}${predictionAnalysis}${tournamentStats}${tieAnalysis}${bottomTableAnalysis}With ${remainingMatches} matches left, one good round of predictions could change everything. Feels like the closing minutes of ${randomWorldCupClassic}. ${nextFixtureWithHistory}`;
                 } else if (gap <= 6) {
-                    tip = `${leader.nickname} is building a handy lead on ${leader.points} points, but ${second.nickname} on ${second.points} won't give up without a fight - ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}${tournamentStats}Still ${remainingMatches} matches to play, which means plenty of points up for grabs. A couple of perfect scores and this leaderboard could look very different. ${nextFixtureWithHistory}`;
+                    tip = `${leader.nickname} is building a handy lead on ${leader.points} points, but ${second.nickname} on ${second.points} won't give up without a fight - ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}${tournamentStats}${tieAnalysis}${bottomTableAnalysis}Still ${remainingMatches} matches to play, which means plenty of points up for grabs. A couple of perfect scores and this leaderboard could look very different. ${nextFixtureWithHistory}`;
                 } else if (gap <= 10) {
-                    tip = `${leader.nickname} is pulling clear on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs to find form quickly. ${matchAnalysis}${predictionAnalysis}${tournamentStats}But don't count anyone out yet - remember Japan beating South Africa at the 2015 World Cup? Anything's possible in this game! ${nextFixtureWithHistory}`;
+                    tip = `${leader.nickname} is pulling clear on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs to find form quickly. ${matchAnalysis}${predictionAnalysis}${tournamentStats}${tieAnalysis}${bottomTableAnalysis}But don't count anyone out yet - remember ${randomWorldCupClassic}? Anything's possible in this game! ${nextFixtureWithHistory}`;
                 } else {
-                    tip = `${leader.nickname} is running away with it on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs a serious comeback worthy of the 1999 French team against the All Blacks. ${matchAnalysis}${predictionAnalysis}${tournamentStats}The gap looks big, but ${remainingMatches} matches means up to ${remainingMatches * 11} points still available. Stranger things have happened - ${randomGloucester2}! ${nextFixtureWithHistory}`;
+                    tip = `${leader.nickname} is running away with it on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs a serious comeback worthy of the 1999 French team against the All Blacks. ${matchAnalysis}${predictionAnalysis}${tournamentStats}${tieAnalysis}${bottomTableAnalysis}The gap looks big, but ${remainingMatches} matches means up to ${remainingMatches * 11} points still available. Stranger things have happened - ${randomGloucester2}! ${nextFixtureWithHistory}`;
                 }
             }
             
@@ -3548,6 +3601,14 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
         // Initialize on load - load data from Supabase first
         initializeData().then(() => {
             init();
+
+            // Apply previously selected theme from cookie immediately on load
+            const savedTheme = (getCookie(THEME_COOKIE_NAME) || '').trim().toLowerCase();
+            if (savedTheme) {
+                changeTheme(savedTheme);
+            } else {
+                changeTheme('classic');
+            }
 
             // Direct PDF URL support: index.html?export=pdf
             const params = new URLSearchParams(window.location.search);
