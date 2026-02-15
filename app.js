@@ -422,6 +422,7 @@
         let appSettings = { predictionsLocked: false };
         let isGuest = false;
         let editingFixtureId = null;
+        let adminPredictionUsername = null;
 
         // Loading state
         let isLoading = true;
@@ -1776,6 +1777,7 @@
             document.getElementById('predictionsTab').classList.add('hidden');
             document.getElementById('summaryTab').classList.remove('hidden');
             document.getElementById('competitorsTab').classList.add('hidden');
+            document.getElementById('scoreCorrectionsTab').classList.add('hidden');
             document.getElementById('resultsTab').classList.add('hidden');
             document.getElementById('recoveryTab').classList.add('hidden');
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
@@ -1812,6 +1814,7 @@
             document.getElementById('predictionsTab').classList.add('hidden');
             document.getElementById('summaryTab').classList.remove('hidden');
             document.getElementById('competitorsTab').classList.add('hidden');
+            document.getElementById('scoreCorrectionsTab').classList.add('hidden');
             document.getElementById('resultsTab').classList.add('hidden');
             document.getElementById('recoveryTab').classList.add('hidden');
 
@@ -1835,6 +1838,190 @@
                 return `<span class="outstanding-banner-count">${outstandingCount}</span> match prediction${outstandingCount !== 1 ? 's' : ''} still to enter`;
             }
             return `<span class="outstanding-banner-count">Total tries</span> prediction still to enter`;
+        }
+
+        function getDisplayName(username) {
+            if (!users[username]) return username;
+            return toTitleCase(users[username].nickname || username);
+        }
+
+        function populateAdminPredictionUserSelect() {
+            const select = document.getElementById('adminPredictionUserSelect');
+            if (!select) return;
+
+            const allUsers = Object.keys(users).sort((a, b) => {
+                return getDisplayName(a).localeCompare(getDisplayName(b));
+            });
+
+            if (allUsers.length === 0) {
+                select.innerHTML = '<option value="">No competitors</option>';
+                adminPredictionUsername = null;
+                return;
+            }
+
+            if (!adminPredictionUsername || !users[adminPredictionUsername]) {
+                adminPredictionUsername = null;
+            }
+
+            const placeholderOption = `<option value="" ${adminPredictionUsername ? '' : 'selected'}>Please select a competitor</option>`;
+            const userOptions = allUsers.map(username => {
+                const selected = username === adminPredictionUsername ? 'selected' : '';
+                return `<option value="${username}" ${selected}>${getDisplayName(username)}</option>`;
+            }).join('');
+
+            select.innerHTML = `${placeholderOption}${userOptions}`;
+        }
+
+        function onAdminPredictionUserChange() {
+            const select = document.getElementById('adminPredictionUserSelect');
+            adminPredictionUsername = select ? select.value : null;
+            renderAdminScoreCorrections();
+        }
+
+        function renderAdminScoreCorrections() {
+            const container = document.getElementById('adminUserMatchesContainer');
+            const triesSection = document.getElementById('adminTriesSection');
+            if (!container) return;
+
+            populateAdminPredictionUserSelect();
+
+            const username = adminPredictionUsername;
+            if (!username || !users[username]) {
+                container.innerHTML = '<p style="text-align: center; opacity: 0.8;">No competitor selected.</p>';
+                const triesInput = document.getElementById('adminTotalTries');
+                if (triesInput) triesInput.value = '';
+                if (triesSection) triesSection.classList.add('hidden');
+                return;
+            }
+
+            if (triesSection) triesSection.classList.remove('hidden');
+
+            let currentRound = 0;
+            let html = `<div class="unlock-banner">Editing predictions for <strong>${getDisplayName(username)}</strong>. Changes are saved automatically.</div>`;
+
+            matches.forEach(match => {
+                if (match.round !== currentRound) {
+                    currentRound = match.round;
+                    html += `<h2 style="font-family: 'Bebas Neue', cursive; font-size: 1.8rem; color: var(--bright-gold); margin: 1.5rem 0 0.75rem 0; letter-spacing: 0.1em;">Round ${currentRound}</h2>`;
+                }
+
+                const isJoker = users[username] && users[username].jokerMatchId === match.id;
+                const jokerCardClass = isJoker ? ' joker-selected' : '';
+                const jokerSection = match.jokerEligible ? `
+                    <div class="joker-selection">
+                        <label class="joker-label">
+                            <input type="radio" name="adminJokerMatch" class="joker-checkbox" value="${match.id}"
+                                ${isJoker ? 'checked' : ''}
+                                onchange="selectAdminJoker(${match.id})">
+                            <span class="joker-icon">🃏</span>
+                            <span class="joker-text">Joker (2x points)</span>
+                        </label>
+                    </div>
+                ` : '';
+
+                html += `
+                    <div class="match-card${jokerCardClass}" id="admin-match-card-${match.id}">
+                        <div class="match-header">${match.date} - ${match.time} <span class="match-saved-indicator" id="admin-saved-${match.id}"></span></div>
+                        <div class="match-teams">
+                            <div class="team">
+                                <div class="team-flag">${getFlag(match.team1)}</div>
+                                <div class="team-name">${match.team1}</div>
+                                <input type="number" class="score-input" id="admin-team1-${match.id}" min="0" placeholder="0" onblur="autoSaveAdminPredictions()">
+                            </div>
+                            <div class="vs">VS</div>
+                            <div class="team">
+                                <div class="team-flag">${getFlag(match.team2)}</div>
+                                <div class="team-name">${match.team2}</div>
+                                <input type="number" class="score-input" id="admin-team2-${match.id}" min="0" placeholder="0" onblur="autoSaveAdminPredictions()">
+                            </div>
+                        </div>
+                        ${jokerSection}
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            loadAdminPredictions();
+            updateAdminSavedIndicators();
+        }
+
+        function loadAdminPredictions() {
+            const username = adminPredictionUsername;
+            const userData = username ? users[username] : null;
+            if (!userData) return;
+
+            if (userData.predictions) {
+                Object.keys(userData.predictions).forEach(matchId => {
+                    const pred = userData.predictions[matchId];
+                    const team1Input = document.getElementById(`admin-team1-${matchId}`);
+                    const team2Input = document.getElementById(`admin-team2-${matchId}`);
+                    if (team1Input) team1Input.value = pred.team1;
+                    if (team2Input) team2Input.value = pred.team2;
+                });
+            }
+
+            const triesInput = document.getElementById('adminTotalTries');
+            if (triesInput) {
+                triesInput.value = userData.totalTries === null || userData.totalTries === undefined
+                    ? ''
+                    : userData.totalTries;
+            }
+        }
+
+        function updateAdminSavedIndicators() {
+            const username = adminPredictionUsername;
+            const userData = username ? users[username] : null;
+            if (!userData || !userData.predictions) return;
+
+            matches.forEach(match => {
+                const indicator = document.getElementById(`admin-saved-${match.id}`);
+                if (!indicator) return;
+
+                if (userData.predictions[match.id]) {
+                    indicator.textContent = '✓';
+                    indicator.classList.add('visible');
+                } else {
+                    indicator.textContent = '';
+                    indicator.classList.remove('visible');
+                }
+            });
+        }
+
+        async function autoSaveAdminPredictions() {
+            const username = adminPredictionUsername;
+            if (!username || !users[username]) return;
+
+            const predictions = {};
+            matches.forEach(match => {
+                const team1Input = document.getElementById(`admin-team1-${match.id}`);
+                const team2Input = document.getElementById(`admin-team2-${match.id}`);
+                const team1Score = team1Input ? team1Input.value : '';
+                const team2Score = team2Input ? team2Input.value : '';
+
+                if (team1Score !== '' && team2Score !== '') {
+                    predictions[match.id] = {
+                        team1: parseInt(team1Score, 10),
+                        team2: parseInt(team2Score, 10)
+                    };
+                }
+            });
+
+            const triesInput = document.getElementById('adminTotalTries');
+            const totalTries = triesInput ? triesInput.value : '';
+            const newTries = totalTries === '' ? null : parseInt(totalTries, 10);
+
+            users[username].predictions = predictions;
+            users[username].totalTries = newTries;
+            await Storage.savePredictions(username, predictions, newTries);
+            updateAdminSavedIndicators();
+        }
+
+        async function selectAdminJoker(matchId) {
+            const username = adminPredictionUsername;
+            if (!username || !users[username]) return;
+            users[username].jokerMatchId = matchId;
+            await Storage.saveUser(username, users[username]);
+            renderAdminScoreCorrections();
         }
 
         // Render matches
@@ -3283,6 +3470,7 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
             document.getElementById('predictionsTab').classList.add('hidden');
             document.getElementById('summaryTab').classList.add('hidden');
             document.getElementById('competitorsTab').classList.add('hidden');
+            document.getElementById('scoreCorrectionsTab').classList.add('hidden');
             document.getElementById('resultsTab').classList.add('hidden');
             document.getElementById('recoveryTab').classList.add('hidden');
 
@@ -3304,6 +3492,11 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
                 document.getElementById('competitorsTab').classList.remove('hidden');
                 event.target.classList.add('active');
                 renderCompetitorManagement();
+            } else if (tabName === 'scoreCorrections') {
+                if (!isCurrentUserAdmin()) return;
+                document.getElementById('scoreCorrectionsTab').classList.remove('hidden');
+                event.target.classList.add('active');
+                renderAdminScoreCorrections();
             } else if (tabName === 'results') {
                 if (!isCurrentUserAdmin()) return;
                 document.getElementById('resultsTab').classList.remove('hidden');

@@ -154,6 +154,7 @@
                 <div class="admin-tabs-label">Admin Functions</div>
                 <div class="tabs admin-tabs">
                     <button class="tab" onclick="showTab('competitors')">Competitor Mgmt.</button>
+                    <button class="tab" onclick="showTab('scoreCorrections')">Edit Predictions</button>
                     <button class="tab" onclick="showTab('results')">Fixture Setup</button>
                     <button class="tab" onclick="showTab('recovery')">Database Recovery</button>
                 </div>
@@ -167,6 +168,22 @@
                     <h3>Total Tournament Tries</h3>
                     <p style="margin-bottom: 0.75rem; font-size: 0.95rem; opacity: 0.8;">Predict the total tries scored across all matches.</p>
                     <input type="number" class="tries-input" id="totalTries" min="0" placeholder="000">
+                </div>
+            </div>
+
+            <!-- Score Corrections Tab (Admin Only) -->
+            <div id="scoreCorrectionsTab" class="prediction-section admin-only hidden" style="margin-top: 2rem;">
+                <div class="admin-score-corrections-toolbar">
+                    <label for="adminPredictionUserSelect">Competitor</label>
+                    <select id="adminPredictionUserSelect" onchange="onAdminPredictionUserChange()"></select>
+                </div>
+
+                <div id="adminUserMatchesContainer"></div>
+
+                <div class="tries-section hidden" id="adminTriesSection">
+                    <h3>Total Tournament Tries</h3>
+                    <p style="margin-bottom: 0.75rem; font-size: 0.95rem; opacity: 0.8;">Edit the selected competitor's total tries prediction.</p>
+                    <input type="number" class="tries-input" id="adminTotalTries" min="0" placeholder="000" onblur="autoSaveAdminPredictions()">
                 </div>
             </div>
 
