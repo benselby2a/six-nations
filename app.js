@@ -651,6 +651,54 @@
                 alert('Home and away teams cannot be the same.');
                 return;
             }
+            if (dateVal && !/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+                alert('Date must be in YYYY-MM-DD format.');
+                return;
+            }
+            if (timeVal && !/^([01]\d|2[0-3]):([0-5]\d)$/.test(timeVal)) {
+                alert('Time must be in HH:MM 24-hour format.');
+                return;
+            }
+
+            const parseOptionalNonNegativeInt = (rawValue, fieldLabel) => {
+                if (rawValue === '') return null;
+                const parsed = Number(rawValue);
+                if (!Number.isInteger(parsed) || parsed < 0) {
+                    throw new Error(`${fieldLabel} must be a whole number of 0 or more.`);
+                }
+                return parsed;
+            };
+
+            let parsedScore1;
+            let parsedScore2;
+            let parsedTries1;
+            let parsedTries2;
+            try {
+                parsedScore1 = parseOptionalNonNegativeInt(score1Val, 'Home score');
+                parsedScore2 = parseOptionalNonNegativeInt(score2Val, 'Away score');
+                parsedTries1 = parseOptionalNonNegativeInt(tries1Val, 'Home tries');
+                parsedTries2 = parseOptionalNonNegativeInt(tries2Val, 'Away tries');
+            } catch (validationError) {
+                alert(validationError.message);
+                return;
+            }
+
+            const hasAnyResultValue = [parsedScore1, parsedScore2, parsedTries1, parsedTries2].some(v => v !== null);
+            const hasAllResultValues = [parsedScore1, parsedScore2, parsedTries1, parsedTries2].every(v => v !== null);
+            if (hasAnyResultValue && !hasAllResultValues) {
+                alert('Please enter Home/Away score and Home/Away tries together, or leave all four blank.');
+                return;
+            }
+            if (hasAllResultValues) {
+                if (parsedScore1 < parsedTries1 * 5) {
+                    alert('Home score looks too low for the number of home tries entered.');
+                    return;
+                }
+                if (parsedScore2 < parsedTries2 * 5) {
+                    alert('Away score looks too low for the number of away tries entered.');
+                    return;
+                }
+            }
 
             match.round = roundVal;
             match.team1 = team1Val;
@@ -662,10 +710,10 @@
             match.time = timeVal || match.time || 'TBD';
             match.jokerEligible = jokerVal;
 
-            match.actualScore1 = score1Val === '' ? null : parseInt(score1Val, 10);
-            match.actualScore2 = score2Val === '' ? null : parseInt(score2Val, 10);
-            match.actualTries1 = tries1Val === '' ? null : parseInt(tries1Val, 10);
-            match.actualTries2 = tries2Val === '' ? null : parseInt(tries2Val, 10);
+            match.actualScore1 = parsedScore1;
+            match.actualScore2 = parsedScore2;
+            match.actualTries1 = parsedTries1;
+            match.actualTries2 = parsedTries2;
 
             await Storage.saveMatches(matches);
             closeEditFixtureModal();
@@ -679,23 +727,62 @@
             if (!dateStr || dateStr === 'TBD') return '';
             // Already ISO format
             if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
-            
-            const months = {
-                'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04',
-                'May': '05', 'Jun': '06', 'Jul': '07', 'Aug': '08',
-                'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+
+            const monthLookup = {
+                jan: 1, january: 1,
+                feb: 2, february: 2,
+                mar: 3, march: 3,
+                apr: 4, april: 4,
+                may: 5,
+                jun: 6, june: 6,
+                jul: 7, july: 7,
+                aug: 8, august: 8,
+                sep: 9, sept: 9, september: 9,
+                oct: 10, october: 10,
+                nov: 11, november: 11,
+                dec: 12, december: 12
             };
-            
-            // Try to parse "Day, Mon DD" format
-            const match = dateStr.match(/(\w+),?\s*(\w+)\s+(\d+)/);
-            if (match) {
-                const month = months[match[2]];
-                const day = match[3].padStart(2, '0');
-                if (month) {
-                    return `2026-${month}-${day}`;
+
+            const toIsoIfValid = (year, month, day) => {
+                const y = Number(year);
+                const m = Number(month);
+                const d = Number(day);
+                const candidate = new Date(y, m - 1, d);
+                if (
+                    Number.isNaN(candidate.getTime()) ||
+                    candidate.getFullYear() !== y ||
+                    candidate.getMonth() !== m - 1 ||
+                    candidate.getDate() !== d
+                ) {
+                    return '';
                 }
+                return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            };
+
+            const normalized = String(dateStr).trim().replace(/\s+/g, ' ');
+            const withoutWeekday = normalized.replace(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s+/i, '');
+
+            const slashMatch = withoutWeekday.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (slashMatch) {
+                return toIsoIfValid(slashMatch[3], slashMatch[2], slashMatch[1]);
             }
-            
+
+            const monthDayMatch = withoutWeekday.match(/^([A-Za-z]+)\s+(\d{1,2})(?:\s+(\d{4}))?$/);
+            if (monthDayMatch) {
+                const month = monthLookup[monthDayMatch[1].toLowerCase()];
+                const day = monthDayMatch[2];
+                const year = monthDayMatch[3] || '2026';
+                if (month) return toIsoIfValid(year, month, day);
+            }
+
+            const dayMonthMatch = withoutWeekday.match(/^(\d{1,2})\s+([A-Za-z]+)(?:\s+(\d{4}))?$/);
+            if (dayMonthMatch) {
+                const month = monthLookup[dayMonthMatch[2].toLowerCase()];
+                const day = dayMonthMatch[1];
+                const year = dayMonthMatch[3] || '2026';
+                if (month) return toIsoIfValid(year, month, day);
+            }
+
             return '';
         }
 
@@ -1952,6 +2039,26 @@
 
                 const isJoker = users[username] && users[username].jokerMatchId === match.id;
                 const jokerCardClass = isJoker ? ' joker-selected' : '';
+                const isMatchCompleted = match.actualScore1 !== null && match.actualScore2 !== null;
+                const userPrediction = users[username] && users[username].predictions
+                    ? users[username].predictions[match.id]
+                    : null;
+                const pointsBreakdown = isMatchCompleted
+                    ? getMatchPointsBreakdown(userPrediction, match, isJoker)
+                    : { points: 0, summary: '' };
+                const pointsAwarded = pointsBreakdown.points;
+                const completedMatchSection = isMatchCompleted ? `
+                    <div class="completed-match-summary">
+                        <div class="completed-match-badge">Match Completed</div>
+                        <div class="completed-match-result">
+                            Actual score: ${getFlag(match.team1)} ${match.team1} ${match.actualScore1} - ${match.actualScore2} ${match.team2} ${getFlag(match.team2)}
+                        </div>
+                        <div class="completed-match-points">
+                            Points awarded: <strong>${pointsAwarded}</strong>${userPrediction ? '' : ' (no prediction submitted)'}
+                            ${pointsBreakdown.summary ? ` - ${pointsBreakdown.summary}` : ''}
+                        </div>
+                    </div>
+                ` : '';
                 const jokerSection = match.jokerEligible ? `
                     <div class="joker-selection">
                         <label class="joker-label">
@@ -1966,7 +2073,7 @@
 
                 html += `
                     <div class="match-card${jokerCardClass}" id="admin-match-card-${match.id}">
-                        <div class="match-header">${match.date} - ${match.time} <span class="match-saved-indicator" id="admin-saved-${match.id}"></span></div>
+                        <div class="match-header">${match.date} - ${match.time} <span class="match-saved-indicator prediction-capture-text" id="admin-saved-${match.id}"></span></div>
                         <div class="match-teams">
                             <div class="team">
                                 <div class="team-flag">${getFlag(match.team1)}</div>
@@ -1980,6 +2087,7 @@
                                 <input type="number" class="score-input" id="admin-team2-${match.id}" min="0" placeholder="0" onblur="autoSaveAdminPredictions()">
                             </div>
                         </div>
+                        ${completedMatchSection}
                         ${jokerSection}
                     </div>
                 `;
@@ -2016,18 +2124,23 @@
         function updateAdminSavedIndicators() {
             const username = adminPredictionUsername;
             const userData = username ? users[username] : null;
-            if (!userData || !userData.predictions) return;
+            if (!userData) return;
+            const userPredictions = userData.predictions || {};
 
             matches.forEach(match => {
                 const indicator = document.getElementById(`admin-saved-${match.id}`);
                 if (!indicator) return;
 
-                if (userData.predictions[match.id]) {
-                    indicator.textContent = '✓';
+                if (userPredictions[match.id]) {
+                    indicator.textContent = 'Prediction Captured';
                     indicator.classList.add('visible');
+                    indicator.classList.add('captured');
+                    indicator.classList.remove('not-captured');
                 } else {
-                    indicator.textContent = '';
-                    indicator.classList.remove('visible');
+                    indicator.textContent = 'Prediction Not Captured';
+                    indicator.classList.add('visible');
+                    indicator.classList.add('not-captured');
+                    indicator.classList.remove('captured');
                 }
             });
         }
@@ -2112,6 +2225,26 @@
 
                 const isJoker = users[currentUsername] && users[currentUsername].jokerMatchId === match.id;
                 const jokerCardClass = isJoker ? ' joker-selected' : '';
+                const isMatchCompleted = match.actualScore1 !== null && match.actualScore2 !== null;
+                const userPrediction = users[currentUsername] && users[currentUsername].predictions
+                    ? users[currentUsername].predictions[match.id]
+                    : null;
+                const pointsBreakdown = isMatchCompleted
+                    ? getMatchPointsBreakdown(userPrediction, match, isJoker)
+                    : { points: 0, summary: '' };
+                const pointsAwarded = pointsBreakdown.points;
+                const completedMatchSection = isMatchCompleted ? `
+                    <div class="completed-match-summary">
+                        <div class="completed-match-badge">Match completed</div>
+                        <div class="completed-match-result">
+                            Actual score: ${getFlag(match.team1)} ${match.team1} ${match.actualScore1} - ${match.actualScore2} ${match.team2} ${getFlag(match.team2)}
+                        </div>
+                        <div class="completed-match-points">
+                            Points awarded: <strong>${pointsAwarded}</strong>${userPrediction ? '' : ' (no prediction submitted)'}
+                            ${pointsBreakdown.summary ? ` - ${pointsBreakdown.summary}` : ''}
+                        </div>
+                    </div>
+                ` : '';
                 const jokerSection = match.jokerEligible ? `
                     <div class="joker-selection">
                         <label class="joker-label">
@@ -2126,7 +2259,7 @@
 
                 html += `
                     <div class="match-card${jokerCardClass}" id="match-card-${match.id}">
-                        <div class="match-header">${match.date} - ${match.time} <span class="match-saved-indicator" id="saved-${match.id}"></span></div>
+                        <div class="match-header">${match.date} - ${match.time} <span class="match-saved-indicator prediction-saved-text" id="saved-${match.id}"></span></div>
                         <div class="match-teams">
                             <div class="team">
                                 <div class="team-flag">${getFlag(match.team1)}</div>
@@ -2140,6 +2273,7 @@
                                 <input type="number" class="score-input" id="team2-${match.id}" min="0" placeholder="0" ${disabledAttr} ${onBlurHandler} style="${disabledStyle}">
                             </div>
                         </div>
+                        ${completedMatchSection}
                         ${jokerSection}
                     </div>
                 `;
@@ -2175,7 +2309,7 @@
                 const indicator = document.getElementById(`saved-${match.id}`);
                 if (indicator) {
                     if (userData.predictions[match.id]) {
-                        indicator.textContent = '✓';
+                        indicator.textContent = 'Prediction saved';
                         indicator.classList.add('visible');
                     } else {
                         indicator.textContent = '';
@@ -2297,6 +2431,57 @@
             }
 
             return points;
+        }
+
+        // Return both points and a short explanation for completed matches.
+        function getMatchPointsBreakdown(prediction, match, isJoker = false) {
+            if (!prediction || match.actualScore1 === null || match.actualScore2 === null) {
+                return { points: 0, summary: '' };
+            }
+
+            const actualResult = getResult(match.actualScore1, match.actualScore2);
+            const predictedResult = getResult(prediction.team1, prediction.team2);
+            const parts = [];
+            let basePoints = 0;
+
+            if (actualResult === predictedResult) {
+                basePoints += 3;
+                parts.push('Correct Result (+3)');
+
+                const team1Diff = Math.abs(prediction.team1 - match.actualScore1);
+                const team2Diff = Math.abs(prediction.team2 - match.actualScore2);
+
+                if (team1Diff === 0 && team2Diff === 0) {
+                    basePoints += 3;
+                    parts.push('Perfect Score (+3)');
+                } else {
+                    if (team1Diff <= 5) {
+                        basePoints += 1;
+                        parts.push(`${match.team1} Close Score (+1)`);
+                    }
+                    if (team2Diff <= 5) {
+                        basePoints += 1;
+                        parts.push(`${match.team2} Close Score (+1)`);
+                    }
+                }
+
+                if (actualResult === 'draw') {
+                    basePoints += 2;
+                    parts.push('Draw Bonus (+2)');
+                }
+            }
+
+            let points = basePoints;
+            if (isJoker) {
+                points *= 2;
+                parts.push(`Joker Bonus (x2: ${basePoints} to ${points})`);
+            }
+
+            if (points === 0) {
+                return { points, summary: '' };
+            }
+
+            return { points, summary: parts.join(' + ') };
         }
 
         // Calculate points based on scoring rules
@@ -2603,7 +2788,7 @@
         }
 
         // Current filter state
-        let currentFilter = 'all';
+        let currentFilter = 'default';
         let selectedRound = 1;
 
         // Initialize the round selector dropdown
@@ -2672,39 +2857,54 @@
         function onRoundSelectChange() {
             const select = document.getElementById('roundSelect');
             selectedRound = parseInt(select.value);
-            
-            // Automatically switch to round filter when dropdown is changed
-            currentFilter = 'round';
-            
-            // Update button states
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelector('.round-filter-group .filter-btn').classList.add('active');
-            
-            // Refresh the view
             showSummary();
         }
 
         // Filter matches based on selected filter
         function filterMatches(filterType) {
             currentFilter = filterType;
-            
-            // Update button states
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+
+            // Update toggle button states
+            document.querySelectorAll('.filter-toggle-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
-            
-            // Refresh summary
+
+            // Show/hide round selector
+            const roundSelect = document.getElementById('roundSelect');
+            const roundSelectLabel = document.getElementById('roundSelectLabel');
+            if (filterType === 'round') {
+                selectedRound = getDefaultRound();
+                roundSelect.value = selectedRound;
+                roundSelect.classList.remove('hidden');
+                if (roundSelectLabel) roundSelectLabel.classList.remove('hidden');
+            } else {
+                roundSelect.classList.add('hidden');
+                if (roundSelectLabel) roundSelectLabel.classList.add('hidden');
+            }
+
             showSummary();
         }
 
         // Get filtered matches based on current filter
         function getFilteredMatches() {
-            if (currentFilter === 'completed') {
-                return matches.filter(m => m.actualScore1 !== null && m.actualScore2 !== null);
-            } else if (currentFilter === 'round') {
+            if (currentFilter === 'round') {
                 return matches.filter(m => m.round === selectedRound);
             }
-            
-            return matches; // 'all'
+
+            return matches; // 'default' shows all matches
+        }
+
+        // Get the index of the first match to scroll to in default view
+        // Shows last 2 completed + next 3 upcoming (or fewer if not enough remain)
+        function getDefaultScrollTargetIndex() {
+            const completed = matches.filter(m => m.actualScore1 !== null && m.actualScore2 !== null);
+            const lastCompleted = completed.slice(-2);
+
+            // The scroll target is the first of the "default" matches
+            if (lastCompleted.length > 0) {
+                return matches.indexOf(lastCompleted[0]);
+            }
+            // No completed matches yet - scroll to the start
+            return 0;
         }
 
         // Show comprehensive summary with matches as columns
@@ -2731,15 +2931,22 @@
             const completedMatches = matches.filter(m => m.actualTries1 !== null && m.actualTries2 !== null).length;
             const totalMatches = matches.length;
 
-            let html = '<div class="summary-container">';
             const isNarrowScreen = window.innerWidth <= 768;
-            const scrollHintText = isNarrowScreen
-                ? 'Scroll right to see full table. On phone, rotate to landscape for the best view.'
-                : 'Scroll right to see full table';
-            const scrollHintMarkup = `<div class="scroll-hint hidden" id="scrollHint"><span>${scrollHintText}</span><span class="scroll-hint-arrow">→</span></div>`;
-            if (currentFilter === 'all') {
-                html += scrollHintMarkup;
+            let scrollHintText;
+            if (currentFilter === 'default') {
+                scrollHintText = isNarrowScreen
+                    ? 'Scroll left and right to see all matches. On phone, rotate to landscape for the best view.'
+                    : 'Scroll left and right to see all matches';
+            } else {
+                scrollHintText = isNarrowScreen
+                    ? 'Scroll right to see full table. On phone, rotate to landscape for the best view.'
+                    : 'Scroll right to see full table';
             }
+            const scrollHintArrow = currentFilter === 'default' ? '↔' : '→';
+            const scrollHintMarkup = `<div class="scroll-hint hidden" id="scrollHint"><span>${scrollHintText}</span><span class="scroll-hint-arrow">${scrollHintArrow}</span></div>`;
+
+            let html = scrollHintMarkup;
+            html += '<div class="summary-container">';
             html += '<table class="summary-table">';
             
             // Header row: Rank | Competitor | Score | Match 1 | Match 2 | ... | Predicted Tries
@@ -2747,12 +2954,12 @@
             html += '<th class="rank-col">#</th>';
             html += '<th class="competitor-col">Competitor</th>';
             html += '<th class="pts-col">Score</th>';
-            filteredMatches.forEach(match => {
+            filteredMatches.forEach((match, colIndex) => {
                 const hasResult = match.actualScore1 !== null && match.actualScore2 !== null;
                 const hasTries = match.actualTries1 !== null && match.actualTries2 !== null;
                 const totalMatchTries = hasTries ? match.actualTries1 + match.actualTries2 : null;
                 const jokerBadge = match.jokerEligible ? '<div class="joker-eligible-badge">🃏 Joker Eligible</div>' : '<div class="joker-eligible-badge" style="visibility: hidden;">🃏 Joker Eligible</div>';
-                html += `<th class="match-header-cell ${match.jokerEligible ? 'joker-eligible-header' : ''}">
+                html += `<th class="match-header-cell ${match.jokerEligible ? 'joker-eligible-header' : ''}" data-match-col="${colIndex}">
                     <div class="match-header-cell-inner">
                         <div class="match-header-top">
                             ${jokerBadge}
@@ -2766,7 +2973,7 @@
                     </div>
                 </th>`;
             });
-            // Only show Tries column if not filtering by weekend
+            // Only show Tries column when not filtering by round
             if (currentFilter !== 'round') {
                 html += '<th class="tries-col">Predicted Tries</th>';
             }
@@ -2924,7 +3131,7 @@
                     }
                 });
                 
-                // Predicted tries column with calculated projection (only if not weekend filter)
+                // Predicted tries column with calculated projection (only when not filtering by round)
                 if (currentFilter !== 'round') {
                     const userTries = users[user.username].totalTries;
                     let predictedTriesDisplay = '-';
@@ -2954,14 +3161,33 @@
             
             html += '</tbody>';
             html += '</table>';
-            if (currentFilter !== 'all') {
-                html += scrollHintMarkup;
-            }
             html += '</div>';
 
             container.innerHTML = html;
             updateLeaderboard();
             checkTableOverflow();
+
+            // In default view, auto-scroll to show the relevant matches
+            if (currentFilter === 'default') {
+                scrollToDefaultMatches();
+            }
+        }
+
+        // Scroll the summary table so the default matches (last 2 completed + next 3 upcoming) are visible
+        function scrollToDefaultMatches() {
+            const container = document.querySelector('.summary-container');
+            if (!container) return;
+
+            const targetIndex = getDefaultScrollTargetIndex();
+            const targetCell = container.querySelector(`th[data-match-col="${targetIndex}"]`);
+            if (!targetCell) return;
+
+            // Scroll so the target cell is at the left edge (after the sticky columns)
+            // Use offsetLeft relative to the table, minus the sticky columns width
+            const stickyWidth = targetCell.closest('table').querySelector('.pts-col').offsetLeft +
+                                targetCell.closest('table').querySelector('.pts-col').offsetWidth;
+            const scrollTarget = targetCell.offsetLeft - stickyWidth;
+            container.scrollLeft = Math.max(0, scrollTarget);
         }
 
         function checkTableOverflow() {
@@ -2975,14 +3201,6 @@
             } else {
                 scrollHint.classList.add('hidden');
             }
-
-            // Hide hint when user scrolls to the end
-            container.addEventListener('scroll', function() {
-                const isScrolledToEnd = container.scrollLeft + container.clientWidth >= container.scrollWidth - 10;
-                if (isScrolledToEnd) {
-                    scrollHint.classList.add('hidden');
-                }
-            });
 
             // Enable touch tooltips for mobile
             initTouchTooltips();
@@ -3462,7 +3680,7 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
 
             // Generate settings INSERT statements
             sql += '\n-- Insert settings\n';
-            sql += `INSERT INTO settings (key, value) VALUES ('predictionsLocked', '${appSettings.predictionsLocked}');\n`;
+            sql += `INSERT INTO settings (key, value) VALUES ('predictions_locked', '${appSettings.predictionsLocked}');\n`;
 
             // Generate users INSERT statements
             const userList = Object.keys(users);

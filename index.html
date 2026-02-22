@@ -189,22 +189,23 @@
 
             <!-- Summary Tab -->
             <div id="summaryTab" style="margin-top: 2rem;">
-                <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
+                <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 1.5rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2.5rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Match Summary</h2>
 
                     <!-- Filters -->
+                    <div class="filter-toggle">
+                        <button class="filter-toggle-btn active" onclick="filterMatches('default')">View All Matches</button>
+                        <button class="filter-toggle-btn" onclick="filterMatches('round')">View the current round of matches</button>
+                    </div>
+                    <div class="round-select-row">
+                        <label for="roundSelect" id="roundSelectLabel" class="hidden" style="margin: 0; font-weight: 600; color: var(--bright-gold); white-space: nowrap;">Select Round of Matches to View</label>
+                        <select id="roundSelect" class="round-select hidden" onchange="onRoundSelectChange()">
+                        </select>
+                    </div>
                     <div class="summary-filters">
-                        <button class="filter-btn active" onclick="filterMatches('all')">All Matches</button>
-                        <button class="filter-btn" onclick="filterMatches('completed')">Completed Only</button>
-                        <div class="round-filter-group">
-                            <button class="filter-btn" onclick="filterMatches('round')">Filter By Round</button>
-                            <span class="round-divider"></span>
-                            <select id="roundSelect" class="round-select" onchange="onRoundSelectChange()">
-                            </select>
-                        </div>
-                        <button class="export-btn" onclick="exportToPDF()" title="Export to PDF">
+                        <button class="export-btn" onclick="exportToPDF()" title="Export PDF Summary">
                             <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM6 20V4h6v6h6v10H6z"/></svg>
-                            Export
+                            Export PDF Summary
                         </button>
                     </div>
                 </div>
@@ -212,7 +213,7 @@
                 <div id="summaryContainer"></div>
 
                 <!-- Stats and Tips at bottom -->
-                <div style="margin-top: 3rem;">
+                <div style="margin-top: 1.5rem;">
                     <!-- Estimated Tries Stats -->
                     <div id="triesStatsContainer" class="tries-stats-box"></div>
 
