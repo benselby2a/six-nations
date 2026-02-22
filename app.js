@@ -265,23 +265,32 @@
                     .from('users')
                     .update({ total_tries: totalTries })
                     .eq('id', user.id);
-                
-                // Upsert predictions
-                for (const [matchId, pred] of Object.entries(predictions)) {
-                    const { error } = await supabaseClient
-                        .from('predictions')
-                        .upsert({
-                            user_id: user.id,
-                            match_id: parseInt(matchId),
-                            team1_score: pred.team1,
-                            team2_score: pred.team2,
-                            updated_at: new Date().toISOString()
-                        }, {
-                            onConflict: 'user_id,match_id'
-                        });
-                    
-                    if (error) console.error('Error saving prediction:', error);
+
+                // Replace all stored predictions for this user so cleared rows are
+                // persisted as deletions (not left behind in Supabase).
+                const { error: deleteError } = await supabaseClient
+                    .from('predictions')
+                    .delete()
+                    .eq('user_id', user.id);
+                if (deleteError) {
+                    console.error('Error clearing existing predictions:', deleteError);
+                    return;
                 }
+
+                const predictionRows = Object.entries(predictions || {}).map(([matchId, pred]) => ({
+                    user_id: user.id,
+                    match_id: parseInt(matchId, 10),
+                    team1_score: pred.team1,
+                    team2_score: pred.team2,
+                    updated_at: new Date().toISOString()
+                }));
+
+                if (predictionRows.length === 0) return;
+
+                const { error: insertError } = await supabaseClient
+                    .from('predictions')
+                    .insert(predictionRows);
+                if (insertError) console.error('Error saving prediction rows:', insertError);
             },
             
             // Delete a user
@@ -422,10 +431,12 @@
         let appSettings = { predictionsLocked: false };
         let isGuest = false;
         let editingFixtureId = null;
+        let editingPredictionContext = null;
         let adminPredictionUsername = null;
         const THEME_COOKIE_NAME = 'rugbyPredictorTheme';
         const THEME_STORAGE_KEY = 'rugbyPredictorTheme';
         const COOKIE_FALLBACK_PREFIX = 'rugbyPredictorCookieFallback:';
+        const REMEMBERED_USER_KEY = 'rugbyPredictorRememberedUser';
 
         // Loading state
         let isLoading = true;
@@ -471,6 +482,48 @@
             }
 
             document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+        }
+
+        function normalizeRememberedUsername(value) {
+            const normalized = (value || '').trim().toLowerCase();
+            if (!normalized) return '';
+            if (!/^[a-z0-9]+$/.test(normalized)) return '';
+            return normalized;
+        }
+
+        function setRememberedUsername(username) {
+            const normalized = normalizeRememberedUsername(username);
+            if (!normalized) return;
+
+            setCookie('rugbyPredictorUser', normalized);
+            try {
+                localStorage.setItem(REMEMBERED_USER_KEY, normalized);
+            } catch (error) {
+                // Ignore storage errors.
+            }
+        }
+
+        function clearRememberedUsername() {
+            deleteCookie('rugbyPredictorUser');
+            try {
+                localStorage.removeItem(REMEMBERED_USER_KEY);
+            } catch (error) {
+                // Ignore storage cleanup errors.
+            }
+        }
+
+        function getRememberedUsername() {
+            const cookieUsername = normalizeRememberedUsername(getCookie('rugbyPredictorUser'));
+            if (cookieUsername) return cookieUsername;
+
+            try {
+                const storedUsername = normalizeRememberedUsername(localStorage.getItem(REMEMBERED_USER_KEY));
+                if (storedUsername) return storedUsername;
+            } catch (error) {
+                // Ignore storage errors and return empty string below.
+            }
+
+            return '';
         }
 
         // Initialize data from supabaseClient
@@ -1324,7 +1377,7 @@
                 // Update current session if editing self
                 if (currentUsername === username) {
                     currentUsername = newUsername;
-                    setCookie('rugbyPredictorUser', newUsername);
+                    setRememberedUsername(newUsername);
                 }
             }
 
@@ -1753,7 +1806,7 @@
             // Successful login
             showLoginFeedback('Login successful. Welcome back, ' + toTitleCase(users[username].nickname) + '.', 'success');
             currentUsername = username;
-            setCookie('rugbyPredictorUser', username);
+            setRememberedUsername(username);
             setTimeout(() => {
                 showApp();
             }, 800);
@@ -1822,7 +1875,7 @@
             }
 
             currentUsername = username;
-            setCookie('rugbyPredictorUser', username);
+            setRememberedUsername(username);
 
             setTimeout(() => {
                 showApp();
@@ -1852,7 +1905,7 @@
         function logout() {
             currentUsername = null;
             isGuest = false;
-            deleteCookie('rugbyPredictorUser');
+            clearRememberedUsername();
             document.getElementById('loginView').classList.remove('hidden');
             document.getElementById('appView').classList.add('hidden');
 
@@ -1972,6 +2025,55 @@
             return `<span class="outstanding-banner-count">Total tries</span> prediction still to enter`;
         }
 
+        function getPredictionChecklistStatus(username) {
+            const userData = users[username] || {};
+            const userPredictions = userData.predictions || {};
+            const enteredPredictions = Object.keys(userPredictions).length;
+            const pendingPredictions = Math.max(0, matches.length - enteredPredictions);
+            const triesEntered = userData.totalTries !== null && userData.totalTries !== undefined;
+
+            const jokerMatchId = userData.jokerMatchId;
+            const jokerMatch = matches.find(m => m.id === jokerMatchId);
+            const jokerSelected = !!(jokerMatch && jokerMatch.jokerEligible);
+
+            return {
+                enteredPredictions,
+                totalPredictions: matches.length,
+                pendingPredictions,
+                triesEntered,
+                jokerSelected,
+                allComplete: pendingPredictions === 0 && triesEntered && jokerSelected
+            };
+        }
+
+        function renderPredictionChecklist(username) {
+            const status = getPredictionChecklistStatus(username);
+            const scoresOk = status.pendingPredictions === 0;
+            const triesOk = status.triesEntered;
+            const jokerOk = status.jokerSelected;
+            const overallClass = status.allComplete ? 'complete' : 'incomplete';
+
+            return `
+                <div class="prediction-checklist ${overallClass}">
+                    <div class="prediction-checklist-title">Prediction Checklist</div>
+                    <div class="prediction-checklist-items">
+                        <div class="prediction-checklist-item ${scoresOk ? 'ok' : 'missing'}">
+                            <span class="prediction-checklist-icon">${scoresOk ? '✓' : '•'}</span>
+                            <span>Scores: ${status.enteredPredictions}/${status.totalPredictions}${scoresOk ? ' complete' : ` (${status.pendingPredictions} pending)`}</span>
+                        </div>
+                        <div class="prediction-checklist-item ${jokerOk ? 'ok' : 'missing'}">
+                            <span class="prediction-checklist-icon">${jokerOk ? '✓' : '•'}</span>
+                            <span>Joker: ${jokerOk ? 'selected' : 'not selected'}</span>
+                        </div>
+                        <div class="prediction-checklist-item ${triesOk ? 'ok' : 'missing'}">
+                            <span class="prediction-checklist-icon">${triesOk ? '✓' : '•'}</span>
+                            <span>Tournament tries: ${triesOk ? 'entered' : 'not entered'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         function getDisplayName(username) {
             if (!users[username]) return username;
             return toTitleCase(users[username].nickname || username);
@@ -2010,6 +2112,217 @@
             renderAdminScoreCorrections();
         }
 
+        function renderAdminPredictionOutstandingBox() {
+            const usernames = Object.keys(users);
+            if (usernames.length === 0) {
+                return `
+                    <div class="admin-prediction-audit-box complete">
+                        <div class="admin-prediction-audit-title">Competitor Completion Check</div>
+                        <div class="admin-prediction-audit-empty">No competitors found.</div>
+                    </div>
+                `;
+            }
+
+            const issues = usernames
+                .sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b)))
+                .map(username => {
+                    const status = getPredictionChecklistStatus(username);
+                    const missing = [];
+                    if (status.pendingPredictions > 0) missing.push(`${status.pendingPredictions} prediction${status.pendingPredictions !== 1 ? 's' : ''}`);
+                    if (!status.triesEntered) missing.push('tournament tries');
+                    if (!status.jokerSelected) missing.push('joker');
+                    return { username, missing };
+                })
+                .filter(entry => entry.missing.length > 0);
+
+            if (issues.length === 0) {
+                return `
+                    <div class="admin-prediction-audit-box complete">
+                        <div class="admin-prediction-audit-title">Competitor Completion Check</div>
+                        <div class="admin-prediction-audit-empty">All competitors are complete.</div>
+                    </div>
+                `;
+            }
+
+            const rows = issues.map(entry => `
+                <div class="admin-prediction-audit-row">
+                    <span class="admin-prediction-audit-user">${getDisplayName(entry.username)}</span>
+                    <span class="admin-prediction-audit-missing">${entry.missing.join(', ')} outstanding</span>
+                </div>
+            `).join('');
+
+            return `
+                <div class="admin-prediction-audit-box">
+                    <div class="admin-prediction-audit-title">Competitor Completion Check</div>
+                    <div class="admin-prediction-audit-subtitle">Select a competitor to edit. The following still have outstanding items:</div>
+                    <div class="admin-prediction-audit-list">${rows}</div>
+                </div>
+            `;
+        }
+
+        function getPredictionStatusLabel(prediction) {
+            if (!prediction) {
+                return '<span class="capture-status pending">-</span>';
+            }
+            return `<span class="capture-status captured">${prediction.team1}-${prediction.team2}</span>`;
+        }
+
+        function getActualStatusLabel(match) {
+            if (match.actualScore1 === null || match.actualScore2 === null) {
+                return '<span class="capture-status pending">-</span>';
+            }
+            return `<span class="capture-status captured">${match.actualScore1}-${match.actualScore2}</span>`;
+        }
+
+        function openEditPredictionModal(mode, matchId) {
+            const match = matches.find(m => m.id === matchId);
+            const modal = document.getElementById('editPredictionModal');
+            if (!match || !modal) return;
+
+            const username = mode === 'admin' ? adminPredictionUsername : currentUsername;
+            if (!username || !users[username]) return;
+
+            const prediction = users[username].predictions ? users[username].predictions[matchId] : null;
+            editingPredictionContext = { mode, matchId, username };
+
+            const title = document.getElementById('edit-prediction-title');
+            const subtitle = document.getElementById('edit-prediction-subtitle');
+            const team1Label = document.getElementById('edit-prediction-team1-label');
+            const team2Label = document.getElementById('edit-prediction-team2-label');
+            const team1Input = document.getElementById('edit-prediction-score1');
+            const team2Input = document.getElementById('edit-prediction-score2');
+            const jokerGroup = document.getElementById('edit-prediction-joker-group');
+            const jokerInput = document.getElementById('edit-prediction-joker');
+            const jokerHint = document.getElementById('edit-prediction-joker-hint');
+            const lockedNote = document.getElementById('edit-prediction-locked-note');
+            const saveBtn = document.getElementById('edit-prediction-save-btn');
+
+            if (!team1Input || !team2Input) return;
+
+            if (title) {
+                title.textContent = mode === 'admin' ? `Edit ${getDisplayName(username)} Prediction` : 'Edit Prediction';
+            }
+            if (subtitle) {
+                subtitle.innerHTML = `<strong>${match.date} ${match.time ? `- ${match.time}` : ''}</strong><br>${getFlag(match.team1)} ${match.team1} vs ${match.team2} ${getFlag(match.team2)}`;
+            }
+            if (team1Label) team1Label.textContent = `${match.team1} score`;
+            if (team2Label) team2Label.textContent = `${match.team2} score`;
+
+            team1Input.value = prediction ? prediction.team1 : '';
+            team2Input.value = prediction ? prediction.team2 : '';
+
+            if (jokerInput) {
+                const isCurrentJoker = users[username] && users[username].jokerMatchId === match.id;
+                jokerInput.checked = !!isCurrentJoker;
+                jokerInput.disabled = !match.jokerEligible;
+            }
+            if (jokerGroup) {
+                jokerGroup.style.display = match.jokerEligible ? 'flex' : 'none';
+            }
+            if (jokerHint) {
+                jokerHint.textContent = match.jokerEligible
+                    ? 'Tick to set this as joker (2x points). Only one joker can be selected.'
+                    : 'This fixture is not joker-eligible.';
+                jokerHint.style.display = match.jokerEligible ? '' : 'none';
+            }
+
+            const isReadOnlyLocked = mode === 'self' && appSettings.predictionsLocked;
+            team1Input.disabled = isReadOnlyLocked;
+            team2Input.disabled = isReadOnlyLocked;
+            if (jokerInput) {
+                jokerInput.disabled = isReadOnlyLocked || !match.jokerEligible;
+            }
+            if (lockedNote) {
+                lockedNote.classList.toggle('hidden', !isReadOnlyLocked);
+            }
+            if (saveBtn) {
+                saveBtn.disabled = isReadOnlyLocked;
+                saveBtn.style.opacity = isReadOnlyLocked ? '0.6' : '1';
+                saveBtn.style.cursor = isReadOnlyLocked ? 'not-allowed' : '';
+            }
+
+            modal.classList.remove('hidden');
+            team1Input.focus();
+        }
+
+        function closeEditPredictionModal() {
+            editingPredictionContext = null;
+            const modal = document.getElementById('editPredictionModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function savePredictionEdits() {
+            if (!editingPredictionContext) return;
+            const { mode, matchId, username } = editingPredictionContext;
+            if (!username || !users[username]) return;
+            if (mode === 'self' && appSettings.predictionsLocked) {
+                alert('Predictions are currently locked.');
+                closeEditPredictionModal();
+                return;
+            }
+
+            const team1Input = document.getElementById('edit-prediction-score1');
+            const team2Input = document.getElementById('edit-prediction-score2');
+            const jokerInput = document.getElementById('edit-prediction-joker');
+            if (!team1Input || !team2Input) return;
+
+            const score1Raw = (team1Input.value || '').trim();
+            const score2Raw = (team2Input.value || '').trim();
+
+            let updatedPrediction = null;
+            if (score1Raw === '' && score2Raw === '') {
+                updatedPrediction = null;
+            } else if (score1Raw === '' || score2Raw === '') {
+                alert('Enter both scores, or leave both blank to clear this prediction.');
+                return;
+            } else {
+                const score1 = Number(score1Raw);
+                const score2 = Number(score2Raw);
+                if (!Number.isInteger(score1) || !Number.isInteger(score2) || score1 < 0 || score2 < 0) {
+                    alert('Scores must be whole numbers of 0 or more.');
+                    return;
+                }
+                updatedPrediction = { team1: score1, team2: score2 };
+            }
+
+            const match = matches.find(m => m.id === matchId);
+            if (!users[username].predictions) users[username].predictions = {};
+            if (updatedPrediction) {
+                users[username].predictions[matchId] = updatedPrediction;
+            } else {
+                delete users[username].predictions[matchId];
+            }
+
+            let jokerUpdated = false;
+            if (match && match.jokerEligible && jokerInput) {
+                if (jokerInput.checked && users[username].jokerMatchId !== matchId) {
+                    // Single joker per user: selecting here replaces any previous joker.
+                    users[username].jokerMatchId = matchId;
+                    jokerUpdated = true;
+                } else if (!jokerInput.checked && users[username].jokerMatchId === matchId) {
+                    users[username].jokerMatchId = null;
+                    jokerUpdated = true;
+                }
+            } else if (match && users[username].jokerMatchId === matchId) {
+                users[username].jokerMatchId = null;
+                jokerUpdated = true;
+            }
+
+            await Storage.savePredictions(username, users[username].predictions, users[username].totalTries);
+            if (jokerUpdated) {
+                await Storage.saveUser(username, users[username]);
+            }
+            closeEditPredictionModal();
+
+            if (mode === 'admin') {
+                renderAdminScoreCorrections();
+            } else {
+                renderMatches();
+                loadPredictions();
+                updateOutstandingBanner();
+            }
+        }
+
         function renderAdminScoreCorrections() {
             const container = document.getElementById('adminUserMatchesContainer');
             const triesSection = document.getElementById('adminTriesSection');
@@ -2019,7 +2332,7 @@
 
             const username = adminPredictionUsername;
             if (!username || !users[username]) {
-                container.innerHTML = '<p style="text-align: center; opacity: 0.8;">No competitor selected.</p>';
+                container.innerHTML = renderAdminPredictionOutstandingBox();
                 const triesInput = document.getElementById('adminTotalTries');
                 if (triesInput) triesInput.value = '';
                 if (triesSection) triesSection.classList.add('hidden');
@@ -2029,89 +2342,82 @@
             if (triesSection) triesSection.classList.remove('hidden');
 
             let currentRound = 0;
-            let html = `<div class="unlock-banner">Editing predictions for <strong>${getDisplayName(username)}</strong>. Changes are saved automatically.</div>`;
+            let html = `<div class="unlock-banner">Editing predictions for <strong>${getDisplayName(username)}</strong>. Click Edit then Save to apply changes.</div>`;
+            html += renderPredictionChecklist(username);
 
+            const matchesByRound = new Map();
             matches.forEach(match => {
-                if (match.round !== currentRound) {
-                    currentRound = match.round;
-                    html += `<h2 style="font-family: 'Bebas Neue', cursive; font-size: 1.8rem; color: var(--bright-gold); margin: 1.5rem 0 0.75rem 0; letter-spacing: 0.1em;">Round ${currentRound}</h2>`;
-                }
+                const round = match.round || 0;
+                if (!matchesByRound.has(round)) matchesByRound.set(round, []);
+                matchesByRound.get(round).push(match);
+            });
 
-                const isJoker = users[username] && users[username].jokerMatchId === match.id;
-                const jokerCardClass = isJoker ? ' joker-selected' : '';
-                const isMatchCompleted = match.actualScore1 !== null && match.actualScore2 !== null;
-                const userPrediction = users[username] && users[username].predictions
-                    ? users[username].predictions[match.id]
-                    : null;
-                const pointsBreakdown = isMatchCompleted
-                    ? getMatchPointsBreakdown(userPrediction, match, isJoker)
-                    : { points: 0, summary: '' };
-                const pointsAwarded = pointsBreakdown.points;
-                const completedMatchSection = isMatchCompleted ? `
-                    <div class="completed-match-summary">
-                        <div class="completed-match-badge">Match Completed</div>
-                        <div class="completed-match-result">
-                            Actual score: ${getFlag(match.team1)} ${match.team1} ${match.actualScore1} - ${match.actualScore2} ${match.team2} ${getFlag(match.team2)}
-                        </div>
-                        <div class="completed-match-points">
-                            Points awarded: <strong>${pointsAwarded}</strong>${userPrediction ? '' : ' (no prediction submitted)'}
-                            ${pointsBreakdown.summary ? ` - ${pointsBreakdown.summary}` : ''}
-                        </div>
-                    </div>
-                ` : '';
-                const jokerSection = match.jokerEligible ? `
-                    <div class="joker-selection">
-                        <label class="joker-label">
-                            <input type="radio" name="adminJokerMatch" class="joker-checkbox" value="${match.id}"
-                                ${isJoker ? 'checked' : ''}
-                                onchange="selectAdminJoker(${match.id})">
-                            <span class="joker-icon">🃏</span>
-                            <span class="joker-text">Joker (2x points)</span>
-                        </label>
-                    </div>
-                ` : '';
+            matchesByRound.forEach((roundMatches, round) => {
+                currentRound = round;
+                html += `<h2 style="font-family: 'Bebas Neue', cursive; font-size: 1.8rem; color: var(--bright-gold); margin: 1.25rem 0 0.6rem 0; letter-spacing: 0.1em;">Round ${currentRound}</h2>`;
+                html += `
+                    <div class="results-table-container prediction-table-container">
+                        <table class="results-table prediction-table">
+                            <thead>
+                                <tr>
+                                    <th>Date/Time</th>
+                                    <th>Fixture</th>
+                                    <th>Predicted</th>
+                                    <th>Actual</th>
+                                    <th>Points</th>
+                                    <th>Joker</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                roundMatches.forEach(match => {
+                    const isJoker = users[username] && users[username].jokerMatchId === match.id;
+                    const isMatchCompleted = match.actualScore1 !== null && match.actualScore2 !== null;
+                    const userPrediction = users[username] && users[username].predictions
+                        ? users[username].predictions[match.id]
+                        : null;
+                    const pointsBreakdown = isMatchCompleted
+                        ? getMatchPointsBreakdown(userPrediction, match, isJoker)
+                        : { points: 0, summary: '' };
+                    const pointsPill = isMatchCompleted
+                        ? `<span class="capture-status captured" title="${pointsBreakdown.summary || 'No points awarded'}">Pts: ${pointsBreakdown.points}</span>`
+                        : '';
+                    const jokerSection = match.jokerEligible
+                        ? `<label class="prediction-joker-readonly"><input type="checkbox" disabled ${isJoker ? 'checked' : ''}><span>Joker</span></label>`
+                        : `<span style="opacity:0.6;">-</span>`;
+
+                    html += `
+                        <tr class="${isJoker ? 'joker-selected' : ''}" id="admin-match-card-${match.id}">
+                            <td>${match.date} ${match.time ? `- ${match.time}` : ''}</td>
+                            <td>${getFlag(match.team1)} ${match.team1} vs ${match.team2} ${getFlag(match.team2)}</td>
+                            <td>${getPredictionStatusLabel(userPrediction)}</td>
+                            <td>${getActualStatusLabel(match)}</td>
+                            <td>${pointsPill}</td>
+                            <td>${jokerSection}</td>
+                            <td class="prediction-actions-cell">
+                                <button class="btn-small btn-success" onclick="openEditPredictionModal('admin', ${match.id})">Edit</button>
+                            </td>
+                        </tr>
+                    `;
+                });
 
                 html += `
-                    <div class="match-card${jokerCardClass}" id="admin-match-card-${match.id}">
-                        <div class="match-header">${match.date} - ${match.time} <span class="match-saved-indicator prediction-capture-text" id="admin-saved-${match.id}"></span></div>
-                        <div class="match-teams">
-                            <div class="team">
-                                <div class="team-flag">${getFlag(match.team1)}</div>
-                                <div class="team-name">${match.team1}</div>
-                                <input type="number" class="score-input" id="admin-team1-${match.id}" min="0" placeholder="0" onblur="autoSaveAdminPredictions()">
-                            </div>
-                            <div class="vs">VS</div>
-                            <div class="team">
-                                <div class="team-flag">${getFlag(match.team2)}</div>
-                                <div class="team-name">${match.team2}</div>
-                                <input type="number" class="score-input" id="admin-team2-${match.id}" min="0" placeholder="0" onblur="autoSaveAdminPredictions()">
-                            </div>
-                        </div>
-                        ${completedMatchSection}
-                        ${jokerSection}
+                            </tbody>
+                        </table>
                     </div>
                 `;
             });
 
             container.innerHTML = html;
             loadAdminPredictions();
-            updateAdminSavedIndicators();
         }
 
         function loadAdminPredictions() {
             const username = adminPredictionUsername;
             const userData = username ? users[username] : null;
             if (!userData) return;
-
-            if (userData.predictions) {
-                Object.keys(userData.predictions).forEach(matchId => {
-                    const pred = userData.predictions[matchId];
-                    const team1Input = document.getElementById(`admin-team1-${matchId}`);
-                    const team2Input = document.getElementById(`admin-team2-${matchId}`);
-                    if (team1Input) team1Input.value = pred.team1;
-                    if (team2Input) team2Input.value = pred.team2;
-                });
-            }
 
             const triesInput = document.getElementById('adminTotalTries');
             if (triesInput) {
@@ -2121,65 +2427,21 @@
             }
         }
 
-        function updateAdminSavedIndicators() {
-            const username = adminPredictionUsername;
-            const userData = username ? users[username] : null;
-            if (!userData) return;
-            const userPredictions = userData.predictions || {};
-
-            matches.forEach(match => {
-                const indicator = document.getElementById(`admin-saved-${match.id}`);
-                if (!indicator) return;
-
-                if (userPredictions[match.id]) {
-                    indicator.textContent = 'Prediction Captured';
-                    indicator.classList.add('visible');
-                    indicator.classList.add('captured');
-                    indicator.classList.remove('not-captured');
-                } else {
-                    indicator.textContent = 'Prediction Not Captured';
-                    indicator.classList.add('visible');
-                    indicator.classList.add('not-captured');
-                    indicator.classList.remove('captured');
-                }
-            });
-        }
-
         async function autoSaveAdminPredictions() {
             const username = adminPredictionUsername;
             if (!username || !users[username]) return;
-
-            const predictions = {};
-            matches.forEach(match => {
-                const team1Input = document.getElementById(`admin-team1-${match.id}`);
-                const team2Input = document.getElementById(`admin-team2-${match.id}`);
-                const team1Score = team1Input ? team1Input.value : '';
-                const team2Score = team2Input ? team2Input.value : '';
-
-                if (team1Score !== '' && team2Score !== '') {
-                    predictions[match.id] = {
-                        team1: parseInt(team1Score, 10),
-                        team2: parseInt(team2Score, 10)
-                    };
-                }
-            });
 
             const triesInput = document.getElementById('adminTotalTries');
             const totalTries = triesInput ? triesInput.value : '';
             const newTries = totalTries === '' ? null : parseInt(totalTries, 10);
 
-            users[username].predictions = predictions;
             users[username].totalTries = newTries;
-            await Storage.savePredictions(username, predictions, newTries);
-            updateAdminSavedIndicators();
+            await Storage.savePredictions(username, users[username].predictions || {}, newTries);
         }
 
-        async function selectAdminJoker(matchId) {
-            const username = adminPredictionUsername;
-            if (!username || !users[username]) return;
-            users[username].jokerMatchId = matchId;
-            await Storage.saveUser(username, users[username]);
-            renderAdminScoreCorrections();
+        async function saveAdminTournamentTries() {
+            await autoSaveAdminPredictions();
+            alert('Tournament tries saved.');
         }
 
         // Render matches
@@ -2188,43 +2450,46 @@
             let currentRound = 0;
             let html = '';
             
-            // Calculate outstanding predictions
-            const { outstandingCount, hasTries } = getOutstandingPredictionStatus(currentUsername);
-            
             // Show lock status banner at top
             if (appSettings.predictionsLocked) {
                 html += '<div class="lock-banner">🔒 Predictions are LOCKED. You cannot make changes.</div>';
             } else {
-                html += '<div class="unlock-banner">🔓 Predictions are OPEN. Your changes are saved automatically.</div>';
-            }
-            
-            // Show outstanding predictions banner if there are any
-            if (!appSettings.predictionsLocked && (outstandingCount > 0 || !hasTries)) {
-                html += `<div id="outstandingBanner" class="outstanding-banner">
-                    <span class="outstanding-banner-icon">⚠️</span>
-                    <span class="outstanding-banner-text">${buildOutstandingBannerText(outstandingCount, hasTries)}</span>
-                </div>`;
-            } else if (!appSettings.predictionsLocked) {
-                // Add hidden banner that can be shown later if predictions are removed
-                html += `<div id="outstandingBanner" class="outstanding-banner" style="display: none;">
-                    <span class="outstanding-banner-icon">⚠️</span>
-                    <span class="outstanding-banner-text"></span>
-                </div>`;
+                html += '<div class="unlock-banner">🔓 Predictions are OPEN. Click Edit then Save to submit each scoreline.</div>';
             }
 
+            // Always show checklist so missing scores/joker/tries are explicit.
+            html += renderPredictionChecklist(currentUsername);
+
+            const matchesByRound = new Map();
             matches.forEach(match => {
-                // Add round header if it's a new round
-                if (match.round !== currentRound) {
-                    currentRound = match.round;
-                    html += `<h2 style="font-family: 'Bebas Neue', cursive; font-size: 1.8rem; color: var(--bright-gold); margin: 1.5rem 0 0.75rem 0; letter-spacing: 0.1em;">Round ${currentRound}</h2>`;
-                }
+                const round = match.round || 0;
+                if (!matchesByRound.has(round)) matchesByRound.set(round, []);
+                matchesByRound.get(round).push(match);
+            });
 
-                const disabledAttr = appSettings.predictionsLocked ? 'disabled' : '';
-                const disabledStyle = appSettings.predictionsLocked ? 'opacity: 0.6; cursor: not-allowed;' : '';
-                const onBlurHandler = appSettings.predictionsLocked ? '' : 'onblur="autoSavePredictions()"';
+            matchesByRound.forEach((roundMatches, round) => {
+                currentRound = round;
+                html += `<h2 style="font-family: 'Bebas Neue', cursive; font-size: 1.8rem; color: var(--bright-gold); margin: 1.25rem 0 0.6rem 0; letter-spacing: 0.1em;">Round ${currentRound}</h2>`;
+                html += `
+                    <div class="results-table-container prediction-table-container">
+                        <table class="results-table prediction-table">
+                            <thead>
+                                <tr>
+                                    <th>Date/Time</th>
+                                    <th>Fixture</th>
+                                    <th>Predicted</th>
+                                    <th>Actual</th>
+                                    <th>Points</th>
+                                    <th>Joker</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                roundMatches.forEach(match => {
 
                 const isJoker = users[currentUsername] && users[currentUsername].jokerMatchId === match.id;
-                const jokerCardClass = isJoker ? ' joker-selected' : '';
                 const isMatchCompleted = match.actualScore1 !== null && match.actualScore2 !== null;
                 const userPrediction = users[currentUsername] && users[currentUsername].predictions
                     ? users[currentUsername].predictions[match.id]
@@ -2232,49 +2497,31 @@
                 const pointsBreakdown = isMatchCompleted
                     ? getMatchPointsBreakdown(userPrediction, match, isJoker)
                     : { points: 0, summary: '' };
-                const pointsAwarded = pointsBreakdown.points;
-                const completedMatchSection = isMatchCompleted ? `
-                    <div class="completed-match-summary">
-                        <div class="completed-match-badge">Match completed</div>
-                        <div class="completed-match-result">
-                            Actual score: ${getFlag(match.team1)} ${match.team1} ${match.actualScore1} - ${match.actualScore2} ${match.team2} ${getFlag(match.team2)}
-                        </div>
-                        <div class="completed-match-points">
-                            Points awarded: <strong>${pointsAwarded}</strong>${userPrediction ? '' : ' (no prediction submitted)'}
-                            ${pointsBreakdown.summary ? ` - ${pointsBreakdown.summary}` : ''}
-                        </div>
-                    </div>
-                ` : '';
+                const pointsPill = isMatchCompleted
+                    ? `<span class="capture-status captured" title="${pointsBreakdown.summary || 'No points awarded'}">Pts: ${pointsBreakdown.points}</span>`
+                    : '';
                 const jokerSection = match.jokerEligible ? `
-                    <div class="joker-selection">
-                        <label class="joker-label">
-                            <input type="radio" name="jokerMatch" class="joker-checkbox" value="${match.id}"
-                                ${isJoker ? 'checked' : ''} ${disabledAttr}
-                                onchange="selectJoker(${match.id})" style="${disabledStyle}">
-                            <span class="joker-icon">🃏</span>
-                            <span class="joker-text">Joker (2x points)</span>
-                        </label>
-                    </div>
-                ` : '';
+                    <label class="prediction-joker-readonly"><input type="checkbox" disabled ${isJoker ? 'checked' : ''}><span>Joker</span></label>
+                ` : `<span style="opacity: 0.6;">-</span>`;
 
                 html += `
-                    <div class="match-card${jokerCardClass}" id="match-card-${match.id}">
-                        <div class="match-header">${match.date} - ${match.time} <span class="match-saved-indicator prediction-saved-text" id="saved-${match.id}"></span></div>
-                        <div class="match-teams">
-                            <div class="team">
-                                <div class="team-flag">${getFlag(match.team1)}</div>
-                                <div class="team-name">${match.team1}</div>
-                                <input type="number" class="score-input" id="team1-${match.id}" min="0" placeholder="0" ${disabledAttr} ${onBlurHandler} style="${disabledStyle}">
-                            </div>
-                            <div class="vs">VS</div>
-                            <div class="team">
-                                <div class="team-flag">${getFlag(match.team2)}</div>
-                                <div class="team-name">${match.team2}</div>
-                                <input type="number" class="score-input" id="team2-${match.id}" min="0" placeholder="0" ${disabledAttr} ${onBlurHandler} style="${disabledStyle}">
-                            </div>
-                        </div>
-                        ${completedMatchSection}
-                        ${jokerSection}
+                    <tr class="${isJoker ? 'joker-selected' : ''}" id="match-card-${match.id}">
+                        <td>${match.date} ${match.time ? `- ${match.time}` : ''}</td>
+                        <td>${getFlag(match.team1)} ${match.team1} vs ${match.team2} ${getFlag(match.team2)}</td>
+                        <td>${getPredictionStatusLabel(userPrediction)}</td>
+                        <td>${getActualStatusLabel(match)}</td>
+                        <td>${pointsPill}</td>
+                        <td>${jokerSection}</td>
+                        <td class="prediction-actions-cell">
+                            <button class="btn-small btn-success" onclick="openEditPredictionModal('self', ${match.id})">Edit</button>
+                        </td>
+                    </tr>
+                `;
+                });
+
+                html += `
+                            </tbody>
+                        </table>
                     </div>
                 `;
             });
@@ -2283,76 +2530,41 @@
             
             // Also disable/enable tries input
             const triesInput = document.getElementById('totalTries');
+            const triesSaveBtn = document.getElementById('saveTriesBtn');
             
             if (triesInput) {
                 triesInput.disabled = appSettings.predictionsLocked;
                 triesInput.style.opacity = appSettings.predictionsLocked ? '0.6' : '1';
                 triesInput.style.cursor = appSettings.predictionsLocked ? 'not-allowed' : '';
-                // Add onblur for auto-save
-                if (!appSettings.predictionsLocked) {
-                    triesInput.onblur = autoSavePredictions;
-                } else {
-                    triesInput.onblur = null;
-                }
+            }
+            if (triesSaveBtn) {
+                triesSaveBtn.disabled = appSettings.predictionsLocked;
+                triesSaveBtn.style.opacity = appSettings.predictionsLocked ? '0.6' : '1';
+                triesSaveBtn.style.cursor = appSettings.predictionsLocked ? 'not-allowed' : '';
             }
             
-            // Update saved indicators for matches that already have predictions
-            updateSavedIndicators();
         }
 
-        // Update the saved tick indicators for all matches
-        function updateSavedIndicators() {
-            const userData = users[currentUsername];
-            if (!userData || !userData.predictions) return;
-            
-            matches.forEach(match => {
-                const indicator = document.getElementById(`saved-${match.id}`);
-                if (indicator) {
-                    if (userData.predictions[match.id]) {
-                        indicator.textContent = 'Prediction saved';
-                        indicator.classList.add('visible');
-                    } else {
-                        indicator.textContent = '';
-                        indicator.classList.remove('visible');
-                    }
-                }
-            });
-        }
-
-        // Auto-save predictions on blur
+        // Save tries prediction on blur
         async function autoSavePredictions() {
             if (appSettings.predictionsLocked) return;
-            
-            const predictions = {};
-            
-            matches.forEach(match => {
-                const team1Input = document.getElementById(`team1-${match.id}`);
-                const team2Input = document.getElementById(`team2-${match.id}`);
-                const team1Score = team1Input ? team1Input.value : '';
-                const team2Score = team2Input ? team2Input.value : '';
-                
-                // Only save if BOTH scores have been entered
-                if (team1Score !== '' && team2Score !== '') {
-                    predictions[match.id] = {
-                        team1: parseInt(team1Score),
-                        team2: parseInt(team2Score)
-                    };
-                }
-            });
 
             const totalTriesInput = document.getElementById('totalTries');
             const totalTries = totalTriesInput ? totalTriesInput.value : '';
-            const newTries = totalTries ? parseInt(totalTries) : null;
+            const newTries = totalTries === '' ? null : parseInt(totalTries, 10);
 
-            users[currentUsername].predictions = predictions;
             users[currentUsername].totalTries = newTries;
-            await Storage.savePredictions(currentUsername, predictions, newTries);
-
-            // Update the tick indicators
-            updateSavedIndicators();
+            await Storage.savePredictions(currentUsername, users[currentUsername].predictions || {}, newTries);
             
             // Update the outstanding banner in real time
             updateOutstandingBanner();
+            renderMatches();
+        }
+
+        async function saveTournamentTries() {
+            if (appSettings.predictionsLocked) return;
+            await autoSavePredictions();
+            alert('Tournament tries saved.');
         }
         
         // Select joker match
@@ -2360,9 +2572,8 @@
             if (appSettings.predictionsLocked) return;
             users[currentUsername].jokerMatchId = matchId;
             await Storage.saveUser(currentUsername, users[currentUsername]);
-            // Re-render to update card highlight and re-populate inputs
+            // Re-render to update card highlight
             renderMatches();
-            loadPredictions();
         }
 
         // Update the outstanding predictions banner
@@ -2371,30 +2582,35 @@
             if (!banner) return;
             
             const { outstandingCount, hasTries } = getOutstandingPredictionStatus(currentUsername);
+            const checklist = getPredictionChecklistStatus(currentUsername);
             
-            if (appSettings.predictionsLocked || (outstandingCount === 0 && hasTries)) {
+            if (appSettings.predictionsLocked || (outstandingCount === 0 && hasTries && checklist.jokerSelected)) {
                 banner.style.display = 'none';
                 return;
             }
             
             banner.style.display = 'flex';
-
-            banner.querySelector('.outstanding-banner-text').innerHTML = buildOutstandingBannerText(outstandingCount, hasTries);
+            const parts = [];
+            if (outstandingCount > 0 || !hasTries) {
+                parts.push(buildOutstandingBannerText(outstandingCount, hasTries));
+            }
+            if (!checklist.jokerSelected) {
+                parts.push('<span class="outstanding-banner-count">Joker</span> still to select');
+            }
+            banner.querySelector('.outstanding-banner-text').innerHTML = parts.join(' | ');
         }
 
         // Save predictions
         // Load predictions
         function loadPredictions() {
             const userData = users[currentUsername];
-            if (userData.predictions) {
-                Object.keys(userData.predictions).forEach(matchId => {
-                    const pred = userData.predictions[matchId];
-                    document.getElementById(`team1-${matchId}`).value = pred.team1;
-                    document.getElementById(`team2-${matchId}`).value = pred.team2;
-                });
-            }
-            if (userData.totalTries) {
-                document.getElementById('totalTries').value = userData.totalTries;
+            const triesInput = document.getElementById('totalTries');
+            if (!triesInput || !userData) return;
+
+            if (userData.totalTries === null || userData.totalTries === undefined) {
+                triesInput.value = '';
+            } else {
+                triesInput.value = userData.totalTries;
             }
         }
 
@@ -3806,6 +4022,8 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
                 renderCompetitorManagement();
             } else if (tabName === 'scoreCorrections') {
                 if (!isCurrentUserAdmin()) return;
+                // Always default back to placeholder selection when opening this tab.
+                adminPredictionUsername = null;
                 document.getElementById('scoreCorrectionsTab').classList.remove('hidden');
                 event.target.classList.add('active');
                 renderAdminScoreCorrections();
@@ -3879,9 +4097,12 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
             }
 
             // Check for saved user cookie and auto-login
-            const savedUsername = (getCookie('rugbyPredictorUser') || '').trim().toLowerCase();
+            const savedUsername = getRememberedUsername();
             if (savedUsername && users[savedUsername]) {
                 currentUsername = savedUsername;
                 showApp();
+            } else if (savedUsername) {
+                // Clean up stale remembered usernames that no longer exist.
+                clearRememberedUsername();
             }
         });

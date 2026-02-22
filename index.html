@@ -168,6 +168,7 @@
                     <h3>Total Tournament Tries</h3>
                     <p style="margin-bottom: 0.75rem; font-size: 0.95rem; opacity: 0.8;">Predict the total tries scored across all matches.</p>
                     <input type="number" class="tries-input" id="totalTries" min="0" placeholder="000">
+                    <button id="saveTriesBtn" class="btn-small btn-success tries-save-btn" onclick="saveTournamentTries()">Save Tournament Tries</button>
                 </div>
             </div>
 
@@ -183,7 +184,8 @@
                 <div class="tries-section hidden" id="adminTriesSection">
                     <h3>Total Tournament Tries</h3>
                     <p style="margin-bottom: 0.75rem; font-size: 0.95rem; opacity: 0.8;">Edit the selected competitor's total tries prediction.</p>
-                    <input type="number" class="tries-input" id="adminTotalTries" min="0" placeholder="000" onblur="autoSaveAdminPredictions()">
+                    <input type="number" class="tries-input" id="adminTotalTries" min="0" placeholder="000">
+                    <button class="btn-small btn-success tries-save-btn" onclick="saveAdminTournamentTries()">Save Tournament Tries</button>
                 </div>
             </div>
 
@@ -374,6 +376,35 @@
                         <button class="btn-small" onclick="copySqlToClipboard()" style="margin-top: 1rem;">Copy SQL to Clipboard</button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Prediction Modal -->
+    <div id="editPredictionModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 560px;">
+            <h2 id="edit-prediction-title" style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 0.6rem; letter-spacing: 0.1em;">Edit Prediction</h2>
+            <p id="edit-prediction-subtitle" style="margin-bottom: 1rem; opacity: 0.9;"></p>
+            <div id="edit-prediction-locked-note" class="lock-banner hidden" style="margin-bottom: 1rem;">🔒 Predictions are locked. This view is read-only.</div>
+            <div class="fixture-edit-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+                <div class="input-group">
+                    <label for="edit-prediction-score1" id="edit-prediction-team1-label">Home score</label>
+                    <input type="number" id="edit-prediction-score1" min="0" placeholder="-">
+                </div>
+                <div class="input-group">
+                    <label for="edit-prediction-score2" id="edit-prediction-team2-label">Away score</label>
+                    <input type="number" id="edit-prediction-score2" min="0" placeholder="-">
+                </div>
+            </div>
+            <div id="edit-prediction-joker-group" class="input-group" style="display:flex; align-items:center; gap:0.6rem; margin-top: 0.5rem;">
+                <input type="checkbox" id="edit-prediction-joker">
+                <label for="edit-prediction-joker" style="margin:0;">Use Joker (2x points)</label>
+            </div>
+            <p id="edit-prediction-joker-hint" style="font-size: 0.82rem; opacity: 0.8; margin-top: 0.3rem;"></p>
+            <p style="font-size: 0.82rem; opacity: 0.8; margin-top: 0.5rem;">Leave both scores blank to clear this prediction.</p>
+            <div class="fixture-modal-actions">
+                <button class="btn-cancel" onclick="closeEditPredictionModal()">Cancel</button>
+                <button id="edit-prediction-save-btn" onclick="savePredictionEdits()">Save</button>
             </div>
         </div>
     </div>

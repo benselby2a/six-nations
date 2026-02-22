@@ -654,6 +654,227 @@
             font-weight: 800;
         }
 
+        .prediction-checklist {
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.9rem;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .prediction-checklist.complete {
+            border-color: rgba(46, 204, 113, 0.55);
+            background: rgba(46, 204, 113, 0.1);
+        }
+
+        .prediction-checklist-title {
+            font-family: 'Bebas Neue', cursive;
+            letter-spacing: 0.08em;
+            color: var(--bright-gold);
+            font-size: 1.05rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .prediction-checklist-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.7rem 1rem;
+        }
+
+        .prediction-checklist-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        .prediction-checklist-item.ok {
+            color: #7ef5a8;
+        }
+
+        .prediction-checklist-item.missing {
+            color: #ffb1a5;
+        }
+
+        .prediction-checklist-icon {
+            font-weight: 800;
+        }
+
+        .prediction-inline-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.7rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.25s ease;
+        }
+
+        .prediction-inline-card:hover {
+            border-color: var(--gold);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .prediction-inline-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto auto;
+            gap: 0.8rem;
+            align-items: center;
+        }
+
+        .prediction-inline-meta {
+            min-width: 0;
+        }
+
+        .prediction-inline-time {
+            font-family: 'Bebas Neue', cursive;
+            color: var(--bright-gold);
+            font-size: 1.05rem;
+            letter-spacing: 0.04em;
+            line-height: 1.1;
+        }
+
+        .prediction-inline-fixture {
+            margin-top: 0.15rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            font-size: 0.9rem;
+        }
+
+        .prediction-inline-score {
+            white-space: nowrap;
+        }
+
+        .prediction-inline-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .prediction-inline-actions .btn-small {
+            margin: 0;
+            min-width: 80px;
+        }
+
+        .prediction-inline-card-tight {
+            padding: 0.5rem 0.75rem;
+            margin-bottom: 0.45rem;
+        }
+
+        .prediction-inline-row-tight {
+            grid-template-columns: auto minmax(170px, 1fr) auto auto auto;
+            gap: 0.5rem;
+        }
+
+        .prediction-inline-row-tight .prediction-inline-time,
+        .prediction-inline-row-tight .prediction-inline-fixture {
+            margin-top: 0;
+            font-size: 0.84rem;
+            line-height: 1.15;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .prediction-inline-row-tight .prediction-inline-score .capture-status {
+            font-size: 0.66rem;
+            padding: 0.15rem 0.45rem;
+        }
+
+        .prediction-inline-score-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            white-space: nowrap;
+        }
+
+        .prediction-inline-score-group .capture-status {
+            margin: 0;
+        }
+
+        .prediction-table-container {
+            margin-top: 0.75rem;
+        }
+
+        .prediction-table .capture-status {
+            white-space: nowrap;
+        }
+
+        .prediction-round-row td {
+            text-align: left;
+            font-family: 'Bebas Neue', cursive;
+            font-size: 1.1rem;
+            letter-spacing: 0.08em;
+            color: var(--bright-gold);
+            background: rgba(212, 175, 55, 0.08);
+            border-top: 2px solid rgba(212, 175, 55, 0.35);
+        }
+
+        .prediction-score-pills {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+        }
+
+        .prediction-actions-cell .btn-small {
+            margin: 0;
+        }
+
+        .prediction-joker-readonly {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .prediction-joker-readonly input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            margin: 0;
+            accent-color: var(--gold);
+        }
+
+        .tries-save-btn {
+            width: auto;
+            margin: 0.75rem auto 0 auto;
+            padding: 0.65rem 1.2rem;
+            display: inline-flex;
+        }
+
+        .joker-selection-inline {
+            margin: 0;
+            padding: 0;
+            border: none;
+            background: transparent;
+        }
+
+        .joker-selection-inline .joker-label {
+            gap: 0.3rem;
+            font-size: 0.66rem;
+            white-space: nowrap;
+        }
+
+        .joker-selection-inline .joker-icon {
+            font-size: 0.85rem;
+        }
+
+        .joker-selection-inline .joker-checkbox {
+            margin: 0;
+        }
+
+        .prediction-inline-completed {
+            margin-top: 0.55rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(46, 204, 113, 0.3);
+            color: #c9f5d7;
+            font-size: 0.84rem;
+            line-height: 1.35;
+        }
+
         .match-card {
             background: rgba(255, 255, 255, 0.05);
             border: 2px solid rgba(212, 175, 55, 0.3);
@@ -795,6 +1016,38 @@
             font-size: 0.82rem;
             color: rgba(184, 247, 203, 0.9);
             text-transform: lowercase;
+        }
+
+        @media (max-width: 760px) {
+            .prediction-inline-row {
+                grid-template-columns: 1fr;
+                gap: 0.55rem;
+            }
+
+            .prediction-inline-score,
+            .prediction-inline-actions {
+                justify-content: flex-start;
+            }
+
+            .prediction-inline-row-tight {
+                grid-template-columns: 1fr;
+            }
+
+            .prediction-inline-row-tight .prediction-inline-time,
+            .prediction-inline-row-tight .prediction-inline-fixture {
+                white-space: normal;
+                overflow: visible;
+                text-overflow: unset;
+            }
+
+            .prediction-inline-score-group {
+                flex-wrap: wrap;
+                white-space: normal;
+            }
+
+            .prediction-score-pills {
+                justify-content: flex-start;
+            }
         }
 
         /* Tooltip styles */
@@ -2415,6 +2668,57 @@
         .admin-score-corrections-toolbar select {
             max-width: 300px;
             margin: 0;
+        }
+
+        .admin-prediction-audit-box {
+            border: 2px solid var(--red);
+            border-radius: 8px;
+            background: rgba(231, 76, 60, 0.12);
+            padding: 0.9rem 1rem;
+        }
+
+        .admin-prediction-audit-box.complete {
+            border-color: #2ecc71;
+            background: rgba(46, 204, 113, 0.12);
+        }
+
+        .admin-prediction-audit-title {
+            font-family: 'Bebas Neue', cursive;
+            letter-spacing: 0.08em;
+            color: var(--bright-gold);
+            font-size: 1.05rem;
+            margin-bottom: 0.35rem;
+        }
+
+        .admin-prediction-audit-subtitle,
+        .admin-prediction-audit-empty {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 0.45rem;
+        }
+
+        .admin-prediction-audit-list {
+            display: grid;
+            gap: 0.3rem;
+        }
+
+        .admin-prediction-audit-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.6rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.18);
+            padding-top: 0.35rem;
+            font-size: 0.85rem;
+        }
+
+        .admin-prediction-audit-user {
+            font-weight: 700;
+            color: var(--white);
+        }
+
+        .admin-prediction-audit-missing {
+            color: #ffb1a5;
+            text-align: right;
         }
 
         /* Admin action buttons */
