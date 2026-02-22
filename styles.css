@@ -795,10 +795,36 @@
 
         .prediction-table-container {
             margin-top: 0.75rem;
+            overflow-x: visible;
+        }
+
+        .prediction-table {
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        .prediction-table th,
+        .prediction-table td {
+            padding: 0.45rem 0.3rem;
+            font-size: 0.74rem;
+            vertical-align: middle;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .prediction-table .capture-status {
             white-space: nowrap;
+            font-size: 0.63rem;
+            padding: 0.13rem 0.38rem;
+        }
+
+        .prediction-table td.prediction-scores-cell {
+            white-space: normal;
+            overflow: visible;
+            text-overflow: unset;
+            line-height: 1.2;
+            word-break: break-word;
         }
 
         .prediction-round-row td {
@@ -811,22 +837,18 @@
             border-top: 2px solid rgba(212, 175, 55, 0.35);
         }
 
-        .prediction-score-pills {
-            display: flex;
-            align-items: center;
-            gap: 0.35rem;
-            flex-wrap: wrap;
-        }
-
         .prediction-actions-cell .btn-small {
             margin: 0;
+            padding: 0.34rem 0.52rem;
+            font-size: 0.7rem;
+            min-width: 54px;
         }
 
         .prediction-joker-readonly {
             display: inline-flex;
             align-items: center;
             gap: 0.35rem;
-            font-size: 0.72rem;
+            font-size: 0.66rem;
             text-transform: uppercase;
             letter-spacing: 0.04em;
         }
@@ -1045,8 +1067,29 @@
                 white-space: normal;
             }
 
-            .prediction-score-pills {
-                justify-content: flex-start;
+            .prediction-table th,
+            .prediction-table td {
+                font-size: 0.68rem;
+                padding: 0.35rem 0.2rem;
+            }
+
+            .prediction-table .capture-status {
+                font-size: 0.58rem;
+            }
+
+            .prediction-actions-cell .btn-small {
+                min-width: 48px;
+                padding: 0.3rem 0.42rem;
+                font-size: 0.65rem;
+            }
+
+            .prediction-joker-readonly {
+                font-size: 0.58rem;
+                gap: 0.2rem;
+            }
+
+            .prediction-joker-readonly span {
+                display: none;
             }
         }
 

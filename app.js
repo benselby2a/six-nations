@@ -2174,6 +2174,10 @@
             return `<span class="capture-status captured">${match.actualScore1}-${match.actualScore2}</span>`;
         }
 
+        function getCompactFixtureLabel(match) {
+            return `${getFlag(match.team1)} ${getTeamAbbr(match.team1)} v ${getTeamAbbr(match.team2)} ${getFlag(match.team2)}`;
+        }
+
         function openEditPredictionModal(mode, matchId) {
             const match = matches.find(m => m.id === matchId);
             const modal = document.getElementById('editPredictionModal');
@@ -2360,10 +2364,9 @@
                         <table class="results-table prediction-table">
                             <thead>
                                 <tr>
-                                    <th>Date/Time</th>
+                                    <th>Date</th>
                                     <th>Fixture</th>
-                                    <th>Predicted</th>
-                                    <th>Actual</th>
+                                    <th>Scores</th>
                                     <th>Points</th>
                                     <th>Joker</th>
                                     <th>Actions</th>
@@ -2390,10 +2393,9 @@
 
                     html += `
                         <tr class="${isJoker ? 'joker-selected' : ''}" id="admin-match-card-${match.id}">
-                            <td>${match.date} ${match.time ? `- ${match.time}` : ''}</td>
-                            <td>${getFlag(match.team1)} ${match.team1} vs ${match.team2} ${getFlag(match.team2)}</td>
-                            <td>${getPredictionStatusLabel(userPrediction)}</td>
-                            <td>${getActualStatusLabel(match)}</td>
+                            <td>${match.date}</td>
+                            <td>${getCompactFixtureLabel(match)}</td>
+                            <td class="prediction-scores-cell">Predicted: ${userPrediction ? `${userPrediction.team1}-${userPrediction.team2}` : '--'}, Actual: ${isMatchCompleted ? `${match.actualScore1}-${match.actualScore2}` : '--'}</td>
                             <td>${pointsPill}</td>
                             <td>${jokerSection}</td>
                             <td class="prediction-actions-cell">
@@ -2475,10 +2477,9 @@
                         <table class="results-table prediction-table">
                             <thead>
                                 <tr>
-                                    <th>Date/Time</th>
+                                    <th>Date</th>
                                     <th>Fixture</th>
-                                    <th>Predicted</th>
-                                    <th>Actual</th>
+                                    <th>Scores</th>
                                     <th>Points</th>
                                     <th>Joker</th>
                                     <th>Actions</th>
@@ -2506,10 +2507,9 @@
 
                 html += `
                     <tr class="${isJoker ? 'joker-selected' : ''}" id="match-card-${match.id}">
-                        <td>${match.date} ${match.time ? `- ${match.time}` : ''}</td>
-                        <td>${getFlag(match.team1)} ${match.team1} vs ${match.team2} ${getFlag(match.team2)}</td>
-                        <td>${getPredictionStatusLabel(userPrediction)}</td>
-                        <td>${getActualStatusLabel(match)}</td>
+                        <td>${match.date}</td>
+                        <td>${getCompactFixtureLabel(match)}</td>
+                        <td class="prediction-scores-cell">Predicted: ${userPrediction ? `${userPrediction.team1}-${userPrediction.team2}` : '--'}, Actual: ${isMatchCompleted ? `${match.actualScore1}-${match.actualScore2}` : '--'}</td>
                         <td>${pointsPill}</td>
                         <td>${jokerSection}</td>
                         <td class="prediction-actions-cell">
