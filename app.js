@@ -211,7 +211,20 @@
                         })
                         .eq('username', username);
                     
-                    if (error) console.error('Error updating user:', error);
+                    if (error) {
+                        console.error('Error updating user:', error);
+                        return;
+                    }
+                    trackUsage('update user', formatUsagePayload({
+                        username,
+                        userData: {
+                            nickname: userData.nickname,
+                            passwordHash: userData.passwordHash,
+                            totalTries: userData.totalTries,
+                            jokerMatchId: userData.jokerMatchId,
+                            supportedTeams: userData.supportedTeams || []
+                        }
+                    }), username);
                 } else {
                     // Insert new user
                     const { error } = await supabaseClient
@@ -225,7 +238,20 @@
                             supported_teams: userData.supportedTeams && userData.supportedTeams.length > 0 ? userData.supportedTeams.join(',') : null
                         });
                     
-                    if (error) console.error('Error inserting user:', error);
+                    if (error) {
+                        console.error('Error inserting user:', error);
+                        return;
+                    }
+                    trackUsage('create user', formatUsagePayload({
+                        username,
+                        userData: {
+                            nickname: userData.nickname,
+                            passwordHash: userData.passwordHash,
+                            totalTries: userData.totalTries,
+                            jokerMatchId: userData.jokerMatchId,
+                            supportedTeams: userData.supportedTeams || []
+                        }
+                    }), username);
                 }
             },
 
@@ -240,7 +266,11 @@
                     .update({ username: newUsername })
                     .eq('username', oldUsername);
 
-                if (error) console.error('Error renaming user:', error);
+                if (error) {
+                    console.error('Error renaming user:', error);
+                    return;
+                }
+                trackUsage('rename user', formatUsagePayload({ oldUsername, newUsername }), newUsername);
             },
 
             // Save predictions for a user
@@ -261,10 +291,14 @@
                 }
                 
                 // Update total tries
-                await supabaseClient
+                const { error: totalTriesError } = await supabaseClient
                     .from('users')
                     .update({ total_tries: totalTries })
                     .eq('id', user.id);
+                if (totalTriesError) {
+                    console.error('Error updating total tries:', totalTriesError);
+                    return;
+                }
 
                 // Replace all stored predictions for this user so cleared rows are
                 // persisted as deletions (not left behind in Supabase).
@@ -285,12 +319,27 @@
                     updated_at: new Date().toISOString()
                 }));
 
-                if (predictionRows.length === 0) return;
+                if (predictionRows.length === 0) {
+                    trackUsage('save predictions', formatUsagePayload({
+                        username,
+                        predictions: predictions || {},
+                        totalTries
+                    }), username);
+                    return;
+                }
 
                 const { error: insertError } = await supabaseClient
                     .from('predictions')
                     .insert(predictionRows);
-                if (insertError) console.error('Error saving prediction rows:', insertError);
+                if (insertError) {
+                    console.error('Error saving prediction rows:', insertError);
+                    return;
+                }
+                trackUsage('save predictions', formatUsagePayload({
+                    username,
+                    predictions: predictions || {},
+                    totalTries
+                }), username);
             },
             
             // Delete a user
@@ -303,7 +352,11 @@
                     .delete()
                     .eq('username', username);
                 
-                if (error) console.error('Error deleting user:', error);
+                if (error) {
+                    console.error('Error deleting user:', error);
+                    return;
+                }
+                trackUsage('delete user', formatUsagePayload({ username }), username);
             },
             
             // Matches/Fixtures
@@ -338,7 +391,11 @@
 
             saveMatches: async (matchesData) => {
                 // Delete all existing matches and re-insert
-                await supabaseClient.from('matches').delete().neq('id', 0);
+                const { error: deleteError } = await supabaseClient.from('matches').delete().neq('id', 0);
+                if (deleteError) {
+                    console.error('Error clearing matches:', deleteError);
+                    return;
+                }
                 
                 const rows = matchesData.map(m => ({
                     id: m.id,
@@ -355,7 +412,11 @@
                 }));
 
                 const { error } = await supabaseClient.from('matches').insert(rows);
-                if (error) console.error('Error saving matches:', error);
+                if (error) {
+                    console.error('Error saving matches:', error);
+                    return;
+                }
+                trackUsage('save fixtures', formatUsagePayload({ matchesData: matchesData || [] }));
             },
             
             // Admin usernames
@@ -376,7 +437,11 @@
 
             saveAdminUsernames: async (usernames) => {
                 // Delete all and re-insert
-                await supabaseClient.from('admin_usernames').delete().neq('username', '');
+                const { error: deleteError } = await supabaseClient.from('admin_usernames').delete().neq('username', '');
+                if (deleteError) {
+                    console.error('Error clearing admin usernames:', deleteError);
+                    return;
+                }
 
                 if (usernames.length > 0) {
                     const normalized = [...new Set(
@@ -386,8 +451,15 @@
                     )];
                     const rows = normalized.map(username => ({ username }));
                     const { error } = await supabaseClient.from('admin_usernames').insert(rows);
-                    if (error) console.error('Error saving admin usernames:', error);
+                    if (error) {
+                        console.error('Error saving admin usernames:', error);
+                        return;
+                    }
+                    trackUsage('save admin usernames', formatUsagePayload({ usernames: normalized }));
+                    return;
                 }
+
+                trackUsage('save admin usernames', formatUsagePayload({ usernames: [] }));
             },
             
             // App settings
@@ -420,7 +492,92 @@
                         onConflict: 'key'
                     });
                 
-                if (error) console.error('Error saving settings:', error);
+                if (error) {
+                    console.error('Error saving settings:', error);
+                    return;
+                }
+                trackUsage('update settings', formatUsagePayload({ settings }));
+            },
+
+            getUsageEvents: async (limit = 100) => {
+                const rowLimit = Math.max(1, Math.min(500, parseInt(limit, 10) || 100));
+                const { data, error } = await supabaseClient
+                    .from('usage_events')
+                    .select('id, created_at, actor, action, payload')
+                    .order('created_at', { ascending: false })
+                    .limit(rowLimit);
+
+                if (error) {
+                    console.error('Error fetching usage events:', error);
+                    return [];
+                }
+
+                return data || [];
+            },
+
+            deleteUsageEventsOlderThanLatest: async (keepLatest = 100) => {
+                const keepCount = Math.max(1, parseInt(keepLatest, 10) || 100);
+                const { data: allRows, error: listError } = await supabaseClient
+                    .from('usage_events')
+                    .select('id')
+                    .order('created_at', { ascending: false })
+                    .order('id', { ascending: false });
+
+                if (listError) {
+                    console.error('Error listing usage events for prune:', listError);
+                    return { deletedCount: 0, totalCount: 0 };
+                }
+
+                const ids = (allRows || []).map(row => row.id);
+                if (ids.length <= keepCount) {
+                    return { deletedCount: 0, totalCount: ids.length };
+                }
+
+                const toDelete = ids.slice(keepCount);
+                const chunkSize = 500;
+                for (let i = 0; i < toDelete.length; i += chunkSize) {
+                    const chunk = toDelete.slice(i, i + chunkSize);
+                    const { error: deleteError } = await supabaseClient
+                        .from('usage_events')
+                        .delete()
+                        .in('id', chunk);
+                    if (deleteError) {
+                        console.error('Error deleting usage events chunk:', deleteError);
+                        return { deletedCount: i, totalCount: ids.length };
+                    }
+                }
+
+                return { deletedCount: toDelete.length, totalCount: ids.length };
+            },
+
+            clearUsageEvents: async () => {
+                const { error } = await supabaseClient
+                    .from('usage_events')
+                    .delete()
+                    .neq('id', 0);
+
+                if (error) {
+                    console.error('Error clearing usage events:', error);
+                    return false;
+                }
+                return true;
+            },
+
+            trackUsageEvent: async (actor, action, payload) => {
+                const normalizedActor = (actor || '').trim().toLowerCase() || 'guest';
+                const normalizedAction = (action || '').trim();
+                if (!normalizedAction) return;
+
+                const { error } = await supabaseClient
+                    .from('usage_events')
+                    .insert({
+                        actor: normalizedActor,
+                        action: normalizedAction,
+                        payload: (payload || '').toString()
+                    });
+                if (error) {
+                    console.warn('Usage tracking failed:', error.message || error);
+                }
             },
 
             // Active scoring rules + close tiers (single-row model)
@@ -581,6 +738,7 @@
                     }
                 }
 
+                trackUsage('update scoring rules', formatUsagePayload({ rules }));
                 return 1;
             },
 
@@ -618,7 +776,10 @@
                     .filter(id => Number.isInteger(id) && id > 0))]
                     .sort((a, b) => a - b);
 
-                if (uniqueMatchIds.length === 0) return true;
+                if (uniqueMatchIds.length === 0) {
+                    trackUsage('save joker selections', formatUsagePayload({ username: normalizedUsername, matchIds: [] }), normalizedUsername);
+                    return true;
+                }
 
                 const rows = uniqueMatchIds.map(matchId => ({
                     user_id: user.id,
@@ -632,6 +793,7 @@
                     return false;
                 }
 
+                trackUsage('save joker selections', formatUsagePayload({ username: normalizedUsername, matchIds: uniqueMatchIds }), normalizedUsername);
                 return true;
             }
         };
@@ -649,6 +811,8 @@
         let editingFixtureId = null;
         let editingPredictionContext = null;
         let adminPredictionUsername = null;
+        let usageReportEvents = [];
+        let usageEventsForRecovery = [];
         const THEME_COOKIE_NAME = 'rugbyPredictorTheme';
         const THEME_STORAGE_KEY = 'rugbyPredictorTheme';
         const COOKIE_FALLBACK_PREFIX = 'rugbyPredictorCookieFallback:';
@@ -656,6 +820,37 @@
 
         // Loading state
         let isLoading = true;
+
+        function getUsageActor(actorOverride = null) {
+            if (actorOverride) return String(actorOverride).trim().toLowerCase();
+            if (currentUsername) return String(currentUsername).trim().toLowerCase();
+            return isGuest ? 'guest' : 'guest';
+        }
+
+        function trackUsage(action, payload = '', actorOverride = null) {
+            const normalizedAction = (action || '').trim();
+            if (!normalizedAction) return;
+            Storage.trackUsageEvent(getUsageActor(actorOverride), normalizedAction, payload);
+        }
+
+        function formatUsagePayload(input) {
+            if (input === null || input === undefined) return '';
+            if (typeof input === 'string') return input;
+            try {
+                return JSON.stringify(input);
+            } catch (error) {
+                return String(input);
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
 
         // Cookie helper functions
         function setCookie(name, value, days = 365) {
@@ -1896,7 +2091,7 @@
         }
 
         // Change theme
-        async function changeTheme(theme) {
+        async function changeTheme(theme, persistToUser = true) {
             const normalizedTheme = ['classic', 'retro', 'dark'].includes(theme) ? theme : 'classic';
 
             // Apply theme to document
@@ -1921,7 +2116,7 @@
             }
             
             // Save to user's account if logged in
-            if (currentUsername && users[currentUsername]) {
+            if (persistToUser && currentUsername && users[currentUsername]) {
                 users[currentUsername].theme = normalizedTheme;
                 try {
                     await Storage.saveUser(currentUsername, users[currentUsername]);
@@ -1941,7 +2136,7 @@
             }
             const cookieTheme = (getCookie(THEME_COOKIE_NAME) || '').trim().toLowerCase();
             const userTheme = currentUsername && users[currentUsername] ? users[currentUsername].theme : null;
-            changeTheme(storageTheme || cookieTheme || userTheme || 'classic');
+            changeTheme(storageTheme || cookieTheme || userTheme || 'classic', false);
         }
 
         function toggleGlobalHelp() {
@@ -2025,6 +2220,7 @@
         function loginAsGuest() {
             isGuest = true;
             currentUsername = null;
+            trackUsage('guest logs in', formatUsagePayload({ mode: 'guest' }), 'guest');
             showAppAsGuest();
         }
 
@@ -2072,6 +2268,7 @@
             showLoginFeedback('Login successful. Welcome back, ' + toTitleCase(users[username].nickname) + '.', 'success');
             currentUsername = username;
             setRememberedUsername(username);
+            trackUsage('user logs in', formatUsagePayload({ username }), username);
             setTimeout(() => {
                 showApp();
             }, 800);
@@ -2141,6 +2338,7 @@
 
             currentUsername = username;
             setRememberedUsername(username);
+            trackUsage('user logs in', formatUsagePayload({ username, source: 'register' }), username);
 
             setTimeout(() => {
                 showApp();
@@ -2235,6 +2433,7 @@
             document.getElementById('rulesTab').classList.add('hidden');
             document.getElementById('prizeFundTab').classList.add('hidden');
             document.getElementById('recoveryTab').classList.add('hidden');
+            document.getElementById('usageReportTab').classList.add('hidden');
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             const summaryTabBtn = Array.from(document.querySelectorAll('.tab')).find(
                 tab => tab.textContent.trim() === 'Match Summary'
@@ -2275,6 +2474,7 @@
             document.getElementById('rulesTab').classList.add('hidden');
             document.getElementById('prizeFundTab').classList.add('hidden');
             document.getElementById('recoveryTab').classList.add('hidden');
+            document.getElementById('usageReportTab').classList.add('hidden');
 
             // Show summary
             showSummary();
@@ -4763,6 +4963,7 @@ DROP TABLE IF EXISTS predictions;
 DROP TABLE IF EXISTS user_joker_selections;
 DROP TABLE IF EXISTS scoring_close_tiers;
 DROP TABLE IF EXISTS scoring_rules;
+DROP TABLE IF EXISTS usage_events;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS matches;
 DROP TABLE IF EXISTS admin_usernames;
@@ -4853,6 +5054,15 @@ CREATE TABLE user_joker_selections (
     UNIQUE(user_id, match_id)
 );
 
+-- Create usage events table
+CREATE TABLE usage_events (
+    id BIGSERIAL PRIMARY KEY,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    actor TEXT NOT NULL,
+    action TEXT NOT NULL,
+    payload TEXT
+);
+
 -- Enable Row Level Security (optional - adjust as needed)
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE predictions ENABLE ROW LEVEL SECURITY;
@@ -4862,6 +5072,7 @@ ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE scoring_rules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE scoring_close_tiers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_joker_selections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for public access (adjust based on your security needs)
 CREATE POLICY "Allow all access to users" ON users FOR ALL USING (true);
@@ -4871,7 +5082,8 @@ CREATE POLICY "Allow all access to admin_usernames" ON admin_usernames FOR ALL U
 CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);
 CREATE POLICY "Allow all access to scoring_rules" ON scoring_rules FOR ALL USING (true);
 CREATE POLICY "Allow all access to scoring_close_tiers" ON scoring_close_tiers FOR ALL USING (true);
-CREATE POLICY "Allow all access to user_joker_selections" ON user_joker_selections FOR ALL USING (true);`;
+CREATE POLICY "Allow all access to user_joker_selections" ON user_joker_selections FOR ALL USING (true);
+CREATE POLICY "Allow all access to usage_events" ON usage_events FOR ALL USING (true);`;
         }
 
         function generateDataSQL() {
@@ -4959,6 +5171,18 @@ CREATE POLICY "Allow all access to user_joker_selections" ON user_joker_selectio
                 sql += `SELECT setval('user_joker_selections_id_seq', (SELECT MAX(id) FROM user_joker_selections));\n`;
             }
 
+            if (usageEventsForRecovery.length > 0) {
+                sql += '\n-- Insert usage events\n';
+                usageEventsForRecovery.forEach(evt => {
+                    const actor = esc(evt.actor || 'guest');
+                    const action = esc(evt.action || '');
+                    const payload = esc(evt.payload || '');
+                    const createdAt = evt.created_at ? `'${esc(evt.created_at)}'` : 'NOW()';
+                    sql += `INSERT INTO usage_events (created_at, actor, action, payload) VALUES (${createdAt}, '${actor}', '${action}', '${payload}');\n`;
+                });
+                sql += `SELECT setval('usage_events_id_seq', (SELECT MAX(id) FROM usage_events));\n`;
+            }
+
             return sql;
         }
 
@@ -4989,6 +5213,7 @@ CREATE POLICY "Allow all access to user_joker_selections" ON user_joker_selectio
                     <li>User joker selections</li>
                     <li>Admin usernames list</li>
                     <li>App settings</li>
+                    <li>Usage events</li>
                 `;
             } else {
                 description.textContent = 'This SQL will recreate empty tables only:';
@@ -5000,6 +5225,7 @@ CREATE POLICY "Allow all access to user_joker_selections" ON user_joker_selectio
                     <li>Empty user_joker_selections table</li>
                     <li>Empty admin_usernames table</li>
                     <li>Empty settings table</li>
+                    <li>Empty usage_events table</li>
                 `;
             }
         }
@@ -5024,10 +5250,94 @@ CREATE POLICY "Allow all access to user_joker_selections" ON user_joker_selectio
             connectionStringEl.textContent = connectionString;
         }
 
-        function initRecoveryTab() {
+        async function initRecoveryTab() {
             renderRecoveryConnectionDetails();
+            usageEventsForRecovery = await Storage.getUsageEvents(1000);
             // Display the SQL based on checkbox state
             updateRecoverySQL();
+        }
+
+        function formatUsageTimestamp(rawValue) {
+            if (!rawValue) return '-';
+            const date = new Date(rawValue);
+            if (Number.isNaN(date.getTime())) return String(rawValue);
+            return date.toLocaleString('en-GB', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        async function renderUsageReport() {
+            const container = document.getElementById('usageReportContainer');
+            if (!container) return;
+
+            container.innerHTML = '<p style="opacity:0.8;">Loading usage events...</p>';
+            usageReportEvents = await Storage.getUsageEvents(100);
+
+            if (!usageReportEvents.length) {
+                container.innerHTML = '<p style="opacity:0.8;">No usage events found.</p>';
+                return;
+            }
+
+            const rowsHtml = usageReportEvents.map(evt => `
+                <tr>
+                    <td>${escapeHtml(formatUsageTimestamp(evt.created_at))}</td>
+                    <td>${escapeHtml(evt.actor || '-')}</td>
+                    <td>${escapeHtml(evt.action || '-')}</td>
+                    <td>
+                        <details class="usage-payload-details">
+                            <summary>View payload</summary>
+                            <pre class="usage-payload-pre">${escapeHtml(evt.payload || '')}</pre>
+                        </details>
+                    </td>
+                </tr>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="usage-report-table-wrap">
+                    <table class="admin-table usage-report-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 180px;">Timestamp</th>
+                                <th style="width: 140px;">Actor</th>
+                                <th style="width: 260px;">Action</th>
+                                <th>Payload</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        async function pruneUsageEventsKeepLatest() {
+            if (!isCurrentUserAdmin()) return;
+            if (!confirm('Remove all usage events older than the latest 100?')) return;
+
+            const result = await Storage.deleteUsageEventsOlderThanLatest(100);
+            alert(`Removed ${result.deletedCount} older usage event(s).`);
+            await renderUsageReport();
+        }
+
+        async function clearAllUsageEvents() {
+            if (!isCurrentUserAdmin()) return;
+            if (!confirm('Remove all usage events? This cannot be undone.')) return;
+
+            const ok = await Storage.clearUsageEvents();
+            if (!ok) {
+                alert('Failed to remove usage events.');
+                return;
+            }
+            usageReportEvents = [];
+            const container = document.getElementById('usageReportContainer');
+            if (container) {
+                container.innerHTML = '<p style="opacity:0.8;">No usage events found.</p>';
+            }
+            alert('All usage events removed.');
         }
 
         function copySqlToClipboard() {
@@ -5059,6 +5369,7 @@ CREATE POLICY "Allow all access to user_joker_selections" ON user_joker_selectio
             document.getElementById('rulesTab').classList.add('hidden');
             document.getElementById('prizeFundTab').classList.add('hidden');
             document.getElementById('recoveryTab').classList.add('hidden');
+            document.getElementById('usageReportTab').classList.add('hidden');
 
             // Update tab buttons
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
@@ -5106,6 +5417,11 @@ CREATE POLICY "Allow all access to user_joker_selections" ON user_joker_selectio
                 document.getElementById('recoveryTab').classList.remove('hidden');
                 event.target.classList.add('active');
                 initRecoveryTab();
+            } else if (tabName === 'usageReport') {
+                if (!isCurrentUserAdmin()) return;
+                document.getElementById('usageReportTab').classList.remove('hidden');
+                event.target.classList.add('active');
+                renderUsageReport();
             }
         }
 
@@ -5170,6 +5486,7 @@ CREATE POLICY "Allow all access to user_joker_selections" ON user_joker_selectio
             const savedUsername = getRememberedUsername();
             if (savedUsername && users[savedUsername]) {
                 currentUsername = savedUsername;
+                trackUsage('user logs in', formatUsagePayload({ username: savedUsername, source: 'cookie_auto_login' }), savedUsername);
                 showApp();
             } else if (savedUsername) {
                 // Clean up stale remembered usernames that no longer exist.
