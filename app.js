@@ -2175,7 +2175,7 @@
         }
 
         function getCompactFixtureLabel(match) {
-            return `${getFlag(match.team1)} ${getTeamAbbr(match.team1)} v ${getTeamAbbr(match.team2)} ${getFlag(match.team2)}`;
+            return `<span class="prediction-fixture-label"><span class="prediction-fixture-team">${getFlag(match.team1)} ${getTeamAbbr(match.team1)}</span><span class="prediction-fixture-v">v</span><span class="prediction-fixture-team">${getTeamAbbr(match.team2)} ${getFlag(match.team2)}</span></span>`;
         }
 
         function openEditPredictionModal(mode, matchId) {
@@ -2368,7 +2368,6 @@
                                     <th>Fixture</th>
                                     <th>Scores</th>
                                     <th>Points</th>
-                                    <th>Joker</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -2387,17 +2386,14 @@
                     const pointsPill = isMatchCompleted
                         ? `<span class="capture-status captured" title="${pointsBreakdown.summary || 'No points awarded'}">Pts: ${pointsBreakdown.points}</span>`
                         : '';
-                    const jokerSection = match.jokerEligible
-                        ? `<label class="prediction-joker-readonly"><input type="checkbox" disabled ${isJoker ? 'checked' : ''}><span>Joker</span></label>`
-                        : `<span style="opacity:0.6;">-</span>`;
+                    const jokerSuffix = isJoker ? ` <span class="joker-indicator">JOKER</span>` : '';
 
                     html += `
                         <tr class="${isJoker ? 'joker-selected' : ''}" id="admin-match-card-${match.id}">
                             <td>${match.date}</td>
                             <td>${getCompactFixtureLabel(match)}</td>
-                            <td class="prediction-scores-cell">Predicted: ${userPrediction ? `${userPrediction.team1}-${userPrediction.team2}` : '--'}, Actual: ${isMatchCompleted ? `${match.actualScore1}-${match.actualScore2}` : '--'}</td>
+                            <td class="prediction-scores-cell">Predicted: ${userPrediction ? `${userPrediction.team1}-${userPrediction.team2}` : '--'}, Actual: ${isMatchCompleted ? `${match.actualScore1}-${match.actualScore2}` : '--'}${jokerSuffix}</td>
                             <td>${pointsPill}</td>
-                            <td>${jokerSection}</td>
                             <td class="prediction-actions-cell">
                                 <button class="btn-small btn-success" onclick="openEditPredictionModal('admin', ${match.id})">Edit</button>
                             </td>
@@ -2481,7 +2477,6 @@
                                     <th>Fixture</th>
                                     <th>Scores</th>
                                     <th>Points</th>
-                                    <th>Joker</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -2501,17 +2496,14 @@
                 const pointsPill = isMatchCompleted
                     ? `<span class="capture-status captured" title="${pointsBreakdown.summary || 'No points awarded'}">Pts: ${pointsBreakdown.points}</span>`
                     : '';
-                const jokerSection = match.jokerEligible ? `
-                    <label class="prediction-joker-readonly"><input type="checkbox" disabled ${isJoker ? 'checked' : ''}><span>Joker</span></label>
-                ` : `<span style="opacity: 0.6;">-</span>`;
+                const jokerSuffix = isJoker ? ` <span class="joker-indicator">JOKER</span>` : '';
 
                 html += `
                     <tr class="${isJoker ? 'joker-selected' : ''}" id="match-card-${match.id}">
                         <td>${match.date}</td>
                         <td>${getCompactFixtureLabel(match)}</td>
-                        <td class="prediction-scores-cell">Predicted: ${userPrediction ? `${userPrediction.team1}-${userPrediction.team2}` : '--'}, Actual: ${isMatchCompleted ? `${match.actualScore1}-${match.actualScore2}` : '--'}</td>
+                        <td class="prediction-scores-cell">Predicted: ${userPrediction ? `${userPrediction.team1}-${userPrediction.team2}` : '--'}, Actual: ${isMatchCompleted ? `${match.actualScore1}-${match.actualScore2}` : '--'}${jokerSuffix}</td>
                         <td>${pointsPill}</td>
-                        <td>${jokerSection}</td>
                         <td class="prediction-actions-cell">
                             <button class="btn-small btn-success" onclick="openEditPredictionModal('self', ${match.id})">Edit</button>
                         </td>
