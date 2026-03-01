@@ -473,7 +473,7 @@
                         <div style="margin-bottom: 1rem;">
                             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                                 <input type="checkbox" id="includeDataCheckbox" checked onchange="updateRecoverySQL()" style="width: 18px; height: 18px; cursor: pointer;">
-                                <span>Include current data (users, predictions, settings)</span>
+                                <span>Include current data (users, predictions, rules, jokers, settings)</span>
                             </label>
                         </div>
                         <p id="recoveryDescription">This SQL will recreate all tables and restore:</p>
@@ -481,6 +481,8 @@
                             <li>All matches and fixtures</li>
                             <li>All user accounts (usernames, password hashes)</li>
                             <li>All predictions</li>
+                            <li>Single scoring rules config and close-score tiers</li>
+                            <li>User joker selections</li>
                             <li>Admin usernames list</li>
                             <li>App settings</li>
                         </ul>

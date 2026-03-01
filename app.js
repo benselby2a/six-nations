@@ -4378,6 +4378,9 @@
         function generateSchemaSQL() {
             return `-- Drop existing tables (in correct order due to foreign keys)
 DROP TABLE IF EXISTS predictions;
+DROP TABLE IF EXISTS user_joker_selections;
+DROP TABLE IF EXISTS scoring_close_tiers;
+DROP TABLE IF EXISTS scoring_rules;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS matches;
 DROP TABLE IF EXISTS admin_usernames;
@@ -4434,19 +4437,54 @@ CREATE TABLE settings (
     value TEXT
 );
 
+-- Create single-row scoring rules table
+CREATE TABLE scoring_rules (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    correct_result_points INTEGER NOT NULL DEFAULT 3,
+    perfect_score_bonus INTEGER NOT NULL DEFAULT 3,
+    draw_bonus INTEGER NOT NULL DEFAULT 2,
+    max_jokers_per_user INTEGER NOT NULL DEFAULT 1,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create close score tiers table
+CREATE TABLE scoring_close_tiers (
+    id SERIAL PRIMARY KEY,
+    tier_order INTEGER NOT NULL CHECK (tier_order BETWEEN 1 AND 3),
+    within_points INTEGER NOT NULL CHECK (within_points >= 0),
+    bonus_points INTEGER NOT NULL CHECK (bonus_points >= 0),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(tier_order)
+);
+
+-- Create multi-joker selections table
+CREATE TABLE user_joker_selections (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    match_id INTEGER NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, match_id)
+);
+
 -- Enable Row Level Security (optional - adjust as needed)
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE predictions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_usernames ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE scoring_rules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE scoring_close_tiers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_joker_selections ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for public access (adjust based on your security needs)
 CREATE POLICY "Allow all access to users" ON users FOR ALL USING (true);
 CREATE POLICY "Allow all access to predictions" ON predictions FOR ALL USING (true);
 CREATE POLICY "Allow all access to matches" ON matches FOR ALL USING (true);
 CREATE POLICY "Allow all access to admin_usernames" ON admin_usernames FOR ALL USING (true);
-CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
+CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);
+CREATE POLICY "Allow all access to scoring_rules" ON scoring_rules FOR ALL USING (true);
+CREATE POLICY "Allow all access to scoring_close_tiers" ON scoring_close_tiers FOR ALL USING (true);
+CREATE POLICY "Allow all access to user_joker_selections" ON user_joker_selections FOR ALL USING (true);`;
         }
 
         function generateDataSQL() {
@@ -4475,6 +4513,23 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
             sql += '\n-- Insert settings\n';
             sql += `INSERT INTO settings (key, value) VALUES ('predictions_locked', '${appSettings.predictionsLocked}');\n`;
 
+            // Generate scoring rules INSERT statement
+            const rules = getEffectiveScoringRules();
+            sql += '\n-- Insert scoring rules\n';
+            sql += `INSERT INTO scoring_rules (id, correct_result_points, perfect_score_bonus, draw_bonus, max_jokers_per_user, updated_at) VALUES (1, ${rules.correctResultPoints}, ${rules.perfectScoreBonus}, ${rules.drawBonus}, ${rules.maxJokersPerUser}, NOW());\n`;
+
+            // Generate close score tiers INSERT statements
+            const closeTiers = (rules.closeTiers || []).slice(0, 3);
+            if (closeTiers.length > 0) {
+                sql += '\n-- Insert scoring close tiers\n';
+                closeTiers.forEach((tier, index) => {
+                    const tierOrder = Number.isInteger(tier.tierOrder) ? tier.tierOrder : (index + 1);
+                    const withinPoints = Number.isFinite(tier.withinPoints) ? tier.withinPoints : 0;
+                    const bonusPoints = Number.isFinite(tier.bonusPoints) ? tier.bonusPoints : 0;
+                    sql += `INSERT INTO scoring_close_tiers (tier_order, within_points, bonus_points) VALUES (${tierOrder}, ${withinPoints}, ${bonusPoints});\n`;
+                });
+            }
+
             // Generate users INSERT statements
             const userList = Object.keys(users);
             if (userList.length > 0) {
@@ -4497,12 +4552,24 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
                     });
                 });
 
+                // Generate multi-joker selections INSERT statements
+                sql += '\n-- Insert user joker selections\n';
+                userList.forEach((username, userIndex) => {
+                    const userId = userIndex + 1;
+                    const selectedJokers = getUserSelectedJokerMatchIds(username);
+                    selectedJokers.forEach(matchId => {
+                        sql += `INSERT INTO user_joker_selections (user_id, match_id) VALUES (${userId}, ${matchId});\n`;
+                    });
+                });
+
                 // Reset the sequence for users table
                 sql += '\n-- Reset sequences\n';
                 sql += `SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));\n`;
                 sql += `SELECT setval('predictions_id_seq', (SELECT MAX(id) FROM predictions));\n`;
                 sql += `SELECT setval('admin_usernames_id_seq', (SELECT MAX(id) FROM admin_usernames));\n`;
                 sql += `SELECT setval('settings_id_seq', (SELECT MAX(id) FROM settings));\n`;
+                sql += `SELECT setval('scoring_close_tiers_id_seq', (SELECT MAX(id) FROM scoring_close_tiers));\n`;
+                sql += `SELECT setval('user_joker_selections_id_seq', (SELECT MAX(id) FROM user_joker_selections));\n`;
             }
 
             return sql;
@@ -4531,6 +4598,8 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
                     <li>All matches and fixtures</li>
                     <li>All user accounts (usernames, password hashes)</li>
                     <li>All predictions</li>
+                    <li>Single scoring rules config and close-score tiers</li>
+                    <li>User joker selections</li>
                     <li>Admin usernames list</li>
                     <li>App settings</li>
                 `;
@@ -4540,6 +4609,8 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
                     <li>Empty matches table</li>
                     <li>Empty users table</li>
                     <li>Empty predictions table</li>
+                    <li>Empty scoring_rules and scoring_close_tiers tables</li>
+                    <li>Empty user_joker_selections table</li>
                     <li>Empty admin_usernames table</li>
                     <li>Empty settings table</li>
                 `;
