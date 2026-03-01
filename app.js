@@ -154,7 +154,6 @@
                         nickname: user.nickname,
                         passwordHash: user.password_hash,
                         totalTries: user.total_tries,
-                        jokerMatchId: user.joker_match_id,
                         supportedTeams: user.supported_teams ? user.supported_teams.split(',') : [],
                         predictions: {}  // Will be populated separately
                     };
@@ -206,7 +205,6 @@
                             nickname: userData.nickname,
                             password_hash: userData.passwordHash,
                             total_tries: userData.totalTries,
-                            joker_match_id: userData.jokerMatchId,
                             supported_teams: userData.supportedTeams && userData.supportedTeams.length > 0 ? userData.supportedTeams.join(',') : null
                         })
                         .eq('username', username);
@@ -221,7 +219,6 @@
                             nickname: userData.nickname,
                             passwordHash: userData.passwordHash,
                             totalTries: userData.totalTries,
-                            jokerMatchId: userData.jokerMatchId,
                             supportedTeams: userData.supportedTeams || []
                         }
                     }), username);
@@ -234,7 +231,6 @@
                             nickname: userData.nickname,
                             password_hash: userData.passwordHash,
                             total_tries: userData.totalTries,
-                            joker_match_id: userData.jokerMatchId,
                             supported_teams: userData.supportedTeams && userData.supportedTeams.length > 0 ? userData.supportedTeams.join(',') : null
                         });
                     
@@ -248,7 +244,6 @@
                             nickname: userData.nickname,
                             passwordHash: userData.passwordHash,
                             totalTries: userData.totalTries,
-                            jokerMatchId: userData.jokerMatchId,
                             supportedTeams: userData.supportedTeams || []
                         }
                     }), username);
@@ -1138,10 +1133,23 @@
         function updateNextMatchScoreButtonState() {
             const btn = document.getElementById('nextMatchScoreMainBtn');
             if (!btn) return;
+            const actionRow = btn.closest('.admin-top-action-row');
             const nextMatch = getNextMatchWithoutScore();
-            if (!nextMatch) {
+            const shouldShowQuickAdd = !!nextMatch && isMatchDueTodayOrPast(nextMatch);
+
+            if (actionRow) {
+                if (isCurrentUserAdmin() && shouldShowQuickAdd) {
+                    actionRow.classList.remove('hidden');
+                } else {
+                    actionRow.classList.add('hidden');
+                }
+            }
+
+            if (!nextMatch || !shouldShowQuickAdd) {
                 btn.disabled = true;
-                btn.textContent = 'No Remaining Match Score To Add';
+                btn.textContent = nextMatch
+                    ? `Add ${getFlag(nextMatch.team1)} ${getTeamAbbr(nextMatch.team1)} v ${getFlag(nextMatch.team2)} ${getTeamAbbr(nextMatch.team2)} Score`
+                    : 'No Remaining Match Score To Add';
                 return;
             }
 
@@ -1152,7 +1160,7 @@
         function openNextMatchScoreModal() {
             if (!isCurrentUserAdmin()) return;
             const nextMatch = getNextMatchWithoutScore();
-            if (!nextMatch) {
+            if (!nextMatch || !isMatchDueTodayOrPast(nextMatch)) {
                 updateNextMatchScoreButtonState();
                 return;
             }
@@ -3303,9 +3311,6 @@
                 .slice(0, requiredJokers === 0 ? 0 : requiredJokers);
 
             userJokerSelections[normalizedUsername] = normalized;
-            if (users[normalizedUsername]) {
-                users[normalizedUsername].jokerMatchId = normalized[0] ?? null;
-            }
         }
 
         function isUserJokerForMatch(username, matchId) {
@@ -3570,7 +3575,63 @@
             const nextFixtureText = nextMatch
                 ? `Next up we have ${nextMatch.team1} vs ${nextMatch.team2} on ${nextMatch.date} at ${nextMatch.time}.`
                 : '';
-            const nextFixtureWithHistory = nextFixtureText;
+            const formatNameList = (nameList) => {
+                if (!nameList || nameList.length === 0) return '';
+                if (nameList.length <= 3) return nameList.join(', ');
+                return `${nameList.slice(0, 3).join(', ')} and ${nameList.length - 3} others`;
+            };
+
+            let nextMatchPredictionSummary = '';
+            if (nextMatch) {
+                const nextPredictions = allUsers
+                    .map(username => ({
+                        username,
+                        nickname: toTitleCase(users[username].nickname || username),
+                        prediction: users[username] && users[username].predictions
+                            ? users[username].predictions[nextMatch.id]
+                            : null
+                    }))
+                    .filter(entry => entry.prediction &&
+                        Number.isFinite(entry.prediction.team1) &&
+                        Number.isFinite(entry.prediction.team2));
+
+                if (nextPredictions.length === 0) {
+                    nextMatchPredictionSummary = `No score predictions are in yet for ${nextMatch.team1} vs ${nextMatch.team2}.`;
+                } else {
+                    const team1Winners = [];
+                    const team2Winners = [];
+                    const drawPickers = [];
+
+                    nextPredictions.forEach(entry => {
+                        const predictedResult = getResult(entry.prediction.team1, entry.prediction.team2);
+                        if (predictedResult === 'team1') {
+                            team1Winners.push(entry.nickname);
+                        } else if (predictedResult === 'team2') {
+                            team2Winners.push(entry.nickname);
+                        } else {
+                            drawPickers.push(entry.nickname);
+                        }
+                    });
+
+                    const totalPredictions = nextPredictions.length;
+                    if (team1Winners.length === totalPredictions) {
+                        nextMatchPredictionSummary = `Prediction split: everyone is backing ${nextMatch.team1}.`;
+                    } else if (team2Winners.length === totalPredictions) {
+                        nextMatchPredictionSummary = `Prediction split: everyone is backing ${nextMatch.team2}.`;
+                    } else if (drawPickers.length === totalPredictions) {
+                        nextMatchPredictionSummary = 'Prediction split: everyone is calling it a draw.';
+                    } else {
+                        const splitParts = [];
+                        if (team1Winners.length > 0) splitParts.push(`${formatNameList(team1Winners)} ${team1Winners.length === 1 ? 'is' : 'are'} backing ${nextMatch.team1}`);
+                        if (team2Winners.length > 0) splitParts.push(`${formatNameList(team2Winners)} ${team2Winners.length === 1 ? 'is' : 'are'} backing ${nextMatch.team2}`);
+                        if (drawPickers.length > 0) splitParts.push(`${formatNameList(drawPickers)} ${drawPickers.length === 1 ? 'is' : 'are'} calling it a draw`);
+                        nextMatchPredictionSummary = splitParts.length > 0
+                            ? `Prediction split: ${splitParts.join('; ')}.`
+                            : `No score predictions are in yet for ${nextMatch.team1} vs ${nextMatch.team2}.`;
+                    }
+                }
+            }
+            const nextFixtureWithHistory = [nextFixtureText, nextMatchPredictionSummary].filter(Boolean).join(' ');
             
             if (completedMatches.length === 0) {
                 tip = `No matches played yet, but the tension is building like ${randomWorldCupClassic}! Get your predictions in sharpish - this isn't a Gloucester training session where you can take your time. The tournament kicks off soon and every point counts. Make sure you've got all your scores in before kick-off - no late changes allowed once the whistle blows! Remember, predicting a draw gets you bonus points, and if you nail the exact score, you'll be celebrating like Gloucester winning the Premiership. ${nextFixtureWithHistory}`;
@@ -5090,7 +5151,6 @@ CREATE TABLE users (
     nickname VARCHAR(255),
     password_hash VARCHAR(255),
     total_tries INTEGER,
-    joker_match_id INTEGER,
     supported_teams VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -5251,7 +5311,7 @@ CREATE POLICY "Allow all access to usage_events" ON usage_events FOR ALL USING (
                     const u = users[username];
                     const oderId = index + 1;
                     const supportedTeamsVal = u.supportedTeams && u.supportedTeams.length > 0 ? `'${esc(u.supportedTeams.join(','))}'` : 'NULL';
-                    sql += `INSERT INTO users (id, username, nickname, password_hash, total_tries, joker_match_id, supported_teams) VALUES (${oderId}, '${esc(username)}', '${esc(u.nickname)}', '${esc(u.passwordHash)}', ${u.totalTries === null || u.totalTries === undefined ? 'NULL' : u.totalTries}, ${u.jokerMatchId === null || u.jokerMatchId === undefined ? 'NULL' : u.jokerMatchId}, ${supportedTeamsVal});\n`;
+                    sql += `INSERT INTO users (id, username, nickname, password_hash, total_tries, supported_teams) VALUES (${oderId}, '${esc(username)}', '${esc(u.nickname)}', '${esc(u.passwordHash)}', ${u.totalTries === null || u.totalTries === undefined ? 'NULL' : u.totalTries}, ${supportedTeamsVal});\n`;
                 });
 
                 // Generate predictions INSERT statements

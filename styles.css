@@ -1426,6 +1426,7 @@
             color: var(--bright-gold);
             margin-bottom: 1.5rem;
             letter-spacing: 0.05em;
+            text-align: center;
         }
 
         .prediction-row {
@@ -1918,6 +1919,7 @@
             margin: -0.45rem 0 0.65rem 0;
             text-transform: uppercase;
             letter-spacing: 0.04em;
+            text-align: center;
         }
 
         .prize-summary-grid {
@@ -1966,6 +1968,13 @@
             padding: 0.5rem 0.6rem;
             display: grid;
             gap: 0.3rem;
+        }
+
+        .prize-rank-cell .prize-row-head,
+        .prize-rank-cell .prize-row-body,
+        .prize-rank-cell .prize-row-amount {
+            text-align: left;
+            justify-self: start;
         }
 
         .prize-row {
@@ -3118,6 +3127,7 @@
             color: var(--bright-gold);
             margin-bottom: 0.8rem;
             letter-spacing: 0.05em;
+            text-align: center;
         }
 
         .rules-grid-two {
@@ -3318,6 +3328,7 @@
             color: var(--bright-gold);
             margin-bottom: 1rem;
             letter-spacing: 0.05em;
+            text-align: center;
         }
 
         .recovery-card p {
