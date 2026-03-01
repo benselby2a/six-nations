@@ -809,6 +809,7 @@
         let rulesFormInitialized = false;
         let isGuest = false;
         let editingFixtureId = null;
+        let nextMatchScoreId = null;
         let editingPredictionContext = null;
         let adminPredictionUsername = null;
         let usageReportEvents = [];
@@ -1033,10 +1034,21 @@
             }
         }
 
+        async function refreshMatchSummaryAfterScoreSave() {
+            const summaryTab = document.getElementById('summaryTab');
+            const isSummaryVisible = !!summaryTab && !summaryTab.classList.contains('hidden');
+            if (isSummaryVisible) {
+                await refreshSummaryData();
+            } else {
+                showSummary();
+            }
+        }
+
         // Render admin matches for entering results
         function renderAdminMatches() {
             const container = document.getElementById('adminMatchesContainer');
             if (!container) return;
+            updateNextMatchScoreButtonState();
 
             if (matches.length === 0) {
                 container.innerHTML = `<tr><td colspan="5" style="text-align:center; opacity:0.8;">No fixtures configured yet.</td></tr>`;
@@ -1104,6 +1116,125 @@
             editingFixtureId = null;
             const modal = document.getElementById('editFixtureModal');
             if (modal) modal.classList.add('hidden');
+        }
+
+        function getNextMatchWithoutScore() {
+            return matches.find(match => match.actualScore1 === null || match.actualScore2 === null) || null;
+        }
+
+        function isMatchDueTodayOrPast(match) {
+            if (!match || !match.date) return false;
+            const isoDate = parseDateForInput(match.date);
+            if (!isoDate) return false;
+
+            const matchDay = new Date(`${isoDate}T00:00:00`);
+            if (Number.isNaN(matchDay.getTime())) return false;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return matchDay.getTime() <= today.getTime();
+        }
+
+        function updateNextMatchScoreButtonState() {
+            const btn = document.getElementById('nextMatchScoreMainBtn');
+            if (!btn) return;
+            const nextMatch = getNextMatchWithoutScore();
+            if (!nextMatch) {
+                btn.disabled = true;
+                btn.textContent = 'No Remaining Match Score To Add';
+                return;
+            }
+
+            btn.disabled = false;
+            btn.textContent = `Add ${getFlag(nextMatch.team1)} ${getTeamAbbr(nextMatch.team1)} v ${getFlag(nextMatch.team2)} ${getTeamAbbr(nextMatch.team2)} Score`;
+        }
+
+        function openNextMatchScoreModal() {
+            if (!isCurrentUserAdmin()) return;
+            const nextMatch = getNextMatchWithoutScore();
+            if (!nextMatch) {
+                updateNextMatchScoreButtonState();
+                return;
+            }
+
+            nextMatchScoreId = nextMatch.id;
+            const fixtureText = `${nextMatch.date || 'TBD'} ${nextMatch.time || ''} - ${nextMatch.team1} vs ${nextMatch.team2}`.trim();
+            const fixtureEl = document.getElementById('nextMatchScoreFixture');
+            if (fixtureEl) fixtureEl.textContent = fixtureText;
+
+            const homeScoreLabel = document.getElementById('nextMatchHomeScoreLabel');
+            const awayScoreLabel = document.getElementById('nextMatchAwayScoreLabel');
+            const homeTriesLabel = document.getElementById('nextMatchHomeTriesLabel');
+            const awayTriesLabel = document.getElementById('nextMatchAwayTriesLabel');
+            if (homeScoreLabel) homeScoreLabel.textContent = `${nextMatch.team1} Score`;
+            if (awayScoreLabel) awayScoreLabel.textContent = `${nextMatch.team2} Score`;
+            if (homeTriesLabel) homeTriesLabel.textContent = `${nextMatch.team1} Tries`;
+            if (awayTriesLabel) awayTriesLabel.textContent = `${nextMatch.team2} Tries`;
+
+            document.getElementById('nextMatchHomeScore').value = nextMatch.actualScore1 !== null ? nextMatch.actualScore1 : '';
+            document.getElementById('nextMatchAwayScore').value = nextMatch.actualScore2 !== null ? nextMatch.actualScore2 : '';
+            document.getElementById('nextMatchHomeTries').value = nextMatch.actualTries1 !== null ? nextMatch.actualTries1 : '';
+            document.getElementById('nextMatchAwayTries').value = nextMatch.actualTries2 !== null ? nextMatch.actualTries2 : '';
+
+            const modal = document.getElementById('nextMatchScoreModal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeNextMatchScoreModal() {
+            nextMatchScoreId = null;
+            const modal = document.getElementById('nextMatchScoreModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function saveNextMatchScore() {
+            if (!isCurrentUserAdmin()) return;
+            if (nextMatchScoreId === null) return;
+            const match = matches.find(m => m.id === nextMatchScoreId);
+            if (!match) return;
+
+            const homeScoreRaw = document.getElementById('nextMatchHomeScore').value;
+            const awayScoreRaw = document.getElementById('nextMatchAwayScore').value;
+            const homeTriesRaw = document.getElementById('nextMatchHomeTries').value;
+            const awayTriesRaw = document.getElementById('nextMatchAwayTries').value;
+
+            const parseRequiredNonNegativeInt = (rawValue, fieldLabel) => {
+                if (rawValue === '') throw new Error(`${fieldLabel} is required.`);
+                const parsed = Number(rawValue);
+                if (!Number.isInteger(parsed) || parsed < 0) {
+                    throw new Error(`${fieldLabel} must be a whole number of 0 or more.`);
+                }
+                return parsed;
+            };
+
+            let homeScore;
+            let awayScore;
+            let homeTries;
+            let awayTries;
+            try {
+                homeScore = parseRequiredNonNegativeInt(homeScoreRaw, `${match.team1} score`);
+                awayScore = parseRequiredNonNegativeInt(awayScoreRaw, `${match.team2} score`);
+                homeTries = parseRequiredNonNegativeInt(homeTriesRaw, `${match.team1} tries`);
+                awayTries = parseRequiredNonNegativeInt(awayTriesRaw, `${match.team2} tries`);
+            } catch (error) {
+                alert(error.message);
+                return;
+            }
+
+            if (homeTries > homeScore || awayTries > awayScore) {
+                alert('Tries cannot exceed points scored for a team.');
+                return;
+            }
+
+            match.actualScore1 = homeScore;
+            match.actualScore2 = awayScore;
+            match.actualTries1 = homeTries;
+            match.actualTries2 = awayTries;
+
+            await Storage.saveMatches(matches);
+            closeNextMatchScoreModal();
+            renderAdminMatches();
+            updateLeaderboard();
+            await refreshMatchSummaryAfterScoreSave();
         }
 
         async function saveFixtureEdits() {
@@ -1202,7 +1333,7 @@
             closeEditFixtureModal();
             renderAdminMatches();
             renderMatches();
-            showSummary();
+            await refreshMatchSummaryAfterScoreSave();
         }
 
         // Parse a display date (e.g., "Sat, Feb 7") to ISO format for date input (e.g., "2026-02-07")
@@ -2163,24 +2294,6 @@
             modal.classList.add('hidden');
         }
 
-        function setAdminFunctionsCollapsed(collapsed) {
-            const adminSection = document.getElementById('adminTabsSection');
-            const toggleBtn = document.getElementById('adminTabsToggle');
-            if (!adminSection) return;
-            const isCollapsed = !!collapsed;
-            adminSection.classList.toggle('collapsed', isCollapsed);
-            if (toggleBtn) {
-                toggleBtn.setAttribute('aria-expanded', String(!isCollapsed));
-            }
-        }
-
-        function toggleAdminFunctionsPanel() {
-            const adminSection = document.getElementById('adminTabsSection');
-            if (!adminSection) return;
-            const isCollapsed = adminSection.classList.contains('collapsed');
-            setAdminFunctionsCollapsed(!isCollapsed);
-        }
-
         // Calculate total actual tries in tournament
         function getTotalActualTries() {
             let total = 0;
@@ -2412,7 +2525,7 @@
             document.querySelector('.tabs:not(.admin-tabs)').classList.remove('hidden');
             document.getElementById('logoutBtn').classList.remove('hidden');
             updateAdminTabsSubheading();
-            setAdminFunctionsCollapsed(true);
+            updateNextMatchScoreButtonState();
 
             // Load user's saved theme
             loadUserTheme();
@@ -2434,6 +2547,7 @@
             document.getElementById('prizeFundTab').classList.add('hidden');
             document.getElementById('recoveryTab').classList.add('hidden');
             document.getElementById('usageReportTab').classList.add('hidden');
+            document.getElementById('adminHomeTab').classList.add('hidden');
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             const summaryTabBtn = Array.from(document.querySelectorAll('.tab')).find(
                 tab => tab.textContent.trim() === 'Match Summary'
@@ -2455,7 +2569,6 @@
             // Hide tabs - guests can only see summary
             document.querySelector('.tabs:not(.admin-tabs)').classList.add('hidden');
             document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
-            setAdminFunctionsCollapsed(true);
 
             // Change logout button to "Sign In"
             const logoutBtn = document.getElementById('logoutBtn');
@@ -2475,6 +2588,7 @@
             document.getElementById('prizeFundTab').classList.add('hidden');
             document.getElementById('recoveryTab').classList.add('hidden');
             document.getElementById('usageReportTab').classList.add('hidden');
+            document.getElementById('adminHomeTab').classList.add('hidden');
 
             // Show summary
             showSummary();
@@ -5377,11 +5491,13 @@ CREATE POLICY "Allow all access to usage_events" ON usage_events FOR ALL USING (
             // Show selected tab
             if (tabName === 'predictions') {
                 document.getElementById('predictionsTab').classList.remove('hidden');
+                document.getElementById('adminHomeTab').classList.add('hidden');
                 event.target.classList.add('active');
                 renderMatches(); // Re-render to check lock status
                 loadPredictions(); // Pre-populate with saved predictions
             } else if (tabName === 'summary') {
                 document.getElementById('summaryTab').classList.remove('hidden');
+                document.getElementById('adminHomeTab').classList.add('hidden');
                 event.target.classList.add('active');
                 refreshSummaryData();
             } else if (tabName === 'competitors') {
@@ -5422,6 +5538,10 @@ CREATE POLICY "Allow all access to usage_events" ON usage_events FOR ALL USING (
                 document.getElementById('usageReportTab').classList.remove('hidden');
                 event.target.classList.add('active');
                 renderUsageReport();
+            } else if (tabName === 'adminHome') {
+                if (!isCurrentUserAdmin()) return;
+                document.getElementById('adminHomeTab').classList.remove('hidden');
+                event.target.classList.add('active');
             }
         }
 

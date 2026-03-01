@@ -149,16 +149,18 @@
             <div class="tabs">
                 <button class="tab" onclick="showTab('predictions')">My Predictions</button>
                 <button class="tab active" onclick="showTab('summary')">Match Summary</button>
+                <button class="tab admin-only hidden admin-top-tab" onclick="showTab('adminHome')">Admin Functions</button>
+            </div>
+            <div class="admin-top-action-row admin-only hidden">
+                <button id="nextMatchScoreMainBtn" class="tab admin-top-tab admin-top-action-btn" onclick="openNextMatchScoreModal()">Add Next Score</button>
             </div>
 
-            <div id="adminTabsSection" class="admin-tabs-section admin-only hidden collapsed">
-                <button class="admin-panel-help-btn" onclick="toggleAdminHelp()" title="Open admin help" aria-label="Open admin help">?</button>
-                <button id="adminTabsToggle" class="admin-tabs-toggle" onclick="toggleAdminFunctionsPanel()" aria-expanded="false" aria-controls="adminTabsContent">
-                    <span class="admin-tabs-label">Admin Functions</span>
-                    <span class="admin-tabs-chevron">▾</span>
-                </button>
-                <div id="adminTabsContent" class="admin-tabs-content">
-                    <div class="admin-tabs-subheading" id="adminTabsSubheading">These sections are only visible to admins</div>
+            <!-- Admin Home Tab (Admin Only) -->
+            <div id="adminHomeTab" class="prediction-section admin-only hidden" style="margin-top: 2rem;">
+                <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--red); margin-bottom: 1rem; position: relative;">
+                    <button class="admin-panel-help-btn" onclick="toggleAdminHelp()" title="Open admin help" aria-label="Open admin help">?</button>
+                    <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: #ffb3ac; margin-bottom: 0.6rem; letter-spacing: 0.1em;">Admin Functions</h2>
+                    <div class="admin-tabs-subheading" id="adminTabsSubheading" style="margin-bottom: 0.9rem; text-align: left;">These sections are only visible to admins</div>
                     <div class="tabs admin-tabs">
                         <button class="tab" onclick="showTab('results')">Fixture Setup and Score Input</button>
                         <button class="tab" onclick="showTab('scoreCorrections')">Edit Player Predictions</button>
@@ -360,6 +362,7 @@
                         </div>
                     </div>
                 </div>
+
             </div>
 
             <!-- Rules Tab (Admin Only) -->
@@ -650,6 +653,36 @@
             <div class="fixture-modal-actions">
                 <button class="btn-cancel" onclick="closeEditPredictionModal()">Cancel</button>
                 <button id="edit-prediction-save-btn" onclick="savePredictionEdits()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Next Match Score Modal -->
+    <div id="nextMatchScoreModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 560px;">
+            <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 0.7rem; letter-spacing: 0.1em;">Add Next Match Score</h2>
+            <p id="nextMatchScoreFixture" style="margin-bottom: 0.9rem; opacity: 0.9;">No remaining match found.</p>
+            <div class="fixture-edit-grid rules-grid-two">
+                <div class="input-group">
+                    <label id="nextMatchHomeScoreLabel" for="nextMatchHomeScore">Home Score</label>
+                    <input type="number" id="nextMatchHomeScore" min="0" placeholder="-">
+                </div>
+                <div class="input-group">
+                    <label id="nextMatchAwayScoreLabel" for="nextMatchAwayScore">Away Score</label>
+                    <input type="number" id="nextMatchAwayScore" min="0" placeholder="-">
+                </div>
+                <div class="input-group">
+                    <label id="nextMatchHomeTriesLabel" for="nextMatchHomeTries">Home Tries</label>
+                    <input type="number" id="nextMatchHomeTries" min="0" placeholder="-">
+                </div>
+                <div class="input-group">
+                    <label id="nextMatchAwayTriesLabel" for="nextMatchAwayTries">Away Tries</label>
+                    <input type="number" id="nextMatchAwayTries" min="0" placeholder="-">
+                </div>
+            </div>
+            <div class="fixture-modal-actions">
+                <button class="btn-cancel" onclick="closeNextMatchScoreModal()">Cancel</button>
+                <button class="btn-small btn-success" onclick="saveNextMatchScore()">Save Next Match Score</button>
             </div>
         </div>
     </div>
