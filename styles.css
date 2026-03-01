@@ -2813,6 +2813,139 @@
             text-align: right;
         }
 
+        .rules-layout {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .rules-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(212, 175, 55, 0.3);
+            border-radius: 10px;
+            padding: 1.2rem;
+        }
+
+        .rules-card h3 {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 1.5rem;
+            color: var(--bright-gold);
+            margin-bottom: 0.8rem;
+            letter-spacing: 0.05em;
+        }
+
+        .rules-grid-two {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .rules-grid-three {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .rules-preview-grid .input-group {
+            margin-bottom: 0;
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.12);
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            min-height: 132px;
+        }
+
+        .rules-preview-grid .input-group p {
+            margin: 0 0 0.35rem 0 !important;
+            font-size: 0.82rem;
+            opacity: 0.8;
+            line-height: 1.3;
+        }
+
+        .rules-checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .rules-preview-toggle {
+            align-items: flex-start;
+        }
+
+        .rules-checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            accent-color: var(--gold);
+        }
+
+        .rules-tier-table {
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            border-radius: 8px;
+            padding: 0.8rem;
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        .rules-tier-header {
+            color: var(--gold);
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+
+        .rules-tier-row {
+            display: grid;
+            grid-template-columns: 70px 1fr 1fr;
+            gap: 0.6rem;
+            align-items: center;
+            margin-bottom: 0.45rem;
+        }
+
+        .rules-tier-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .rules-tier-label {
+            color: var(--gold);
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .rules-preview-output {
+            margin-top: 0.75rem;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 6px;
+            padding: 0.8rem;
+            min-height: 52px;
+            font-size: 0.9rem;
+            line-height: 1.45;
+        }
+
+        .rules-action-row {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .rules-action-row .btn-small {
+            min-width: 160px;
+        }
+
+        .rules-action-row .btn-cancel {
+            margin-top: 0;
+        }
+
+        .rules-action-row button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
         /* Admin action buttons */
         .btn-small {
             padding: 0.5rem 1rem;
@@ -3194,6 +3327,29 @@
             color: #2ecc71;
             font-weight: bold;
             font-size: 1.1rem;
+        }
+
+        @media (max-width: 900px) {
+            .rules-grid-two,
+            .rules-grid-three {
+                grid-template-columns: 1fr;
+            }
+
+            .rules-preview-grid .input-group {
+                min-height: 0;
+            }
+
+            .rules-tier-row {
+                grid-template-columns: 1fr;
+                gap: 0.35rem;
+                padding: 0.5rem 0;
+                border-top: 1px solid rgba(255, 255, 255, 0.12);
+            }
+
+            .rules-tier-row:first-of-type {
+                border-top: none;
+                padding-top: 0;
+            }
         }
 
         /* Loading Screen */

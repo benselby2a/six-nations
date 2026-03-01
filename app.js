@@ -423,39 +423,35 @@
                 if (error) console.error('Error saving settings:', error);
             },
 
-            // Active scoring ruleset + close tiers (read-only in Phase 2)
+            // Active scoring rules + close tiers (single-row model)
             getActiveScoringRules: async () => {
                 const fallback = {
-                    id: null,
-                    name: 'Legacy Defaults',
-                    status: 'published',
+                    id: 1,
+                    name: 'Scoring Rules',
+                    status: 'saved',
                     isActive: true,
                     correctResultPoints: 3,
                     perfectScoreBonus: 3,
                     drawBonus: 2,
-                    closeToleranceCap: 20,
                     applyClosePerTeam: true,
                     maxJokersPerUser: 1,
                     closeTiers: [{ tierOrder: 1, withinPoints: 5, bonusPoints: 1 }]
                 };
 
-                const { data: rulesRows, error: rulesError } = await supabaseClient
-                    .from('scoring_rule_sets')
+                const { data: rule, error: rulesError } = await supabaseClient
+                    .from('scoring_rules')
                     .select('*')
-                    .eq('is_active', true)
-                    .eq('status', 'published')
-                    .limit(1);
+                    .eq('id', 1)
+                    .maybeSingle();
 
-                if (rulesError || !rulesRows || rulesRows.length === 0) {
-                    if (rulesError) console.error('Error fetching active scoring rules:', rulesError);
+                if (rulesError || !rule) {
+                    if (rulesError) console.error('Error fetching scoring rules:', rulesError);
                     return fallback;
                 }
 
-                const rule = rulesRows[0];
                 const { data: tierRows, error: tiersError } = await supabaseClient
                     .from('scoring_close_tiers')
                     .select('*')
-                    .eq('rule_set_id', rule.id)
                     .order('tier_order', { ascending: true });
 
                 if (tiersError) {
@@ -470,14 +466,12 @@
 
                 return {
                     id: rule.id,
-                    name: rule.name,
-                    status: rule.status,
-                    isActive: !!rule.is_active,
+                    name: 'Scoring Rules',
+                    status: 'saved',
+                    isActive: true,
                     correctResultPoints: rule.correct_result_points,
                     perfectScoreBonus: rule.perfect_score_bonus,
                     drawBonus: rule.draw_bonus,
-                    closeToleranceCap: rule.close_tolerance_cap,
-                    applyClosePerTeam: rule.apply_close_per_team !== false,
                     maxJokersPerUser: rule.max_jokers_per_user,
                     closeTiers: closeTiers.length > 0 ? closeTiers : fallback.closeTiers
                 };
@@ -524,54 +518,30 @@
                 return byUsername;
             },
 
-            // Save a scoring ruleset as draft and replace its close tiers.
-            // Returns the saved rule_set_id, or null on failure.
+            // Save singleton scoring rules and replace close tiers.
+            // Returns 1 on success, or null on failure.
             saveScoringRulesDraft: async (rules) => {
                 const normalized = {
-                    name: (rules && rules.name) ? String(rules.name).trim() : 'Untitled Rules',
+                    id: 1,
                     correct_result_points: Math.max(0, parseInt(rules && rules.correctResultPoints, 10) || 0),
                     perfect_score_bonus: Math.max(0, parseInt(rules && rules.perfectScoreBonus, 10) || 0),
                     draw_bonus: Math.max(0, parseInt(rules && rules.drawBonus, 10) || 0),
-                    close_tolerance_cap: Math.max(0, parseInt(rules && rules.closeToleranceCap, 10) || 0),
-                    apply_close_per_team: rules && rules.applyClosePerTeam !== false,
                     max_jokers_per_user: Math.max(0, parseInt(rules && rules.maxJokersPerUser, 10) || 0),
                     updated_at: new Date().toISOString()
                 };
 
-                let ruleSetId = rules && rules.id ? Number(rules.id) : null;
-                if (ruleSetId) {
-                    const { error: updateError } = await supabaseClient
-                        .from('scoring_rule_sets')
-                        .update({
-                            ...normalized,
-                            status: 'draft'
-                        })
-                        .eq('id', ruleSetId);
-                    if (updateError) {
-                        console.error('Error updating scoring rules draft:', updateError);
-                        return null;
-                    }
-                } else {
-                    const { data: inserted, error: insertError } = await supabaseClient
-                        .from('scoring_rule_sets')
-                        .insert({
-                            ...normalized,
-                            status: 'draft',
-                            is_active: false
-                        })
-                        .select('id')
-                        .single();
-                    if (insertError || !inserted) {
-                        console.error('Error inserting scoring rules draft:', insertError);
-                        return null;
-                    }
-                    ruleSetId = inserted.id;
+                const { error: upsertError } = await supabaseClient
+                    .from('scoring_rules')
+                    .upsert(normalized, { onConflict: 'id' });
+                if (upsertError) {
+                    console.error('Error saving scoring rules:', upsertError);
+                    return null;
                 }
 
                 const { error: deleteTiersError } = await supabaseClient
                     .from('scoring_close_tiers')
                     .delete()
-                    .eq('rule_set_id', ruleSetId);
+                    .gte('tier_order', 1);
                 if (deleteTiersError) {
                     console.error('Error clearing existing scoring close tiers:', deleteTiersError);
                     return null;
@@ -579,7 +549,6 @@
 
                 const normalizedTiers = ((rules && rules.closeTiers) || [])
                     .map((tier, index) => ({
-                        rule_set_id: ruleSetId,
                         tier_order: Math.min(3, Math.max(1, parseInt(tier && tier.tierOrder, 10) || index + 1)),
                         within_points: Math.max(0, parseInt(tier && tier.withinPoints, 10) || 0),
                         bonus_points: Math.max(0, parseInt(tier && tier.bonusPoints, 10) || 0)
@@ -597,36 +566,11 @@
                     }
                 }
 
-                return ruleSetId;
+                return 1;
             },
 
-            // Publish a ruleset by marking all others inactive first.
+            // Single-row model: save is immediately active.
             publishScoringRules: async (ruleSetId) => {
-                const targetId = Number(ruleSetId);
-                if (!targetId) return false;
-
-                const { error: deactivateError } = await supabaseClient
-                    .from('scoring_rule_sets')
-                    .update({ is_active: false })
-                    .eq('is_active', true);
-                if (deactivateError) {
-                    console.error('Error deactivating existing active rulesets:', deactivateError);
-                    return false;
-                }
-
-                const { error: activateError } = await supabaseClient
-                    .from('scoring_rule_sets')
-                    .update({
-                        status: 'published',
-                        is_active: true,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', targetId);
-                if (activateError) {
-                    console.error('Error publishing ruleset:', activateError);
-                    return false;
-                }
-
                 return true;
             },
 
@@ -684,6 +628,8 @@
         let appSettings = { predictionsLocked: false };
         let activeScoringRules = null;
         let userJokerSelections = {};
+        let scoringRulesDraftId = null;
+        let rulesFormInitialized = false;
         let isGuest = false;
         let editingFixtureId = null;
         let editingPredictionContext = null;
@@ -2223,6 +2169,7 @@
             document.getElementById('competitorsTab').classList.add('hidden');
             document.getElementById('scoreCorrectionsTab').classList.add('hidden');
             document.getElementById('resultsTab').classList.add('hidden');
+            document.getElementById('rulesTab').classList.add('hidden');
             document.getElementById('recoveryTab').classList.add('hidden');
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             const summaryTabBtn = Array.from(document.querySelectorAll('.tab')).find(
@@ -2260,6 +2207,7 @@
             document.getElementById('competitorsTab').classList.add('hidden');
             document.getElementById('scoreCorrectionsTab').classList.add('hidden');
             document.getElementById('resultsTab').classList.add('hidden');
+            document.getElementById('rulesTab').classList.add('hidden');
             document.getElementById('recoveryTab').classList.add('hidden');
 
             // Show summary
@@ -2284,23 +2232,41 @@
             return `<span class="outstanding-banner-count">Total tries</span> prediction still to enter`;
         }
 
+        function getEligibleJokerMatchIds() {
+            return matches
+                .filter(match => !!match.jokerEligible)
+                .map(match => match.id);
+        }
+
+        function getRequiredJokerCount() {
+            const rules = getEffectiveScoringRules();
+            const maxAllowed = Math.max(0, Number(rules.maxJokersPerUser) || 0);
+            return Math.min(maxAllowed, getEligibleJokerMatchIds().length);
+        }
+
         function getPredictionChecklistStatus(username) {
             const userData = users[username] || {};
             const userPredictions = userData.predictions || {};
             const enteredPredictions = Object.keys(userPredictions).length;
             const pendingPredictions = Math.max(0, matches.length - enteredPredictions);
             const triesEntered = userData.totalTries !== null && userData.totalTries !== undefined;
-
-            const jokerSelected = getUserSelectedJokerMatchIds(username)
-                .some(matchId => matches.some(m => m.id === matchId && m.jokerEligible));
+            const jokerSelectedCount = getUserSelectedJokerMatchIds(username).length;
+            const jokerRequiredCount = getRequiredJokerCount();
+            const jokerComplete = jokerRequiredCount === 0
+                ? jokerSelectedCount === 0
+                : jokerSelectedCount === jokerRequiredCount;
+            const jokerOverLimit = jokerSelectedCount > jokerRequiredCount;
 
             return {
                 enteredPredictions,
                 totalPredictions: matches.length,
                 pendingPredictions,
                 triesEntered,
-                jokerSelected,
-                allComplete: pendingPredictions === 0 && triesEntered && jokerSelected
+                jokerSelectedCount,
+                jokerRequiredCount,
+                jokerOverLimit,
+                jokerComplete,
+                allComplete: pendingPredictions === 0 && triesEntered && jokerComplete
             };
         }
 
@@ -2308,7 +2274,7 @@
             const status = getPredictionChecklistStatus(username);
             const scoresOk = status.pendingPredictions === 0;
             const triesOk = status.triesEntered;
-            const jokerOk = status.jokerSelected;
+            const jokerOk = status.jokerComplete;
             const overallClass = status.allComplete ? 'complete' : 'incomplete';
 
             return `
@@ -2321,7 +2287,7 @@
                         </div>
                         <div class="prediction-checklist-item ${jokerOk ? 'ok' : 'missing'}">
                             <span class="prediction-checklist-icon">${jokerOk ? '✓' : '•'}</span>
-                            <span>Joker: ${jokerOk ? 'selected' : 'not selected'}</span>
+                            <span>Jokers: ${status.jokerRequiredCount === 0 ? 'not required' : `${status.jokerSelectedCount}/${status.jokerRequiredCount} selected${status.jokerOverLimit ? ' (over limit)' : ''}`}</span>
                         </div>
                         <div class="prediction-checklist-item ${triesOk ? 'ok' : 'missing'}">
                             <span class="prediction-checklist-icon">${triesOk ? '✓' : '•'}</span>
@@ -2388,7 +2354,7 @@
                     const missing = [];
                     if (status.pendingPredictions > 0) missing.push(`${status.pendingPredictions} prediction${status.pendingPredictions !== 1 ? 's' : ''}`);
                     if (!status.triesEntered) missing.push('tournament tries');
-                    if (!status.jokerSelected) missing.push('joker');
+                    if (!status.jokerComplete) missing.push(`jokers ${status.jokerSelectedCount}/${status.jokerRequiredCount}`);
                     return { username, missing };
                 })
                 .filter(entry => entry.missing.length > 0);
@@ -2473,17 +2439,24 @@
             team1Input.value = prediction ? prediction.team1 : '';
             team2Input.value = prediction ? prediction.team2 : '';
 
+            const selectedJokers = getUserSelectedJokerMatchIds(username);
+            const requiredJokers = getRequiredJokerCount();
+            const isCurrentJoker = selectedJokers.includes(match.id);
+            const remainingSlots = Math.max(0, requiredJokers - selectedJokers.length);
+            const cannotSelectMore = requiredJokers > 0 && !isCurrentJoker && remainingSlots === 0;
+
             if (jokerInput) {
-                const isCurrentJoker = isUserJokerForMatch(username, match.id);
                 jokerInput.checked = !!isCurrentJoker;
-                jokerInput.disabled = !match.jokerEligible;
+                jokerInput.disabled = !match.jokerEligible || requiredJokers === 0 || cannotSelectMore;
             }
             if (jokerGroup) {
                 jokerGroup.style.display = match.jokerEligible ? 'flex' : 'none';
             }
             if (jokerHint) {
                 jokerHint.textContent = match.jokerEligible
-                    ? 'Tick to set this as joker (2x points). Only one joker can be selected.'
+                    ? (requiredJokers === 0
+                        ? 'Jokers are disabled in current rules.'
+                        : `Select up to ${requiredJokers} joker${requiredJokers !== 1 ? 's' : ''}. Currently selected: ${selectedJokers.length}/${requiredJokers}.`)
                     : 'This fixture is not joker-eligible.';
                 jokerHint.style.display = match.jokerEligible ? '' : 'none';
             }
@@ -2492,7 +2465,7 @@
             team1Input.disabled = isReadOnlyLocked;
             team2Input.disabled = isReadOnlyLocked;
             if (jokerInput) {
-                jokerInput.disabled = isReadOnlyLocked || !match.jokerEligible;
+                jokerInput.disabled = isReadOnlyLocked || !match.jokerEligible || requiredJokers === 0 || cannotSelectMore;
             }
             if (lockedNote) {
                 lockedNote.classList.toggle('hidden', !isReadOnlyLocked);
@@ -2555,24 +2528,32 @@
                 delete users[username].predictions[matchId];
             }
 
-            let jokerUpdated = false;
-            if (match && match.jokerEligible && jokerInput) {
-                if (jokerInput.checked && users[username].jokerMatchId !== matchId) {
-                    // Single joker per user: selecting here replaces any previous joker.
-                    users[username].jokerMatchId = matchId;
-                    jokerUpdated = true;
-                } else if (!jokerInput.checked && users[username].jokerMatchId === matchId) {
-                    users[username].jokerMatchId = null;
-                    jokerUpdated = true;
+            const requiredJokers = getRequiredJokerCount();
+            const selectedBefore = getUserSelectedJokerMatchIds(username);
+            let selectedAfter = [...selectedBefore];
+            const hasCurrent = selectedAfter.includes(matchId);
+            const wantsCurrent = !!(match && match.jokerEligible && jokerInput && jokerInput.checked && updatedPrediction);
+
+            if (hasCurrent && (!wantsCurrent || !match || !match.jokerEligible || !updatedPrediction)) {
+                selectedAfter = selectedAfter.filter(id => id !== matchId);
+            } else if (!hasCurrent && wantsCurrent) {
+                if (requiredJokers > 0 && selectedAfter.length >= requiredJokers) {
+                    alert(`You can only select ${requiredJokers} joker${requiredJokers !== 1 ? 's' : ''}. Deselect another joker first.`);
+                    return;
                 }
-            } else if (match && users[username].jokerMatchId === matchId) {
-                users[username].jokerMatchId = null;
-                jokerUpdated = true;
+                selectedAfter.push(matchId);
             }
+            selectedAfter = [...new Set(selectedAfter)]
+                .sort((a, b) => a - b)
+                .slice(0, requiredJokers === 0 ? 0 : requiredJokers);
+
+            const jokerUpdated = selectedAfter.length !== selectedBefore.length
+                || selectedAfter.some((id, index) => id !== selectedBefore[index]);
 
             await Storage.savePredictions(username, users[username].predictions, users[username].totalTries);
             if (jokerUpdated) {
-                await Storage.saveUser(username, users[username]);
+                setUserSelectedJokerMatchIds(username, selectedAfter);
+                await Storage.saveUserJokerSelections(username, selectedAfter);
             }
             closeEditPredictionModal();
 
@@ -2817,11 +2798,18 @@
             alert('Tournament tries saved.');
         }
         
-        // Select joker match
+        // Legacy helper kept for compatibility with older UI hooks.
         async function selectJoker(matchId) {
             if (appSettings.predictionsLocked) return;
-            users[currentUsername].jokerMatchId = matchId;
-            await Storage.saveUser(currentUsername, users[currentUsername]);
+            const requiredJokers = getRequiredJokerCount();
+            if (requiredJokers === 0) return;
+            const selected = getUserSelectedJokerMatchIds(currentUsername);
+            if (!selected.includes(matchId)) {
+                if (selected.length >= requiredJokers) return;
+                selected.push(matchId);
+            }
+            setUserSelectedJokerMatchIds(currentUsername, selected);
+            await Storage.saveUserJokerSelections(currentUsername, selected);
             // Re-render to update card highlight
             renderMatches();
         }
@@ -2834,7 +2822,7 @@
             const { outstandingCount, hasTries } = getOutstandingPredictionStatus(currentUsername);
             const checklist = getPredictionChecklistStatus(currentUsername);
             
-            if (appSettings.predictionsLocked || (outstandingCount === 0 && hasTries && checklist.jokerSelected)) {
+            if (appSettings.predictionsLocked || (outstandingCount === 0 && hasTries && checklist.jokerComplete)) {
                 banner.style.display = 'none';
                 return;
             }
@@ -2844,8 +2832,8 @@
             if (outstandingCount > 0 || !hasTries) {
                 parts.push(buildOutstandingBannerText(outstandingCount, hasTries));
             }
-            if (!checklist.jokerSelected) {
-                parts.push('<span class="outstanding-banner-count">Joker</span> still to select');
+            if (!checklist.jokerComplete) {
+                parts.push(`<span class="outstanding-banner-count">Jokers</span> ${checklist.jokerSelectedCount}/${checklist.jokerRequiredCount} selected`);
             }
             banner.querySelector('.outstanding-banner-text').innerHTML = parts.join(' | ');
         }
@@ -2864,26 +2852,23 @@
             }
         }
 
-        function getEffectiveScoringRules() {
+        function normalizeScoringRules(sourceRules = null) {
             const fallback = {
                 correctResultPoints: 3,
                 perfectScoreBonus: 3,
                 drawBonus: 2,
-                closeToleranceCap: 20,
                 applyClosePerTeam: true,
                 maxJokersPerUser: 1,
                 closeTiers: [{ tierOrder: 1, withinPoints: 5, bonusPoints: 1 }]
             };
 
-            const source = activeScoringRules || fallback;
-            const closeCap = Math.max(0, Number(source.closeToleranceCap ?? fallback.closeToleranceCap) || 0);
+            const source = sourceRules || fallback;
             const closeTiers = ((source.closeTiers || fallback.closeTiers) || [])
                 .map((tier, index) => ({
                     tierOrder: Math.max(1, Number(tier.tierOrder ?? index + 1) || index + 1),
                     withinPoints: Math.max(0, Number(tier.withinPoints ?? 0) || 0),
                     bonusPoints: Math.max(0, Number(tier.bonusPoints ?? 0) || 0)
                 }))
-                .filter(tier => tier.withinPoints <= closeCap)
                 .sort((a, b) => a.withinPoints - b.withinPoints)
                 .slice(0, 3);
 
@@ -2891,27 +2876,46 @@
                 correctResultPoints: Math.max(0, Number(source.correctResultPoints ?? fallback.correctResultPoints) || 0),
                 perfectScoreBonus: Math.max(0, Number(source.perfectScoreBonus ?? fallback.perfectScoreBonus) || 0),
                 drawBonus: Math.max(0, Number(source.drawBonus ?? fallback.drawBonus) || 0),
-                closeToleranceCap: closeCap,
-                applyClosePerTeam: source.applyClosePerTeam !== false,
+                applyClosePerTeam: true,
                 maxJokersPerUser: Math.max(0, Number(source.maxJokersPerUser ?? fallback.maxJokersPerUser) || 0),
                 closeTiers: closeTiers.length > 0 ? closeTiers : fallback.closeTiers
             };
         }
 
-        function getUserSelectedJokerMatchIds(username) {
-            const legacyJoker = users[username] ? users[username].jokerMatchId : null;
-            if (Number.isInteger(legacyJoker)) {
-                return [legacyJoker];
-            }
+        function getEffectiveScoringRules() {
+            return normalizeScoringRules(activeScoringRules);
+        }
 
+        function getUserSelectedJokerMatchIds(username) {
             const fromNewTable = userJokerSelections && Array.isArray(userJokerSelections[username])
                 ? userJokerSelections[username]
                 : [];
             if (fromNewTable.length > 0) {
-                return [...new Set(fromNewTable.map(id => Number(id)).filter(Number.isInteger))];
+                const eligibleIds = new Set(getEligibleJokerMatchIds());
+                return [...new Set(fromNewTable.map(id => Number(id)).filter(Number.isInteger))]
+                    .filter(id => eligibleIds.has(id))
+                    .sort((a, b) => a - b);
             }
 
             return [];
+        }
+
+        function setUserSelectedJokerMatchIds(username, matchIds) {
+            const normalizedUsername = (username || '').trim().toLowerCase();
+            if (!normalizedUsername) return;
+            const eligibleIds = new Set(getEligibleJokerMatchIds());
+            const requiredJokers = getRequiredJokerCount();
+            const normalized = [...new Set((matchIds || [])
+                .map(id => Number(id))
+                .filter(Number.isInteger))]
+                .filter(id => eligibleIds.has(id))
+                .sort((a, b) => a - b)
+                .slice(0, requiredJokers === 0 ? 0 : requiredJokers);
+
+            userJokerSelections[normalizedUsername] = normalized;
+            if (users[normalizedUsername]) {
+                users[normalizedUsername].jokerMatchId = normalized[0] ?? null;
+            }
         }
 
         function isUserJokerForMatch(username, matchId) {
@@ -2941,8 +2945,7 @@
             return getMatchPointsBreakdown(prediction, match, isJoker).points;
         }
 
-        // Return both points and a short explanation for completed matches.
-        function getMatchPointsBreakdown(prediction, match, isJoker = false) {
+        function calculateMatchPointsBreakdownWithRules(prediction, match, isJoker, rules) {
             if (!prediction || match.actualScore1 === null || match.actualScore2 === null) {
                 return {
                     points: 0,
@@ -2957,7 +2960,6 @@
                 };
             }
 
-            const rules = getEffectiveScoringRules();
             const actualResult = getResult(match.actualScore1, match.actualScore2);
             const predictedResult = getResult(prediction.team1, prediction.team2);
             const correctResult = actualResult === predictedResult;
@@ -2984,27 +2986,18 @@
                         parts.push(`Perfect Score (+${rules.perfectScoreBonus})`);
                     }
                 } else {
-                    if (rules.applyClosePerTeam) {
-                        const team1Tier = findCloseTierForDiff(team1Diff, rules);
-                        if (team1Tier && team1Tier.bonusPoints > 0) {
-                            team1CloseBonus = team1Tier.bonusPoints;
-                            basePoints += team1CloseBonus;
-                            parts.push(`${match.team1} Close Score (+${team1CloseBonus})`);
-                        }
+                    const team1Tier = findCloseTierForDiff(team1Diff, rules);
+                    if (team1Tier && team1Tier.bonusPoints > 0) {
+                        team1CloseBonus = team1Tier.bonusPoints;
+                        basePoints += team1CloseBonus;
+                        parts.push(`${match.team1} Close Score (+${team1CloseBonus})`);
+                    }
 
-                        const team2Tier = findCloseTierForDiff(team2Diff, rules);
-                        if (team2Tier && team2Tier.bonusPoints > 0) {
-                            team2CloseBonus = team2Tier.bonusPoints;
-                            basePoints += team2CloseBonus;
-                            parts.push(`${match.team2} Close Score (+${team2CloseBonus})`);
-                        }
-                    } else {
-                        const bestTier = findCloseTierForDiff(Math.min(team1Diff, team2Diff), rules);
-                        if (bestTier && bestTier.bonusPoints > 0) {
-                            team1CloseBonus = bestTier.bonusPoints;
-                            basePoints += bestTier.bonusPoints;
-                            parts.push(`Close Score (+${bestTier.bonusPoints})`);
-                        }
+                    const team2Tier = findCloseTierForDiff(team2Diff, rules);
+                    if (team2Tier && team2Tier.bonusPoints > 0) {
+                        team2CloseBonus = team2Tier.bonusPoints;
+                        basePoints += team2CloseBonus;
+                        parts.push(`${match.team2} Close Score (+${team2CloseBonus})`);
                     }
                 }
 
@@ -3033,6 +3026,12 @@
                 drawBonus,
                 jokerApplied
             };
+        }
+
+        // Return both points and a short explanation for completed matches.
+        function getMatchPointsBreakdown(prediction, match, isJoker = false) {
+            const rules = getEffectiveScoringRules();
+            return calculateMatchPointsBreakdownWithRules(prediction, match, isJoker, rules);
         }
 
         // Calculate points based on scoring rules
@@ -4106,6 +4105,275 @@
             });
         }
 
+        function setRulesFeedback(message, type = 'info') {
+            const feedback = document.getElementById('rulesFeedback');
+            if (!feedback) return;
+            if (!message) {
+                feedback.classList.add('hidden');
+                feedback.classList.remove('error', 'success', 'info');
+                feedback.textContent = '';
+                return;
+            }
+            feedback.classList.remove('hidden', 'error', 'success', 'info');
+            feedback.classList.add(type);
+            feedback.textContent = message;
+        }
+
+        function parseRulesIntInput(id, options = {}) {
+            const { required = true, fallback = 0 } = options;
+            const el = document.getElementById(id);
+            if (!el) return required ? null : fallback;
+            const raw = String(el.value || '').trim();
+            if (!raw) return required ? null : fallback;
+            const parsed = Number(raw);
+            if (!Number.isFinite(parsed) || parsed < 0 || !Number.isInteger(parsed)) {
+                return null;
+            }
+            return parsed;
+        }
+
+        function readRulesFormData() {
+            const data = {
+                id: scoringRulesDraftId,
+                correctResultPoints: parseRulesIntInput('rulesCorrectResultPoints'),
+                perfectScoreBonus: parseRulesIntInput('rulesPerfectScoreBonus'),
+                drawBonus: parseRulesIntInput('rulesDrawBonus'),
+                maxJokersPerUser: parseRulesIntInput('rulesMaxJokersPerUser'),
+                closeTiers: []
+            };
+
+            for (let i = 1; i <= 3; i += 1) {
+                const withinEl = document.getElementById(`rulesTier${i}Within`);
+                const bonusEl = document.getElementById(`rulesTier${i}Bonus`);
+                const withinRaw = withinEl ? String(withinEl.value || '').trim() : '';
+                const bonusRaw = bonusEl ? String(bonusEl.value || '').trim() : '';
+
+                if (!withinRaw && !bonusRaw) continue;
+
+                const withinPoints = withinRaw ? Number(withinRaw) : null;
+                const bonusPoints = bonusRaw ? Number(bonusRaw) : null;
+                data.closeTiers.push({
+                    tierOrder: i,
+                    withinPoints: Number.isFinite(withinPoints) && withinPoints >= 0 && Number.isInteger(withinPoints) ? withinPoints : null,
+                    bonusPoints: Number.isFinite(bonusPoints) && bonusPoints >= 0 && Number.isInteger(bonusPoints) ? bonusPoints : null,
+                    _hasWithin: !!withinRaw,
+                    _hasBonus: !!bonusRaw
+                });
+            }
+
+            return data;
+        }
+
+        function validateRulesFormData(data) {
+            const errors = [];
+
+            if (data.correctResultPoints === null) errors.push('Correct result points must be a whole number 0 or higher.');
+            if (data.perfectScoreBonus === null) errors.push('Perfect score bonus must be a whole number 0 or higher.');
+            if (data.drawBonus === null) errors.push('Draw bonus must be a whole number 0 or higher.');
+            if (data.maxJokersPerUser === null) errors.push('Jokers per user must be a whole number 0 or higher.');
+            if (data.closeTiers.length === 0) errors.push('At least one close-score tier is required.');
+
+            data.closeTiers.forEach((tier, index) => {
+                const row = index + 1;
+                if (!tier._hasWithin || !tier._hasBonus) {
+                    errors.push(`Tier ${row} must include both "within points" and "bonus points".`);
+                    return;
+                }
+                if (tier.withinPoints === null || tier.bonusPoints === null) {
+                    errors.push(`Tier ${row} values must be whole numbers 0 or higher.`);
+                    return;
+                }
+            });
+
+            return errors;
+        }
+
+        function getRulesPayloadFromForm() {
+            const raw = readRulesFormData();
+            const errors = validateRulesFormData(raw);
+            const payload = {
+                id: raw.id,
+                correctResultPoints: raw.correctResultPoints ?? 0,
+                perfectScoreBonus: raw.perfectScoreBonus ?? 0,
+                drawBonus: raw.drawBonus ?? 0,
+                maxJokersPerUser: raw.maxJokersPerUser ?? 0,
+                closeTiers: raw.closeTiers
+                    .filter(tier => tier.withinPoints !== null && tier.bonusPoints !== null)
+                    .map((tier, index) => ({
+                        tierOrder: index + 1,
+                        withinPoints: tier.withinPoints,
+                        bonusPoints: tier.bonusPoints
+                    }))
+            };
+            return { payload, errors };
+        }
+
+        function updateRulesPublishState() {
+            const saveBtn = document.getElementById('rulesSaveUpdatedBtn');
+            if (!saveBtn) return;
+            const { errors } = getRulesPayloadFromForm();
+            const isValid = errors.length === 0;
+            saveBtn.disabled = !isValid;
+        }
+
+        function renderRulesPreview() {
+            const output = document.getElementById('rulesPreviewOutput');
+            if (!output) return;
+
+            const { payload, errors } = getRulesPayloadFromForm();
+            if (errors.length > 0) {
+                output.textContent = `Preview unavailable: ${errors[0]}`;
+                return;
+            }
+
+            const pred1 = parseRulesIntInput('rulesPreviewPred1');
+            const pred2 = parseRulesIntInput('rulesPreviewPred2');
+            const actual1 = parseRulesIntInput('rulesPreviewActual1');
+            const actual2 = parseRulesIntInput('rulesPreviewActual2');
+            const joker = !!(document.getElementById('rulesPreviewJoker') && document.getElementById('rulesPreviewJoker').checked);
+
+            if ([pred1, pred2, actual1, actual2].some(value => value === null)) {
+                output.textContent = 'Enter whole-number predicted and actual scores to preview points.';
+                return;
+            }
+
+            const rules = normalizeScoringRules(payload);
+            const breakdown = calculateMatchPointsBreakdownWithRules(
+                { team1: pred1, team2: pred2 },
+                { team1: 'Home', team2: 'Away', actualScore1: actual1, actualScore2: actual2 },
+                joker,
+                rules
+            );
+
+            output.textContent = breakdown.points > 0
+                ? `${breakdown.points} pts\n${breakdown.summary}`
+                : '0 pts\nNo points awarded for this combination.';
+        }
+
+        function populateRulesForm(sourceRules) {
+            const source = sourceRules || activeScoringRules || {};
+            const normalized = normalizeScoringRules(source);
+            const tiersByOrder = {};
+            (normalized.closeTiers || []).forEach(tier => {
+                tiersByOrder[tier.tierOrder] = tier;
+            });
+
+            const correctResultPoints = document.getElementById('rulesCorrectResultPoints');
+            const perfectScoreBonus = document.getElementById('rulesPerfectScoreBonus');
+            const drawBonus = document.getElementById('rulesDrawBonus');
+            const maxJokersPerUser = document.getElementById('rulesMaxJokersPerUser');
+
+            if (correctResultPoints) correctResultPoints.value = normalized.correctResultPoints;
+            if (perfectScoreBonus) perfectScoreBonus.value = normalized.perfectScoreBonus;
+            if (drawBonus) drawBonus.value = normalized.drawBonus;
+            if (maxJokersPerUser) maxJokersPerUser.value = normalized.maxJokersPerUser;
+
+            for (let i = 1; i <= 3; i += 1) {
+                const withinInput = document.getElementById(`rulesTier${i}Within`);
+                const bonusInput = document.getElementById(`rulesTier${i}Bonus`);
+                const tier = tiersByOrder[i];
+                if (withinInput) withinInput.value = tier ? tier.withinPoints : '';
+                if (bonusInput) bonusInput.value = tier ? tier.bonusPoints : '';
+            }
+        }
+
+        function initializeRulesTabBindings() {
+            if (rulesFormInitialized) return;
+            const ids = [
+                'rulesCorrectResultPoints',
+                'rulesPerfectScoreBonus',
+                'rulesDrawBonus',
+                'rulesMaxJokersPerUser',
+                'rulesTier1Within',
+                'rulesTier1Bonus',
+                'rulesTier2Within',
+                'rulesTier2Bonus',
+                'rulesTier3Within',
+                'rulesTier3Bonus',
+                'rulesPreviewPred1',
+                'rulesPreviewPred2',
+                'rulesPreviewActual1',
+                'rulesPreviewActual2',
+                'rulesPreviewJoker'
+            ];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const evt = el.type === 'checkbox' ? 'change' : 'input';
+                el.addEventListener(evt, () => {
+                    setRulesFeedback('');
+                    updateRulesPublishState();
+                    renderRulesPreview();
+                });
+            });
+            rulesFormInitialized = true;
+        }
+
+        function renderRulesTab() {
+            if (!isCurrentUserAdmin()) return;
+            initializeRulesTabBindings();
+            if (!scoringRulesDraftId) {
+                populateRulesForm(activeScoringRules);
+            }
+            updateRulesPublishState();
+            renderRulesPreview();
+        }
+
+        async function saveUpdatedRules() {
+            if (!isCurrentUserAdmin()) return;
+            const { payload, errors } = getRulesPayloadFromForm();
+            if (errors.length > 0) {
+                setRulesFeedback(errors[0], 'error');
+                updateRulesPublishState();
+                return;
+            }
+
+            const saveBtn = document.getElementById('rulesSaveUpdatedBtn');
+            const originalText = saveBtn ? saveBtn.textContent : '';
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.textContent = 'Saving...';
+            }
+
+            try {
+                payload.id = scoringRulesDraftId;
+                const savedId = await Storage.saveScoringRulesDraft(payload);
+                if (!savedId) {
+                    setRulesFeedback('Failed to save rules.', 'error');
+                    return;
+                }
+                const published = await Storage.publishScoringRules(savedId);
+                if (!published) {
+                    setRulesFeedback('Failed to save rules.', 'error');
+                    return;
+                }
+
+                activeScoringRules = await Storage.getActiveScoringRules();
+                scoringRulesDraftId = null;
+                populateRulesForm(activeScoringRules);
+                setRulesFeedback('Rules saved successfully.', 'success');
+                renderRulesPreview();
+            } catch (error) {
+                console.error('Error saving rules:', error);
+                setRulesFeedback('Error while saving rules.', 'error');
+            } finally {
+                if (saveBtn) {
+                    saveBtn.textContent = originalText;
+                }
+                updateRulesPublishState();
+            }
+        }
+
+        async function revertRulesToSaved() {
+            if (!isCurrentUserAdmin()) return;
+            activeScoringRules = await Storage.getActiveScoringRules();
+            scoringRulesDraftId = null;
+            populateRulesForm(activeScoringRules);
+            setRulesFeedback('Form reset to saved rules.', 'info');
+            updateRulesPublishState();
+            renderRulesPreview();
+        }
+
         // Database Recovery Functions
         function generateSchemaSQL() {
             return `-- Drop existing tables (in correct order due to foreign keys)
@@ -4309,6 +4577,7 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
             document.getElementById('competitorsTab').classList.add('hidden');
             document.getElementById('scoreCorrectionsTab').classList.add('hidden');
             document.getElementById('resultsTab').classList.add('hidden');
+            document.getElementById('rulesTab').classList.add('hidden');
             document.getElementById('recoveryTab').classList.add('hidden');
 
             // Update tab buttons
@@ -4342,6 +4611,11 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
                 event.target.classList.add('active');
                 updateLockToggleUI();
                 renderAdminMatches();
+            } else if (tabName === 'rules') {
+                if (!isCurrentUserAdmin()) return;
+                document.getElementById('rulesTab').classList.remove('hidden');
+                event.target.classList.add('active');
+                renderRulesTab();
             } else if (tabName === 'recovery') {
                 if (!isCurrentUserAdmin()) return;
                 document.getElementById('recoveryTab').classList.remove('hidden');
