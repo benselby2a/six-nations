@@ -156,9 +156,9 @@
                 <div class="admin-tabs-label">Admin Functions</div>
                 <div class="admin-tabs-subheading" id="adminTabsSubheading">These sections are only visible to admins</div>
                 <div class="tabs admin-tabs">
+                    <button class="tab" onclick="showTab('results')">Fixture Setup and Score Input</button>
+                    <button class="tab" onclick="showTab('scoreCorrections')">Edit Player Predictions</button>
                     <button class="tab" onclick="showTab('competitors')">Competitor Mgmt.</button>
-                    <button class="tab" onclick="showTab('scoreCorrections')">Edit Predictions</button>
-                    <button class="tab" onclick="showTab('results')">Fixture Setup</button>
                     <button class="tab" onclick="showTab('rules')">Rules Config</button>
                     <button class="tab" onclick="showTab('prizeFund')">Prize Fund Setup</button>
                     <button class="tab" onclick="showTab('recovery')">Database Recovery</button>
@@ -250,7 +250,7 @@
             <!-- Fixture Setup Tab (Admin Only) -->
             <div id="resultsTab" class="prediction-section hidden" style="margin-top: 2rem;">
                 <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
-                    <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Fixture Setup</h2>
+                    <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Fixture Setup and Score Input</h2>
                     <p style="margin-bottom: 1rem;">Manage fixtures and results. Click a row or Edit to update all fixture fields.</p>
                 </div>
 
@@ -527,6 +527,27 @@
 
                 <div class="recovery-section">
                     <div class="recovery-card">
+                        <h3>Connection Details</h3>
+                        <p style="margin-bottom: 1rem;">Use these details for admin/recovery tasks and external tooling.</p>
+                        <div class="input-group" style="margin-bottom: 0.8rem;">
+                            <label>Supabase Project URL</label>
+                            <pre class="sql-preview" id="recoveryProjectUrlPreview" style="margin: 0;">Loading...</pre>
+                        </div>
+                        <div class="input-group" style="margin-bottom: 0.8rem;">
+                            <label>REST API Endpoint</label>
+                            <pre class="sql-preview" id="recoveryRestEndpointPreview" style="margin: 0;">Loading...</pre>
+                        </div>
+                        <div class="input-group" style="margin-bottom: 0.8rem;">
+                            <label>Publishable API Key</label>
+                            <pre class="sql-preview" id="recoveryApiKeyPreview" style="margin: 0;">Loading...</pre>
+                        </div>
+                        <div class="input-group">
+                            <label>Postgres Connection String (template)</label>
+                            <pre class="sql-preview" id="recoveryConnectionStringPreview" style="margin: 0;">Loading...</pre>
+                        </div>
+                    </div>
+
+                    <div class="recovery-card">
                         <h3>Database SQL Export</h3>
                         <div style="margin-bottom: 1rem;">
                             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
@@ -559,7 +580,7 @@
             <div class="global-help-content">
                 <div><strong>My Predictions:</strong> Enter your score predictions for each fixture, choose your jokers, and set your tournament tries prediction. Predictions can only be entered/edited while predictions are unlocked.</div>
                 <div><strong>Match Summary:</strong> View the live table, points breakdowns, tries tracking, and prize projections as results are entered.</div>
-                <div><strong>Admin Functions:</strong> Setup, editing, rules config, prize fund setup, and recovery are available to admins only. Admins can lock predictions (typically once the tournament starts).</div>
+                <div><strong>Admin Functions:</strong> Fixture setup and score input, prediction editing, competitor management, prize fund setup, and recovery are available to admins only. Admins can lock predictions (typically once the tournament starts).</div>
             </div>
             <div class="fixture-modal-actions">
                 <button class="btn-cancel" onclick="closeGlobalHelpModal()">Close</button>
@@ -572,10 +593,9 @@
         <div class="modal-content admin-help-modal-content">
             <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: #ff9b92; margin-bottom: 0.8rem; letter-spacing: 0.1em;">Admin Help</h2>
             <div class="admin-help-content">
+                <div><strong>Fixture Setup and Score Input</strong> Add/edit fixtures, enter scores and tries, set joker-eligible matches, and lock/unlock predictions.</div>
+                <div><strong>Edit Player Predictions</strong> Review and correct competitor score predictions and tournament tries values.</div>
                 <div><strong>Competitor Mgmt.</strong> Add, edit, or remove competitors, update display names, assign teams, and manage admin access.</div>
-                <div><strong>Edit Predictions</strong> Review and correct competitor score predictions and tournament tries values.</div>
-                <div><strong>Fixture Setup</strong> Add/edit fixtures, enter scores and tries, set joker-eligible matches, and lock/unlock predictions.</div>
-                <div><strong>Rules Config</strong> Configure scoring points, close-score tiers, and joker limits with a live preview calculator.</div>
                 <div><strong>Prize Fund Setup</strong> Set entry fee and payout allocation for 1st/2nd/3rd and closest tries prize.</div>
                 <div><strong>Database Recovery</strong> Generate SQL to recreate schema and optionally restore current data.</div>
             </div>

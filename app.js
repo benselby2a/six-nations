@@ -5001,7 +5001,28 @@ CREATE POLICY "Allow all access to user_joker_selections" ON user_joker_selectio
             }
         }
 
+        function renderRecoveryConnectionDetails() {
+            const projectUrlEl = document.getElementById('recoveryProjectUrlPreview');
+            const restEndpointEl = document.getElementById('recoveryRestEndpointPreview');
+            const apiKeyEl = document.getElementById('recoveryApiKeyPreview');
+            const connectionStringEl = document.getElementById('recoveryConnectionStringPreview');
+            if (!projectUrlEl || !restEndpointEl || !apiKeyEl || !connectionStringEl) return;
+
+            const cleanUrl = String(SUPABASE_URL || '').replace(/\/+$/, '');
+            const urlMatch = cleanUrl.match(/^https:\/\/([a-z0-9-]+)\.supabase\.co$/i);
+            const projectRef = urlMatch ? urlMatch[1] : '';
+            const connectionString = projectRef
+                ? `postgresql://postgres:[YOUR_DB_PASSWORD]@db.${projectRef}.supabase.co:5432/postgres`
+                : 'postgresql://postgres:[YOUR_DB_PASSWORD]@db.<project-ref>.supabase.co:5432/postgres';
+
+            projectUrlEl.textContent = cleanUrl || 'Not configured';
+            restEndpointEl.textContent = cleanUrl ? `${cleanUrl}/rest/v1` : 'Not configured';
+            apiKeyEl.textContent = SUPABASE_ANON_KEY || 'Not configured';
+            connectionStringEl.textContent = connectionString;
+        }
+
         function initRecoveryTab() {
+            renderRecoveryConnectionDetails();
             // Display the SQL based on checkbox state
             updateRecoverySQL();
         }
