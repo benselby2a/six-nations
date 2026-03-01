@@ -3632,11 +3632,12 @@
                 }
             }
             const nextFixtureWithHistory = [nextFixtureText, nextMatchPredictionSummary].filter(Boolean).join(' ');
+            const nextFixtureParagraph = nextFixtureWithHistory ? `<br><br>${nextFixtureWithHistory}` : '';
             
             if (completedMatches.length === 0) {
-                tip = `No matches played yet, but the tension is building like ${randomWorldCupClassic}! Get your predictions in sharpish - this isn't a Gloucester training session where you can take your time. The tournament kicks off soon and every point counts. Make sure you've got all your scores in before kick-off - no late changes allowed once the whistle blows! Remember, predicting a draw gets you bonus points, and if you nail the exact score, you'll be celebrating like Gloucester winning the Premiership. ${nextFixtureWithHistory}`;
+                tip = `No matches played yet, but the tension is building like ${randomWorldCupClassic}! Get your predictions in sharpish - this isn't a Gloucester training session where you can take your time. The tournament kicks off soon and every point counts. Make sure you've got all your scores in before kick-off - no late changes allowed once the whistle blows! Remember, predicting a draw gets you bonus points, and if you nail the exact score, you'll be celebrating like Gloucester winning the Premiership.${nextFixtureParagraph}`;
             } else if (leaderboardData.length === 1) {
-                tip = `${leaderboardData[0].nickname} is currently the only competitor - ${randomGloucester}! Bit lonely at the top though, like being the only person who remembers Gloucester's Powergen Cup wins. Get some mates involved and make this a proper competition! The more the merrier, as they say down at Kingsholm on match day. ${nextFixtureWithHistory}`;
+                tip = `${leaderboardData[0].nickname} is currently the only competitor - ${randomGloucester}! Bit lonely at the top though, like being the only person who remembers Gloucester's Powergen Cup wins. Get some mates involved and make this a proper competition! The more the merrier, as they say down at Kingsholm on match day.${nextFixtureParagraph}`;
             } else {
                 const leader = leaderboardData[0];
                 const second = leaderboardData[1];
@@ -3728,23 +3729,6 @@
                     }
                 }
                 
-                // Overall tournament stats with more analysis
-                let tournamentStats = '';
-                if (completedMatches.length >= 3) {
-                    const totalActualTries = getTotalActualTries();
-                    const avgTries = (totalActualTries / completedMatches.length).toFixed(1);
-                    const totalPointsScored = completedMatches.reduce((sum, m) => sum + m.actualScore1 + m.actualScore2, 0);
-                    const avgPointsPerGame = (totalPointsScored / completedMatches.length).toFixed(0);
-                    
-                    tournamentStats = `Tournament stats: ${totalActualTries} tries across ${completedMatches.length} matches (${avgTries} per game), averaging ${avgPointsPerGame} points per match. `;
-                    
-                    if (avgTries > 7) {
-                        tournamentStats += `This is shaping up to be a high-scoring tournament - good news for the try prediction! `;
-                    } else if (avgTries < 5) {
-                        tournamentStats += `Defences have been on top - those predicting lower try totals might be onto something. `;
-                    }
-                }
-                
                 // Who predicted well in recent match
                 let predictionAnalysis = '';
                 if (recentMatch) {
@@ -3767,15 +3751,15 @@
                 }
                 
                 if (gap === 0) {
-                    tip = `It's tighter than the 2003 World Cup final at the top! ${leader.nickname} and ${second.nickname} are level on ${leader.points} points - ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}${tournamentStats}${tieAnalysis}${bottomTableAnalysis}With ${remainingMatches} matches still to play, this one's going down to the wire like England vs Australia in Sydney! Every prediction counts now - one perfect score could swing it all. ${nextFixtureWithHistory}`;
+                    tip = `It's tighter than the 2003 World Cup final at the top! ${leader.nickname} and ${second.nickname} are level on ${leader.points} points - ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}<br><br>${tieAnalysis}${bottomTableAnalysis}With ${remainingMatches} matches still to play, this one's going down to the wire like England vs Australia in Sydney! Every prediction counts now - one perfect score could swing it all.${nextFixtureParagraph}`;
                 } else if (gap <= 3) {
-                    tip = `${leader.nickname} leads with ${leader.points} points but ${second.nickname} is breathing down their neck like a Gloucester flanker hunting a fly-half! Only ${gap} point${gap > 1 ? 's' : ''} separating them. ${matchAnalysis}${predictionAnalysis}${tournamentStats}${tieAnalysis}${bottomTableAnalysis}With ${remainingMatches} matches left, one good round of predictions could change everything. Feels like the closing minutes of ${randomWorldCupClassic}. ${nextFixtureWithHistory}`;
+                    tip = `${leader.nickname} leads with ${leader.points} points but ${second.nickname} is breathing down their neck like a Gloucester flanker hunting a fly-half! Only ${gap} point${gap > 1 ? 's' : ''} separating them. ${matchAnalysis}${predictionAnalysis}<br><br>${tieAnalysis}${bottomTableAnalysis}With ${remainingMatches} matches left, one good round of predictions could change everything. Feels like the closing minutes of ${randomWorldCupClassic}.${nextFixtureParagraph}`;
                 } else if (gap <= 6) {
-                    tip = `${leader.nickname} is building a handy lead on ${leader.points} points, but ${second.nickname} on ${second.points} won't give up without a fight - ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}${tournamentStats}${tieAnalysis}${bottomTableAnalysis}Still ${remainingMatches} matches to play, which means plenty of points up for grabs. A couple of perfect scores and this leaderboard could look very different. ${nextFixtureWithHistory}`;
+                    tip = `${leader.nickname} is building a handy lead on ${leader.points} points, but ${second.nickname} on ${second.points} won't give up without a fight - ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}<br><br>${tieAnalysis}${bottomTableAnalysis}Still ${remainingMatches} matches to play, which means plenty of points up for grabs. A couple of perfect scores and this leaderboard could look very different.${nextFixtureParagraph}`;
                 } else if (gap <= 10) {
-                    tip = `${leader.nickname} is pulling clear on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs to find form quickly. ${matchAnalysis}${predictionAnalysis}${tournamentStats}${tieAnalysis}${bottomTableAnalysis}But don't count anyone out yet - remember ${randomWorldCupClassic}? Anything's possible in this game! ${nextFixtureWithHistory}`;
+                    tip = `${leader.nickname} is pulling clear on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs to find form quickly. ${matchAnalysis}${predictionAnalysis}<br><br>${tieAnalysis}${bottomTableAnalysis}But don't count anyone out yet - remember ${randomWorldCupClassic}? Anything's possible in this game!${nextFixtureParagraph}`;
                 } else {
-                    tip = `${leader.nickname} is running away with it on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs a serious comeback worthy of the 1999 French team against the All Blacks. ${matchAnalysis}${predictionAnalysis}${tournamentStats}${tieAnalysis}${bottomTableAnalysis}The gap looks big, but ${remainingMatches} matches means up to ${remainingMatches * 11} points still available. Stranger things have happened - ${randomGloucester2}! ${nextFixtureWithHistory}`;
+                    tip = `${leader.nickname} is running away with it on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs a serious comeback worthy of the 1999 French team against the All Blacks. ${matchAnalysis}${predictionAnalysis}<br><br>${tieAnalysis}${bottomTableAnalysis}The gap looks big, but ${remainingMatches} matches means up to ${remainingMatches * 11} points still available. Stranger things have happened - ${randomGloucester2}!${nextFixtureParagraph}`;
                 }
             }
             
