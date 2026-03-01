@@ -357,6 +357,38 @@
             font-weight: 700;
         }
 
+        .header-help-btn {
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            padding: 0;
+            margin: 0;
+            border-radius: 50%;
+            border: 2px solid var(--gold);
+            background: rgba(212, 175, 55, 0.18);
+            color: var(--bright-gold);
+            font-weight: 800;
+            font-size: 0.95rem;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-transform: none;
+            letter-spacing: 0;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .header-help-btn::after {
+            display: none;
+        }
+
+        .header-help-btn:hover {
+            background: rgba(212, 175, 55, 0.32);
+            transform: none;
+            box-shadow: none;
+        }
+
         /* App header with theme selector */
         .app-header {
             display: flex;
@@ -1842,6 +1874,113 @@
             text-align: center;
         }
 
+        .prize-money-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--gold);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .prize-subheading {
+            font-size: 0.82rem;
+            opacity: 0.82;
+            margin: -0.45rem 0 0.65rem 0;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .prize-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.6rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .prize-stat {
+            text-align: center;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            background: rgba(0, 0, 0, 0.18);
+            border-radius: 8px;
+            padding: 0.55rem;
+        }
+
+        .prize-stat-value {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 1.6rem;
+            color: var(--bright-gold);
+            line-height: 1;
+        }
+
+        .prize-stat-label {
+            font-size: 0.78rem;
+            opacity: 0.8;
+            margin-top: 0.2rem;
+        }
+
+        .prize-allocations {
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        .prize-rank-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.45rem;
+        }
+
+        .prize-rank-cell {
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.15);
+            padding: 0.5rem 0.6rem;
+            display: grid;
+            gap: 0.3rem;
+        }
+
+        .prize-row {
+            border: 1px solid rgba(212, 175, 55, 0.25);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.15);
+            padding: 0.5rem 0.6rem;
+            display: grid;
+            grid-template-columns: 170px 1fr auto;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .prize-row-head {
+            color: var(--gold);
+            font-weight: 700;
+            font-size: 0.82rem;
+        }
+
+        .prize-row-body {
+            font-size: 0.84rem;
+        }
+
+        .prize-row-amount {
+            font-weight: 700;
+            color: var(--bright-gold);
+            white-space: nowrap;
+            text-align: right;
+            font-size: 0.84rem;
+        }
+
+        .prize-footnote {
+            margin-top: 0.55rem;
+            font-size: 0.78rem;
+            opacity: 0.8;
+        }
+
+        .prize-chasers {
+            margin-top: 0.35rem;
+            display: grid;
+            gap: 0.25rem;
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
         .tries-stats-title {
             font-family: 'Bebas Neue', cursive;
             font-size: 1.5rem;
@@ -2566,6 +2705,7 @@
 
         /* Admin tabs section */
         .admin-tabs-section {
+            position: relative;
             margin-top: 1.5rem;
             padding: 1rem;
             background: rgba(231, 76, 60, 0.1);
@@ -2579,8 +2719,78 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.1em;
-            margin-bottom: 0.75rem;
+            margin-bottom: 0.35rem;
             text-align: center;
+        }
+
+        .admin-panel-help-btn {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            padding: 0;
+            margin: 0;
+            position: absolute;
+            top: 0.55rem;
+            left: 0.55rem;
+            border-radius: 50%;
+            border: 2px solid #ff8f84;
+            background: rgba(231, 76, 60, 0.22);
+            color: #ffd1cc;
+            font-weight: 800;
+            font-size: 0.84rem;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-transform: none;
+            letter-spacing: 0;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .admin-panel-help-btn::after {
+            display: none;
+        }
+
+        .admin-panel-help-btn:hover {
+            background: rgba(231, 76, 60, 0.35);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .admin-tabs-subheading {
+            font-size: 0.78rem;
+            opacity: 0.85;
+            text-align: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .global-help-modal-content {
+            max-width: 680px;
+        }
+
+        .admin-help-modal-content {
+            max-width: 680px;
+            border: 2px solid rgba(231, 76, 60, 0.55);
+        }
+
+        .global-help-content {
+            display: grid;
+            gap: 0.45rem;
+            font-size: 0.8rem;
+            line-height: 1.35;
+            color: rgba(255, 255, 255, 0.92);
+            margin-bottom: 0.9rem;
+        }
+
+        .admin-help-content {
+            border-top: 1px solid rgba(231, 76, 60, 0.25);
+            padding: 0.65rem 0.75rem 0.7rem;
+            display: grid;
+            gap: 0.45rem;
+            font-size: 0.78rem;
+            line-height: 1.35;
+            color: rgba(255, 255, 255, 0.92);
         }
 
         .admin-tabs {
@@ -2839,6 +3049,19 @@
 
         .rules-grid-three {
             grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .rules-grid-four {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .prize-fund-form .fixture-edit-grid + .fixture-edit-grid {
+            margin-top: 0.9rem;
+        }
+
+        .prize-fund-form .input-group p {
+            margin: 0 0 0.4rem 0 !important;
+            line-height: 1.35;
         }
 
         .rules-preview-grid .input-group {
@@ -3331,7 +3554,8 @@
 
         @media (max-width: 900px) {
             .rules-grid-two,
-            .rules-grid-three {
+            .rules-grid-three,
+            .rules-grid-four {
                 grid-template-columns: 1fr;
             }
 
@@ -3349,6 +3573,15 @@
             .rules-tier-row:first-of-type {
                 border-top: none;
                 padding-top: 0;
+            }
+
+            .prize-row {
+                grid-template-columns: 1fr;
+                gap: 0.35rem;
+            }
+
+            .prize-row-amount {
+                text-align: left;
             }
         }
 

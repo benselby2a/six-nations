@@ -435,6 +435,11 @@
                     drawBonus: 2,
                     applyClosePerTeam: true,
                     maxJokersPerUser: 1,
+                    entryFeeAmount: 0,
+                    payoutFirstPct: 0,
+                    payoutSecondPct: 0,
+                    payoutThirdPct: 0,
+                    payoutClosestTriesPct: 0,
                     closeTiers: [{ tierOrder: 1, withinPoints: 5, bonusPoints: 1 }]
                 };
 
@@ -473,6 +478,11 @@
                     perfectScoreBonus: rule.perfect_score_bonus,
                     drawBonus: rule.draw_bonus,
                     maxJokersPerUser: rule.max_jokers_per_user,
+                    entryFeeAmount: Number(rule.entry_fee_amount ?? 0),
+                    payoutFirstPct: Number(rule.payout_first_pct ?? 0),
+                    payoutSecondPct: Number(rule.payout_second_pct ?? 0),
+                    payoutThirdPct: Number(rule.payout_third_pct ?? 0),
+                    payoutClosestTriesPct: Number(rule.payout_closest_tries_pct ?? 0),
                     closeTiers: closeTiers.length > 0 ? closeTiers : fallback.closeTiers
                 };
             },
@@ -527,6 +537,11 @@
                     perfect_score_bonus: Math.max(0, parseInt(rules && rules.perfectScoreBonus, 10) || 0),
                     draw_bonus: Math.max(0, parseInt(rules && rules.drawBonus, 10) || 0),
                     max_jokers_per_user: Math.max(0, parseInt(rules && rules.maxJokersPerUser, 10) || 0),
+                    entry_fee_amount: Math.max(0, Number(rules && rules.entryFeeAmount) || 0),
+                    payout_first_pct: Math.max(0, Number(rules && rules.payoutFirstPct) || 0),
+                    payout_second_pct: Math.max(0, Number(rules && rules.payoutSecondPct) || 0),
+                    payout_third_pct: Math.max(0, Number(rules && rules.payoutThirdPct) || 0),
+                    payout_closest_tries_pct: Math.max(0, Number(rules && rules.payoutClosestTriesPct) || 0),
                     updated_at: new Date().toISOString()
                 };
 
@@ -780,6 +795,21 @@
         function isCurrentUserAdmin() {
             if (!currentUsername || !users[currentUsername]) return false;
             return adminUsernames.includes(currentUsername);
+        }
+
+        function updateAdminTabsSubheading() {
+            const subheading = document.getElementById('adminTabsSubheading');
+            if (!subheading) return;
+            const admins = [...new Set((adminUsernames || [])
+                .map(username => (username || '').trim().toLowerCase())
+                .filter(Boolean))]
+                .map(username => {
+                    const user = users[username];
+                    return toTitleCase((user && user.nickname) ? user.nickname : username);
+                })
+                .sort((a, b) => a.localeCompare(b));
+            const suffix = admins.length > 0 ? ` (${admins.join(', ')})` : '';
+            subheading.textContent = `These sections are only visible to admins${suffix}`;
         }
 
         // Initialize app
@@ -1516,6 +1546,7 @@
             if (makeAdmin && !adminUsernames.includes(username)) {
                 adminUsernames.push(username);
                 await Storage.saveAdminUsernames(adminUsernames);
+                updateAdminTabsSubheading();
             }
 
             alert(`Competitor ${toTitleCase(nickname)} added.`);
@@ -1573,6 +1604,7 @@
                 if (adminIndex !== -1) {
                     adminUsernames[adminIndex] = newUsername;
                     await Storage.saveAdminUsernames(adminUsernames);
+                    updateAdminTabsSubheading();
                 }
 
                 // Re-key in local users object
@@ -1590,6 +1622,7 @@
             users[newUsername].supportedTeams = [team1, team2].filter(Boolean);
 
             await Storage.saveUser(newUsername, users[newUsername]);
+            updateAdminTabsSubheading();
             alert('User updated successfully.');
 
             // Update current user display if editing self
@@ -1617,6 +1650,7 @@
             }
 
             await Storage.saveAdminUsernames(adminUsernames);
+            updateAdminTabsSubheading();
         }
 
         // Delete a user
@@ -1639,6 +1673,7 @@
             // Remove from admin list if they were an admin
             adminUsernames = adminUsernames.filter(u => u !== username);
             await Storage.saveAdminUsernames(adminUsernames);
+            updateAdminTabsSubheading();
 
             delete users[username];
             await Storage.deleteUser(username);
@@ -1916,6 +1951,30 @@
             changeTheme(storageTheme || cookieTheme || userTheme || 'classic');
         }
 
+        function toggleGlobalHelp() {
+            const modal = document.getElementById('globalHelpModal');
+            if (!modal) return;
+            modal.classList.remove('hidden');
+        }
+
+        function closeGlobalHelpModal() {
+            const modal = document.getElementById('globalHelpModal');
+            if (!modal) return;
+            modal.classList.add('hidden');
+        }
+
+        function toggleAdminHelp() {
+            const modal = document.getElementById('adminHelpModal');
+            if (!modal) return;
+            modal.classList.remove('hidden');
+        }
+
+        function closeAdminHelpModal() {
+            const modal = document.getElementById('adminHelpModal');
+            if (!modal) return;
+            modal.classList.add('hidden');
+        }
+
         // Calculate total actual tries in tournament
         function getTotalActualTries() {
             let total = 0;
@@ -2153,6 +2212,7 @@
             // Show all tabs for logged-in users
             document.querySelector('.tabs:not(.admin-tabs)').classList.remove('hidden');
             document.getElementById('logoutBtn').classList.remove('hidden');
+            updateAdminTabsSubheading();
 
             // Load user's saved theme
             loadUserTheme();
@@ -2162,6 +2222,7 @@
 
             // Initialize round selector dropdown
             initRoundSelector();
+            updateAdminTabsSubheading();
 
             // Always land on Match Summary after login.
             document.getElementById('predictionsTab').classList.add('hidden');
@@ -2170,6 +2231,7 @@
             document.getElementById('scoreCorrectionsTab').classList.add('hidden');
             document.getElementById('resultsTab').classList.add('hidden');
             document.getElementById('rulesTab').classList.add('hidden');
+            document.getElementById('prizeFundTab').classList.add('hidden');
             document.getElementById('recoveryTab').classList.add('hidden');
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             const summaryTabBtn = Array.from(document.querySelectorAll('.tab')).find(
@@ -2208,6 +2270,7 @@
             document.getElementById('scoreCorrectionsTab').classList.add('hidden');
             document.getElementById('resultsTab').classList.add('hidden');
             document.getElementById('rulesTab').classList.add('hidden');
+            document.getElementById('prizeFundTab').classList.add('hidden');
             document.getElementById('recoveryTab').classList.add('hidden');
 
             // Show summary
@@ -2859,6 +2922,11 @@
                 drawBonus: 2,
                 applyClosePerTeam: true,
                 maxJokersPerUser: 1,
+                entryFeeAmount: 0,
+                payoutFirstPct: 0,
+                payoutSecondPct: 0,
+                payoutThirdPct: 0,
+                payoutClosestTriesPct: 0,
                 closeTiers: [{ tierOrder: 1, withinPoints: 5, bonusPoints: 1 }]
             };
 
@@ -2878,6 +2946,11 @@
                 drawBonus: Math.max(0, Number(source.drawBonus ?? fallback.drawBonus) || 0),
                 applyClosePerTeam: true,
                 maxJokersPerUser: Math.max(0, Number(source.maxJokersPerUser ?? fallback.maxJokersPerUser) || 0),
+                entryFeeAmount: Math.max(0, Number(source.entryFeeAmount ?? fallback.entryFeeAmount) || 0),
+                payoutFirstPct: Math.max(0, Number(source.payoutFirstPct ?? fallback.payoutFirstPct) || 0),
+                payoutSecondPct: Math.max(0, Number(source.payoutSecondPct ?? fallback.payoutSecondPct) || 0),
+                payoutThirdPct: Math.max(0, Number(source.payoutThirdPct ?? fallback.payoutThirdPct) || 0),
+                payoutClosestTriesPct: Math.max(0, Number(source.payoutClosestTriesPct ?? fallback.payoutClosestTriesPct) || 0),
                 closeTiers: closeTiers.length > 0 ? closeTiers : fallback.closeTiers
             };
         }
@@ -3457,6 +3530,216 @@
             return 0;
         }
 
+        function roundMoney(value) {
+            return Math.round((Number(value) || 0) * 100) / 100;
+        }
+
+        function formatCurrencyAmount(amount) {
+            try {
+                return new Intl.NumberFormat('en-GB', {
+                    style: 'currency',
+                    currency: 'GBP',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(roundMoney(amount));
+            } catch (error) {
+                return `GBP ${roundMoney(amount).toFixed(2)}`;
+            }
+        }
+
+        function isTournamentTriesFinalized() {
+            return matches.length > 0 && matches.every(match => match.actualTries1 !== null && match.actualTries2 !== null);
+        }
+
+        function getProjectedTournamentTriesTotal() {
+            const completedWithTries = matches.filter(m => m.actualTries1 !== null && m.actualTries2 !== null);
+            if (completedWithTries.length === 0) return null;
+            const totalActualTries = getTotalActualTries();
+            return Math.round((totalActualTries / completedWithTries.length) * matches.length);
+        }
+
+        function buildRankingGroups(sortedUsers) {
+            const groups = [];
+            let index = 0;
+            while (index < sortedUsers.length) {
+                const start = index;
+                const points = sortedUsers[index].totalPoints;
+                while (index < sortedUsers.length && sortedUsers[index].totalPoints === points) {
+                    index += 1;
+                }
+                groups.push({
+                    startRank: start + 1,
+                    endRank: start + (index - start),
+                    users: sortedUsers.slice(start, index)
+                });
+            }
+            return groups;
+        }
+
+        function calculatePrizeProjection(sortedUsers, rules) {
+            const entrantCount = sortedUsers.length;
+            const entryFeeAmount = Math.max(0, Number(rules.entryFeeAmount) || 0);
+            const payoutFirstPct = Math.max(0, Number(rules.payoutFirstPct) || 0);
+            const payoutSecondPct = Math.max(0, Number(rules.payoutSecondPct) || 0);
+            const payoutThirdPct = Math.max(0, Number(rules.payoutThirdPct) || 0);
+            const payoutClosestTriesPct = Math.max(0, Number(rules.payoutClosestTriesPct) || 0);
+            const totalPool = roundMoney(entryFeeAmount * entrantCount);
+
+            const pots = {
+                1: roundMoney(totalPool * payoutFirstPct / 100),
+                2: roundMoney(totalPool * payoutSecondPct / 100),
+                3: roundMoney(totalPool * payoutThirdPct / 100),
+                closestTries: roundMoney(totalPool * payoutClosestTriesPct / 100)
+            };
+
+            const groups = buildRankingGroups(sortedUsers);
+            const leaderboardPayouts = {};
+            groups.forEach(group => {
+                const overlappingRanks = [1, 2, 3].filter(rank => rank >= group.startRank && rank <= group.endRank);
+                if (overlappingRanks.length === 0) return;
+                const combinedPot = overlappingRanks.reduce((sum, rank) => sum + (pots[rank] || 0), 0);
+                if (combinedPot <= 0 || group.users.length === 0) return;
+                const share = roundMoney(combinedPot / group.users.length);
+                group.users.forEach(user => {
+                    leaderboardPayouts[user.username] = roundMoney((leaderboardPayouts[user.username] || 0) + share);
+                });
+            });
+
+            const triesTarget = isTournamentTriesFinalized() ? getTotalActualTries() : getProjectedTournamentTriesTotal();
+            let closestTriesWinners = [];
+            let triesCandidatesSorted = [];
+            if (triesTarget !== null) {
+                const candidates = [];
+                sortedUsers.forEach((user, index) => {
+                    const predicted = users[user.username] ? users[user.username].totalTries : null;
+                    if (predicted === null || predicted === undefined || !Number.isFinite(Number(predicted))) return;
+                    candidates.push({
+                        username: user.username,
+                        predicted: Number(predicted),
+                        diff: Math.abs(Number(predicted) - triesTarget),
+                        leaderboardOrder: index
+                    });
+                });
+
+                triesCandidatesSorted = candidates.sort((a, b) => {
+                    if (a.diff !== b.diff) return a.diff - b.diff;
+                    if (a.leaderboardOrder !== b.leaderboardOrder) return a.leaderboardOrder - b.leaderboardOrder;
+                    return a.username.localeCompare(b.username);
+                });
+
+                const bestDiff = triesCandidatesSorted.length > 0 ? triesCandidatesSorted[0].diff : Number.POSITIVE_INFINITY;
+                closestTriesWinners = triesCandidatesSorted.filter(entry => entry.diff === bestDiff);
+            }
+
+            const closestTriesShare = closestTriesWinners.length > 0
+                ? roundMoney(pots.closestTries / closestTriesWinners.length)
+                : 0;
+
+            const nonWinningCandidates = triesCandidatesSorted.filter(entry => !closestTriesWinners.some(w => w.username === entry.username));
+            const provisionalSecondClosest = nonWinningCandidates[0] || null;
+            const provisionalThirdClosest = nonWinningCandidates[1] || null;
+
+            return {
+                entrantCount,
+                totalPool,
+                pots,
+                groups,
+                leaderboardPayouts,
+                triesTarget,
+                triesFinalized: isTournamentTriesFinalized(),
+                closestTriesWinners,
+                closestTriesShare,
+                provisionalSecondClosest,
+                provisionalThirdClosest
+            };
+        }
+
+        function getRankGroupForRank(groups, rank) {
+            return groups.find(group => rank >= group.startRank && rank <= group.endRank) || null;
+        }
+
+        function formatNamesForUsers(userList) {
+            return (userList || []).map(u => toTitleCase(u.nickname || u.username)).join(', ');
+        }
+
+        function renderPrizeMoneyPanel(sortedUsers) {
+            const container = document.getElementById('prizeMoneyContainer');
+            if (!container) return;
+
+            const rules = getEffectiveScoringRules();
+            const projection = calculatePrizeProjection(sortedUsers, rules);
+            const rank1Group = getRankGroupForRank(projection.groups, 1);
+            const rank2Group = getRankGroupForRank(projection.groups, 2);
+            const rank3Group = getRankGroupForRank(projection.groups, 3);
+
+            const rankLine = (label, pct, group) => {
+                const names = group ? formatNamesForUsers(group.users) : 'TBD';
+                const share = group && group.users.length > 0
+                    ? projection.leaderboardPayouts[group.users[0].username] || 0
+                    : 0;
+                const amountSuffix = group && group.users.length > 1 ? ' each' : '';
+                return `
+                    <div class="prize-rank-cell">
+                        <div class="prize-row-head">${label} (${pct}%)</div>
+                        <div class="prize-row-body">${names}</div>
+                        <div class="prize-row-amount">${formatCurrencyAmount(share)}${amountSuffix}</div>
+                    </div>
+                `;
+            };
+
+            const closestNames = projection.closestTriesWinners.length > 0
+                ? projection.closestTriesWinners.map(w => `${toTitleCase(users[w.username].nickname || w.username)} (${w.predicted} tries)`).join(', ')
+                : 'TBD';
+
+            const triesStatus = projection.triesFinalized
+                ? `Final total tries: ${projection.triesTarget ?? '-'}`
+                : `Provisional tries target: ${projection.triesTarget ?? '-'} (based on current completed matches)`;
+            const closestSuffix = projection.closestTriesWinners.length > 1 ? ' each' : '';
+            const secondClosestText = projection.provisionalSecondClosest
+                ? `${toTitleCase(users[projection.provisionalSecondClosest.username].nickname || projection.provisionalSecondClosest.username)} (${projection.provisionalSecondClosest.predicted} tries, off by ${projection.provisionalSecondClosest.diff})`
+                : 'TBD';
+            const thirdClosestText = projection.provisionalThirdClosest
+                ? `${toTitleCase(users[projection.provisionalThirdClosest.username].nickname || projection.provisionalThirdClosest.username)} (${projection.provisionalThirdClosest.predicted} tries, off by ${projection.provisionalThirdClosest.diff})`
+                : 'TBD';
+
+            container.innerHTML = `
+                <div class="tries-stats-title">Prize Money</div>
+                <div class="prize-subheading">As things currently stand</div>
+                <div class="prize-summary-grid">
+                    <div class="prize-stat">
+                        <div class="prize-stat-value">${projection.entrantCount}</div>
+                        <div class="prize-stat-label">Eligible Entrants</div>
+                    </div>
+                    <div class="prize-stat">
+                        <div class="prize-stat-value">${formatCurrencyAmount(rules.entryFeeAmount)}</div>
+                        <div class="prize-stat-label">Entry Fee</div>
+                    </div>
+                    <div class="prize-stat">
+                        <div class="prize-stat-value">${formatCurrencyAmount(projection.totalPool)}</div>
+                        <div class="prize-stat-label">Total Prize Fund</div>
+                    </div>
+                </div>
+                <div class="prize-allocations">
+                    <div class="prize-rank-grid">
+                        ${rankLine('1st Place', rules.payoutFirstPct, rank1Group)}
+                        ${rankLine('2nd Place', rules.payoutSecondPct, rank2Group)}
+                        ${rankLine('3rd Place', rules.payoutThirdPct, rank3Group)}
+                    </div>
+                    <div class="prize-row">
+                        <div class="prize-row-head">Closest Tries (${rules.payoutClosestTriesPct}%)</div>
+                        <div class="prize-row-body">${closestNames}</div>
+                        <div class="prize-row-amount">${formatCurrencyAmount(projection.closestTriesShare)}${closestSuffix}</div>
+                    </div>
+                </div>
+                <div class="prize-subheading" style="margin-top: 0.65rem;">Provisional Closest Tries Chasers</div>
+                <div class="prize-chasers">
+                    <div><strong>2nd closest:</strong> ${secondClosestText}</div>
+                    <div><strong>3rd closest:</strong> ${thirdClosestText}</div>
+                </div>
+                <div class="prize-footnote">${triesStatus}</div>
+            `;
+        }
+
         // Show comprehensive summary with matches as columns
         function showSummary() {
             const container = document.getElementById('summaryContainer');
@@ -3464,6 +3747,7 @@
             
             if (allUsers.length === 0) {
                 container.innerHTML = '<p style="text-align: center; font-size: 1.2rem; opacity: 0.7;">No competitors have registered yet.</p>';
+                renderPrizeMoneyPanel([]);
                 updateLeaderboard();
                 return;
             }
@@ -3472,6 +3756,14 @@
             
             if (filteredMatches.length === 0) {
                 container.innerHTML = '<p style="text-align: center; font-size: 1.2rem; opacity: 0.7;">No matches match the current filter.</p>';
+                const sortedUsersForPrizeOnly = Object.keys(users)
+                    .map(username => ({
+                        username: username,
+                        nickname: toTitleCase(users[username].nickname || username),
+                        totalPoints: calculatePoints(username)
+                    }))
+                    .sort((a, b) => b.totalPoints - a.totalPoints);
+                renderPrizeMoneyPanel(sortedUsersForPrizeOnly);
                 updateLeaderboard();
                 return;
             }
@@ -3688,6 +3980,7 @@
             html += '</div>';
 
             container.innerHTML = html;
+            renderPrizeMoneyPanel(sortedUsers);
             updateLeaderboard();
             checkTableOverflow();
 
@@ -4106,17 +4399,23 @@
         }
 
         function setRulesFeedback(message, type = 'info') {
-            const feedback = document.getElementById('rulesFeedback');
-            if (!feedback) return;
-            if (!message) {
-                feedback.classList.add('hidden');
-                feedback.classList.remove('error', 'success', 'info');
-                feedback.textContent = '';
-                return;
-            }
-            feedback.classList.remove('hidden', 'error', 'success', 'info');
-            feedback.classList.add(type);
-            feedback.textContent = message;
+            const feedbackEls = [
+                document.getElementById('rulesFeedback'),
+                document.getElementById('prizeRulesFeedback')
+            ].filter(Boolean);
+            if (feedbackEls.length === 0) return;
+
+            feedbackEls.forEach(feedback => {
+                if (!message) {
+                    feedback.classList.add('hidden');
+                    feedback.classList.remove('error', 'success', 'info');
+                    feedback.textContent = '';
+                    return;
+                }
+                feedback.classList.remove('hidden', 'error', 'success', 'info');
+                feedback.classList.add(type);
+                feedback.textContent = message;
+            });
         }
 
         function parseRulesIntInput(id, options = {}) {
@@ -4132,6 +4431,18 @@
             return parsed;
         }
 
+        function parseRulesDecimalInput(id, options = {}) {
+            const { required = true, fallback = 0, maxDecimals = 2 } = options;
+            const el = document.getElementById(id);
+            if (!el) return required ? null : fallback;
+            const raw = String(el.value || '').trim();
+            if (!raw) return required ? null : fallback;
+            const parsed = Number(raw);
+            if (!Number.isFinite(parsed) || parsed < 0) return null;
+            const factor = 10 ** maxDecimals;
+            return Math.round(parsed * factor) / factor;
+        }
+
         function readRulesFormData() {
             const data = {
                 id: scoringRulesDraftId,
@@ -4139,6 +4450,11 @@
                 perfectScoreBonus: parseRulesIntInput('rulesPerfectScoreBonus'),
                 drawBonus: parseRulesIntInput('rulesDrawBonus'),
                 maxJokersPerUser: parseRulesIntInput('rulesMaxJokersPerUser'),
+                entryFeeAmount: parseRulesDecimalInput('rulesEntryFeeAmount'),
+                payoutFirstPct: parseRulesDecimalInput('rulesPayoutFirstPct'),
+                payoutSecondPct: parseRulesDecimalInput('rulesPayoutSecondPct'),
+                payoutThirdPct: parseRulesDecimalInput('rulesPayoutThirdPct'),
+                payoutClosestTriesPct: parseRulesDecimalInput('rulesPayoutClosestTriesPct'),
                 closeTiers: []
             };
 
@@ -4171,7 +4487,25 @@
             if (data.perfectScoreBonus === null) errors.push('Perfect score bonus must be a whole number 0 or higher.');
             if (data.drawBonus === null) errors.push('Draw bonus must be a whole number 0 or higher.');
             if (data.maxJokersPerUser === null) errors.push('Jokers per user must be a whole number 0 or higher.');
+            if (data.entryFeeAmount === null) errors.push('Entry fee must be a number 0 or higher.');
+            if (data.payoutFirstPct === null) errors.push('1st place payout % must be a number 0 or higher.');
+            if (data.payoutSecondPct === null) errors.push('2nd place payout % must be a number 0 or higher.');
+            if (data.payoutThirdPct === null) errors.push('3rd place payout % must be a number 0 or higher.');
+            if (data.payoutClosestTriesPct === null) errors.push('Closest tries payout % must be a number 0 or higher.');
             if (data.closeTiers.length === 0) errors.push('At least one close-score tier is required.');
+
+            if (
+                data.payoutFirstPct !== null &&
+                data.payoutSecondPct !== null &&
+                data.payoutThirdPct !== null &&
+                data.payoutClosestTriesPct !== null
+            ) {
+                const payoutTotal = data.payoutFirstPct + data.payoutSecondPct + data.payoutThirdPct + data.payoutClosestTriesPct;
+                const allZero = payoutTotal === 0;
+                if (!allZero && Math.abs(payoutTotal - 100) > 0.001) {
+                    errors.push('Prize payout percentages must total exactly 100 (or all be 0 to disable payouts).');
+                }
+            }
 
             data.closeTiers.forEach((tier, index) => {
                 const row = index + 1;
@@ -4197,6 +4531,11 @@
                 perfectScoreBonus: raw.perfectScoreBonus ?? 0,
                 drawBonus: raw.drawBonus ?? 0,
                 maxJokersPerUser: raw.maxJokersPerUser ?? 0,
+                entryFeeAmount: raw.entryFeeAmount ?? 0,
+                payoutFirstPct: raw.payoutFirstPct ?? 0,
+                payoutSecondPct: raw.payoutSecondPct ?? 0,
+                payoutThirdPct: raw.payoutThirdPct ?? 0,
+                payoutClosestTriesPct: raw.payoutClosestTriesPct ?? 0,
                 closeTiers: raw.closeTiers
                     .filter(tier => tier.withinPoints !== null && tier.bonusPoints !== null)
                     .map((tier, index) => ({
@@ -4209,11 +4548,15 @@
         }
 
         function updateRulesPublishState() {
-            const saveBtn = document.getElementById('rulesSaveUpdatedBtn');
-            if (!saveBtn) return;
             const { errors } = getRulesPayloadFromForm();
             const isValid = errors.length === 0;
-            saveBtn.disabled = !isValid;
+            const saveBtns = [
+                document.getElementById('rulesSaveUpdatedBtn'),
+                document.getElementById('prizeSaveUpdatedBtn')
+            ].filter(Boolean);
+            saveBtns.forEach(btn => {
+                btn.disabled = !isValid;
+            });
         }
 
         function renderRulesPreview() {
@@ -4262,11 +4605,21 @@
             const perfectScoreBonus = document.getElementById('rulesPerfectScoreBonus');
             const drawBonus = document.getElementById('rulesDrawBonus');
             const maxJokersPerUser = document.getElementById('rulesMaxJokersPerUser');
+            const entryFeeAmount = document.getElementById('rulesEntryFeeAmount');
+            const payoutFirstPct = document.getElementById('rulesPayoutFirstPct');
+            const payoutSecondPct = document.getElementById('rulesPayoutSecondPct');
+            const payoutThirdPct = document.getElementById('rulesPayoutThirdPct');
+            const payoutClosestTriesPct = document.getElementById('rulesPayoutClosestTriesPct');
 
             if (correctResultPoints) correctResultPoints.value = normalized.correctResultPoints;
             if (perfectScoreBonus) perfectScoreBonus.value = normalized.perfectScoreBonus;
             if (drawBonus) drawBonus.value = normalized.drawBonus;
             if (maxJokersPerUser) maxJokersPerUser.value = normalized.maxJokersPerUser;
+            if (entryFeeAmount) entryFeeAmount.value = normalized.entryFeeAmount;
+            if (payoutFirstPct) payoutFirstPct.value = normalized.payoutFirstPct;
+            if (payoutSecondPct) payoutSecondPct.value = normalized.payoutSecondPct;
+            if (payoutThirdPct) payoutThirdPct.value = normalized.payoutThirdPct;
+            if (payoutClosestTriesPct) payoutClosestTriesPct.value = normalized.payoutClosestTriesPct;
 
             for (let i = 1; i <= 3; i += 1) {
                 const withinInput = document.getElementById(`rulesTier${i}Within`);
@@ -4284,6 +4637,11 @@
                 'rulesPerfectScoreBonus',
                 'rulesDrawBonus',
                 'rulesMaxJokersPerUser',
+                'rulesEntryFeeAmount',
+                'rulesPayoutFirstPct',
+                'rulesPayoutSecondPct',
+                'rulesPayoutThirdPct',
+                'rulesPayoutClosestTriesPct',
                 'rulesTier1Within',
                 'rulesTier1Bonus',
                 'rulesTier2Within',
@@ -4319,6 +4677,15 @@
             renderRulesPreview();
         }
 
+        function renderPrizeFundTab() {
+            if (!isCurrentUserAdmin()) return;
+            initializeRulesTabBindings();
+            if (!scoringRulesDraftId) {
+                populateRulesForm(activeScoringRules);
+            }
+            updateRulesPublishState();
+        }
+
         async function saveUpdatedRules() {
             if (!isCurrentUserAdmin()) return;
             const { payload, errors } = getRulesPayloadFromForm();
@@ -4328,12 +4695,16 @@
                 return;
             }
 
-            const saveBtn = document.getElementById('rulesSaveUpdatedBtn');
-            const originalText = saveBtn ? saveBtn.textContent : '';
-            if (saveBtn) {
-                saveBtn.disabled = true;
-                saveBtn.textContent = 'Saving...';
-            }
+            const saveBtns = [
+                document.getElementById('rulesSaveUpdatedBtn'),
+                document.getElementById('prizeSaveUpdatedBtn')
+            ].filter(Boolean);
+            const originalTexts = new Map();
+            saveBtns.forEach(btn => {
+                originalTexts.set(btn, btn.textContent);
+                btn.disabled = true;
+                btn.textContent = 'Saving...';
+            });
 
             try {
                 payload.id = scoringRulesDraftId;
@@ -4357,9 +4728,9 @@
                 console.error('Error saving rules:', error);
                 setRulesFeedback('Error while saving rules.', 'error');
             } finally {
-                if (saveBtn) {
-                    saveBtn.textContent = originalText;
-                }
+                saveBtns.forEach(btn => {
+                    btn.textContent = originalTexts.get(btn) || 'Save Updated Rules';
+                });
                 updateRulesPublishState();
             }
         }
@@ -4444,6 +4815,11 @@ CREATE TABLE scoring_rules (
     perfect_score_bonus INTEGER NOT NULL DEFAULT 3,
     draw_bonus INTEGER NOT NULL DEFAULT 2,
     max_jokers_per_user INTEGER NOT NULL DEFAULT 1,
+    entry_fee_amount NUMERIC(10,2) NOT NULL DEFAULT 0,
+    payout_first_pct NUMERIC(5,2) NOT NULL DEFAULT 0,
+    payout_second_pct NUMERIC(5,2) NOT NULL DEFAULT 0,
+    payout_third_pct NUMERIC(5,2) NOT NULL DEFAULT 0,
+    payout_closest_tries_pct NUMERIC(5,2) NOT NULL DEFAULT 0,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -4516,7 +4892,7 @@ CREATE POLICY "Allow all access to user_joker_selections" ON user_joker_selectio
             // Generate scoring rules INSERT statement
             const rules = getEffectiveScoringRules();
             sql += '\n-- Insert scoring rules\n';
-            sql += `INSERT INTO scoring_rules (id, correct_result_points, perfect_score_bonus, draw_bonus, max_jokers_per_user, updated_at) VALUES (1, ${rules.correctResultPoints}, ${rules.perfectScoreBonus}, ${rules.drawBonus}, ${rules.maxJokersPerUser}, NOW());\n`;
+            sql += `INSERT INTO scoring_rules (id, correct_result_points, perfect_score_bonus, draw_bonus, max_jokers_per_user, entry_fee_amount, payout_first_pct, payout_second_pct, payout_third_pct, payout_closest_tries_pct, updated_at) VALUES (1, ${rules.correctResultPoints}, ${rules.perfectScoreBonus}, ${rules.drawBonus}, ${rules.maxJokersPerUser}, ${Number(rules.entryFeeAmount || 0)}, ${Number(rules.payoutFirstPct || 0)}, ${Number(rules.payoutSecondPct || 0)}, ${Number(rules.payoutThirdPct || 0)}, ${Number(rules.payoutClosestTriesPct || 0)}, NOW());\n`;
 
             // Generate close score tiers INSERT statements
             const closeTiers = (rules.closeTiers || []).slice(0, 3);
@@ -4598,7 +4974,7 @@ CREATE POLICY "Allow all access to user_joker_selections" ON user_joker_selectio
                     <li>All matches and fixtures</li>
                     <li>All user accounts (usernames, password hashes)</li>
                     <li>All predictions</li>
-                    <li>Single scoring rules config and close-score tiers</li>
+                    <li>Single scoring rules config, prize settings, and close-score tiers</li>
                     <li>User joker selections</li>
                     <li>Admin usernames list</li>
                     <li>App settings</li>
@@ -4609,7 +4985,7 @@ CREATE POLICY "Allow all access to user_joker_selections" ON user_joker_selectio
                     <li>Empty matches table</li>
                     <li>Empty users table</li>
                     <li>Empty predictions table</li>
-                    <li>Empty scoring_rules and scoring_close_tiers tables</li>
+                    <li>Empty scoring_rules (including prize fields) and scoring_close_tiers tables</li>
                     <li>Empty user_joker_selections table</li>
                     <li>Empty admin_usernames table</li>
                     <li>Empty settings table</li>
@@ -4649,6 +5025,7 @@ CREATE POLICY "Allow all access to user_joker_selections" ON user_joker_selectio
             document.getElementById('scoreCorrectionsTab').classList.add('hidden');
             document.getElementById('resultsTab').classList.add('hidden');
             document.getElementById('rulesTab').classList.add('hidden');
+            document.getElementById('prizeFundTab').classList.add('hidden');
             document.getElementById('recoveryTab').classList.add('hidden');
 
             // Update tab buttons
@@ -4687,6 +5064,11 @@ CREATE POLICY "Allow all access to user_joker_selections" ON user_joker_selectio
                 document.getElementById('rulesTab').classList.remove('hidden');
                 event.target.classList.add('active');
                 renderRulesTab();
+            } else if (tabName === 'prizeFund') {
+                if (!isCurrentUserAdmin()) return;
+                document.getElementById('prizeFundTab').classList.remove('hidden');
+                event.target.classList.add('active');
+                renderPrizeFundTab();
             } else if (tabName === 'recovery') {
                 if (!isCurrentUserAdmin()) return;
                 document.getElementById('recoveryTab').classList.remove('hidden');

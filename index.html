@@ -138,6 +138,7 @@
                         <option value="retro">Teletext</option>
                         <option value="dark">Dark Mode</option>
                     </select>
+                    <button class="header-help-btn" onclick="toggleGlobalHelp()" title="Open help" aria-label="Open help">?</button>
                 </div>
                 <div class="user-info">
                     <div class="username profile-link" id="currentUser" onclick="openProfile()"></div>
@@ -149,14 +150,17 @@
                 <button class="tab" onclick="showTab('predictions')">My Predictions</button>
                 <button class="tab active" onclick="showTab('summary')">Match Summary</button>
             </div>
-            
+
             <div class="admin-tabs-section admin-only hidden">
+                <button class="admin-panel-help-btn" onclick="toggleAdminHelp()" title="Open admin help" aria-label="Open admin help">?</button>
                 <div class="admin-tabs-label">Admin Functions</div>
+                <div class="admin-tabs-subheading" id="adminTabsSubheading">These sections are only visible to admins</div>
                 <div class="tabs admin-tabs">
                     <button class="tab" onclick="showTab('competitors')">Competitor Mgmt.</button>
                     <button class="tab" onclick="showTab('scoreCorrections')">Edit Predictions</button>
                     <button class="tab" onclick="showTab('results')">Fixture Setup</button>
-                    <button class="tab" onclick="showTab('rules')">Rules</button>
+                    <button class="tab" onclick="showTab('rules')">Rules Config</button>
+                    <button class="tab" onclick="showTab('prizeFund')">Prize Fund Setup</button>
                     <button class="tab" onclick="showTab('recovery')">Database Recovery</button>
                 </div>
             </div>
@@ -222,6 +226,9 @@
 
                     <!-- Trev's Tips -->
                     <div id="trevsTipsContainer" class="trevs-tips-box"></div>
+
+                    <!-- Prize Money Projection -->
+                    <div id="prizeMoneyContainer" class="prize-money-box"></div>
                 </div>
             </div>
 
@@ -460,6 +467,57 @@
                 </div>
             </div>
 
+            <!-- Prize Fund Tab (Admin Only) -->
+            <div id="prizeFundTab" class="prediction-section admin-only hidden" style="margin-top: 2rem;">
+                <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 1rem;">
+                    <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Prize Fund</h2>
+                    <p style="margin-bottom: 0;">Configure entry fee and payout allocation. Currency is fixed to GBP.</p>
+                </div>
+
+                <div id="prizeRulesFeedback" class="login-feedback hidden"></div>
+
+                <div class="rules-layout">
+                    <div class="rules-card prize-fund-form">
+                        <h3>Prize Fund Setup</h3>
+                        <p style="margin: 0 0 0.8rem 0; font-size: 0.9rem; opacity: 0.85;">Set the entry fee and how the total prize fund is allocated across finishing positions and closest tries prediction.</p>
+                        <div class="fixture-edit-grid rules-grid-two">
+                            <div class="input-group">
+                                <label for="rulesEntryFeeAmount">Entry Fee Per Player (GBP)</label>
+                                <p style="margin: 0 0 0.35rem 0; font-size: 0.82rem; opacity: 0.8;">Amount each entrant pays into the prize pool.</p>
+                                <input type="number" id="rulesEntryFeeAmount" min="0" step="0.01">
+                            </div>
+                        </div>
+                        <div class="fixture-edit-grid rules-grid-four">
+                            <div class="input-group">
+                                <label for="rulesPayoutFirstPct">1st Place %</label>
+                                <p style="margin: 0 0 0.35rem 0; font-size: 0.82rem; opacity: 0.8;">Percent of fund allocated to first place.</p>
+                                <input type="number" id="rulesPayoutFirstPct" min="0" step="0.01">
+                            </div>
+                            <div class="input-group">
+                                <label for="rulesPayoutSecondPct">2nd Place %</label>
+                                <p style="margin: 0 0 0.35rem 0; font-size: 0.82rem; opacity: 0.8;">Percent of fund allocated to second place.</p>
+                                <input type="number" id="rulesPayoutSecondPct" min="0" step="0.01">
+                            </div>
+                            <div class="input-group">
+                                <label for="rulesPayoutThirdPct">3rd Place %</label>
+                                <p style="margin: 0 0 0.35rem 0; font-size: 0.82rem; opacity: 0.8;">Percent of fund allocated to third place.</p>
+                                <input type="number" id="rulesPayoutThirdPct" min="0" step="0.01">
+                            </div>
+                            <div class="input-group">
+                                <label for="rulesPayoutClosestTriesPct">Closest Tries %</label>
+                                <p style="margin: 0 0 0.35rem 0; font-size: 0.82rem; opacity: 0.8;">Percent of fund allocated to closest total-tries prediction.</p>
+                                <input type="number" id="rulesPayoutClosestTriesPct" min="0" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rules-action-row">
+                    <button class="btn-small btn-success" id="prizeSaveUpdatedBtn" onclick="saveUpdatedRules()">Save Updated Prize Rules</button>
+                    <button class="btn-small btn-cancel" id="prizeRevertBtn" onclick="revertRulesToSaved()">Revert to Saved Prize Rules</button>
+                </div>
+            </div>
+
             <!-- Database Recovery Tab (Admin Only) -->
             <div id="recoveryTab" class="prediction-section hidden" style="margin-top: 4rem;">
                 <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
@@ -481,7 +539,7 @@
                             <li>All matches and fixtures</li>
                             <li>All user accounts (usernames, password hashes)</li>
                             <li>All predictions</li>
-                            <li>Single scoring rules config and close-score tiers</li>
+                            <li>Single scoring rules config, prize settings, and close-score tiers</li>
                             <li>User joker selections</li>
                             <li>Admin usernames list</li>
                             <li>App settings</li>
@@ -490,6 +548,39 @@
                         <button class="btn-small" onclick="copySqlToClipboard()" style="margin-top: 1rem;">Copy SQL to Clipboard</button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Help Modal -->
+    <div id="globalHelpModal" class="modal hidden" onclick="if (event.target === this) closeGlobalHelpModal()">
+        <div class="modal-content global-help-modal-content">
+            <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 0.8rem; letter-spacing: 0.1em;">App Help</h2>
+            <div class="global-help-content">
+                <div><strong>My Predictions:</strong> Enter your score predictions for each fixture, choose your jokers, and set your tournament tries prediction. Predictions can only be entered/edited while predictions are unlocked.</div>
+                <div><strong>Match Summary:</strong> View the live table, points breakdowns, tries tracking, and prize projections as results are entered.</div>
+                <div><strong>Admin Functions:</strong> Setup, editing, rules config, prize fund setup, and recovery are available to admins only. Admins can lock predictions (typically once the tournament starts).</div>
+            </div>
+            <div class="fixture-modal-actions">
+                <button class="btn-cancel" onclick="closeGlobalHelpModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Help Modal -->
+    <div id="adminHelpModal" class="modal hidden" onclick="if (event.target === this) closeAdminHelpModal()">
+        <div class="modal-content admin-help-modal-content">
+            <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: #ff9b92; margin-bottom: 0.8rem; letter-spacing: 0.1em;">Admin Help</h2>
+            <div class="admin-help-content">
+                <div><strong>Competitor Mgmt.</strong> Add, edit, or remove competitors, update display names, assign teams, and manage admin access.</div>
+                <div><strong>Edit Predictions</strong> Review and correct competitor score predictions and tournament tries values.</div>
+                <div><strong>Fixture Setup</strong> Add/edit fixtures, enter scores and tries, set joker-eligible matches, and lock/unlock predictions.</div>
+                <div><strong>Rules Config</strong> Configure scoring points, close-score tiers, and joker limits with a live preview calculator.</div>
+                <div><strong>Prize Fund Setup</strong> Set entry fee and payout allocation for 1st/2nd/3rd and closest tries prize.</div>
+                <div><strong>Database Recovery</strong> Generate SQL to recreate schema and optionally restore current data.</div>
+            </div>
+            <div class="fixture-modal-actions">
+                <button class="btn-cancel" onclick="closeAdminHelpModal()">Close</button>
             </div>
         </div>
     </div>
