@@ -421,6 +421,259 @@
                     });
                 
                 if (error) console.error('Error saving settings:', error);
+            },
+
+            // Active scoring ruleset + close tiers (read-only in Phase 2)
+            getActiveScoringRules: async () => {
+                const fallback = {
+                    id: null,
+                    name: 'Legacy Defaults',
+                    status: 'published',
+                    isActive: true,
+                    correctResultPoints: 3,
+                    perfectScoreBonus: 3,
+                    drawBonus: 2,
+                    closeToleranceCap: 20,
+                    applyClosePerTeam: true,
+                    maxJokersPerUser: 1,
+                    closeTiers: [{ tierOrder: 1, withinPoints: 5, bonusPoints: 1 }]
+                };
+
+                const { data: rulesRows, error: rulesError } = await supabaseClient
+                    .from('scoring_rule_sets')
+                    .select('*')
+                    .eq('is_active', true)
+                    .eq('status', 'published')
+                    .limit(1);
+
+                if (rulesError || !rulesRows || rulesRows.length === 0) {
+                    if (rulesError) console.error('Error fetching active scoring rules:', rulesError);
+                    return fallback;
+                }
+
+                const rule = rulesRows[0];
+                const { data: tierRows, error: tiersError } = await supabaseClient
+                    .from('scoring_close_tiers')
+                    .select('*')
+                    .eq('rule_set_id', rule.id)
+                    .order('tier_order', { ascending: true });
+
+                if (tiersError) {
+                    console.error('Error fetching scoring close tiers:', tiersError);
+                }
+
+                const closeTiers = (tierRows || []).map(t => ({
+                    tierOrder: t.tier_order,
+                    withinPoints: t.within_points,
+                    bonusPoints: t.bonus_points
+                }));
+
+                return {
+                    id: rule.id,
+                    name: rule.name,
+                    status: rule.status,
+                    isActive: !!rule.is_active,
+                    correctResultPoints: rule.correct_result_points,
+                    perfectScoreBonus: rule.perfect_score_bonus,
+                    drawBonus: rule.draw_bonus,
+                    closeToleranceCap: rule.close_tolerance_cap,
+                    applyClosePerTeam: rule.apply_close_per_team !== false,
+                    maxJokersPerUser: rule.max_jokers_per_user,
+                    closeTiers: closeTiers.length > 0 ? closeTiers : fallback.closeTiers
+                };
+            },
+
+            // New multi-joker selections, returned as username => [matchId]
+            getUserJokerSelections: async () => {
+                const { data: userRows, error: usersError } = await supabaseClient
+                    .from('users')
+                    .select('id, username');
+
+                if (usersError) {
+                    console.error('Error fetching users for joker selection map:', usersError);
+                    return {};
+                }
+
+                const userIdToUsername = {};
+                (userRows || []).forEach(u => {
+                    const normalizedUsername = (u.username || '').trim().toLowerCase();
+                    if (normalizedUsername) userIdToUsername[u.id] = normalizedUsername;
+                });
+
+                const { data: selectionRows, error: selectionError } = await supabaseClient
+                    .from('user_joker_selections')
+                    .select('user_id, match_id');
+
+                if (selectionError) {
+                    console.error('Error fetching joker selections:', selectionError);
+                    return {};
+                }
+
+                const byUsername = {};
+                (selectionRows || []).forEach(row => {
+                    const username = userIdToUsername[row.user_id];
+                    if (!username) return;
+                    if (!byUsername[username]) byUsername[username] = [];
+                    byUsername[username].push(row.match_id);
+                });
+
+                Object.keys(byUsername).forEach(username => {
+                    byUsername[username] = [...new Set(byUsername[username])].sort((a, b) => a - b);
+                });
+
+                return byUsername;
+            },
+
+            // Save a scoring ruleset as draft and replace its close tiers.
+            // Returns the saved rule_set_id, or null on failure.
+            saveScoringRulesDraft: async (rules) => {
+                const normalized = {
+                    name: (rules && rules.name) ? String(rules.name).trim() : 'Untitled Rules',
+                    correct_result_points: Math.max(0, parseInt(rules && rules.correctResultPoints, 10) || 0),
+                    perfect_score_bonus: Math.max(0, parseInt(rules && rules.perfectScoreBonus, 10) || 0),
+                    draw_bonus: Math.max(0, parseInt(rules && rules.drawBonus, 10) || 0),
+                    close_tolerance_cap: Math.max(0, parseInt(rules && rules.closeToleranceCap, 10) || 0),
+                    apply_close_per_team: rules && rules.applyClosePerTeam !== false,
+                    max_jokers_per_user: Math.max(0, parseInt(rules && rules.maxJokersPerUser, 10) || 0),
+                    updated_at: new Date().toISOString()
+                };
+
+                let ruleSetId = rules && rules.id ? Number(rules.id) : null;
+                if (ruleSetId) {
+                    const { error: updateError } = await supabaseClient
+                        .from('scoring_rule_sets')
+                        .update({
+                            ...normalized,
+                            status: 'draft'
+                        })
+                        .eq('id', ruleSetId);
+                    if (updateError) {
+                        console.error('Error updating scoring rules draft:', updateError);
+                        return null;
+                    }
+                } else {
+                    const { data: inserted, error: insertError } = await supabaseClient
+                        .from('scoring_rule_sets')
+                        .insert({
+                            ...normalized,
+                            status: 'draft',
+                            is_active: false
+                        })
+                        .select('id')
+                        .single();
+                    if (insertError || !inserted) {
+                        console.error('Error inserting scoring rules draft:', insertError);
+                        return null;
+                    }
+                    ruleSetId = inserted.id;
+                }
+
+                const { error: deleteTiersError } = await supabaseClient
+                    .from('scoring_close_tiers')
+                    .delete()
+                    .eq('rule_set_id', ruleSetId);
+                if (deleteTiersError) {
+                    console.error('Error clearing existing scoring close tiers:', deleteTiersError);
+                    return null;
+                }
+
+                const normalizedTiers = ((rules && rules.closeTiers) || [])
+                    .map((tier, index) => ({
+                        rule_set_id: ruleSetId,
+                        tier_order: Math.min(3, Math.max(1, parseInt(tier && tier.tierOrder, 10) || index + 1)),
+                        within_points: Math.max(0, parseInt(tier && tier.withinPoints, 10) || 0),
+                        bonus_points: Math.max(0, parseInt(tier && tier.bonusPoints, 10) || 0)
+                    }))
+                    .slice(0, 3)
+                    .sort((a, b) => a.tier_order - b.tier_order);
+
+                if (normalizedTiers.length > 0) {
+                    const { error: insertTiersError } = await supabaseClient
+                        .from('scoring_close_tiers')
+                        .insert(normalizedTiers);
+                    if (insertTiersError) {
+                        console.error('Error inserting scoring close tiers:', insertTiersError);
+                        return null;
+                    }
+                }
+
+                return ruleSetId;
+            },
+
+            // Publish a ruleset by marking all others inactive first.
+            publishScoringRules: async (ruleSetId) => {
+                const targetId = Number(ruleSetId);
+                if (!targetId) return false;
+
+                const { error: deactivateError } = await supabaseClient
+                    .from('scoring_rule_sets')
+                    .update({ is_active: false })
+                    .eq('is_active', true);
+                if (deactivateError) {
+                    console.error('Error deactivating existing active rulesets:', deactivateError);
+                    return false;
+                }
+
+                const { error: activateError } = await supabaseClient
+                    .from('scoring_rule_sets')
+                    .update({
+                        status: 'published',
+                        is_active: true,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', targetId);
+                if (activateError) {
+                    console.error('Error publishing ruleset:', activateError);
+                    return false;
+                }
+
+                return true;
+            },
+
+            // Replace joker selections for a user with supplied match IDs.
+            saveUserJokerSelections: async (username, matchIds) => {
+                const normalizedUsername = (username || '').trim().toLowerCase();
+                if (!normalizedUsername) return false;
+
+                const { data: user, error: userError } = await supabaseClient
+                    .from('users')
+                    .select('id')
+                    .eq('username', normalizedUsername)
+                    .single();
+                if (userError || !user) {
+                    console.error('Error finding user for joker selection save:', userError);
+                    return false;
+                }
+
+                const { error: deleteError } = await supabaseClient
+                    .from('user_joker_selections')
+                    .delete()
+                    .eq('user_id', user.id);
+                if (deleteError) {
+                    console.error('Error clearing existing joker selections:', deleteError);
+                    return false;
+                }
+
+                const uniqueMatchIds = [...new Set((matchIds || [])
+                    .map(id => parseInt(id, 10))
+                    .filter(id => Number.isInteger(id) && id > 0))]
+                    .sort((a, b) => a - b);
+
+                if (uniqueMatchIds.length === 0) return true;
+
+                const rows = uniqueMatchIds.map(matchId => ({
+                    user_id: user.id,
+                    match_id: matchId
+                }));
+                const { error: insertError } = await supabaseClient
+                    .from('user_joker_selections')
+                    .insert(rows);
+                if (insertError) {
+                    console.error('Error inserting joker selections:', insertError);
+                    return false;
+                }
+
+                return true;
             }
         };
 
@@ -429,6 +682,8 @@
         let currentUsername = null;
         let adminUsernames = [];
         let appSettings = { predictionsLocked: false };
+        let activeScoringRules = null;
+        let userJokerSelections = {};
         let isGuest = false;
         let editingFixtureId = null;
         let editingPredictionContext = null;
@@ -533,16 +788,20 @@
                 showLoadingScreen();
                 
                 // Load all data in parallel
-                const [loadedUsers, loadedAdmins, loadedSettings, loadedMatches] = await Promise.all([
+                const [loadedUsers, loadedAdmins, loadedSettings, loadedMatches, loadedRules, loadedJokerSelections] = await Promise.all([
                     Storage.getUsers(),
                     Storage.getAdminUsernames(),
                     Storage.getSettings(),
-                    Storage.getMatches()
+                    Storage.getMatches(),
+                    Storage.getActiveScoringRules(),
+                    Storage.getUserJokerSelections()
                 ]);
                 
                 users = loadedUsers;
                 adminUsernames = loadedAdmins;
                 appSettings = loadedSettings;
+                activeScoringRules = loadedRules;
+                userJokerSelections = loadedJokerSelections;
                 
                 // Load matches from database or use defaults
                 if (loadedMatches && loadedMatches.length > 0) {
@@ -2032,9 +2291,8 @@
             const pendingPredictions = Math.max(0, matches.length - enteredPredictions);
             const triesEntered = userData.totalTries !== null && userData.totalTries !== undefined;
 
-            const jokerMatchId = userData.jokerMatchId;
-            const jokerMatch = matches.find(m => m.id === jokerMatchId);
-            const jokerSelected = !!(jokerMatch && jokerMatch.jokerEligible);
+            const jokerSelected = getUserSelectedJokerMatchIds(username)
+                .some(matchId => matches.some(m => m.id === matchId && m.jokerEligible));
 
             return {
                 enteredPredictions,
@@ -2216,7 +2474,7 @@
             team2Input.value = prediction ? prediction.team2 : '';
 
             if (jokerInput) {
-                const isCurrentJoker = users[username] && users[username].jokerMatchId === match.id;
+                const isCurrentJoker = isUserJokerForMatch(username, match.id);
                 jokerInput.checked = !!isCurrentJoker;
                 jokerInput.disabled = !match.jokerEligible;
             }
@@ -2375,7 +2633,7 @@
                 `;
 
                 roundMatches.forEach(match => {
-                    const isJoker = users[username] && users[username].jokerMatchId === match.id;
+                    const isJoker = isUserJokerForMatch(username, match.id);
                     const isMatchCompleted = match.actualScore1 !== null && match.actualScore2 !== null;
                     const userPrediction = users[username] && users[username].predictions
                         ? users[username].predictions[match.id]
@@ -2485,7 +2743,7 @@
 
                 roundMatches.forEach(match => {
 
-                const isJoker = users[currentUsername] && users[currentUsername].jokerMatchId === match.id;
+                const isJoker = isUserJokerForMatch(currentUsername, match.id);
                 const isMatchCompleted = match.actualScore1 !== null && match.actualScore2 !== null;
                 const userPrediction = users[currentUsername] && users[currentUsername].predictions
                     ? users[currentUsername].predictions[match.id]
@@ -2606,90 +2864,175 @@
             }
         }
 
+        function getEffectiveScoringRules() {
+            const fallback = {
+                correctResultPoints: 3,
+                perfectScoreBonus: 3,
+                drawBonus: 2,
+                closeToleranceCap: 20,
+                applyClosePerTeam: true,
+                maxJokersPerUser: 1,
+                closeTiers: [{ tierOrder: 1, withinPoints: 5, bonusPoints: 1 }]
+            };
+
+            const source = activeScoringRules || fallback;
+            const closeCap = Math.max(0, Number(source.closeToleranceCap ?? fallback.closeToleranceCap) || 0);
+            const closeTiers = ((source.closeTiers || fallback.closeTiers) || [])
+                .map((tier, index) => ({
+                    tierOrder: Math.max(1, Number(tier.tierOrder ?? index + 1) || index + 1),
+                    withinPoints: Math.max(0, Number(tier.withinPoints ?? 0) || 0),
+                    bonusPoints: Math.max(0, Number(tier.bonusPoints ?? 0) || 0)
+                }))
+                .filter(tier => tier.withinPoints <= closeCap)
+                .sort((a, b) => a.withinPoints - b.withinPoints)
+                .slice(0, 3);
+
+            return {
+                correctResultPoints: Math.max(0, Number(source.correctResultPoints ?? fallback.correctResultPoints) || 0),
+                perfectScoreBonus: Math.max(0, Number(source.perfectScoreBonus ?? fallback.perfectScoreBonus) || 0),
+                drawBonus: Math.max(0, Number(source.drawBonus ?? fallback.drawBonus) || 0),
+                closeToleranceCap: closeCap,
+                applyClosePerTeam: source.applyClosePerTeam !== false,
+                maxJokersPerUser: Math.max(0, Number(source.maxJokersPerUser ?? fallback.maxJokersPerUser) || 0),
+                closeTiers: closeTiers.length > 0 ? closeTiers : fallback.closeTiers
+            };
+        }
+
+        function getUserSelectedJokerMatchIds(username) {
+            const legacyJoker = users[username] ? users[username].jokerMatchId : null;
+            if (Number.isInteger(legacyJoker)) {
+                return [legacyJoker];
+            }
+
+            const fromNewTable = userJokerSelections && Array.isArray(userJokerSelections[username])
+                ? userJokerSelections[username]
+                : [];
+            if (fromNewTable.length > 0) {
+                return [...new Set(fromNewTable.map(id => Number(id)).filter(Number.isInteger))];
+            }
+
+            return [];
+        }
+
+        function isUserJokerForMatch(username, matchId) {
+            const parsedMatchId = Number(matchId);
+            if (!Number.isInteger(parsedMatchId)) return false;
+            return getUserSelectedJokerMatchIds(username).includes(parsedMatchId);
+        }
+
+        function findCloseTierForDiff(diff, rules) {
+            if (!Number.isFinite(diff) || diff < 0) return null;
+            const eligible = (rules.closeTiers || []).filter(tier => diff <= tier.withinPoints);
+            if (eligible.length === 0) return null;
+
+            return eligible.reduce((best, tier) => {
+                if (!best) return tier;
+                if (tier.bonusPoints > best.bonusPoints) return tier;
+                if (tier.bonusPoints === best.bonusPoints && tier.withinPoints < best.withinPoints) return tier;
+                return best;
+            }, null);
+        }
+
         // Shared scoring logic used across leaderboard, summary, and PDF export.
         function calculateMatchPoints(prediction, match, isJoker = false) {
             if (!prediction || match.actualScore1 === null || match.actualScore2 === null) {
                 return null;
             }
-
-            const actualResult = getResult(match.actualScore1, match.actualScore2);
-            const predictedResult = getResult(prediction.team1, prediction.team2);
-            let points = 0;
-
-            if (actualResult === predictedResult) {
-                points += 3;
-
-                const team1Diff = Math.abs(prediction.team1 - match.actualScore1);
-                const team2Diff = Math.abs(prediction.team2 - match.actualScore2);
-
-                if (team1Diff === 0 && team2Diff === 0) {
-                    points += 3;
-                } else {
-                    if (team1Diff <= 5) points += 1;
-                    if (team2Diff <= 5) points += 1;
-                }
-
-                if (actualResult === 'draw') {
-                    points += 2;
-                }
-            }
-
-            if (isJoker) {
-                points *= 2;
-            }
-
-            return points;
+            return getMatchPointsBreakdown(prediction, match, isJoker).points;
         }
 
         // Return both points and a short explanation for completed matches.
         function getMatchPointsBreakdown(prediction, match, isJoker = false) {
             if (!prediction || match.actualScore1 === null || match.actualScore2 === null) {
-                return { points: 0, summary: '' };
+                return {
+                    points: 0,
+                    summary: '',
+                    basePoints: 0,
+                    correctResult: false,
+                    perfectScore: false,
+                    team1CloseBonus: 0,
+                    team2CloseBonus: 0,
+                    drawBonus: 0,
+                    jokerApplied: false
+                };
             }
 
+            const rules = getEffectiveScoringRules();
             const actualResult = getResult(match.actualScore1, match.actualScore2);
             const predictedResult = getResult(prediction.team1, prediction.team2);
+            const correctResult = actualResult === predictedResult;
             const parts = [];
             let basePoints = 0;
+            let perfectScore = false;
+            let team1CloseBonus = 0;
+            let team2CloseBonus = 0;
+            let drawBonus = 0;
 
-            if (actualResult === predictedResult) {
-                basePoints += 3;
-                parts.push('Correct Result (+3)');
+            if (correctResult) {
+                if (rules.correctResultPoints > 0) {
+                    basePoints += rules.correctResultPoints;
+                    parts.push(`Correct Result (+${rules.correctResultPoints})`);
+                }
 
                 const team1Diff = Math.abs(prediction.team1 - match.actualScore1);
                 const team2Diff = Math.abs(prediction.team2 - match.actualScore2);
+                perfectScore = team1Diff === 0 && team2Diff === 0;
 
-                if (team1Diff === 0 && team2Diff === 0) {
-                    basePoints += 3;
-                    parts.push('Perfect Score (+3)');
-                } else {
-                    if (team1Diff <= 5) {
-                        basePoints += 1;
-                        parts.push(`${match.team1} Close Score (+1)`);
+                if (perfectScore) {
+                    if (rules.perfectScoreBonus > 0) {
+                        basePoints += rules.perfectScoreBonus;
+                        parts.push(`Perfect Score (+${rules.perfectScoreBonus})`);
                     }
-                    if (team2Diff <= 5) {
-                        basePoints += 1;
-                        parts.push(`${match.team2} Close Score (+1)`);
+                } else {
+                    if (rules.applyClosePerTeam) {
+                        const team1Tier = findCloseTierForDiff(team1Diff, rules);
+                        if (team1Tier && team1Tier.bonusPoints > 0) {
+                            team1CloseBonus = team1Tier.bonusPoints;
+                            basePoints += team1CloseBonus;
+                            parts.push(`${match.team1} Close Score (+${team1CloseBonus})`);
+                        }
+
+                        const team2Tier = findCloseTierForDiff(team2Diff, rules);
+                        if (team2Tier && team2Tier.bonusPoints > 0) {
+                            team2CloseBonus = team2Tier.bonusPoints;
+                            basePoints += team2CloseBonus;
+                            parts.push(`${match.team2} Close Score (+${team2CloseBonus})`);
+                        }
+                    } else {
+                        const bestTier = findCloseTierForDiff(Math.min(team1Diff, team2Diff), rules);
+                        if (bestTier && bestTier.bonusPoints > 0) {
+                            team1CloseBonus = bestTier.bonusPoints;
+                            basePoints += bestTier.bonusPoints;
+                            parts.push(`Close Score (+${bestTier.bonusPoints})`);
+                        }
                     }
                 }
 
-                if (actualResult === 'draw') {
-                    basePoints += 2;
-                    parts.push('Draw Bonus (+2)');
+                if (actualResult === 'draw' && rules.drawBonus > 0) {
+                    drawBonus = rules.drawBonus;
+                    basePoints += drawBonus;
+                    parts.push(`Draw Bonus (+${drawBonus})`);
                 }
             }
 
             let points = basePoints;
-            if (isJoker) {
+            const jokerApplied = !!isJoker && basePoints > 0;
+            if (jokerApplied) {
                 points *= 2;
                 parts.push(`Joker Bonus (x2: ${basePoints} to ${points})`);
             }
 
-            if (points === 0) {
-                return { points, summary: '' };
-            }
-
-            return { points, summary: parts.join(' + ') };
+            return {
+                points,
+                summary: points === 0 ? '' : parts.join(' + '),
+                basePoints,
+                correctResult,
+                perfectScore,
+                team1CloseBonus,
+                team2CloseBonus,
+                drawBonus,
+                jokerApplied
+            };
         }
 
         // Calculate points based on scoring rules
@@ -2700,7 +3043,7 @@
 
             matches.forEach(match => {
                 const prediction = user.predictions[match.id];
-                const matchPoints = calculateMatchPoints(prediction, match, user.jokerMatchId === match.id);
+                const matchPoints = calculateMatchPoints(prediction, match, isUserJokerForMatch(username, match.id));
                 if (matchPoints !== null) totalPoints += matchPoints;
             });
 
@@ -3235,59 +3578,33 @@
                     let pointsEarned = 0;
                     let pointsClass = 'points-0';
                     let tooltipContent = '';
-                    const isJoker = users[user.username].jokerMatchId === match.id;
+                    const isJoker = isUserJokerForMatch(user.username, match.id);
+                    const breakdown = hasResult
+                        ? getMatchPointsBreakdown(pred, match, isJoker)
+                        : null;
 
-                    if (hasResult) {
-                        const actualResult = getResult(match.actualScore1, match.actualScore2);
-                        const predictedResult = getResult(pred.team1, pred.team2);
+                    if (hasResult && breakdown) {
+                        pointsEarned = breakdown.points;
+                        if (breakdown.perfectScore) {
+                            pointsClass = 'points-perfect';
+                        } else if (breakdown.correctResult) {
+                            pointsClass = pointsEarned > 3 ? 'points-4' : 'points-3';
+                        }
 
-                        const team1Diff = Math.abs(pred.team1 - match.actualScore1);
-                        const team2Diff = Math.abs(pred.team2 - match.actualScore2);
-
-                        // Build tooltip content
                         tooltipContent += `<span class="tooltip-line">Predicted: ${pred.team1} - ${pred.team2}</span>`;
                         tooltipContent += `<span class="tooltip-line">Actual: ${match.actualScore1} - ${match.actualScore2}</span>`;
-
-                        if (actualResult === predictedResult) {
-                            pointsEarned = 3;
-                            pointsClass = 'points-3';
-                            tooltipContent += `<span class="tooltip-line correct">✓ Correct result: +3 pts</span>`;
-
-                            // Check for perfect score OR within 5 points
-                            if (team1Diff === 0 && team2Diff === 0) {
-                                pointsEarned += 3;
-                                pointsClass = 'points-perfect';
-                                tooltipContent += `<span class="tooltip-line bonus">🎯 Perfect score: +3 pts</span>`;
-                            } else {
-                                // 1 extra point for each team score within 5 points (max 2)
-                                if (team1Diff <= 5) {
-                                    pointsEarned += 1;
-                                    tooltipContent += `<span class="tooltip-line bonus">★ ${match.team1} score within 5: +1 pt</span>`;
-                                }
-                                if (team2Diff <= 5) {
-                                    pointsEarned += 1;
-                                    tooltipContent += `<span class="tooltip-line bonus">★ ${match.team2} score within 5: +1 pt</span>`;
-                                }
-                                if (team1Diff <= 5 || team2Diff <= 5) {
-                                    pointsClass = 'points-4';
-                                }
-                            }
-
-                            // Bonus 2 points for correctly predicting a draw
-                            if (actualResult === 'draw') {
-                                pointsEarned += 2;
-                                tooltipContent += `<span class="tooltip-line bonus">★ Draw bonus: +2 pts</span>`;
-                            }
+                        if (breakdown.summary) {
+                            breakdown.summary.split(' + ').forEach(part => {
+                                const className = part.startsWith('Joker Bonus')
+                                    ? 'joker-bonus'
+                                    : breakdown.correctResult
+                                        ? 'bonus'
+                                        : 'incorrect';
+                                tooltipContent += `<span class="tooltip-line ${className}">${part}</span>`;
+                            });
                         } else {
-                            tooltipContent += `<span class="tooltip-line incorrect">✗ Wrong result: 0 pts</span>`;
+                            tooltipContent += '<span class="tooltip-line incorrect">Wrong result (0)</span>';
                         }
-
-                        // Apply joker doubling
-                        if (isJoker) {
-                            tooltipContent += `<span class="tooltip-line joker-bonus">🃏 Joker: ${pointsEarned} × 2 = ${pointsEarned * 2} pts</span>`;
-                            pointsEarned *= 2;
-                        }
-
                         tooltipContent += `<span class="tooltip-line" style="margin-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 0.5rem;">Total: ${pointsEarned} pts</span>`;
                     }
 
@@ -3428,7 +3745,7 @@
 
             function getMatchPoints(username, match) {
                 const pred = users[username].predictions[match.id];
-                return calculateMatchPoints(pred, match, users[username].jokerMatchId === match.id);
+                return calculateMatchPoints(pred, match, isUserJokerForMatch(username, match.id));
             }
 
             function hexToRgb(hex) {
@@ -3595,7 +3912,7 @@
                 allMatches.forEach(match => {
                     const pred = users[user.username].predictions[match.id];
                     const hasResult = match.actualScore1 !== null && match.actualScore2 !== null;
-                    const isJoker = users[user.username].jokerMatchId === match.id;
+                    const isJoker = isUserJokerForMatch(user.username, match.id);
                     const pts = getMatchPoints(user.username, match);
 
                     if (!pred) {
@@ -4049,6 +4366,8 @@ CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);`;
 
                 // Update local data
                 users = loadedUsers;
+                activeScoringRules = await Storage.getActiveScoringRules();
+                userJokerSelections = await Storage.getUserJokerSelections();
                 if (loadedMatches && loadedMatches.length > 0) {
                     matches.length = 0;
                     loadedMatches.forEach(m => matches.push(m));
