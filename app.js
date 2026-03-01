@@ -1695,7 +1695,6 @@
 
             // Remove existing password
             users[username].passwordHash = null;
-            delete users[username].password;
             await Storage.saveUser(username, users[username]);
             
             alert(`Password removed for ${displayName}.`);
@@ -1749,7 +1748,7 @@
         function openProfile() {
             if (!currentUsername || !users[currentUsername]) return;
             const user = users[currentUsername];
-            const hasExistingPassword = !!(user.passwordHash || user.password);
+            const hasExistingPassword = !!user.passwordHash;
             const currentPasswordInput = document.getElementById('profileCurrentPassword');
             const passwordHint = document.getElementById('profilePasswordHint');
 
@@ -1801,7 +1800,7 @@
 
         async function saveProfile() {
             const user = users[currentUsername];
-            const hasExistingPassword = !!(user.passwordHash || user.password);
+            const hasExistingPassword = !!user.passwordHash;
             const nickname = document.getElementById('profileDisplayName').value.trim();
             const currentPassword = document.getElementById('profileCurrentPassword').value;
             const newPassword = document.getElementById('profileNewPassword').value;
@@ -1843,12 +1842,7 @@
                         return;
                     }
 
-                    let isValid = false;
-                    if (user.passwordHash) {
-                        isValid = await verifyPassword(currentPassword, user.passwordHash);
-                    } else if (user.password) {
-                        isValid = user.password === currentPassword;
-                    }
+                    const isValid = await verifyPassword(currentPassword, user.passwordHash);
 
                     if (!isValid) {
                         feedbackEl.textContent = 'Current password is incorrect.';
@@ -1880,7 +1874,6 @@
                 }
 
                 user.passwordHash = await hashPassword(newPassword);
-                delete user.password;
             }
 
             // Update display name and teams
@@ -1975,6 +1968,24 @@
             modal.classList.add('hidden');
         }
 
+        function setAdminFunctionsCollapsed(collapsed) {
+            const adminSection = document.getElementById('adminTabsSection');
+            const toggleBtn = document.getElementById('adminTabsToggle');
+            if (!adminSection) return;
+            const isCollapsed = !!collapsed;
+            adminSection.classList.toggle('collapsed', isCollapsed);
+            if (toggleBtn) {
+                toggleBtn.setAttribute('aria-expanded', String(!isCollapsed));
+            }
+        }
+
+        function toggleAdminFunctionsPanel() {
+            const adminSection = document.getElementById('adminTabsSection');
+            if (!adminSection) return;
+            const isCollapsed = adminSection.classList.contains('collapsed');
+            setAdminFunctionsCollapsed(!isCollapsed);
+        }
+
         // Calculate total actual tries in tournament
         function getTotalActualTries() {
             let total = 0;
@@ -2038,28 +2049,18 @@
                 return;
             }
 
-            const hasPassword = !!(users[username].passwordHash || users[username].password);
+            const hasPassword = !!users[username].passwordHash;
             if (hasPassword && !password) {
                 showLoginFeedback('Please enter both username and password.', 'error');
                 return;
             }
 
-            // Check password - support both hashed and legacy plain text passwords
+            // Check password
             let passwordValid = false;
             if (!hasPassword) {
                 passwordValid = true;
-            } else if (users[username].passwordHash) {
-                // New hashed password
+            } else {
                 passwordValid = await verifyPassword(password, users[username].passwordHash);
-            } else if (users[username].password) {
-                // Legacy plain text password - migrate to hash on successful login
-                if (users[username].password === password) {
-                    passwordValid = true;
-                    // Migrate to hashed password
-                    users[username].passwordHash = await hashPassword(password);
-                    delete users[username].password;
-                    await Storage.saveUser(username, users[username]);
-                }
             }
 
             if (!passwordValid) {
@@ -2213,6 +2214,7 @@
             document.querySelector('.tabs:not(.admin-tabs)').classList.remove('hidden');
             document.getElementById('logoutBtn').classList.remove('hidden');
             updateAdminTabsSubheading();
+            setAdminFunctionsCollapsed(true);
 
             // Load user's saved theme
             loadUserTheme();
@@ -2254,6 +2256,7 @@
             // Hide tabs - guests can only see summary
             document.querySelector('.tabs:not(.admin-tabs)').classList.add('hidden');
             document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
+            setAdminFunctionsCollapsed(true);
 
             // Change logout button to "Sign In"
             const logoutBtn = document.getElementById('logoutBtn');

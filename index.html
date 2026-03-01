@@ -151,17 +151,22 @@
                 <button class="tab active" onclick="showTab('summary')">Match Summary</button>
             </div>
 
-            <div class="admin-tabs-section admin-only hidden">
+            <div id="adminTabsSection" class="admin-tabs-section admin-only hidden collapsed">
                 <button class="admin-panel-help-btn" onclick="toggleAdminHelp()" title="Open admin help" aria-label="Open admin help">?</button>
-                <div class="admin-tabs-label">Admin Functions</div>
-                <div class="admin-tabs-subheading" id="adminTabsSubheading">These sections are only visible to admins</div>
-                <div class="tabs admin-tabs">
-                    <button class="tab" onclick="showTab('results')">Fixture Setup and Score Input</button>
-                    <button class="tab" onclick="showTab('scoreCorrections')">Edit Player Predictions</button>
-                    <button class="tab" onclick="showTab('competitors')">Competitor Mgmt.</button>
-                    <button class="tab" onclick="showTab('rules')">Rules Config</button>
-                    <button class="tab" onclick="showTab('prizeFund')">Prize Fund Setup</button>
-                    <button class="tab" onclick="showTab('recovery')">Database Recovery</button>
+                <button id="adminTabsToggle" class="admin-tabs-toggle" onclick="toggleAdminFunctionsPanel()" aria-expanded="false" aria-controls="adminTabsContent">
+                    <span class="admin-tabs-label">Admin Functions</span>
+                    <span class="admin-tabs-chevron">▾</span>
+                </button>
+                <div id="adminTabsContent" class="admin-tabs-content">
+                    <div class="admin-tabs-subheading" id="adminTabsSubheading">These sections are only visible to admins</div>
+                    <div class="tabs admin-tabs">
+                        <button class="tab" onclick="showTab('results')">Fixture Setup and Score Input</button>
+                        <button class="tab" onclick="showTab('scoreCorrections')">Edit Player Predictions</button>
+                        <button class="tab" onclick="showTab('competitors')">Competitor Mgmt.</button>
+                        <button class="tab" onclick="showTab('rules')">Rules Config</button>
+                        <button class="tab" onclick="showTab('prizeFund')">Prize Fund Setup</button>
+                        <button class="tab" onclick="showTab('recovery')">Database Recovery</button>
+                    </div>
                 </div>
             </div>
 
