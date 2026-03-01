@@ -4090,7 +4090,7 @@
                 estimatedTotalTries = Math.round((totalActualTries / completedTriesMatches) * totalMatchCount);
             }
 
-            // --- Build header rows (fixture header spans Home/Away score columns) ---
+            // --- Build header rows (fixture header spans Home/Away/Points columns) ---
             const teamAbbr = {
                 England: 'ENG',
                 France: 'FRA',
@@ -4106,7 +4106,7 @@
                 { content: 'Score', styles: { halign: 'center' } },
                 ...allMatches.map(m => ({
                     content: m.date + '\n' + m.time,
-                    colSpan: 2,
+                    colSpan: 3,
                     styles: {
                         halign: 'center',
                         overflow: 'visible',
@@ -4123,7 +4123,8 @@
                 { content: '', styles: { halign: 'center' } },
                 ...allMatches.flatMap(m => ([
                     { content: teamAbbr[m.team1] || m.team1, styles: { halign: 'center', fontSize: 5.2 } },
-                    { content: teamAbbr[m.team2] || m.team2, styles: { halign: 'center', fontSize: 5.2 } }
+                    { content: teamAbbr[m.team2] || m.team2, styles: { halign: 'center', fontSize: 5.2 } },
+                    { content: 'Pts', styles: { halign: 'center', fontSize: 5.2 } }
                 ])),
                 { content: '', styles: { halign: 'center' } }
             ];
@@ -4153,7 +4154,8 @@
                     }
                     return [
                         { content: home, styles: { textColor: homeColor, fontStyle: 'bold', fontSize: 6, halign: 'center' } },
-                        { content: away, styles: { textColor: awayColor, fontStyle: 'bold', fontSize: 6, halign: 'center' } }
+                        { content: away, styles: { textColor: awayColor, fontStyle: 'bold', fontSize: 6, halign: 'center' } },
+                        { content: '', styles: { textColor: hexToRgb(C.gray), fontStyle: 'bold', fontSize: 6, halign: 'center' } }
                     ];
                 }).flat(),
                 { content: '', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', fontSize: 6.5 } }
@@ -4174,14 +4176,15 @@
                         {
                             content: awayTries,
                             styles: { textColor: m.actualTries2 !== null ? hexToRgb(C.black) : hexToRgb(C.gray), fontStyle: 'bold', fontSize: 6, halign: 'center' }
-                        }
+                        },
+                        { content: '', styles: { textColor: hexToRgb(C.gray), fontStyle: 'bold', fontSize: 6, halign: 'center' } }
                     ];
                 }).flat(),
                 { content: completedTriesMatches > 0 ? totalActualTries + ' (' + estimatedTotalTries + ')' : '', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', fontSize: 6.5 } }
             ];
 
-            // --- Build data rows (scores row + merged points row per user) ---
-            const dataRows = sortedUsers.flatMap((user, index) => {
+            // --- Build data rows (single row per user with per-match points cell) ---
+            const dataRows = sortedUsers.map((user, index) => {
                 let rank = index + 1;
                 if (index > 0 && sortedUsers[index - 1].totalPoints === user.totalPoints) {
                     for (let i = index - 1; i >= 0; i--) {
@@ -4195,12 +4198,6 @@
                     { content: String(user.totalPoints), styles: { fontStyle: 'bold', textColor: hexToRgb(C.pointsFg), fontSize: 9 } },
                 ];
 
-                const pointsRow = [
-                    { content: '', styles: { textColor: hexToRgb(C.gray) } },
-                    { content: '', styles: { textColor: hexToRgb(C.gray) } },
-                    { content: '', styles: { textColor: hexToRgb(C.gray) } },
-                ];
-
                 allMatches.forEach(match => {
                     const pred = users[user.username].predictions[match.id];
                     const hasResult = match.actualScore1 !== null && match.actualScore2 !== null;
@@ -4210,7 +4207,7 @@
                     if (!pred) {
                         scoreRow.push({ content: '\u2014', styles: { textColor: hexToRgb(C.gray), fontSize: 6 } });
                         scoreRow.push({ content: '\u2014', styles: { textColor: hexToRgb(C.gray), fontSize: 6 } });
-                        pointsRow.push({ content: '\u2014', colSpan: 2, styles: { textColor: hexToRgb(C.gray), fontSize: 5.5, halign: 'center' } });
+                        scoreRow.push({ content: '\u2014', styles: { textColor: hexToRgb(C.gray), fontSize: 5.5, halign: 'center' } });
                         return;
                     }
 
@@ -4238,18 +4235,17 @@
                     scoreRow.push({ content: String(pred.team1) + (isJoker ? '*' : ''), styles: homeStyles });
                     scoreRow.push({ content: String(pred.team2) + (isJoker ? '*' : ''), styles: awayStyles });
 
-                    const ptsText = pts === null ? '' : `${pts} pts`;
+                    const ptsText = pts === null ? '' : String(pts);
                     const ptsColor = pts === null
                         ? hexToRgb(C.gray)
                         : pts === 0
                             ? [184, 92, 0] // dark orange
                             : hexToRgb('#1F5FBF'); // blue
-                    pointsRow.push({
+                    scoreRow.push({
                         content: ptsText,
-                        colSpan: 2,
                         styles: {
                             textColor: ptsColor,
-                            fontSize: 5.5,
+                            fontSize: 6.5,
                             halign: 'center',
                             fontStyle: pts !== null && pts > 3 ? 'bold' : 'normal'
                         }
@@ -4262,31 +4258,27 @@
                     content: userTries != null ? String(userTries) : '\u2014',
                     styles: { textColor: hexToRgb(C.black) }
                 });
-                pointsRow.push({
-                    content: '',
-                    styles: { textColor: hexToRgb(C.gray) }
-                });
 
-                return [scoreRow, pointsRow];
+                return scoreRow;
             });
 
             // --- Render table ---
             const pageWidth = doc.internal.pageSize.getWidth();
-            const marginLR = 6;
+            const marginLR = 4;
             const tableWidth = pageWidth - marginLR * 2;
-            const scoreColumnCount = allMatches.length * 2;
-            const fixedWidth = 7 + 24 + 11 + 12; // rank + name + score + tries
-            const matchColWidth = Math.max(6.4, (tableWidth - fixedWidth) / scoreColumnCount);
+            const scoreColumnCount = allMatches.length * 3;
+            const fixedWidth = 6 + 20 + 9 + 10; // rank + name + score + tries
+            const matchColWidth = Math.max(4.2, (tableWidth - fixedWidth) / scoreColumnCount);
             const triesColIndex = 3 + scoreColumnCount;
             const colStyles = {
-                0: { cellWidth: 7 },
-                1: { cellWidth: 24 },
-                2: { cellWidth: 11 },
+                0: { cellWidth: 6 },
+                1: { cellWidth: 20 },
+                2: { cellWidth: 9 },
             };
             for (let i = 3; i < triesColIndex; i++) {
                 colStyles[i] = { cellWidth: matchColWidth };
             }
-            colStyles[triesColIndex] = { cellWidth: 12 };
+            colStyles[triesColIndex] = { cellWidth: 10 };
 
             doc.autoTable({
                 head: [headerRowTop, headerRowBottom],
@@ -4295,33 +4287,36 @@
                 theme: 'grid',
                 tableWidth: tableWidth,
                 styles: {
-                    fontSize: 6.5,
-                    cellPadding: 0.8,
+                    fontSize: 5.8,
+                    cellPadding: 0.45,
                     lineColor: hexToRgb(C.border),
                     lineWidth: 0.2,
                     halign: 'center',
                     valign: 'middle',
-                    overflow: 'visible',
+                    overflow: 'hidden',
                     font: 'helvetica',
                 },
                 headStyles: {
                     fillColor: hexToRgb(C.white),
                     textColor: hexToRgb(C.black),
                     fontStyle: 'bold',
-                    fontSize: 5.5,
-                    cellPadding: 0.6,
+                    fontSize: 4.8,
+                    cellPadding: 0.35,
                     halign: 'center',
                     lineColor: hexToRgb(C.border),
                     lineWidth: 0.3,
                 },
                 columnStyles: colStyles,
                 didParseCell: function(data) {
-                    // Subtle striping for user rows (skip the "Actual Result" row at index 0).
+                    // Subtle striping for user rows.
                     // Keep any explicit per-cell fill (e.g. exact-score highlight) untouched.
-                    if (data.section === 'body' && data.row.index > 0) {
+                    if (data.section === 'body' && data.row.index >= 2) {
                         const hasExplicitFill = Array.isArray(data.cell.styles.fillColor);
-                        if (!hasExplicitFill && data.row.index % 2 === 0) {
-                            data.cell.styles.fillColor = [248, 248, 248];
+                        if (!hasExplicitFill) {
+                            const userRowIndex = data.row.index - 2;
+                            if (userRowIndex % 2 === 0) {
+                                data.cell.styles.fillColor = [248, 248, 248];
+                            }
                         }
                     }
 
@@ -4329,8 +4324,8 @@
                     if (data.column.index === 2) {
                         data.cell.styles.lineWidth = { bottom: 0.2, top: 0.2, left: 0.2, right: 0.5 };
                     }
-                    // Thicker separators after each Away score column.
-                    if (data.column.index >= 3 && data.column.index < triesColIndex && ((data.column.index - 3) % 2 === 1)) {
+                    // Thicker separators after each match block (home, away, points).
+                    if (data.column.index >= 3 && data.column.index < triesColIndex && ((data.column.index - 3) % 3 === 2)) {
                         const lw = data.cell.styles.lineWidth;
                         if (typeof lw === 'object') {
                             lw.right = 0.5;
@@ -4338,8 +4333,8 @@
                             data.cell.styles.lineWidth = { bottom: 0.2, top: 0.2, left: 0.2, right: 0.5 };
                         }
                     }
-                    // Thicker separators before each Home score column.
-                    if (data.column.index >= 3 && data.column.index < triesColIndex && ((data.column.index - 3) % 2 === 0)) {
+                    // Thicker separators before each match block.
+                    if (data.column.index >= 3 && data.column.index < triesColIndex && ((data.column.index - 3) % 3 === 0)) {
                         const lw = data.cell.styles.lineWidth;
                         if (typeof lw === 'object') {
                             lw.left = 0.5;
@@ -4355,6 +4350,19 @@
                         } else {
                             data.cell.styles.lineWidth = { bottom: 0.5, top: 0.2, left: 0.2, right: data.column.index === 2 ? 0.5 : 0.2 };
                         }
+                    }
+
+                    // Thicker horizontal borders around each user's row.
+                    if (data.section === 'body' && data.row.index >= 2) {
+                        const current = data.cell.styles.lineWidth;
+                        const normalized = typeof current === 'object'
+                            ? current
+                            : { top: current || 0.2, bottom: current || 0.2, left: current || 0.2, right: current || 0.2 };
+
+                        normalized.top = Math.max(normalized.top || 0.2, 0.45);
+                        normalized.bottom = Math.max(normalized.bottom || 0.2, 0.45);
+
+                        data.cell.styles.lineWidth = normalized;
                     }
                 },
                 margin: { top: 10, left: marginLR, right: marginLR },
