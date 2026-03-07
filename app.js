@@ -523,41 +523,6 @@
                 return data || [];
             },
 
-            deleteUsageEventsOlderThanLatest: async (keepLatest = 100) => {
-                const keepCount = Math.max(1, parseInt(keepLatest, 10) || 100);
-                const { data: allRows, error: listError } = await supabaseClient
-                    .from('usage_events')
-                    .select('id')
-                    .order('created_at', { ascending: false })
-                    .order('id', { ascending: false });
-
-                if (listError) {
-                    console.error('Error listing usage events for prune:', listError);
-                    return { deletedCount: 0, totalCount: 0 };
-                }
-
-                const ids = (allRows || []).map(row => row.id);
-                if (ids.length <= keepCount) {
-                    return { deletedCount: 0, totalCount: ids.length };
-                }
-
-                const toDelete = ids.slice(keepCount);
-                const chunkSize = 500;
-                for (let i = 0; i < toDelete.length; i += chunkSize) {
-                    const chunk = toDelete.slice(i, i + chunkSize);
-                    const { error: deleteError } = await supabaseClient
-                        .from('usage_events')
-                        .delete()
-                        .in('id', chunk);
-                    if (deleteError) {
-                        console.error('Error deleting usage events chunk:', deleteError);
-                        return { deletedCount: i, totalCount: ids.length };
-                    }
-                }
-
-                return { deletedCount: toDelete.length, totalCount: ids.length };
-            },
-
             clearUsageEvents: async () => {
                 const { error } = await supabaseClient
                     .from('usage_events')
@@ -750,11 +715,6 @@
                 return 1;
             },
 
-            // Single-row model: save is immediately active.
-            publishScoringRules: async (ruleSetId) => {
-                return true;
-            },
-
             // Replace joker selections for a user with supplied match IDs.
             saveUserJokerSelections: async (username, matchIds) => {
                 const normalizedUsername = (username || '').trim().toLowerCase();
@@ -844,7 +804,6 @@
         let appSettings = { predictionsLocked: false };
         let activeScoringRules = null;
         let userJokerSelections = {};
-        let scoringRulesDraftId = null;
         let rulesFormInitialized = false;
         let isGuest = false;
         let editingFixtureId = null;
@@ -2823,20 +2782,6 @@
             `;
         }
 
-        function getPredictionStatusLabel(prediction) {
-            if (!prediction) {
-                return '<span class="capture-status pending">-</span>';
-            }
-            return `<span class="capture-status captured">${prediction.team1}-${prediction.team2}</span>`;
-        }
-
-        function getActualStatusLabel(match) {
-            if (match.actualScore1 === null || match.actualScore2 === null) {
-                return '<span class="capture-status pending">-</span>';
-            }
-            return `<span class="capture-status captured">${match.actualScore1}-${match.actualScore2}</span>`;
-        }
-
         function getCompactFixtureLabel(match) {
             return `<span class="prediction-fixture-label"><span class="prediction-fixture-team">${getFlag(match.team1)} ${getTeamAbbr(match.team1)}</span><span class="prediction-fixture-v">v</span><span class="prediction-fixture-team">${getTeamAbbr(match.team2)} ${getFlag(match.team2)}</span></span>`;
         }
@@ -3247,22 +3192,6 @@
             alert('Tournament tries saved.');
         }
         
-        // Legacy helper kept for compatibility with older UI hooks.
-        async function selectJoker(matchId) {
-            if (appSettings.predictionsLocked) return;
-            const requiredJokers = getRequiredJokerCount();
-            if (requiredJokers === 0) return;
-            const selected = getUserSelectedJokerMatchIds(currentUsername);
-            if (!selected.includes(matchId)) {
-                if (selected.length >= requiredJokers) return;
-                selected.push(matchId);
-            }
-            setUserSelectedJokerMatchIds(currentUsername, selected);
-            await Storage.saveUserJokerSelections(currentUsername, selected);
-            // Re-render to update card highlight
-            renderMatches();
-        }
-
         // Update the outstanding predictions banner
         function updateOutstandingBanner() {
             const banner = document.getElementById('outstandingBanner');
@@ -5482,7 +5411,6 @@
 
         function readRulesFormData() {
             const data = {
-                id: scoringRulesDraftId,
                 correctResultPoints: parseRulesIntInput('rulesCorrectResultPoints'),
                 perfectScoreBonus: parseRulesIntInput('rulesPerfectScoreBonus'),
                 drawBonus: parseRulesIntInput('rulesDrawBonus'),
@@ -5707,9 +5635,7 @@
         function renderRulesTab() {
             if (!isCurrentUserAdmin()) return;
             initializeRulesTabBindings();
-            if (!scoringRulesDraftId) {
-                populateRulesForm(activeScoringRules);
-            }
+            populateRulesForm(activeScoringRules);
             updateRulesPublishState();
             renderRulesPreview();
         }
@@ -5717,9 +5643,7 @@
         function renderPrizeFundTab() {
             if (!isCurrentUserAdmin()) return;
             initializeRulesTabBindings();
-            if (!scoringRulesDraftId) {
-                populateRulesForm(activeScoringRules);
-            }
+            populateRulesForm(activeScoringRules);
             updateRulesPublishState();
         }
 
@@ -5744,20 +5668,13 @@
             });
 
             try {
-                payload.id = scoringRulesDraftId;
                 const savedId = await Storage.saveScoringRulesDraft(payload);
                 if (!savedId) {
                     setRulesFeedback('Failed to save rules.', 'error');
                     return;
                 }
-                const published = await Storage.publishScoringRules(savedId);
-                if (!published) {
-                    setRulesFeedback('Failed to save rules.', 'error');
-                    return;
-                }
 
                 activeScoringRules = await Storage.getActiveScoringRules();
-                scoringRulesDraftId = null;
                 populateRulesForm(activeScoringRules);
                 setRulesFeedback('Rules saved successfully.', 'success');
                 renderRulesPreview();
@@ -5775,7 +5692,6 @@
         async function revertRulesToSaved() {
             if (!isCurrentUserAdmin()) return;
             activeScoringRules = await Storage.getActiveScoringRules();
-            scoringRulesDraftId = null;
             populateRulesForm(activeScoringRules);
             setRulesFeedback('Form reset to saved rules.', 'info');
             updateRulesPublishState();
@@ -6179,15 +6095,6 @@ CREATE POLICY "Allow all access to usage_events" ON usage_events FOR ALL USING (
             container.innerHTML = '<p style="opacity:0.8;">Loading usage events...</p>';
             usageReportEvents = await Storage.getUsageEvents(100);
             renderUsageReportTable();
-        }
-
-        async function pruneUsageEventsKeepLatest() {
-            if (!isCurrentUserAdmin()) return;
-            if (!confirm('Remove all usage events older than the latest 100?')) return;
-
-            const result = await Storage.deleteUsageEventsOlderThanLatest(100);
-            alert(`Removed ${result.deletedCount} older usage event(s).`);
-            await renderUsageReport();
         }
 
         async function clearAllUsageEvents() {

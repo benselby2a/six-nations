@@ -103,7 +103,7 @@ Array of fixtures/results:
 - `Storage.saveMatches`
 - `Storage.saveAdminUsernames`
 - `Storage.saveSettings`
-- `Storage.saveScoringRulesDraft`, `Storage.publishScoringRules`
+- `Storage.saveScoringRulesDraft`
 - `Storage.saveUserJokerSelections`
 
 This is the main browser-to-Supabase boundary.
@@ -114,7 +114,6 @@ This is the main browser-to-Supabase boundary.
 - `loadPredictions`
 - `autoSavePredictions`
 - `saveTournamentTries`
-- `selectJoker`
 - `getPredictionChecklistStatus`
 
 ### Admin workflows
