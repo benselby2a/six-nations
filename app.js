@@ -452,7 +452,7 @@
                 const usagePayload = usageEvent && Object.prototype.hasOwnProperty.call(usageEvent, 'payload')
                     ? usageEvent.payload
                     : formatUsagePayload({ matchesData: matchesData || [] });
-                trackUsage(usageAction, usagePayload);
+                await Storage.trackUsageEvent(getUsageActor(), usageAction, usagePayload);
             },
             
             // Admin usernames
