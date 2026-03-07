@@ -2292,7 +2292,7 @@
         }
 
         // Change theme
-        async function changeTheme(theme, persistToUser = true) {
+        function changeTheme(theme) {
             const normalizedTheme = ['classic', 'retro', 'dark'].includes(theme) ? theme : 'classic';
 
             // Apply theme to document
@@ -2315,16 +2315,6 @@
             } catch (error) {
                 // Ignore storage errors.
             }
-            
-            // Save to user's account if logged in
-            if (persistToUser && currentUsername && users[currentUsername]) {
-                users[currentUsername].theme = normalizedTheme;
-                try {
-                    await Storage.saveUser(currentUsername, users[currentUsername]);
-                } catch (error) {
-                    console.error('Failed to persist theme to user profile:', error);
-                }
-            }
         }
 
         // Load user's saved theme
@@ -2336,8 +2326,7 @@
                 storageTheme = '';
             }
             const cookieTheme = (getCookie(THEME_COOKIE_NAME) || '').trim().toLowerCase();
-            const userTheme = currentUsername && users[currentUsername] ? users[currentUsername].theme : null;
-            changeTheme(storageTheme || cookieTheme || userTheme || 'classic', false);
+            changeTheme(storageTheme || cookieTheme || 'classic');
         }
 
         function toggleGlobalHelp() {
@@ -3368,6 +3357,17 @@
             }
 
             return [];
+        }
+
+        function getStoredUserJokerMatchIds(username) {
+            const normalizedUsername = (username || '').trim().toLowerCase();
+            if (!normalizedUsername) return [];
+            const storedSelections = userJokerSelections && Array.isArray(userJokerSelections[normalizedUsername])
+                ? userJokerSelections[normalizedUsername]
+                : [];
+
+            return [...new Set(storedSelections.map(id => Number(id)).filter(Number.isInteger))]
+                .sort((a, b) => a - b);
         }
 
         function setUserSelectedJokerMatchIds(username, matchIds) {
@@ -5980,7 +5980,7 @@ CREATE POLICY "Allow all access to usage_events" ON usage_events FOR ALL USING (
                 sql += '\n-- Insert user joker selections\n';
                 userList.forEach((username, userIndex) => {
                     const userId = userIndex + 1;
-                    const selectedJokers = getUserSelectedJokerMatchIds(username);
+                    const selectedJokers = getStoredUserJokerMatchIds(username);
                     selectedJokers.forEach(matchId => {
                         sql += `INSERT INTO user_joker_selections (user_id, match_id) VALUES (${userId}, ${matchId});\n`;
                     });
