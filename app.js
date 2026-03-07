@@ -4071,6 +4071,34 @@
             return groups.find(group => rank >= group.startRank && rank <= group.endRank) || null;
         }
 
+        function formatOrdinalRank(rank) {
+            const mod100 = rank % 100;
+            if (mod100 >= 11 && mod100 <= 13) return `${rank}th`;
+            switch (rank % 10) {
+                case 1: return `${rank}st`;
+                case 2: return `${rank}nd`;
+                case 3: return `${rank}rd`;
+                default: return `${rank}th`;
+            }
+        }
+
+        function formatPrizeRankLabel(group, fallbackLabel, fallbackPct, rules) {
+            if (!group) return `${fallbackLabel} (${fallbackPct}%)`;
+            if (group.startRank === group.endRank) return `${formatOrdinalRank(group.startRank)} Place (${fallbackPct}%)`;
+
+            const occupiedRanks = [];
+            for (let rank = group.startRank; rank <= group.endRank; rank += 1) {
+                if (rank >= 1 && rank <= 3) occupiedRanks.push(rank);
+            }
+            const combinedPct = occupiedRanks.reduce((sum, rank) => {
+                if (rank === 1) return sum + (Number(rules?.payoutFirstPct) || 0);
+                if (rank === 2) return sum + (Number(rules?.payoutSecondPct) || 0);
+                if (rank === 3) return sum + (Number(rules?.payoutThirdPct) || 0);
+                return sum;
+            }, 0);
+            return `${formatOrdinalRank(group.startRank)}-${formatOrdinalRank(group.endRank)} Place (${combinedPct}%)`;
+        }
+
         function formatNamesForUsers(userList) {
             return (userList || []).map(u => toTitleCase(u.nickname || u.username)).join(', ');
         }
@@ -4084,8 +4112,22 @@
             const rank1Group = getRankGroupForRank(projection.groups, 1);
             const rank2Group = getRankGroupForRank(projection.groups, 2);
             const rank3Group = getRankGroupForRank(projection.groups, 3);
+            const displayedPrizeGroups = new Set();
 
-            const rankLine = (label, pct, group) => {
+            const rankLine = (fallbackLabel, fallbackPct, group) => {
+                if (group) {
+                    const groupKey = `${group.startRank}-${group.endRank}`;
+                    if (displayedPrizeGroups.has(groupKey)) {
+                        return `
+                            <div class="prize-rank-cell">
+                                <div class="prize-row-head">${fallbackLabel} (${fallbackPct}%)</div>
+                                <div class="prize-row-body">Included in tied ${formatOrdinalRank(group.startRank)}-${formatOrdinalRank(group.endRank)} payout</div>
+                                <div class="prize-row-amount">${formatCurrencyAmount(0)}</div>
+                            </div>
+                        `;
+                    }
+                    displayedPrizeGroups.add(groupKey);
+                }
                 const names = group ? formatNamesForUsers(group.users) : 'TBD';
                 const share = group && group.users.length > 0
                     ? projection.leaderboardPayouts[group.users[0].username] || 0
@@ -4093,7 +4135,7 @@
                 const amountSuffix = group && group.users.length > 1 ? ' each' : '';
                 return `
                     <div class="prize-rank-cell">
-                        <div class="prize-row-head">${label} (${pct}%)</div>
+                        <div class="prize-row-head">${formatPrizeRankLabel(group, fallbackLabel, fallbackPct, rules)}</div>
                         <div class="prize-row-body">${names}</div>
                         <div class="prize-row-amount">${formatCurrencyAmount(share)}${amountSuffix}</div>
                     </div>
