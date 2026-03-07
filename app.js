@@ -2351,6 +2351,7 @@
         function loginAsGuest() {
             isGuest = true;
             currentUsername = null;
+            setRememberedUsername('guest');
             trackUsage('guest logs in', formatUsagePayload({ mode: 'guest' }), 'guest');
             showAppAsGuest();
         }
@@ -6264,7 +6265,12 @@ CREATE POLICY "Allow all access to usage_events" ON usage_events FOR ALL USING (
 
             // Check for saved user cookie and auto-login
             const savedUsername = getRememberedUsername();
-            if (savedUsername && users[savedUsername]) {
+            if (savedUsername === 'guest') {
+                isGuest = true;
+                currentUsername = null;
+                trackUsage('guest logs in', formatUsagePayload({ source: 'cookie_auto_login' }), 'guest');
+                showAppAsGuest();
+            } else if (savedUsername && users[savedUsername]) {
                 currentUsername = savedUsername;
                 trackUsage('user logs in', formatUsagePayload({ username: savedUsername, source: 'cookie_auto_login' }), savedUsername);
                 showApp();
