@@ -21,6 +21,8 @@
             { id: 14, round: 5, date: 'Sat, Mar 14', time: '16:40', team1: 'Wales', team2: 'Italy', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null, jokerEligible: false },
             { id: 15, round: 5, date: 'Sat, Mar 14', time: '20:10', team1: 'France', team2: 'England', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null, jokerEligible: false }
         ];
+        let stattoFactIndex = null;
+        let trevsTipsLoadout = null;
 
         // Country flags mapping
         const countryFlags = {
@@ -3462,6 +3464,444 @@
             return 'draw';
         }
 
+        function formatStatNameList(usernames) {
+            const names = (usernames || []).map(username => isAiPlayer(username) ? `${getDisplayName(username)} (boo, hiss!)` : getDisplayName(username));
+            if (names.length === 0) return '';
+            if (names.length === 1) return names[0];
+            if (names.length === 2) return `${names[0]} and ${names[1]}`;
+            if (names.length === 3) return `${names[0]}, ${names[1]} and ${names[2]}`;
+            return `${names.slice(0, 3).join(', ')} and ${names.length - 3} others`;
+        }
+
+        function formatActualScoreline(match) {
+            return `${match.team1} ${match.actualScore1}-${match.actualScore2} ${match.team2}`;
+        }
+
+        function formatPredictedOutcomeSnippet(username, match, predictedResult, prediction) {
+            if (predictedResult === 'team1') {
+                return `opting for ${match.team1} over ${match.team2} with a ${prediction.team1}-${prediction.team2} card`;
+            }
+            if (predictedResult === 'team2') {
+                return `opting for ${match.team2} over ${match.team1} with a ${prediction.team1}-${prediction.team2} card`;
+            }
+            return `calling a ${prediction.team1}-${prediction.team2} draw in ${match.team1} vs ${match.team2}`;
+        }
+
+        function joinStattoExamples(exampleList) {
+            const examples = Array.from(new Set((exampleList || []).filter(Boolean)));
+            if (examples.length === 0) return '';
+            if (examples.length === 1) return ` Example: ${examples[0]}.`;
+            if (examples.length === 2) return ` Examples include ${examples[0]} and ${examples[1]}.`;
+            return ` Examples include ${examples[0]}, ${examples[1]} and ${examples[2]}.`;
+        }
+
+        function joinStattoExamplesIfSmall(totalCount, exampleList) {
+            return totalCount > 2 ? '' : joinStattoExamples(exampleList);
+        }
+
+        function buildTournamentStattoFacts() {
+            const allUsers = Object.keys(users);
+            const completedScoreMatches = matches.filter(match => match.actualScore1 !== null && match.actualScore2 !== null);
+            if (allUsers.length === 0 || completedScoreMatches.length === 0) {
+                return ['The Statto is still sharpening the pencil. Once results land, the numbers will start talking.'];
+            }
+
+            const rules = getEffectiveScoringRules();
+            const statsByUser = {};
+            const recentWindowMatchIds = completedScoreMatches.slice(-3).map(match => match.id);
+            const fixtureSplitStats = [];
+
+            const ensureUserStats = (username) => {
+                if (!statsByUser[username]) {
+                    statsByUser[username] = {
+                        correctResults: 0,
+                        exactScores: 0,
+                        bonusPoints: 0,
+                        contrarianCalls: 0,
+                        contrarianCorrect: 0,
+                        correctDraws: 0,
+                        jokerBonusPoints: 0,
+                        jokerHits: 0,
+                        recentPoints: 0,
+                        currentStreak: 0,
+                        nearMisses: 0,
+                        closeCalls: 0,
+                        correctResultExamples: [],
+                        exactScoreExamples: [],
+                        bonusExamples: [],
+                        contrarianExamples: [],
+                        drawExamples: [],
+                        jokerExamples: [],
+                        recentExamples: [],
+                        streakExamples: [],
+                        nearMissExamples: [],
+                        closeCallExamples: []
+                    };
+                }
+                return statsByUser[username];
+            };
+
+            completedScoreMatches.forEach(match => {
+                const matchPredictions = allUsers
+                    .map(username => {
+                        const prediction = users[username] && users[username].predictions
+                            ? users[username].predictions[match.id]
+                            : null;
+                        if (!prediction || !Number.isFinite(prediction.team1) || !Number.isFinite(prediction.team2)) {
+                            return null;
+                        }
+
+                        return {
+                            username,
+                            prediction,
+                            predictedResult: getResult(prediction.team1, prediction.team2),
+                            breakdown: calculateMatchPointsBreakdownWithRules(
+                                prediction,
+                                match,
+                                isUserJokerForMatch(username, match.id),
+                                rules
+                            )
+                        };
+                    })
+                    .filter(Boolean);
+
+                if (matchPredictions.length === 0) return;
+
+                const supportCounts = { team1: 0, team2: 0, draw: 0 };
+                matchPredictions.forEach(entry => {
+                    supportCounts[entry.predictedResult] += 1;
+                });
+                const supportValues = Object.values(supportCounts).filter(count => count > 0);
+                const maxSupport = supportValues.length > 0 ? Math.max(...supportValues) : 0;
+                const minSupport = supportValues.length > 0 ? Math.min(...supportValues) : 0;
+
+                if (supportValues.length > 1) {
+                    fixtureSplitStats.push({
+                        match,
+                        spread: maxSupport - minSupport,
+                        supportCounts,
+                        totalPredictions: matchPredictions.length
+                    });
+                }
+
+                const predictedUsers = new Set(matchPredictions.map(entry => entry.username));
+                allUsers.forEach(username => {
+                    if (!predictedUsers.has(username)) {
+                        ensureUserStats(username).currentStreak = 0;
+                    }
+                });
+
+                matchPredictions.forEach(entry => {
+                    const userStats = ensureUserStats(entry.username);
+                    const prediction = entry.prediction;
+                    const breakdown = entry.breakdown;
+                    const totalDiff = Math.abs(prediction.team1 - match.actualScore1) + Math.abs(prediction.team2 - match.actualScore2);
+
+                    if (breakdown.correctResult) userStats.correctResults += 1;
+                    if (breakdown.correctResult) {
+                        userStats.correctResultExamples.push(`${getDisplayName(entry.username)} calling ${formatActualScoreline(match)}`);
+                    }
+                    if (breakdown.perfectScore) {
+                        userStats.exactScores += 1;
+                        userStats.exactScoreExamples.push(`${getDisplayName(entry.username)} nailing ${formatActualScoreline(match)}`);
+                    }
+                    if (breakdown.drawBonus > 0) {
+                        userStats.correctDraws += 1;
+                        userStats.drawExamples.push(`${getDisplayName(entry.username)} landing ${prediction.team1}-${prediction.team2} in ${match.team1} vs ${match.team2}`);
+                    }
+                    if (!breakdown.perfectScore && (breakdown.team1CloseBonus > 0 || breakdown.team2CloseBonus > 0)) {
+                        userStats.closeCalls += 1;
+                        userStats.closeCallExamples.push(`${getDisplayName(entry.username)} going ${prediction.team1}-${prediction.team2} on an actual ${match.actualScore1}-${match.actualScore2} in ${match.team1} vs ${match.team2}`);
+                    }
+                    if (breakdown.jokerApplied) {
+                        userStats.jokerHits += 1;
+                        userStats.jokerBonusPoints += breakdown.basePoints;
+                        userStats.jokerExamples.push(`${getDisplayName(entry.username)} doubling ${prediction.team1}-${prediction.team2} in ${match.team1} vs ${match.team2}`);
+                    }
+                    if (!breakdown.perfectScore && totalDiff <= 2) {
+                        userStats.nearMisses += 1;
+                        userStats.nearMissExamples.push(`${getDisplayName(entry.username)} going ${prediction.team1}-${prediction.team2} when ${formatActualScoreline(match)} was the final score`);
+                    }
+
+                    const baseResultPoints = breakdown.correctResult ? (Number(rules.correctResultPoints) || 0) : 0;
+                    const extraPoints = Math.max(0,
+                        breakdown.points
+                        - (breakdown.jokerApplied ? baseResultPoints * 2 : baseResultPoints)
+                    );
+                    userStats.bonusPoints += extraPoints;
+                    if (extraPoints > 0) {
+                        userStats.bonusExamples.push(`${getDisplayName(entry.username)} squeezing ${extraPoints} extra point${extraPoints === 1 ? '' : 's'} from ${prediction.team1}-${prediction.team2} in ${match.team1} vs ${match.team2}`);
+                    }
+
+                    if (supportCounts[entry.predictedResult] > 0 && supportCounts[entry.predictedResult] < maxSupport) {
+                        userStats.contrarianCalls += 1;
+                        userStats.contrarianExamples.push(formatPredictedOutcomeSnippet(entry.username, match, entry.predictedResult, prediction));
+                        if (breakdown.correctResult) userStats.contrarianCorrect += 1;
+                    }
+
+                    if (recentWindowMatchIds.includes(match.id)) {
+                        userStats.recentPoints += breakdown.points;
+                        if (breakdown.points > 0) {
+                            userStats.recentExamples.push(`${getDisplayName(entry.username)} taking ${breakdown.points} point${breakdown.points === 1 ? '' : 's'} from ${prediction.team1}-${prediction.team2} in ${match.team1} vs ${match.team2}`);
+                        }
+                    }
+
+                    if (breakdown.correctResult) {
+                        userStats.currentStreak += 1;
+                        userStats.streakExamples.push(`${getDisplayName(entry.username)} reading ${formatActualScoreline(match)} correctly`);
+                    } else {
+                        userStats.currentStreak = 0;
+                        userStats.streakExamples = [];
+                    }
+                });
+            });
+
+            const topUsersFor = (metric, minValue = 1) => {
+                const values = allUsers.map(username => ({
+                    username,
+                    value: statsByUser[username] ? statsByUser[username][metric] : 0
+                }));
+                const best = values.reduce((max, entry) => Math.max(max, entry.value), 0);
+                if (best < minValue) return null;
+                return {
+                    value: best,
+                    usernames: values.filter(entry => entry.value === best).map(entry => entry.username)
+                };
+            };
+            const gatherExamples = (usernames, field, limit = 2) => Array.from(new Set(
+                (usernames || []).flatMap(username => {
+                    const stats = statsByUser[username];
+                    return stats && Array.isArray(stats[field]) ? stats[field] : [];
+                })
+            )).slice(0, limit);
+
+            const factCandidates = [];
+            const correctResultsLeader = topUsersFor('correctResults');
+            if (correctResultsLeader) {
+                factCandidates.push(`${formatStatNameList(correctResultsLeader.usernames)} ${correctResultsLeader.usernames.length === 1 ? 'has' : 'have'} picked the most outright results correctly with ${correctResultsLeader.value}.${joinStattoExamplesIfSmall(correctResultsLeader.value, gatherExamples(correctResultsLeader.usernames, 'correctResultExamples'))}`);
+            }
+
+            const exactScoresLeader = topUsersFor('exactScores');
+            if (exactScoresLeader) {
+                factCandidates.push(`${formatStatNameList(exactScoresLeader.usernames)} ${exactScoresLeader.usernames.length === 1 ? 'leads' : 'lead'} the exact-score chart with ${exactScoresLeader.value}.${joinStattoExamplesIfSmall(exactScoresLeader.value, gatherExamples(exactScoresLeader.usernames, 'exactScoreExamples'))}`);
+            }
+
+            const bonusLeader = topUsersFor('bonusPoints');
+            if (bonusLeader) {
+                factCandidates.push(`${formatStatNameList(bonusLeader.usernames)} ${bonusLeader.usernames.length === 1 ? 'has banked' : 'have banked'} the biggest bonus haul so far with ${bonusLeader.value} extra point${bonusLeader.value === 1 ? '' : 's'}.${joinStattoExamplesIfSmall(bonusLeader.value, gatherExamples(bonusLeader.usernames, 'bonusExamples'))}`);
+            }
+
+            const contrarianLeader = topUsersFor('contrarianCalls');
+            if (contrarianLeader) {
+                factCandidates.push(`${formatStatNameList(contrarianLeader.usernames)} ${contrarianLeader.usernames.length === 1 ? 'owns' : 'own'} the boldest prediction sheet with ${contrarianLeader.value} contrarian call${contrarianLeader.value === 1 ? '' : 's'}.${joinStattoExamplesIfSmall(contrarianLeader.value, gatherExamples(contrarianLeader.usernames, 'contrarianExamples'))}`);
+            }
+
+            const contrarianRateEntries = allUsers
+                .map(username => {
+                    const stats = statsByUser[username] || {};
+                    const attempts = stats.contrarianCalls || 0;
+                    const wins = stats.contrarianCorrect || 0;
+                    return attempts >= 2 ? { username, rate: wins / attempts, wins, attempts } : null;
+                })
+                .filter(Boolean)
+                .sort((a, b) => b.rate - a.rate || b.wins - a.wins || a.username.localeCompare(b.username));
+            if (contrarianRateEntries.length > 0 && contrarianRateEntries[0].rate > 0) {
+                const bestRate = contrarianRateEntries[0].rate;
+                const bestEntries = contrarianRateEntries.filter(entry => entry.rate === bestRate && entry.wins === contrarianRateEntries[0].wins);
+                const bestUsernames = bestEntries.map(entry => entry.username);
+                factCandidates.push(`${formatStatNameList(bestUsernames)} ${bestEntries.length === 1 ? 'is' : 'are'} the sharpest outsider${bestEntries.length === 1 ? '' : 's'}, landing ${Math.round(bestRate * 100)}% of contrarian calls right.${joinStattoExamplesIfSmall(bestEntries[0].attempts, gatherExamples(bestUsernames, 'contrarianExamples'))}`);
+            }
+
+            const drawLeader = topUsersFor('correctDraws');
+            if (drawLeader) {
+                factCandidates.push(`${formatStatNameList(drawLeader.usernames)} ${drawLeader.usernames.length === 1 ? 'is' : 'are'} the draw specialist${drawLeader.usernames.length === 1 ? '' : 's'} with ${drawLeader.value} correct stalemate call${drawLeader.value === 1 ? '' : 's'}.${joinStattoExamplesIfSmall(drawLeader.value, gatherExamples(drawLeader.usernames, 'drawExamples'))}`);
+            }
+
+            const jokerLeader = topUsersFor('jokerBonusPoints');
+            if (jokerLeader) {
+                factCandidates.push(`${formatStatNameList(jokerLeader.usernames)} ${jokerLeader.usernames.length === 1 ? 'has squeezed' : 'have squeezed'} the most from joker selections, adding ${jokerLeader.value} bonus point${jokerLeader.value === 1 ? '' : 's'}.${joinStattoExamplesIfSmall(jokerLeader.value, gatherExamples(jokerLeader.usernames, 'jokerExamples'))}`);
+            }
+
+            const recentFormLeader = topUsersFor('recentPoints');
+            if (recentFormLeader) {
+                factCandidates.push(`Over the last ${recentWindowMatchIds.length} completed match${recentWindowMatchIds.length === 1 ? '' : 'es'}, ${formatStatNameList(recentFormLeader.usernames)} ${recentFormLeader.usernames.length === 1 ? 'has' : 'have'} been the form side of the competition with ${recentFormLeader.value} point${recentFormLeader.value === 1 ? '' : 's'}.${joinStattoExamplesIfSmall(recentWindowMatchIds.length, gatherExamples(recentFormLeader.usernames, 'recentExamples'))}`);
+            }
+
+            const streakLeader = topUsersFor('currentStreak');
+            if (streakLeader) {
+                factCandidates.push(`${formatStatNameList(streakLeader.usernames)} ${streakLeader.usernames.length === 1 ? 'is' : 'are'} riding the longest current correct-result streak at ${streakLeader.value}.${joinStattoExamplesIfSmall(streakLeader.value, gatherExamples(streakLeader.usernames, 'streakExamples', 1))}`);
+            }
+
+            const nearMissLeader = topUsersFor('nearMisses');
+            if (nearMissLeader) {
+                factCandidates.push(`${formatStatNameList(nearMissLeader.usernames)} ${nearMissLeader.usernames.length === 1 ? 'has come' : 'have come'} closest to perfect scorelines, with ${nearMissLeader.value} prediction${nearMissLeader.value === 1 ? '' : 's'} finishing within two points overall.${joinStattoExamplesIfSmall(nearMissLeader.value, gatherExamples(nearMissLeader.usernames, 'nearMissExamples'))}`);
+            }
+
+            if (factCandidates.length < 10) {
+                const closeCallLeader = topUsersFor('closeCalls');
+                if (closeCallLeader) {
+                    factCandidates.push(`${formatStatNameList(closeCallLeader.usernames)} ${closeCallLeader.usernames.length === 1 ? 'has turned' : 'have turned'} the most almost-there reads into close-score bonuses with ${closeCallLeader.value}.${joinStattoExamplesIfSmall(closeCallLeader.value, gatherExamples(closeCallLeader.usernames, 'closeCallExamples'))}`);
+                }
+            }
+
+            if (factCandidates.length < 10 && fixtureSplitStats.length > 0) {
+                const mostSplit = fixtureSplitStats.sort((a, b) => a.spread - b.spread || b.totalPredictions - a.totalPredictions)[0];
+                if (mostSplit) {
+                    factCandidates.push(`${mostSplit.match.team1} vs ${mostSplit.match.team2} has been the most divided fixture so far, with the room split ${mostSplit.supportCounts.team1}/${mostSplit.supportCounts.team2}/${mostSplit.supportCounts.draw} across home win, away win and draw calls.`);
+                }
+            }
+
+            const availableFacts = factCandidates.filter(Boolean);
+            if (availableFacts.length === 0) {
+                return ['The Statto is still sharpening the pencil. Once results land, the numbers will start talking.'];
+            }
+            return availableFacts;
+        }
+
+        function getStaticStattoFact(facts) {
+            if (!facts || facts.length === 0) {
+                return 'The Statto is still sharpening the pencil. Once results land, the numbers will start talking.';
+            }
+            if (stattoFactIndex === null) {
+                stattoFactIndex = Math.floor(Math.random() * facts.length);
+            }
+            return facts[stattoFactIndex % facts.length];
+        }
+
+        function pickRandomItem(list) {
+            if (!Array.isArray(list) || list.length === 0) return '';
+            return list[Math.floor(Math.random() * list.length)];
+        }
+
+        function getTrevsTipsLoadout() {
+            if (trevsTipsLoadout) return trevsTipsLoadout;
+
+            const leadIns = [
+                'Stop the presses',
+                'From the back page desk',
+                'After another rattle round the grounds',
+                'A fresh edition of Trev\'s Tips reports',
+                'The latest word from the Guesser press box'
+            ];
+            const soloOpeners = [
+                'is currently a one-person headline',
+                'has the column all to themselves',
+                'is writing the only byline in town',
+                'is monopolising the sports pages'
+            ];
+            const minorityOpeners = [
+                'The bold call belongs to',
+                'The daring prediction comes from',
+                'The contrarian line is being taken by',
+                'The brave souls in this edition are'
+            ];
+            const noPredictionLines = [
+                'the copy desk is still waiting for the first scoreline to come in',
+                'the predictions page is still blank for now',
+                'nobody has filed a scoreline with the desk just yet'
+            ];
+            const splitLeads = [
+                'The prediction desk currently reads',
+                'The early print run reads',
+                'The current verdict from the room is',
+                'The first count on the prediction slips reads'
+            ];
+
+            trevsTipsLoadout = {
+                leadIn: pickRandomItem(leadIns),
+                soloOpener: pickRandomItem(soloOpeners),
+                minorityOpener: pickRandomItem(minorityOpeners),
+                noPredictionLine: pickRandomItem(noPredictionLines),
+                splitLead: pickRandomItem(splitLeads),
+                gloucesterRef1: pickRandomItem([
+                    "showing the kind of form Gloucester had in the 2002-03 Zurich Premiership",
+                    "more dominant than Gloucester's pack on a muddy Kingsholm afternoon",
+                    "channeling serious Cherry and White energy",
+                    "playing it tighter than a Gloucester maul five metres out",
+                    "with the precision of a prime James Simpson-Daniel sidestep",
+                    "looking sharper than Mike Teague on a charge against the All Blacks",
+                    "more relentless than a Kingsholm crowd in full voice on a Friday night",
+                    "as solid as the Shed End faithful in December",
+                    "with the guile of a young Jeremy Guscott cutting through the defence",
+                    "fiercer than the Bath-Gloucester derby in the 80s",
+                    "tougher than playing at the Rec in February without gloves",
+                    "more committed than Phil Vickery scrummaging on a wet Wednesday",
+                    "steadier than Don Caskie slotting penalties in the wind",
+                    "showing more heart than Gloucester's 2003 Powergen Cup final win",
+                    "hungrier than a young Olly Morgan chasing a high ball",
+                    "more unpredictable than a Friday night under the lights at Kingsholm",
+                    "with the power of the Cherry and Whites in their Heineken Cup days",
+                    "as fearless as Marcel Garvey running at a full defence",
+                    "with the footwork of Terry Fanolua dancing through tackles",
+                    "hitting harder than Junior Paramore on a rampaging burst",
+                    "showing the consistency of Andy Gomarsall's box kicking",
+                    "as reliable as Henry Paul pulling the strings at fly-half",
+                    "more clinical than Ludovic Mercier slotting kicks from the touchline",
+                    "with the vision of Ryan Lamb spotting gaps in the defence",
+                    "as explosive as Lesley Vainikolo in full flight down the wing",
+                    "tougher than the Kingsholm pitch after a week of West Country rain",
+                    "showing the never-say-die attitude of the 2006-07 EDF Energy Cup winners",
+                    "as fired up as Kingsholm on derby day against Bath",
+                    "with the composure of Greig Laidlaw knocking over late pressure kicks in Cherry and White",
+                    "as clinical as Charlie Sharples finishing in the corner at full pace",
+                    "like Gloucester in full flow during those Heineken Cup nights under the lights"
+                ]),
+                gloucesterRef2: pickRandomItem([
+                    "showing the kind of form Gloucester had in the 2002-03 Zurich Premiership",
+                    "more dominant than Gloucester's pack on a muddy Kingsholm afternoon",
+                    "channeling serious Cherry and White energy",
+                    "playing it tighter than a Gloucester maul five metres out",
+                    "with the precision of a prime James Simpson-Daniel sidestep",
+                    "looking sharper than Mike Teague on a charge against the All Blacks",
+                    "more relentless than a Kingsholm crowd in full voice on a Friday night",
+                    "as solid as the Shed End faithful in December",
+                    "with the guile of a young Jeremy Guscott cutting through the defence",
+                    "fiercer than the Bath-Gloucester derby in the 80s",
+                    "tougher than playing at the Rec in February without gloves",
+                    "more committed than Phil Vickery scrummaging on a wet Wednesday",
+                    "steadier than Don Caskie slotting penalties in the wind",
+                    "showing more heart than Gloucester's 2003 Powergen Cup final win",
+                    "hungrier than a young Olly Morgan chasing a high ball",
+                    "more unpredictable than a Friday night under the lights at Kingsholm",
+                    "with the power of the Cherry and Whites in their Heineken Cup days",
+                    "as fearless as Marcel Garvey running at a full defence",
+                    "with the footwork of Terry Fanolua dancing through tackles",
+                    "hitting harder than Junior Paramore on a rampaging burst",
+                    "showing the consistency of Andy Gomarsall's box kicking",
+                    "as reliable as Henry Paul pulling the strings at fly-half",
+                    "more clinical than Ludovic Mercier slotting kicks from the touchline",
+                    "with the vision of Ryan Lamb spotting gaps in the defence",
+                    "as explosive as Lesley Vainikolo in full flight down the wing",
+                    "tougher than the Kingsholm pitch after a week of West Country rain",
+                    "showing the never-say-die attitude of the 2006-07 EDF Energy Cup winners",
+                    "as fired up as Kingsholm on derby day against Bath",
+                    "with the composure of Greig Laidlaw knocking over late pressure kicks in Cherry and White",
+                    "as clinical as Charlie Sharples finishing in the corner at full pace",
+                    "like Gloucester in full flow during those Heineken Cup nights under the lights"
+                ]),
+                worldCupClassic: pickRandomItem([
+                    "the 1995 World Cup final in Johannesburg",
+                    "France's stunning comeback against New Zealand in the 1999 World Cup semi-final",
+                    "Jonny Wilkinson's 2003 World Cup final drop goal in Sydney",
+                    "France v New Zealand in the 2007 World Cup quarter-final in Cardiff",
+                    "the 2007 World Cup final arm wrestle between South Africa and England"
+                ]),
+                internationalClassic: pickRandomItem([
+                    "Wales v Scotland with the roof shut and the noise bouncing off the Millennium Stadium",
+                    "England v France when the whole thing feels one dropped ball away from chaos",
+                    "Ireland v Wales on a cold Dublin afternoon with everything on the line",
+                    "Scotland v England when the Calcutta Cup gets properly feral",
+                    "France v Ireland when every phase looks like it might end up on a highlights reel"
+                ])
+            };
+            return trevsTipsLoadout;
+        }
+
+        function getTrevsTipsDisplayName(username) {
+            const displayName = getDisplayName(username);
+            return isAiPlayer(username) ? `${displayName} (boo, hiss!)` : displayName;
+        }
+
         // Update leaderboard
         function updateLeaderboard() {
             // Update tries stats and Trev's Tips
@@ -3485,9 +3925,11 @@
                 avgPerMatch = (totalActualTries / completedMatches).toFixed(1);
                 estimatedTotal = Math.round((totalActualTries / completedMatches) * totalMatches);
             }
+            const stattoFacts = buildTournamentStattoFacts();
+            const initialStattoFact = getStaticStattoFact(stattoFacts);
             
             container.innerHTML = `
-                <div class="tries-stats-title">Tournament Tries</div>
+                <div class="tries-stats-title">Tournament Stats</div>
                 <div class="tries-stats-grid">
                     <div class="tries-stat">
                         <div class="tries-stat-value">${totalActualTries}</div>
@@ -3506,6 +3948,10 @@
                         <div class="tries-stat-label">Estimated Total</div>
                     </div>
                 </div>
+                <div class="statto-callout">
+                    <div class="statto-title">The Statto</div>
+                    <div class="statto-body">${initialStattoFact}</div>
+                </div>
             `;
             
             // Update Trev's Tips
@@ -3522,10 +3968,11 @@
                 container.innerHTML = '';
                 return;
             }
+            const trevsLoadout = getTrevsTipsLoadout();
             
             // Get leaderboard data
             const leaderboardData = allUsers.map(username => ({
-                nickname: toTitleCase(users[username].nickname || username),
+                nickname: getTrevsTipsDisplayName(username),
                 points: calculatePoints(username),
                 username: username
             })).sort((a, b) => b.points - a.points);
@@ -3537,59 +3984,18 @@
             // Generate tips based on current state
             let tip = '';
             
-            const gloucesterRefs = [
-                "showing the kind of form Gloucester had in the 2002-03 Zurich Premiership",
-                "more dominant than Gloucester's pack on a muddy Kingsholm afternoon",
-                "channeling serious Cherry and White energy",
-                "playing it tighter than a Gloucester maul five metres out",
-                "with the precision of a prime James Simpson-Daniel sidestep",
-                "looking sharper than Mike Teague on a charge against the All Blacks",
-                "more relentless than a Kingsholm crowd in full voice on a Friday night",
-                "as solid as the Shed End faithful in December",
-                "with the guile of a young Jeremy Guscott cutting through the defence",
-                "fiercer than the Bath-Gloucester derby in the 80s",
-                "tougher than playing at the Rec in February without gloves",
-                "more committed than Phil Vickery scrummaging on a wet Wednesday",
-                "steadier than Don Caskie slotting penalties in the wind",
-                "showing more heart than Gloucester's 2003 Powergen Cup final win",
-                "hungrier than a young Olly Morgan chasing a high ball",
-                "more unpredictable than a Friday night under the lights at Kingsholm",
-                "with the power of the Cherry and Whites in their Heineken Cup days",
-                "as fearless as Marcel Garvey running at a full defence",
-                "with the footwork of Terry Fanolua dancing through tackles",
-                "hitting harder than Junior Paramore on a rampaging burst",
-                "showing the consistency of Andy Gomarsall's box kicking",
-                "as reliable as Henry Paul pulling the strings at fly-half",
-                "more clinical than Ludovic Mercier slotting kicks from the touchline",
-                "with the vision of Ryan Lamb spotting gaps in the defence",
-                "as explosive as Lesley Vainikolo in full flight down the wing",
-                "tougher than the Kingsholm pitch after a week of West Country rain",
-                "showing the never-say-die attitude of the 2006-07 EDF Energy Cup winners",
-                "as fired up as Kingsholm on derby day against Bath",
-                "with the composure of Greig Laidlaw knocking over late pressure kicks in Cherry and White",
-                "as clinical as Charlie Sharples finishing in the corner at full pace",
-                "like Gloucester in full flow during those Heineken Cup nights under the lights"
-            ];
-
-            const worldCupClassicRefs = [
-                "the 1995 World Cup final in Johannesburg",
-                "France's stunning comeback against New Zealand in the 1999 World Cup semi-final",
-                "Jonny Wilkinson's 2003 World Cup final drop goal in Sydney",
-                "France v New Zealand in the 2007 World Cup quarter-final in Cardiff",
-                "the 2007 World Cup final arm wrestle between South Africa and England"
-            ];
-            
-            const randomGloucester = gloucesterRefs[Math.floor(Math.random() * gloucesterRefs.length)];
-            const randomGloucester2 = gloucesterRefs[Math.floor(Math.random() * gloucesterRefs.length)];
-            const randomWorldCupClassic = worldCupClassicRefs[Math.floor(Math.random() * worldCupClassicRefs.length)];
+            const randomGloucester = trevsLoadout.gloucesterRef1;
+            const randomGloucester2 = trevsLoadout.gloucesterRef2;
+            const randomWorldCupClassic = trevsLoadout.worldCupClassic;
+            const randomInternationalClassic = trevsLoadout.internationalClassic;
             const nextMatch = matches.find(m => m.actualScore1 === null || m.actualScore2 === null);
-            const nextFixtureText = nextMatch
-                ? `Next up we have ${nextMatch.team1} vs ${nextMatch.team2} on ${nextMatch.date} at ${nextMatch.time}.`
-                : '';
-            const formatNameList = (nameList) => {
+            const formatHighlightedNameList = (nameList) => {
                 if (!nameList || nameList.length === 0) return '';
-                if (nameList.length <= 3) return nameList.join(', ');
-                return `${nameList.slice(0, 3).join(', ')} and ${nameList.length - 3} others`;
+                const highlighted = nameList.map(name => `<strong>${name}</strong>`);
+                if (highlighted.length === 1) return highlighted[0];
+                if (highlighted.length === 2) return `${highlighted[0]} and ${highlighted[1]}`;
+                if (highlighted.length === 3) return `${highlighted[0]}, ${highlighted[1]} and ${highlighted[2]}`;
+                return `${highlighted.slice(0, 3).join(', ')} and ${highlighted.length - 3} others`;
             };
 
             let nextMatchPredictionSummary = '';
@@ -3597,7 +4003,7 @@
                 const nextPredictions = allUsers
                     .map(username => ({
                         username,
-                        nickname: toTitleCase(users[username].nickname || username),
+                        nickname: getTrevsTipsDisplayName(username),
                         prediction: users[username] && users[username].predictions
                             ? users[username].predictions[nextMatch.id]
                             : null
@@ -3607,7 +4013,7 @@
                         Number.isFinite(entry.prediction.team2));
 
                 if (nextPredictions.length === 0) {
-                    nextMatchPredictionSummary = `No score predictions are in yet for ${nextMatch.team1} vs ${nextMatch.team2}.`;
+                    nextMatchPredictionSummary = `Eyes now turn to ${nextMatch.team1} vs ${nextMatch.team2} on ${nextMatch.date} at ${nextMatch.time}, but ${trevsLoadout.noPredictionLine}.`;
                 } else {
                     const team1Winners = [];
                     const team2Winners = [];
@@ -3626,29 +4032,42 @@
 
                     const totalPredictions = nextPredictions.length;
                     if (team1Winners.length === totalPredictions) {
-                        nextMatchPredictionSummary = `Prediction split: everyone is backing ${nextMatch.team1}.`;
+                        nextMatchPredictionSummary = `Attention now shifts to ${nextMatch.team1} vs ${nextMatch.team2} on ${nextMatch.date} at ${nextMatch.time}. The prediction split is as one-sided as a Friday night roar from the Shed: all ${totalPredictions} players are backing ${nextMatch.team1}.`;
                     } else if (team2Winners.length === totalPredictions) {
-                        nextMatchPredictionSummary = `Prediction split: everyone is backing ${nextMatch.team2}.`;
+                        nextMatchPredictionSummary = `Attention now shifts to ${nextMatch.team1} vs ${nextMatch.team2} on ${nextMatch.date} at ${nextMatch.time}. The prediction split is absolute: all ${totalPredictions} players are backing ${nextMatch.team2}, which is the kind of consensus usually reserved for a nailed-on kick in front of the posts.`;
                     } else if (drawPickers.length === totalPredictions) {
-                        nextMatchPredictionSummary = 'Prediction split: everyone is calling it a draw.';
+                        nextMatchPredictionSummary = `Attention now shifts to ${nextMatch.team1} vs ${nextMatch.team2} on ${nextMatch.date} at ${nextMatch.time}. Every single predictor is calling it a draw, a wonderfully old-school verdict that would not look out of place alongside ${randomInternationalClassic}.`;
                     } else {
                         const splitParts = [];
-                        if (team1Winners.length > 0) splitParts.push(`${formatNameList(team1Winners)} ${team1Winners.length === 1 ? 'is' : 'are'} backing ${nextMatch.team1}`);
-                        if (team2Winners.length > 0) splitParts.push(`${formatNameList(team2Winners)} ${team2Winners.length === 1 ? 'is' : 'are'} backing ${nextMatch.team2}`);
-                        if (drawPickers.length > 0) splitParts.push(`${formatNameList(drawPickers)} ${drawPickers.length === 1 ? 'is' : 'are'} calling it a draw`);
+                        if (team1Winners.length > 0) splitParts.push(`${team1Winners.length} backing ${nextMatch.team1}`);
+                        if (team2Winners.length > 0) splitParts.push(`${team2Winners.length} backing ${nextMatch.team2}`);
+                        if (drawPickers.length > 0) splitParts.push(`${drawPickers.length} calling it a draw`);
+
+                        const resultGroups = [
+                            { type: 'team1', label: nextMatch.team1, names: team1Winners },
+                            { type: 'team2', label: nextMatch.team2, names: team2Winners },
+                            { type: 'draw', label: 'the draw', names: drawPickers }
+                        ].filter(group => group.names.length > 0)
+                            .sort((a, b) => a.names.length - b.names.length);
+                        const minorityGroup = resultGroups.find(group => group.names.length > 0 && group.names.length < 3 && group.names.length < totalPredictions);
+                        let minorityCommentary = '';
+                        if (minorityGroup) {
+                            const target = minorityGroup.type === 'draw' ? 'a stalemate' : minorityGroup.label;
+                            minorityCommentary = ` ${trevsLoadout.minorityOpener} ${formatHighlightedNameList(minorityGroup.names)}, making ${minorityGroup.names.length === 1 ? 'a daring prediction' : 'some properly daring predictions'} for ${target} while most of the room is heading the other way.`;
+                        }
                         nextMatchPredictionSummary = splitParts.length > 0
-                            ? `Prediction split: ${splitParts.join('; ')}.`
-                            : `No score predictions are in yet for ${nextMatch.team1} vs ${nextMatch.team2}.`;
+                            ? `Attention now shifts to ${nextMatch.team1} vs ${nextMatch.team2} on ${nextMatch.date} at ${nextMatch.time}. ${trevsLoadout.splitLead} ${splitParts.join(', ')}.${minorityCommentary} It has the feel of ${randomInternationalClassic}, with every chance that one contrarian shout ends up looking inspired by full-time.`
+                            : `Eyes now turn to ${nextMatch.team1} vs ${nextMatch.team2} on ${nextMatch.date} at ${nextMatch.time}, but ${trevsLoadout.noPredictionLine}.`;
                     }
                 }
             }
-            const nextFixtureWithHistory = [nextFixtureText, nextMatchPredictionSummary].filter(Boolean).join(' ');
+            const nextFixtureWithHistory = [nextMatchPredictionSummary].filter(Boolean).join(' ');
             const nextFixtureParagraph = nextFixtureWithHistory ? `<br><br>${nextFixtureWithHistory}` : '';
             
             if (completedMatches.length === 0) {
-                tip = `No matches played yet, but the tension is building like ${randomWorldCupClassic}! Get your predictions in sharpish - this isn't a Gloucester training session where you can take your time. The tournament kicks off soon and every point counts. Make sure you've got all your scores in before kick-off - no late changes allowed once the whistle blows! Remember, predicting a draw gets you bonus points, and if you nail the exact score, you'll be celebrating like Gloucester winning the Premiership.${nextFixtureParagraph}`;
+                tip = `The presses are humming, but we have not had a ball kicked in anger yet. The mood is building like ${randomWorldCupClassic}, with every competitor convinced they have spotted the winning read before anyone else. Get those predictions filed before kick-off because this paper is not accepting late copy once the whistle goes. Call a draw correctly and you pocket a handy bonus; land the exact score and you will be strutting about like Gloucester have just lifted silverware again.${nextFixtureParagraph}`;
             } else if (leaderboardData.length === 1) {
-                tip = `${leaderboardData[0].nickname} is currently the only competitor - ${randomGloucester}! Bit lonely at the top though, like being the only person who remembers Gloucester's Powergen Cup wins. Get some mates involved and make this a proper competition! The more the merrier, as they say down at Kingsholm on match day.${nextFixtureParagraph}`;
+                tip = `${leaderboardData[0].nickname} ${trevsLoadout.soloOpener}, ${randomGloucester}. Admirable stuff, but it is a lonely old back page when there is nobody else to chase. Round up a few more entrants and turn this into the sort of proper scrap that gets Kingsholm muttering over the tea urn.${nextFixtureParagraph}`;
             } else {
                 const leader = leaderboardData[0];
                 const second = leaderboardData[1];
@@ -3754,7 +4173,7 @@
                     if (correctPredictions.length === 0) {
                         predictionAnalysis = `Nobody got that result right - ${recentMatch.team1} vs ${recentMatch.team2} caught everyone out! `;
                     } else if (correctPredictions.length === 1) {
-                        const winner = toTitleCase(users[correctPredictions[0]].nickname || correctPredictions[0]);
+                        const winner = getTrevsTipsDisplayName(correctPredictions[0]);
                         predictionAnalysis = `Only ${winner} called that one correctly - sharp stuff! `;
                     } else if (correctPredictions.length <= 3) {
                         predictionAnalysis = `Only ${correctPredictions.length} competitors got the result right - not an easy one to call! `;
@@ -3762,15 +4181,15 @@
                 }
                 
                 if (gap === 0) {
-                    tip = `It's tighter than the 2003 World Cup final at the top! ${leader.nickname} and ${second.nickname} are level on ${leader.points} points - ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}<br><br>${tieAnalysis}${bottomTableAnalysis}With ${remainingMatches} matches still to play, this one's going down to the wire like England vs Australia in Sydney! Every prediction counts now - one perfect score could swing it all.${nextFixtureParagraph}`;
+                    tip = `${trevsLoadout.leadIn}: ${leader.nickname} and ${second.nickname} are locked together at the top on ${leader.points} points, ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}<br><br>${tieAnalysis}${bottomTableAnalysis}With ${remainingMatches} matches still to play, the Guesser has the pulse of a proper title decider. One inspired scoreline and the whole story gets rewritten before the next edition.${nextFixtureParagraph}`;
                 } else if (gap <= 3) {
-                    tip = `${leader.nickname} leads with ${leader.points} points but ${second.nickname} is breathing down their neck like a Gloucester flanker hunting a fly-half! Only ${gap} point${gap > 1 ? 's' : ''} separating them. ${matchAnalysis}${predictionAnalysis}<br><br>${tieAnalysis}${bottomTableAnalysis}With ${remainingMatches} matches left, one good round of predictions could change everything. Feels like the closing minutes of ${randomWorldCupClassic}.${nextFixtureParagraph}`;
+                    tip = `${leader.nickname} still has the headline on ${leader.points} points, but ${second.nickname} is right on the shoulder with only ${gap} point${gap > 1 ? 's' : ''} in it, like a Gloucester flanker sniffing around a loose carry. ${matchAnalysis}${predictionAnalysis}<br><br>${tieAnalysis}${bottomTableAnalysis}With ${remainingMatches} matches left, one good round of predictions could turn the whole table on its head. It has the late-drama feel of ${randomWorldCupClassic}.${nextFixtureParagraph}`;
                 } else if (gap <= 6) {
-                    tip = `${leader.nickname} is building a handy lead on ${leader.points} points, but ${second.nickname} on ${second.points} won't give up without a fight - ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}<br><br>${tieAnalysis}${bottomTableAnalysis}Still ${remainingMatches} matches to play, which means plenty of points up for grabs. A couple of perfect scores and this leaderboard could look very different.${nextFixtureParagraph}`;
+                    tip = `${leader.nickname} has edged into a useful lead on ${leader.points} points, but ${second.nickname} on ${second.points} remains close enough to keep the back-page writers interested, ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}<br><br>${tieAnalysis}${bottomTableAnalysis}There are still ${remainingMatches} matches to play, which means plenty of room for a nerveless exact score and a leaderboard that suddenly looks very different by Monday morning.${nextFixtureParagraph}`;
                 } else if (gap <= 10) {
-                    tip = `${leader.nickname} is pulling clear on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs to find form quickly. ${matchAnalysis}${predictionAnalysis}<br><br>${tieAnalysis}${bottomTableAnalysis}But don't count anyone out yet - remember ${randomWorldCupClassic}? Anything's possible in this game!${nextFixtureParagraph}`;
+                    tip = `${leader.nickname} is beginning to pull clear on ${leader.points} points, ${randomGloucester}. ${second.nickname} trails by ${gap} and needs the sort of revival that usually starts with one brave pick and a bit of scoreboard nerve. ${matchAnalysis}${predictionAnalysis}<br><br>${tieAnalysis}${bottomTableAnalysis}Still, this competition has not gone to print yet. Remember ${randomWorldCupClassic}; momentum can turn in a hurry when the fixtures get awkward.${nextFixtureParagraph}`;
                 } else {
-                    tip = `${leader.nickname} is running away with it on ${leader.points} points - ${randomGloucester}! ${second.nickname} trails by ${gap} points and needs a serious comeback worthy of the 1999 French team against the All Blacks. ${matchAnalysis}${predictionAnalysis}<br><br>${tieAnalysis}${bottomTableAnalysis}The gap looks big, but ${remainingMatches} matches means up to ${remainingMatches * 11} points still available. Stranger things have happened - ${randomGloucester2}!${nextFixtureParagraph}`;
+                    tip = `${leader.nickname} has slapped a hefty headline across the top of the table with ${leader.points} points, ${randomGloucester}. ${second.nickname} is ${gap} back and now needs a comeback worthy of the 1999 French side against the All Blacks. ${matchAnalysis}${predictionAnalysis}<br><br>${tieAnalysis}${bottomTableAnalysis}It is a sizeable gap, but with ${remainingMatches} matches left there are still up to ${remainingMatches * 11} points available. Stranger final editions have been written, especially when the fixture list starts behaving like ${randomGloucester2}.${nextFixtureParagraph}`;
                 }
             }
             

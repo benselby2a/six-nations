@@ -162,11 +162,11 @@
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: #ffb3ac; margin-bottom: 0.6rem; letter-spacing: 0.1em;">Admin Functions</h2>
                     <div class="admin-tabs-subheading" id="adminTabsSubheading" style="margin-bottom: 0.9rem; text-align: center;">These sections are only visible to admins</div>
                     <div class="tabs admin-tabs">
-                        <button class="tab" onclick="showTab('results')">Fixture Setup and Score Input</button>
-                        <button class="tab" onclick="showTab('scoreCorrections')">Edit Player Predictions</button>
-                        <button class="tab" onclick="showTab('competitors')">Competitor Mgmt.</button>
-                        <button class="tab" onclick="showTab('rules')">Rules Config</button>
-                        <button class="tab" onclick="showTab('prizeFund')">Prize Fund Setup</button>
+                        <button class="tab" onclick="showTab('results')">Fixtures and Scores</button>
+                        <button class="tab" onclick="showTab('scoreCorrections')">Predictions</button>
+                        <button class="tab" onclick="showTab('competitors')">Competitors</button>
+                        <button class="tab" onclick="showTab('rules')">Guesser Rules</button>
+                        <button class="tab" onclick="showTab('prizeFund')">Prize Fund</button>
                         <button class="tab" onclick="showTab('recovery')">Database Recovery</button>
                         <button class="tab" onclick="showTab('usageReport')">Usage Report</button>
                     </div>
@@ -178,7 +178,7 @@
                 <div id="matchesContainer"></div>
 
                 <div class="tries-section" id="triesSection">
-                    <h3>Total Tournament Tries</h3>
+                    <h3>Tournament Stats</h3>
                     <p style="margin-bottom: 0.75rem; font-size: 0.95rem; opacity: 0.8;">Predict the total tries scored across all matches.</p>
                     <input type="number" class="tries-input" id="totalTries" min="0" placeholder="000">
                     <button id="saveTriesBtn" class="btn-small btn-success tries-save-btn" onclick="saveTournamentTries()">Save Tournament Tries</button>
@@ -195,7 +195,7 @@
                 <div id="adminUserMatchesContainer"></div>
 
                 <div class="tries-section hidden" id="adminTriesSection">
-                    <h3>Total Tournament Tries</h3>
+                    <h3>Tournament Stats</h3>
                     <p style="margin-bottom: 0.75rem; font-size: 0.95rem; opacity: 0.8;">Edit the selected competitor's total tries prediction.</p>
                     <input type="number" class="tries-input" id="adminTotalTries" min="0" placeholder="000">
                     <button class="btn-small btn-success tries-save-btn" onclick="saveAdminTournamentTries()">Save Tournament Tries</button>
@@ -248,7 +248,7 @@
             <!-- Competitor Management Tab (Admin Only) -->
             <div id="competitorsTab" class="prediction-section hidden" style="margin-top: 2rem;">
                 <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
-                    <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Competitor Mgmt.</h2>
+                    <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Competitors</h2>
                     <p style="margin-bottom: 1rem;">Manage competitor accounts - edit details or remove users.</p>
                 </div>
 
@@ -258,7 +258,7 @@
             <!-- Fixture Setup Tab (Admin Only) -->
             <div id="resultsTab" class="prediction-section hidden" style="margin-top: 2rem;">
                 <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
-                    <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Fixture Setup and Score Input</h2>
+                    <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Fixtures and Scores</h2>
                     <p style="margin-bottom: 1rem;">Manage fixtures and results. Click a row or Edit to update all fixture fields.</p>
                 </div>
 
@@ -487,7 +487,7 @@
 
                 <div class="rules-layout">
                     <div class="rules-card prize-fund-form">
-                        <h3>Prize Fund Setup</h3>
+                        <h3>Prize Fund</h3>
                         <p style="margin: 0 0 0.8rem 0; font-size: 0.9rem; opacity: 0.85;">Set the entry fee and how the total prize fund is allocated across finishing positions and closest tries prediction.</p>
                         <div class="fixture-edit-grid rules-grid-two">
                             <div class="input-group">
@@ -602,7 +602,7 @@
             <div class="global-help-content">
                 <div><strong>My Predictions:</strong> Enter your score predictions for each fixture, choose your jokers, and set your tournament tries prediction. Predictions can only be entered/edited while predictions are unlocked.</div>
                 <div><strong>Match Summary:</strong> View the live table, points breakdowns, tries tracking, and prize projections as results are entered.</div>
-                <div><strong>Admin Functions:</strong> Fixture setup and score input, prediction editing, competitor management, prize fund setup, and recovery are available to admins only. Admins can lock predictions (typically once the tournament starts).</div>
+                <div><strong>Admin Functions:</strong> Fixtures and Scores, Predictions, Competitors, Prize Fund, and recovery are available to admins only. Admins can lock predictions (typically once the tournament starts).</div>
             </div>
             <div class="fixture-modal-actions">
                 <button class="btn-cancel" onclick="closeGlobalHelpModal()">Close</button>
@@ -615,10 +615,10 @@
         <div class="modal-content admin-help-modal-content">
             <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: #ff9b92; margin-bottom: 0.8rem; letter-spacing: 0.1em;">Admin Help</h2>
             <div class="admin-help-content">
-                <div><strong>Fixture Setup and Score Input</strong> Add/edit fixtures, enter scores and tries, set joker-eligible matches, and lock/unlock predictions.</div>
-                <div><strong>Edit Player Predictions</strong> Review and correct competitor score predictions and tournament tries values.</div>
-                <div><strong>Competitor Mgmt.</strong> Add, edit, or remove competitors, update display names, assign teams, and manage admin access.</div>
-                <div><strong>Prize Fund Setup</strong> Set entry fee and payout allocation for 1st/2nd/3rd and closest tries prize.</div>
+                <div><strong>Fixtures and Scores</strong> Add/edit fixtures, enter scores and tries, set joker-eligible matches, and lock/unlock predictions.</div>
+                <div><strong>Predictions</strong> Review and correct competitor score predictions and tournament tries values.</div>
+                <div><strong>Competitors</strong> Add, edit, or remove competitors, update display names, assign teams, and manage admin access.</div>
+                <div><strong>Prize Fund</strong> Set entry fee and payout allocation for 1st/2nd/3rd and closest tries prize.</div>
                 <div><strong>Database Recovery</strong> Generate SQL to recreate schema and optionally restore current data.</div>
                 <div><strong>Usage Report</strong> View the most recent 100 login and database write events.</div>
             </div>
