@@ -2876,6 +2876,12 @@
             const isCurrentJoker = selectedJokers.includes(match.id);
             const remainingSlots = Math.max(0, requiredJokers - selectedJokers.length);
             const cannotSelectMore = requiredJokers > 0 && !isCurrentJoker && remainingSlots === 0;
+            const otherSelectedJokers = selectedJokers.filter(id => id !== match.id)
+                .map(id => matches.find(m => m.id === id))
+                .filter(Boolean);
+            const jokerFixtureSummary = otherSelectedJokers.length > 0
+                ? otherSelectedJokers.map(selectedMatch => `${selectedMatch.team1} vs ${selectedMatch.team2}`).join(', ')
+                : '';
 
             if (jokerInput) {
                 jokerInput.checked = !!isCurrentJoker;
@@ -2885,11 +2891,15 @@
                 jokerGroup.style.display = match.jokerEligible ? 'flex' : 'none';
             }
             if (jokerHint) {
-                jokerHint.textContent = match.jokerEligible
-                    ? (requiredJokers === 0
-                        ? 'Jokers are disabled in current rules.'
-                        : `Select up to ${requiredJokers} joker${requiredJokers !== 1 ? 's' : ''}. Currently selected: ${selectedJokers.length}/${requiredJokers}.`)
-                    : 'This fixture is not joker-eligible.';
+                if (!match.jokerEligible) {
+                    jokerHint.textContent = 'This fixture is not joker-eligible.';
+                } else if (requiredJokers === 0) {
+                    jokerHint.textContent = 'Jokers are disabled in current rules.';
+                } else if (cannotSelectMore && jokerFixtureSummary) {
+                    jokerHint.textContent = `You have already used your ${requiredJokers === 1 ? 'joker' : 'maximum joker selections'} on ${jokerFixtureSummary}. Deselect that first if you want to move it here.`;
+                } else {
+                    jokerHint.textContent = `Select up to ${requiredJokers} joker${requiredJokers !== 1 ? 's' : ''}. Currently selected: ${selectedJokers.length}/${requiredJokers}.`;
+                }
                 jokerHint.style.display = match.jokerEligible ? '' : 'none';
             }
 
@@ -3541,6 +3551,13 @@
             const statsByUser = {};
             const recentWindowMatchIds = completedScoreMatches.slice(-3).map(match => match.id);
             const fixtureSplitStats = [];
+            const upcomingJokerSelections = matches
+                .filter(match => match.actualScore1 === null || match.actualScore2 === null)
+                .map(match => ({
+                    match,
+                    usernames: allUsers.filter(username => isUserJokerForMatch(username, match.id))
+                }))
+                .filter(entry => entry.usernames.length > 0);
 
             const ensureUserStats = (username) => {
                 if (!statsByUser[username]) {
@@ -3725,6 +3742,16 @@
             const contrarianLeader = topUsersFor('contrarianCalls');
             if (contrarianLeader) {
                 factCandidates.push(`${formatStatNameList(contrarianLeader.usernames)} ${contrarianLeader.usernames.length === 1 ? 'owns' : 'own'} the boldest prediction sheet with ${contrarianLeader.value} contrarian call${contrarianLeader.value === 1 ? '' : 's'}.${joinStattoExamplesIfSmall(contrarianLeader.value, gatherExamples(contrarianLeader.usernames, 'contrarianExamples'))}`);
+            }
+
+            const loneUpcomingJoker = upcomingJokerSelections.find(entry => entry.usernames.length === 1);
+            if (loneUpcomingJoker) {
+                factCandidates.push(`${formatStatNameList(loneUpcomingJoker.usernames)} ${loneUpcomingJoker.usernames.length === 1 ? 'is' : 'are'} the lone voice on the upcoming joker sheet, standing alone on ${loneUpcomingJoker.match.team1} vs ${loneUpcomingJoker.match.team2}.`);
+            } else if (upcomingJokerSelections.length > 0) {
+                const mostPopularUpcomingJoker = upcomingJokerSelections
+                    .slice()
+                    .sort((a, b) => b.usernames.length - a.usernames.length || a.match.id - b.match.id)[0];
+                factCandidates.push(`${mostPopularUpcomingJoker.match.team1} vs ${mostPopularUpcomingJoker.match.team2} is currently the hottest upcoming joker fixture, with ${mostPopularUpcomingJoker.usernames.length} player${mostPopularUpcomingJoker.usernames.length === 1 ? '' : 's'} piled in.`);
             }
 
             const contrarianRateEntries = allUsers
@@ -4607,10 +4634,13 @@
             const thirdClosestText = projection.provisionalThirdClosest
                 ? `${toTitleCase(users[projection.provisionalThirdClosest.username].nickname || projection.provisionalThirdClosest.username)} (${projection.provisionalThirdClosest.predicted} tries, off by ${projection.provisionalThirdClosest.diff})`
                 : 'TBD';
+            const prizeStatusLabel = matches.some(match => match.actualScore1 === null || match.actualScore2 === null)
+                ? 'As things stand'
+                : 'Official results';
 
             container.innerHTML = `
                 <div class="tries-stats-title">Prize Money</div>
-                <div class="prize-subheading">As things currently stand</div>
+                <div class="prize-subheading">${prizeStatusLabel}</div>
                 <div class="prize-summary-grid">
                     <div class="prize-stat">
                         <div class="prize-stat-value">${projection.entrantCount}</div>
@@ -4981,10 +5011,11 @@
             doc.text('Six Nations Guesser \u2014 Match Summary', 14, 15);
 
             const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
             doc.setFontSize(10);
             doc.setFont('helvetica', 'normal');
             doc.setTextColor(102, 102, 102);
-            doc.text('Exported ' + dateStr, 14, 22);
+            doc.text(`Exported ${dateStr} at ${timeStr}`, 14, 22);
             doc.setTextColor(0, 0, 0);
 
             // --- Calculate actual + estimated tries ---
@@ -5086,7 +5117,14 @@
                         { content: '', styles: { textColor: hexToRgb(C.gray), fontStyle: 'bold', fontSize: 6, halign: 'center' } }
                     ];
                 }).flat(),
-                { content: completedTriesMatches > 0 ? totalActualTries + ' (' + estimatedTotalTries + ')' : '', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', fontSize: 6.5 } }
+                {
+                    content: completedTriesMatches > 0
+                            ? (completedTriesMatches === totalMatchCount
+                                ? `Act: ${totalActualTries}`
+                                : `Act: ${totalActualTries}\nProj: ${estimatedTotalTries}`)
+                        : '',
+                    styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', fontSize: 5.8 }
+                }
             ];
 
             // --- Build data rows (single row per user with per-match points cell) ---
@@ -5273,6 +5311,73 @@
                 },
                 margin: { top: 10, left: marginLR, right: marginLR },
             });
+
+            const rules = getEffectiveScoringRules();
+            const prizeProjection = calculatePrizeProjection(sortedUsers, rules);
+            const rank1Group = getRankGroupForRank(prizeProjection.groups, 1);
+            const rank2Group = getRankGroupForRank(prizeProjection.groups, 2);
+            const rank3Group = getRankGroupForRank(prizeProjection.groups, 3);
+            const renderedPrizeGroups = new Set();
+            const prizeStatusLabel = allMatches.some(match => match.actualScore1 === null || match.actualScore2 === null)
+                ? 'As things stand'
+                : 'Official results';
+            const prizeLines = [
+                prizeStatusLabel,
+                `Eligible entrants: ${prizeProjection.entrantCount}    Entry fee: ${formatCurrencyAmount(rules.entryFeeAmount)}    Total fund: ${formatCurrencyAmount(prizeProjection.totalPool)}`
+            ];
+            const appendPrizeLine = (fallbackLabel, fallbackPct, group) => {
+                if (!group) {
+                    prizeLines.push(`${fallbackLabel} (${fallbackPct}%): TBD`);
+                    return;
+                }
+                const groupKey = `${group.startRank}-${group.endRank}`;
+                if (renderedPrizeGroups.has(groupKey)) return;
+                renderedPrizeGroups.add(groupKey);
+                const label = formatPrizeRankLabel(group, fallbackLabel, fallbackPct, rules);
+                const names = formatNamesForUsers(group.users) || 'TBD';
+                const share = group.users.length > 0
+                    ? prizeProjection.leaderboardPayouts[group.users[0].username] || 0
+                    : 0;
+                prizeLines.push(`${label}: ${names} - ${formatCurrencyAmount(share)}${group.users.length > 1 ? ' each' : ''}`);
+            };
+            appendPrizeLine('1st Place', rules.payoutFirstPct, rank1Group);
+            appendPrizeLine('2nd Place', rules.payoutSecondPct, rank2Group);
+            appendPrizeLine('3rd Place', rules.payoutThirdPct, rank3Group);
+            const closestNames = prizeProjection.closestTriesWinners.length > 0
+                ? prizeProjection.closestTriesWinners.map(w => `${getDisplayName(w.username)} (${w.predicted})`).join(', ')
+                : 'TBD';
+            prizeLines.push(`Closest tries (${rules.payoutClosestTriesPct}%): ${closestNames} - ${formatCurrencyAmount(prizeProjection.closestTriesShare)}${prizeProjection.closestTriesWinners.length > 1 ? ' each' : ''}`);
+            const prizeFootnotes = [
+                prizeProjection.aiPrizeFootnote
+            ].filter(Boolean);
+
+            let cursorY = (doc.lastAutoTable && doc.lastAutoTable.finalY ? doc.lastAutoTable.finalY : 31) + 8;
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const requiredHeight = 10 + (prizeLines.length * 5) + (prizeFootnotes.length * 4);
+            if (cursorY + requiredHeight > pageHeight - 10) {
+                doc.addPage();
+                cursorY = 14;
+            }
+
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Prize Summary', 14, cursorY);
+            cursorY += 5;
+            doc.setFontSize(8.5);
+            prizeLines.forEach((line, index) => {
+                doc.setFont('helvetica', index === 0 ? 'italic' : 'normal');
+                doc.text(line, 14, cursorY);
+                cursorY += 4.5;
+            });
+            if (prizeFootnotes.length > 0) {
+                cursorY += 1;
+                doc.setFont('helvetica', 'italic');
+                prizeFootnotes.forEach(line => {
+                    doc.text(line, 14, cursorY);
+                    cursorY += 4;
+                });
+                doc.setFont('helvetica', 'normal');
+            }
 
             // --- Download ---
             const filename = 'SixNations_Summary_' + now.toISOString().slice(0, 10) + '.pdf';
