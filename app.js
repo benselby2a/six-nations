@@ -1131,8 +1131,43 @@
             if (modal) modal.classList.add('hidden');
         }
 
+        function hasMatchScore(match) {
+            return !!match &&
+                match.actualScore1 !== null &&
+                match.actualScore2 !== null;
+        }
+
         function getNextMatchWithoutScore() {
-            return matches.find(match => match.actualScore1 === null || match.actualScore2 === null) || null;
+            return matches.find(match => !hasMatchScore(match)) || null;
+        }
+
+        function getMatchKickoffDate(match) {
+            if (!match || !match.date) return null;
+
+            const isoDate = parseDateForInput(match.date);
+            if (!isoDate) return null;
+
+            const timeValue = match.time && /^\d{2}:\d{2}$/.test(match.time) ? match.time : '00:00';
+            const kickoff = new Date(`${isoDate}T${timeValue}:00`);
+            return Number.isNaN(kickoff.getTime()) ? null : kickoff;
+        }
+
+        function isMatchInQuickScoreWindow(match, now = new Date()) {
+            const kickoff = getMatchKickoffDate(match);
+            if (!kickoff) return false;
+
+            const elapsedMs = now.getTime() - kickoff.getTime();
+            return elapsedMs >= 0 && elapsedMs < 2 * 60 * 60 * 1000;
+        }
+
+        function getQuickScoreEntryMatch() {
+            const now = new Date();
+            const recentMatch = matches
+                .filter(match => isMatchInQuickScoreWindow(match, now))
+                .sort((a, b) => getMatchKickoffDate(b).getTime() - getMatchKickoffDate(a).getTime())[0];
+
+            if (recentMatch) return recentMatch;
+            return matches.find(match => !hasMatchScore(match) && isMatchDueTodayOrPast(match)) || null;
         }
 
         function isMatchDueTodayOrPast(match) {
@@ -1152,8 +1187,8 @@
             const btn = document.getElementById('nextMatchScoreMainBtn');
             if (!btn) return;
             const actionRow = btn.closest('.admin-top-action-row');
-            const nextMatch = getNextMatchWithoutScore();
-            const shouldShowQuickAdd = !!nextMatch && isMatchDueTodayOrPast(nextMatch);
+            const nextMatch = getQuickScoreEntryMatch();
+            const shouldShowQuickAdd = !!nextMatch;
 
             if (actionRow) {
                 if (isCurrentUserAdmin() && shouldShowQuickAdd) {
@@ -1165,20 +1200,18 @@
 
             if (!nextMatch || !shouldShowQuickAdd) {
                 btn.disabled = true;
-                btn.textContent = nextMatch
-                    ? `Add ${getFlag(nextMatch.team1)} ${getTeamAbbr(nextMatch.team1)} v ${getFlag(nextMatch.team2)} ${getTeamAbbr(nextMatch.team2)} Score`
-                    : 'No Remaining Match Score To Add';
                 return;
             }
 
             btn.disabled = false;
-            btn.textContent = `Add ${getFlag(nextMatch.team1)} ${getTeamAbbr(nextMatch.team1)} v ${getFlag(nextMatch.team2)} ${getTeamAbbr(nextMatch.team2)} Score`;
+            const actionLabel = hasMatchScore(nextMatch) ? 'Game In Play - Update' : 'Add';
+            btn.textContent = `${actionLabel} ${getFlag(nextMatch.team1)} ${getTeamAbbr(nextMatch.team1)} v ${getFlag(nextMatch.team2)} ${getTeamAbbr(nextMatch.team2)} Score`;
         }
 
         function openNextMatchScoreModal() {
             if (!isCurrentUserAdmin()) return;
-            const nextMatch = getNextMatchWithoutScore();
-            if (!nextMatch || !isMatchDueTodayOrPast(nextMatch)) {
+            const nextMatch = getQuickScoreEntryMatch();
+            if (!nextMatch) {
                 updateNextMatchScoreButtonState();
                 return;
             }
