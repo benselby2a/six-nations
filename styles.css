@@ -189,125 +189,130 @@
 
         /* Dark Mode Theme */
         [data-theme="dark"] {
-            --pitch-green: #1a1a2e;
-            --deep-green: #0f0f1a;
-            --gold: #6c7a89;
-            --bright-gold: #95a5a6;
-            --white: #ecf0f1;
-            --slate: #2c3e50;
-            --red: #c0392b;
-            --accent-blue: #2980b9;
+            --pitch-green: #10212c;
+            --deep-green: #08131c;
+            --gold: #7fb9b3;
+            --bright-gold: #c8e6e2;
+            --white: #edf4f6;
+            --slate: #173445;
+            --red: #d46a4f;
+            --accent-blue: #4ba3c7;
             --shadow: rgba(0, 0, 0, 0.5);
             --header-font: 'Bebas Neue', cursive;
             --body-font: 'Barlow', sans-serif;
-            --bg-gradient: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
-            --card-bg: rgba(255, 255, 255, 0.03);
-            --card-border: #34495e;
+            --bg-gradient:
+                radial-gradient(circle at top left, rgba(38, 92, 102, 0.22) 0%, rgba(38, 92, 102, 0) 34%),
+                radial-gradient(circle at bottom right, rgba(164, 93, 66, 0.18) 0%, rgba(164, 93, 66, 0) 30%),
+                linear-gradient(135deg, #08131c 0%, #10212c 52%, #132a34 100%);
+            --card-bg: rgba(12, 26, 34, 0.82);
+            --card-border: #2d5661;
         }
 
         [data-theme="dark"] body::before {
-            opacity: 0.3;
+            opacity: 0.18;
         }
 
         [data-theme="dark"] h1,
         [data-theme="dark"] h2,
         [data-theme="dark"] h3,
         [data-theme="dark"] .trevs-tips-title {
-            color: #bdc3c7 !important;
+            color: #d8eeea !important;
         }
 
         [data-theme="dark"] .subtitle {
-            color: #7f8c8d !important;
+            color: #9cbab6 !important;
         }
 
         [data-theme="dark"] .match-card,
         [data-theme="dark"] .tries-section,
         [data-theme="dark"] .trevs-tips-box,
         [data-theme="dark"] .tries-stats-box {
-            background: rgba(255, 255, 255, 0.02) !important;
-            border-color: #34495e !important;
+            background: rgba(12, 26, 34, 0.82) !important;
+            border-color: #2d5661 !important;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
         }
 
         [data-theme="dark"] .match-card::before {
-            background: linear-gradient(90deg, #34495e, #5d6d7e, #34495e);
+            background: linear-gradient(90deg, #2d5661, #7fb9b3, #2d5661);
         }
 
         [data-theme="dark"] button {
-            background: #34495e !important;
-            color: #ecf0f1 !important;
+            background: #21404d !important;
+            color: #edf4f6 !important;
+            border-color: #3f7280 !important;
         }
 
         [data-theme="dark"] button:hover {
-            background: #5d6d7e !important;
+            background: #2f5a68 !important;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         }
 
         [data-theme="dark"] .tab.active {
-            background: #5d6d7e !important;
-            color: #ecf0f1 !important;
-            border-color: #5d6d7e !important;
+            background: #2f5a68 !important;
+            color: #edf4f6 !important;
+            border-color: #6ea7a4 !important;
         }
 
         [data-theme="dark"] .summary-container {
-            border-color: #34495e !important;
+            border-color: #2d5661 !important;
         }
 
         [data-theme="dark"] .summary-table thead {
-            background: #2c3e50 !important;
-            color: #ecf0f1 !important;
+            background: #183242 !important;
+            color: #edf4f6 !important;
         }
 
         [data-theme="dark"] .summary-table th.competitor-col {
-            background: #2c3e50 !important;
+            background: #183242 !important;
         }
 
         [data-theme="dark"] .summary-table th.rank-col,
         [data-theme="dark"] .summary-table th.pts-col {
-            background: #2c3e50 !important;
-            color: #ecf0f1 !important;
+            background: #183242 !important;
+            color: #edf4f6 !important;
         }
 
         [data-theme="dark"] .summary-table td.competitor-name {
-            background: rgb(15, 15, 26) !important;
+            background: rgb(8, 19, 28) !important;
         }
 
         [data-theme="dark"] .summary-table td.rank-col,
         [data-theme="dark"] .summary-table td.pts-col {
-            background: rgb(15, 15, 26) !important;
-            color: #f1c40f !important;
+            background: rgb(8, 19, 28) !important;
+            color: #c8e6e2 !important;
         }
 
         [data-theme="dark"] .summary-table tr.current-user-row td.rank-col,
         [data-theme="dark"] .summary-table tr.current-user-row td.competitor-name,
         [data-theme="dark"] .summary-table tr.current-user-row td.pts-col {
-            background: rgb(64, 55, 33) !important;
+            background: rgb(44, 53, 41) !important;
         }
 
         [data-theme="dark"] .summary-table tr.current-user-row:hover td.rank-col,
         [data-theme="dark"] .summary-table tr.current-user-row:hover td.competitor-name,
         [data-theme="dark"] .summary-table tr.current-user-row:hover td.pts-col {
-            background: rgb(84, 71, 36) !important;
+            background: rgb(58, 70, 54) !important;
         }
 
         [data-theme="dark"] .match-header-cell .match-result {
-            background: rgba(46, 204, 113, 0.2) !important;
-            color: #a3e4b7 !important;
+            background: rgba(90, 165, 150, 0.16) !important;
+            color: #ccebe5 !important;
         }
 
         [data-theme="dark"] input,
         [data-theme="dark"] select {
-            background: rgba(0, 0, 0, 0.3) !important;
-            border-color: #34495e !important;
-            color: #ecf0f1 !important;
+            background: rgba(5, 13, 19, 0.72) !important;
+            border-color: #2d5661 !important;
+            color: #edf4f6 !important;
         }
 
         [data-theme="dark"] .logout-btn {
-            background: rgba(192, 57, 43, 0.6) !important;
+            background: rgba(212, 106, 79, 0.58) !important;
         }
 
         [data-theme="dark"] .admin-tabs-section {
-            background: rgba(192, 57, 43, 0.1) !important;
-            border-color: #7f3d3d !important;
+            background: rgba(212, 106, 79, 0.08) !important;
+            border-color: #855243 !important;
         }
 
         /* Theme selector styles */

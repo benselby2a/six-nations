@@ -853,6 +853,7 @@
         let adminPredictionUsername = null;
         let usageReportEvents = [];
         let usageEventsForRecovery = [];
+        let usageReportHideLogins = true;
         const THEME_COOKIE_NAME = 'rugbyPredictorTheme';
         const THEME_STORAGE_KEY = 'rugbyPredictorTheme';
         const COOKIE_FALLBACK_PREFIX = 'rugbyPredictorCookieFallback:';
@@ -1004,6 +1005,7 @@
                     matches.length = 0;
                     loadedMatches.forEach(m => matches.push(m));
                 }
+                updateChallengeSubtitleYear();
                 
                 isLoading = false;
                 hideLoadingScreen();
@@ -1024,6 +1026,19 @@
         function hideLoadingScreen() {
             const loader = document.getElementById('loadingScreen');
             if (loader) loader.classList.add('hidden');
+        }
+
+        function updateChallengeSubtitleYear() {
+            const subtitle = document.getElementById('challengeSubtitle');
+            if (!subtitle) return;
+
+            const firstDatedFixture = matches.find(match => parseDateForInput(match.date || ''));
+            const isoDate = firstDatedFixture ? parseDateForInput(firstDatedFixture.date || '') : '';
+            const year = isoDate && /^\d{4}-/.test(isoDate)
+                ? isoDate.slice(0, 4)
+                : '';
+
+            subtitle.textContent = year ? `Prediction Challenge ${year}` : 'Prediction Challenge';
         }
 
         // Check if current user is admin
@@ -1383,6 +1398,7 @@
 
             await Storage.saveMatches(matches);
             closeEditFixtureModal();
+            updateChallengeSubtitleYear();
             renderAdminMatches();
             renderMatches();
             await refreshMatchSummaryAfterScoreSave();
@@ -1676,6 +1692,7 @@
             
             await Storage.saveMatches(matches);
             closeBulkImport();
+            updateChallengeSubtitleYear();
             renderAdminMatches();
             renderMatches();
             showSummary();
@@ -1756,6 +1773,7 @@
 
             // Save to storage
             await Storage.saveMatches(matches);
+            updateChallengeSubtitleYear();
             
             // Update saved indicators
             updateResultSavedIndicators();
@@ -6078,19 +6096,44 @@ CREATE POLICY "Allow all access to usage_events" ON usage_events FOR ALL USING (
             });
         }
 
-        async function renderUsageReport() {
+        function renderUsageReportTable() {
             const container = document.getElementById('usageReportContainer');
             if (!container) return;
-
-            container.innerHTML = '<p style="opacity:0.8;">Loading usage events...</p>';
-            usageReportEvents = await Storage.getUsageEvents(100);
 
             if (!usageReportEvents.length) {
                 container.innerHTML = '<p style="opacity:0.8;">No usage events found.</p>';
                 return;
             }
 
-            const rowsHtml = usageReportEvents.map(evt => `
+            const visibleEvents = usageReportHideLogins
+                ? usageReportEvents.filter(evt => !String(evt.action || '').toLowerCase().includes('logs in'))
+                : usageReportEvents;
+
+            const filterControlsHtml = `
+                <div style="display:flex; justify-content:flex-end; margin-bottom:0.75rem;">
+                    <label style="display:flex; align-items:center; gap:0.45rem; font-size:0.9rem; opacity:0.9;">
+                        <input type="checkbox" id="usageHideLoginsToggle" ${usageReportHideLogins ? 'checked' : ''}>
+                        Hide login events
+                    </label>
+                </div>
+            `;
+
+            if (!visibleEvents.length) {
+                container.innerHTML = `
+                    ${filterControlsHtml}
+                    <p style="opacity:0.8;">No usage events match the current filter.</p>
+                `;
+                const emptyToggle = document.getElementById('usageHideLoginsToggle');
+                if (emptyToggle) {
+                    emptyToggle.onchange = (event) => {
+                        usageReportHideLogins = !!event.target.checked;
+                        renderUsageReportTable();
+                    };
+                }
+                return;
+            }
+
+            const rowsHtml = visibleEvents.map(evt => `
                 <tr>
                     <td>${escapeHtml(formatUsageTimestamp(evt.created_at))}</td>
                     <td>${escapeHtml(evt.actor || '-')}</td>
@@ -6105,6 +6148,7 @@ CREATE POLICY "Allow all access to usage_events" ON usage_events FOR ALL USING (
             `).join('');
 
             container.innerHTML = `
+                ${filterControlsHtml}
                 <div class="usage-report-table-wrap">
                     <table class="admin-table usage-report-table">
                         <thead>
@@ -6119,6 +6163,22 @@ CREATE POLICY "Allow all access to usage_events" ON usage_events FOR ALL USING (
                     </table>
                 </div>
             `;
+            const toggle = document.getElementById('usageHideLoginsToggle');
+            if (toggle) {
+                toggle.onchange = (event) => {
+                    usageReportHideLogins = !!event.target.checked;
+                    renderUsageReportTable();
+                };
+            }
+        }
+
+        async function renderUsageReport() {
+            const container = document.getElementById('usageReportContainer');
+            if (!container) return;
+
+            container.innerHTML = '<p style="opacity:0.8;">Loading usage events...</p>';
+            usageReportEvents = await Storage.getUsageEvents(100);
+            renderUsageReportTable();
         }
 
         async function pruneUsageEventsKeepLatest() {
