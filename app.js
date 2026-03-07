@@ -770,35 +770,66 @@
                     return false;
                 }
 
-                const { error: deleteError } = await supabaseClient
-                    .from('user_joker_selections')
-                    .delete()
-                    .eq('user_id', user.id);
-                if (deleteError) {
-                    console.error('Error clearing existing joker selections:', deleteError);
-                    return false;
-                }
-
                 const uniqueMatchIds = [...new Set((matchIds || [])
                     .map(id => parseInt(id, 10))
                     .filter(id => Number.isInteger(id) && id > 0))]
                     .sort((a, b) => a - b);
 
+                const { data: existingRows, error: existingError } = await supabaseClient
+                    .from('user_joker_selections')
+                    .select('match_id')
+                    .eq('user_id', user.id);
+                if (existingError) {
+                    console.error('Error reading existing joker selections:', existingError);
+                    return false;
+                }
+
+                const existingMatchIds = new Set((existingRows || [])
+                    .map(row => parseInt(row.match_id, 10))
+                    .filter(id => Number.isInteger(id) && id > 0));
+                const desiredMatchIds = new Set(uniqueMatchIds);
+                const matchIdsToInsert = uniqueMatchIds.filter(matchId => !existingMatchIds.has(matchId));
+                const matchIdsToDelete = Array.from(existingMatchIds).filter(matchId => !desiredMatchIds.has(matchId));
+
+                if (matchIdsToInsert.length > 0) {
+                    const rows = matchIdsToInsert.map(matchId => ({
+                        user_id: user.id,
+                        match_id: matchId
+                    }));
+                    const { error: insertError } = await supabaseClient
+                        .from('user_joker_selections')
+                        .insert(rows);
+                    if (insertError) {
+                        console.error('Error inserting joker selections:', insertError);
+                        return false;
+                    }
+                }
+
                 if (uniqueMatchIds.length === 0) {
+                    if (existingMatchIds.size > 0) {
+                        const { error: deleteAllError } = await supabaseClient
+                            .from('user_joker_selections')
+                            .delete()
+                            .eq('user_id', user.id);
+                        if (deleteAllError) {
+                            console.error('Error clearing existing joker selections:', deleteAllError);
+                            return false;
+                        }
+                    }
                     trackUsage('save joker selections', formatUsagePayload({ username: normalizedUsername, matchIds: [] }), normalizedUsername);
                     return true;
                 }
 
-                const rows = uniqueMatchIds.map(matchId => ({
-                    user_id: user.id,
-                    match_id: matchId
-                }));
-                const { error: insertError } = await supabaseClient
-                    .from('user_joker_selections')
-                    .insert(rows);
-                if (insertError) {
-                    console.error('Error inserting joker selections:', insertError);
-                    return false;
+                if (matchIdsToDelete.length > 0) {
+                    const { error: deleteError } = await supabaseClient
+                        .from('user_joker_selections')
+                        .delete()
+                        .eq('user_id', user.id)
+                        .in('match_id', matchIdsToDelete);
+                    if (deleteError) {
+                        console.error('Error deleting removed joker selections:', deleteError);
+                        return false;
+                    }
                 }
 
                 trackUsage('save joker selections', formatUsagePayload({ username: normalizedUsername, matchIds: uniqueMatchIds }), normalizedUsername);
