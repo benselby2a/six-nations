@@ -4950,20 +4950,20 @@
 
             // --- Initialise PDF ---
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' });
 
             // Title
             const now = new Date();
-            doc.setFontSize(18);
+            doc.setFontSize(20);
             doc.setFont('helvetica', 'bold');
-            doc.text('Six Nations Guesser \u2014 Match Summary', 14, 15);
+            doc.text('Six Nations Guesser \u2014 Match Summary', 12, 14);
 
             const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-            doc.setFontSize(10);
+            doc.setFontSize(11);
             doc.setFont('helvetica', 'normal');
             doc.setTextColor(102, 102, 102);
-            doc.text(`Exported ${dateStr} at ${timeStr}`, 14, 22);
+            doc.text(`Exported ${dateStr} at ${timeStr}`, 12, 20);
             doc.setTextColor(0, 0, 0);
 
             // --- Calculate actual + estimated tries ---
@@ -4995,7 +4995,7 @@
                     styles: {
                         halign: 'center',
                         overflow: 'visible',
-                        fontSize: 5.5,
+                        fontSize: 7.4,
                         fillColor: m.round % 2 === 0 ? [255, 255, 255] : [242, 242, 242]
                     }
                 })),
@@ -5007,9 +5007,9 @@
                 { content: '', styles: { halign: 'left' } },
                 { content: '', styles: { halign: 'center' } },
                 ...allMatches.flatMap(m => ([
-                    { content: teamAbbr[m.team1] || m.team1, styles: { halign: 'center', fontSize: 5.2 } },
-                    { content: teamAbbr[m.team2] || m.team2, styles: { halign: 'center', fontSize: 5.2 } },
-                    { content: 'Pts', styles: { halign: 'center', fontSize: 5.2 } }
+                    { content: teamAbbr[m.team1] || m.team1, styles: { halign: 'center', fontSize: 6.8 } },
+                    { content: teamAbbr[m.team2] || m.team2, styles: { halign: 'center', fontSize: 6.8 } },
+                    { content: 'Pts', styles: { halign: 'center', fontSize: 6.6 } }
                 ])),
                 { content: '', styles: { halign: 'center' } }
             ];
@@ -5038,12 +5038,12 @@
                         }
                     }
                     return [
-                        { content: home, styles: { textColor: homeColor, fontStyle: 'bold', fontSize: 6, halign: 'center' } },
-                        { content: away, styles: { textColor: awayColor, fontStyle: 'bold', fontSize: 6, halign: 'center' } },
-                        { content: '', styles: { textColor: hexToRgb(C.gray), fontStyle: 'bold', fontSize: 6, halign: 'center' } }
+                        { content: home, styles: { textColor: homeColor, fontStyle: 'bold', fontSize: 7.2, halign: 'center' } },
+                        { content: away, styles: { textColor: awayColor, fontStyle: 'bold', fontSize: 7.2, halign: 'center' } },
+                        { content: '', styles: { textColor: hexToRgb(C.gray), fontStyle: 'bold', fontSize: 7.2, halign: 'center' } }
                     ];
                 }).flat(),
-                { content: '', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', fontSize: 6.5 } }
+                { content: '', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', fontSize: 7.4 } }
             ];
 
             const actualTriesRow = [
@@ -5056,13 +5056,13 @@
                     return [
                         {
                             content: homeTries,
-                            styles: { textColor: m.actualTries1 !== null ? hexToRgb(C.black) : hexToRgb(C.gray), fontStyle: 'bold', fontSize: 6, halign: 'center' }
+                            styles: { textColor: m.actualTries1 !== null ? hexToRgb(C.black) : hexToRgb(C.gray), fontStyle: 'bold', fontSize: 7.2, halign: 'center' }
                         },
                         {
                             content: awayTries,
-                            styles: { textColor: m.actualTries2 !== null ? hexToRgb(C.black) : hexToRgb(C.gray), fontStyle: 'bold', fontSize: 6, halign: 'center' }
+                            styles: { textColor: m.actualTries2 !== null ? hexToRgb(C.black) : hexToRgb(C.gray), fontStyle: 'bold', fontSize: 7.2, halign: 'center' }
                         },
-                        { content: '', styles: { textColor: hexToRgb(C.gray), fontStyle: 'bold', fontSize: 6, halign: 'center' } }
+                        { content: '', styles: { textColor: hexToRgb(C.gray), fontStyle: 'bold', fontSize: 7.2, halign: 'center' } }
                     ];
                 }).flat(),
                 {
@@ -5071,7 +5071,7 @@
                                 ? `Act: ${totalActualTries}`
                                 : `Act: ${totalActualTries}\nProj: ${estimatedTotalTries}`)
                         : '',
-                    styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', fontSize: 5.8 }
+                    styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', fontSize: 7 }
                 }
             ];
 
@@ -5086,8 +5086,8 @@
 
                 const scoreRow = [
                     { content: String(rank), styles: { fontStyle: 'bold', halign: 'center' } },
-                    { content: user.nickname, styles: { fontStyle: 'bold', halign: 'left' } },
-                    { content: String(user.totalPoints), styles: { fontStyle: 'bold', textColor: hexToRgb(C.pointsFg), fontSize: 9 } },
+                    { content: user.nickname, styles: { fontStyle: 'bold', halign: 'left', fontSize: 8.2 } },
+                    { content: String(user.totalPoints), styles: { fontStyle: 'bold', textColor: hexToRgb(C.pointsFg), fontSize: 14 } },
                 ];
 
                 allMatches.forEach(match => {
@@ -5097,9 +5097,9 @@
                     const pts = getMatchPoints(user.username, match);
 
                     if (!pred) {
-                        scoreRow.push({ content: '\u2014', styles: { textColor: hexToRgb(C.gray), fontSize: 6 } });
-                        scoreRow.push({ content: '\u2014', styles: { textColor: hexToRgb(C.gray), fontSize: 6 } });
-                        scoreRow.push({ content: '\u2014', styles: { textColor: hexToRgb(C.gray), fontSize: 5.5, halign: 'center' } });
+                        scoreRow.push({ content: '\u2014', styles: { textColor: hexToRgb(C.gray), fontSize: 7.4 } });
+                        scoreRow.push({ content: '\u2014', styles: { textColor: hexToRgb(C.gray), fontSize: 7.4 } });
+                        scoreRow.push({ content: '\u2014', styles: { textColor: hexToRgb(C.gray), fontSize: 6.8, halign: 'center' } });
                         return;
                     }
 
@@ -5116,8 +5116,8 @@
                         awayColor = hexToRgb(C.drawFg);
                     }
 
-                    const homeStyles = { textColor: homeColor, fontSize: 6.5, fontStyle: isJoker ? 'bold' : 'normal' };
-                    const awayStyles = { textColor: awayColor, fontSize: 6.5, fontStyle: isJoker ? 'bold' : 'normal' };
+                    const homeStyles = { textColor: homeColor, fontSize: 8.4, fontStyle: 'bold' };
+                    const awayStyles = { textColor: awayColor, fontSize: 8.4, fontStyle: 'bold' };
 
                     if (hasResult && pred.team1 === match.actualScore1 && pred.team2 === match.actualScore2) {
                         homeStyles.fillColor = hexToRgb(C.exactBg);
@@ -5130,14 +5130,12 @@
                     const ptsText = pts === null ? '' : String(pts);
                     const ptsColor = pts === null
                         ? hexToRgb(C.gray)
-                        : pts === 0
-                            ? [184, 92, 0] // dark orange
-                            : hexToRgb('#1F5FBF'); // blue
+                        : hexToRgb('#1F5FBF'); // blue
                     scoreRow.push({
                         content: ptsText,
                         styles: {
                             textColor: ptsColor,
-                            fontSize: 6.5,
+                            fontSize: 7.6,
                             halign: 'center',
                             fontStyle: pts !== null && pts > 3 ? 'bold' : 'normal'
                         }
@@ -5156,33 +5154,33 @@
 
             // --- Render table ---
             const pageWidth = doc.internal.pageSize.getWidth();
-            const marginLR = 4;
+            const marginLR = 6;
             const tableWidth = pageWidth - marginLR * 2;
             const scoreColumnCount = allMatches.length * 3;
-            const fixedWidth = 6 + 20 + 9 + 10; // rank + name + score + tries
-            const matchColWidth = Math.max(4.2, (tableWidth - fixedWidth) / scoreColumnCount);
+            const fixedWidth = 10 + 38 + 17 + 16; // rank + name + score + tries
+            const matchColWidth = Math.max(6.8, (tableWidth - fixedWidth) / scoreColumnCount);
             const triesColIndex = 3 + scoreColumnCount;
             const colStyles = {
-                0: { cellWidth: 6 },
-                1: { cellWidth: 20 },
-                2: { cellWidth: 9 },
+                0: { cellWidth: 10 },
+                1: { cellWidth: 38 },
+                2: { cellWidth: 17 },
             };
             for (let i = 3; i < triesColIndex; i++) {
                 colStyles[i] = { cellWidth: matchColWidth };
             }
-            colStyles[triesColIndex] = { cellWidth: 10 };
+            colStyles[triesColIndex] = { cellWidth: 16 };
 
             doc.autoTable({
                 head: [headerRowTop, headerRowBottom],
                 body: [actualScoresRow, actualTriesRow, ...dataRows],
-                startY: 28,
+                startY: 25,
                 theme: 'grid',
                 tableWidth: tableWidth,
                 styles: {
-                    fontSize: 5.8,
-                    cellPadding: 0.45,
+                    fontSize: 7,
+                    cellPadding: 0.75,
                     lineColor: hexToRgb(C.border),
-                    lineWidth: 0.2,
+                    lineWidth: 0.28,
                     halign: 'center',
                     valign: 'middle',
                     overflow: 'hidden',
@@ -5192,11 +5190,11 @@
                     fillColor: hexToRgb(C.white),
                     textColor: hexToRgb(C.black),
                     fontStyle: 'bold',
-                    fontSize: 4.8,
-                    cellPadding: 0.35,
+                    fontSize: 6.4,
+                    cellPadding: 0.55,
                     halign: 'center',
                     lineColor: hexToRgb(C.border),
-                    lineWidth: 0.3,
+                    lineWidth: 0.36,
                 },
                 columnStyles: colStyles,
                 didParseCell: function(data) {
@@ -5301,28 +5299,28 @@
 
             let cursorY = (doc.lastAutoTable && doc.lastAutoTable.finalY ? doc.lastAutoTable.finalY : 31) + 8;
             const pageHeight = doc.internal.pageSize.getHeight();
-            const requiredHeight = 10 + (prizeLines.length * 5) + (prizeFootnotes.length * 4);
-            if (cursorY + requiredHeight > pageHeight - 10) {
+            const requiredHeight = 12 + (prizeLines.length * 6) + (prizeFootnotes.length * 5);
+            if (cursorY + requiredHeight > pageHeight - 14) {
                 doc.addPage();
-                cursorY = 14;
+                cursorY = 16;
             }
 
-            doc.setFontSize(12);
+            doc.setFontSize(14);
             doc.setFont('helvetica', 'bold');
-            doc.text('Prize Summary', 14, cursorY);
-            cursorY += 5;
-            doc.setFontSize(8.5);
+            doc.text('Prize Summary', 16, cursorY);
+            cursorY += 6;
+            doc.setFontSize(10.5);
             prizeLines.forEach((line, index) => {
                 doc.setFont('helvetica', index === 0 ? 'italic' : 'normal');
-                doc.text(line, 14, cursorY);
-                cursorY += 4.5;
+                doc.text(line, 16, cursorY);
+                cursorY += 5.4;
             });
             if (prizeFootnotes.length > 0) {
-                cursorY += 1;
+                cursorY += 1.5;
                 doc.setFont('helvetica', 'italic');
                 prizeFootnotes.forEach(line => {
-                    doc.text(line, 14, cursorY);
-                    cursorY += 4;
+                    doc.text(line, 16, cursorY);
+                    cursorY += 4.8;
                 });
                 doc.setFont('helvetica', 'normal');
             }
