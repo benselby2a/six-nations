@@ -397,7 +397,7 @@
                 }));
             },
 
-            saveMatches: async (matchesData, usageEvent = null) => {
+            saveMatches: async (matchesData, options = {}) => {
                 const rows = matchesData.map(m => ({
                     id: m.id,
                     round: m.round,
@@ -445,14 +445,9 @@
                         return;
                     }
                 }
-
-                const usageAction = usageEvent && usageEvent.action
-                    ? usageEvent.action
-                    : 'save fixtures';
-                const usagePayload = usageEvent && Object.prototype.hasOwnProperty.call(usageEvent, 'payload')
-                    ? usageEvent.payload
-                    : formatUsagePayload({ matchesData: matchesData || [] });
-                await Storage.trackUsageEvent(getUsageActor(), usageAction, usagePayload);
+                if (!options || !options.skipUsageLog) {
+                    await Storage.trackUsageEvent(getUsageActor(), 'save fixtures', formatUsagePayload({ matchesData: matchesData || [] }));
+                }
             },
             
             // Admin usernames
@@ -1317,18 +1312,16 @@
             match.actualTries1 = homeTries;
             match.actualTries2 = awayTries;
 
-            await Storage.saveMatches(matches, {
-                action: 'save quick score update',
-                payload: formatUsagePayload({
-                    matchId: match.id,
-                    team1: match.team1,
-                    team2: match.team2,
-                    actualScore1: homeScore,
-                    actualScore2: awayScore,
-                    actualTries1: homeTries,
-                    actualTries2: awayTries
-                })
-            });
+            await Storage.saveMatches(matches, { skipUsageLog: true });
+            await Storage.trackUsageEvent(getUsageActor(), 'save quick score update', formatUsagePayload({
+                matchId: match.id,
+                team1: match.team1,
+                team2: match.team2,
+                actualScore1: homeScore,
+                actualScore2: awayScore,
+                actualTries1: homeTries,
+                actualTries2: awayTries
+            }));
             closeNextMatchScoreModal();
             renderAdminMatches();
             updateLeaderboard();
@@ -1427,22 +1420,20 @@
             match.actualTries1 = parsedTries1;
             match.actualTries2 = parsedTries2;
 
-            await Storage.saveMatches(matches, {
-                action: 'save fixture edit',
-                payload: formatUsagePayload({
-                    matchId: match.id,
-                    round: match.round,
-                    date: match.date,
-                    time: match.time,
-                    team1: match.team1,
-                    team2: match.team2,
-                    jokerEligible: match.jokerEligible,
-                    actualScore1: match.actualScore1,
-                    actualScore2: match.actualScore2,
-                    actualTries1: match.actualTries1,
-                    actualTries2: match.actualTries2
-                })
-            });
+            await Storage.saveMatches(matches, { skipUsageLog: true });
+            await Storage.trackUsageEvent(getUsageActor(), 'save fixture edit', formatUsagePayload({
+                matchId: match.id,
+                round: match.round,
+                date: match.date,
+                time: match.time,
+                team1: match.team1,
+                team2: match.team2,
+                jokerEligible: match.jokerEligible,
+                actualScore1: match.actualScore1,
+                actualScore2: match.actualScore2,
+                actualTries1: match.actualTries1,
+                actualTries2: match.actualTries2
+            }));
             closeEditFixtureModal();
             updateChallengeSubtitleYear();
             renderAdminMatches();
