@@ -398,13 +398,6 @@
             },
 
             saveMatches: async (matchesData) => {
-                // Delete all existing matches and re-insert
-                const { error: deleteError } = await supabaseClient.from('matches').delete().neq('id', 0);
-                if (deleteError) {
-                    console.error('Error clearing matches:', deleteError);
-                    return;
-                }
-                
                 const rows = matchesData.map(m => ({
                     id: m.id,
                     round: m.round,
@@ -419,10 +412,38 @@
                     joker_eligible: m.jokerEligible || false
                 }));
 
-                const { error } = await supabaseClient.from('matches').insert(rows);
-                if (error) {
-                    console.error('Error saving matches:', error);
+                const { data: existingMatches, error: existingError } = await supabaseClient
+                    .from('matches')
+                    .select('id');
+                if (existingError) {
+                    console.error('Error reading existing matches before save:', existingError);
                     return;
+                }
+
+                const incomingIds = new Set(rows.map(row => row.id));
+                const idsToDelete = (existingMatches || [])
+                    .map(row => row.id)
+                    .filter(id => !incomingIds.has(id));
+
+                if (idsToDelete.length > 0) {
+                    const { error: deleteError } = await supabaseClient
+                        .from('matches')
+                        .delete()
+                        .in('id', idsToDelete);
+                    if (deleteError) {
+                        console.error('Error deleting removed matches:', deleteError);
+                        return;
+                    }
+                }
+
+                if (rows.length > 0) {
+                    const { error: upsertError } = await supabaseClient
+                        .from('matches')
+                        .upsert(rows, { onConflict: 'id' });
+                    if (upsertError) {
+                        console.error('Error saving matches:', upsertError);
+                        return;
+                    }
                 }
                 trackUsage('save fixtures', formatUsagePayload({ matchesData: matchesData || [] }));
             },
