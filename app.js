@@ -47,6 +47,19 @@
             return usernameText === 'ai' || nicknameText === 'ai';
         }
 
+        function getAiCrowdAside() {
+            return pickRandomItem([
+                'boo, hiss!',
+                'down with the robot overlords!',
+                'not in my clubhouse!'
+            ]);
+        }
+
+        function formatAiDisplayName(displayName, aside = '') {
+            const chosenAside = aside || getAiCrowdAside();
+            return `${displayName} (${chosenAside})`;
+        }
+
         // 3-letter abbreviations for compact summary headers
         function getTeamAbbr(team) {
             const abbr = {
@@ -3532,7 +3545,7 @@
         }
 
         function formatStatNameList(usernames) {
-            const names = (usernames || []).map(username => isAiPlayer(username) ? `${getDisplayName(username)} (boo, hiss!)` : getDisplayName(username));
+            const names = (usernames || []).map(username => isAiPlayer(username) ? formatAiDisplayName(getDisplayName(username)) : getDisplayName(username));
             if (names.length === 0) return '';
             if (names.length === 1) return names[0];
             if (names.length === 2) return `${names[0]} and ${names[1]}`;
@@ -3552,6 +3565,487 @@
                 return `opting for ${match.team2} over ${match.team1} with a ${prediction.team1}-${prediction.team2} card`;
             }
             return `calling a ${prediction.team1}-${prediction.team2} draw in ${match.team1} vs ${match.team2}`;
+        }
+
+        function isMatchComplete(match) {
+            return match.actualScore1 !== null && match.actualScore2 !== null;
+        }
+
+        function isFinalRoundRunInActive() {
+            if (!matches || matches.length === 0) return false;
+            const rounds = [...new Set(matches.map(match => Number(match.round) || 0))]
+                .filter(round => round > 0)
+                .sort((a, b) => a - b);
+            if (rounds.length === 0) return false;
+
+            const finalRound = rounds[rounds.length - 1];
+            const finalRoundMatches = matches.filter(match => match.round === finalRound);
+            if (finalRoundMatches.length === 0) return false;
+            if (!finalRoundMatches.some(match => !isMatchComplete(match))) return false;
+
+            const earlierRounds = matches.filter(match => (Number(match.round) || 0) < finalRound);
+            return earlierRounds.every(isMatchComplete);
+        }
+
+        function getRemainingFinalRoundMatches() {
+            if (!isFinalRoundRunInActive()) return [];
+            const finalRound = Math.max(...matches.map(match => Number(match.round) || 0));
+            return matches.filter(match => match.round === finalRound && !isMatchComplete(match));
+        }
+
+        function isTournamentComplete() {
+            return matches.length > 0 && matches.every(isMatchComplete);
+        }
+
+        function getScenarioCandidateScores(match, allUsers) {
+            const fallbackByResult = {
+                team1: { team1: 24, team2: 17 },
+                team2: { team1: 17, team2: 24 },
+                draw: { team1: 20, team2: 20 }
+            };
+            const seen = new Set();
+            const candidates = [];
+            const predictionCounts = new Map();
+
+            allUsers.forEach(username => {
+                const prediction = users[username] && users[username].predictions
+                    ? users[username].predictions[match.id]
+                    : null;
+                if (!prediction || !Number.isFinite(prediction.team1) || !Number.isFinite(prediction.team2)) return;
+                const key = `${prediction.team1}-${prediction.team2}`;
+                predictionCounts.set(key, (predictionCounts.get(key) || 0) + 1);
+            });
+
+            [...predictionCounts.entries()]
+                .sort((a, b) => {
+                    if (b[1] !== a[1]) return b[1] - a[1];
+                    return a[0].localeCompare(b[0]);
+                })
+                .slice(0, 6)
+                .forEach(([key]) => {
+                    if (seen.has(key)) return;
+                    const [team1, team2] = key.split('-').map(Number);
+                    candidates.push({ team1, team2, result: getResult(team1, team2) });
+                    seen.add(key);
+                });
+
+            ['team1', 'team2', 'draw'].forEach(result => {
+                const existing = candidates.some(candidate => candidate.result === result);
+                if (existing) return;
+                const fallback = fallbackByResult[result];
+                const key = `${fallback.team1}-${fallback.team2}`;
+                if (seen.has(key)) return;
+                candidates.push({ ...fallback, result });
+                seen.add(key);
+            });
+
+            return candidates.slice(0, 8);
+        }
+
+        function buildScenarioResultText(match, result) {
+            if (result === 'team1') return `${match.team1} win`;
+            if (result === 'team2') return `${match.team2} win`;
+            return `${match.team1} and ${match.team2} draw`;
+        }
+
+        function joinNaturalLanguageList(parts) {
+            if (!parts || parts.length === 0) return '';
+            if (parts.length === 1) return parts[0];
+            if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
+            return `${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}`;
+        }
+
+        function buildTrevsRunInSection(leaderboardData, allUsers, formatDisplayName = getTrevsTipsDisplayName) {
+            const remainingMatches = getRemainingFinalRoundMatches();
+            if (remainingMatches.length === 0 || leaderboardData.length < 2) return '';
+
+            const rules = getEffectiveScoringRules();
+            const currentActualTries = getTotalActualTries();
+            const projectedTournamentTries = getProjectedTournamentTriesTotal();
+            const sortedLeaderboard = leaderboardData.map(entry => ({
+                username: entry.username,
+                points: entry.points,
+                nickname: formatDisplayName(entry.username)
+            }));
+            const topThree = sortedLeaderboard.slice(0, 3);
+            const bottomThree = sortedLeaderboard.slice(-3);
+            const topThreeSet = new Set(topThree.map(entry => entry.username));
+            const bottomThreeSet = new Set(bottomThree.map(entry => entry.username));
+            const basePointsByUser = {};
+            allUsers.forEach(username => {
+                basePointsByUser[username] = 0;
+                matches.forEach(match => {
+                    if (!isMatchComplete(match)) return;
+                    const prediction = users[username] && users[username].predictions
+                        ? users[username].predictions[match.id]
+                        : null;
+                    const matchPoints = calculateMatchPoints(prediction, match, isUserJokerForMatch(username, match.id));
+                    if (matchPoints !== null) basePointsByUser[username] += matchPoints;
+                });
+            });
+
+            const candidateSets = remainingMatches.map(match => getScenarioCandidateScores(match, allUsers));
+            if (candidateSets.some(set => set.length === 0)) return '';
+
+            const totalScenarioCount = candidateSets.reduce((total, set) => total * set.length, 1);
+            if (totalScenarioCount <= 0 || totalScenarioCount > 5000) return '';
+            const maxScoreSwingPerMatch = rules.correctResultPoints + rules.perfectScoreBonus + rules.drawBonus + 2 * Math.max(0, ...((rules.closeTiers || []).map(tier => Number(tier.bonusPoints) || 0)));
+
+            const remainingJokerUsers = allUsers
+                .map(username => ({
+                    username,
+                    nickname: formatDisplayName(username),
+                    jokerMatches: remainingMatches.filter(match => isUserJokerForMatch(username, match.id))
+                }))
+                .filter(entry => entry.jokerMatches.length > 0);
+
+            const scenarioSummaries = [];
+            const titleWinnersByResult = remainingMatches.map(() => ({
+                team1: new Set(),
+                team2: new Set(),
+                draw: new Set()
+            }));
+            const bottomByResult = remainingMatches.map(() => ({
+                team1: new Set(),
+                team2: new Set(),
+                draw: new Set()
+            }));
+            const topThreeWinCounts = new Map(topThree.map(entry => [entry.username, 0]));
+            const bottomThreeBottomCounts = new Map(bottomThree.map(entry => [entry.username, 0]));
+
+            const walkScenarios = (index, selectedScores) => {
+                if (index === remainingMatches.length) {
+                    const totals = allUsers.map(username => {
+                        let points = basePointsByUser[username];
+                        remainingMatches.forEach((match, matchIndex) => {
+                            const scenarioScore = selectedScores[matchIndex];
+                            const simulatedMatch = {
+                                ...match,
+                                actualScore1: scenarioScore.team1,
+                                actualScore2: scenarioScore.team2
+                            };
+                            const prediction = users[username] && users[username].predictions
+                                ? users[username].predictions[match.id]
+                                : null;
+                            const breakdown = calculateMatchPointsBreakdownWithRules(
+                                prediction,
+                                simulatedMatch,
+                                isUserJokerForMatch(username, match.id),
+                                rules
+                            );
+                            points += breakdown.points;
+                        });
+                        return { username, points };
+                    });
+
+                    const topPoints = Math.max(...totals.map(entry => entry.points));
+                    const winners = totals.filter(entry => entry.points === topPoints);
+                    const bottomPoints = Math.min(...totals.map(entry => entry.points));
+                    const bottomUsers = totals.filter(entry => entry.points === bottomPoints);
+                    scenarioSummaries.push({
+                        selectedScores: selectedScores.map(score => ({ ...score })),
+                        winners: winners.map(entry => entry.username),
+                        bottomUsers: bottomUsers.map(entry => entry.username)
+                    });
+
+                    winners.forEach(entry => {
+                        if (topThreeWinCounts.has(entry.username)) {
+                            topThreeWinCounts.set(entry.username, topThreeWinCounts.get(entry.username) + 1);
+                        }
+                    });
+                    bottomUsers.forEach(entry => {
+                        if (bottomThreeBottomCounts.has(entry.username)) {
+                            bottomThreeBottomCounts.set(entry.username, bottomThreeBottomCounts.get(entry.username) + 1);
+                        }
+                    });
+
+                    selectedScores.forEach((score, matchIndex) => {
+                        winners.forEach(username => {
+                            if (topThreeSet.has(username)) {
+                                titleWinnersByResult[matchIndex][score.result].add(username);
+                            }
+                        });
+                        bottomUsers.forEach(username => {
+                            if (bottomThreeSet.has(username)) {
+                                bottomByResult[matchIndex][score.result].add(username);
+                            }
+                        });
+                    });
+                    return;
+                }
+
+                candidateSets[index].forEach(candidate => {
+                    selectedScores.push(candidate);
+                    walkScenarios(index + 1, selectedScores);
+                    selectedScores.pop();
+                });
+            };
+
+            walkScenarios(0, []);
+
+            const titleLive = topThree.filter(entry => (topThreeWinCounts.get(entry.username) || 0) > 0);
+            const titleIntroCore = titleLive.length === 0
+                ? `the press-room sums say <strong>${topThree[0].nickname}</strong> has already got one hand on the trophy`
+                : titleLive.length === 1
+                    ? `it has narrowed to <strong>${titleLive[0].nickname}</strong>, who is carrying the clearest title route into the closing games`
+                    : `it is really a ${titleLive.length}-way scrap between ${joinNaturalLanguageList(titleLive.map(entry => `<strong>${entry.nickname}</strong>`))}`;
+            const titleIntro = `As we lead up to the final weekend, ${titleIntroCore}.`;
+
+            const summarizeResultFavour = (bucketSet, sourceEntries) => {
+                const names = sourceEntries
+                    .filter(entry => bucketSet.has(entry.username))
+                    .map(entry => `<strong>${entry.nickname}</strong>`);
+                return names.length > 0 ? joinNaturalLanguageList(names) : '';
+            };
+
+            const titleLines = remainingMatches.map((match, matchIndex) => {
+                const buckets = titleWinnersByResult[matchIndex];
+                const labels = [
+                    { result: 'team1', label: `${match.team1} win`, names: summarizeResultFavour(buckets.team1, topThree) },
+                    { result: 'team2', label: `${match.team2} win`, names: summarizeResultFavour(buckets.team2, topThree) },
+                    { result: 'draw', label: 'draw', names: summarizeResultFavour(buckets.draw, topThree) }
+                ].filter(entry => entry.names);
+                if (labels.length === 0) return '';
+                const distinctNameSets = [...new Set(labels.map(entry => entry.names))];
+                if (distinctNameSets.length === 1) {
+                    return `For the title picture, ${match.team1} v ${match.team2} mostly comes down to scoring texture rather than result alone, because every broad outcome still leans toward ${distinctNameSets[0]}.`;
+                }
+                return `For the title picture, a ${labels.map(entry => `${entry.label} favours ${entry.names}`).join(', while ')}.`;
+            }).filter(Boolean);
+
+            const bottomLines = remainingMatches.map((match, matchIndex) => {
+                const buckets = bottomByResult[matchIndex];
+                const labels = [
+                    { result: 'team1', label: `${match.team1} win`, names: summarizeResultFavour(buckets.team1, bottomThree) },
+                    { result: 'team2', label: `${match.team2} win`, names: summarizeResultFavour(buckets.team2, bottomThree) },
+                    { result: 'draw', label: 'draw', names: summarizeResultFavour(buckets.draw, bottomThree) }
+                ].filter(entry => entry.names);
+                if (labels.length === 0) return '';
+                const distinctNameSets = [...new Set(labels.map(entry => entry.names))];
+                if (distinctNameSets.length === 1) {
+                    return `At the wrong end, ${match.team1} v ${match.team2} still leaves ${distinctNameSets[0]} looking over the shoulder whatever the broad result line says.`;
+                }
+                return `At the wrong end, a ${labels.map(entry => `${entry.label} hurts ${entry.names}`).join(', while ')}.`;
+            }).filter(Boolean);
+
+            const fixtureSwingSummaries = remainingMatches.map((match, matchIndex) => {
+                const titleBucketNames = [
+                    summarizeResultFavour(titleWinnersByResult[matchIndex].team1, topThree),
+                    summarizeResultFavour(titleWinnersByResult[matchIndex].team2, topThree),
+                    summarizeResultFavour(titleWinnersByResult[matchIndex].draw, topThree)
+                ].filter(Boolean);
+                const bottomBucketNames = [
+                    summarizeResultFavour(bottomByResult[matchIndex].team1, bottomThree),
+                    summarizeResultFavour(bottomByResult[matchIndex].team2, bottomThree),
+                    summarizeResultFavour(bottomByResult[matchIndex].draw, bottomThree)
+                ].filter(Boolean);
+                const titleSpread = new Set(titleBucketNames).size;
+                const bottomSpread = new Set(bottomBucketNames).size;
+                return {
+                    match,
+                    spread: titleSpread + bottomSpread
+                };
+            }).sort((a, b) => b.spread - a.spread);
+
+            const wideOpenLine = fixtureSwingSummaries.length >= 2 && fixtureSwingSummaries[0].spread >= 3
+                ? `The fixtures most likely to throw this thing wide open look to be <strong>${fixtureSwingSummaries[0].match.team1} v ${fixtureSwingSummaries[0].match.team2}</strong>${fixtureSwingSummaries[1] && fixtureSwingSummaries[1].spread >= 3 ? ` and <strong>${fixtureSwingSummaries[1].match.team1} v ${fixtureSwingSummaries[1].match.team2}</strong>` : ''}.`
+                : '';
+
+            const contrarianCalls = [];
+            remainingMatches.forEach(match => {
+                const picks = allUsers.map(username => {
+                    const prediction = users[username] && users[username].predictions
+                        ? users[username].predictions[match.id]
+                        : null;
+                    if (!prediction || !Number.isFinite(prediction.team1) || !Number.isFinite(prediction.team2)) return null;
+                    return {
+                        username,
+                        nickname: formatDisplayName(username),
+                        result: getResult(prediction.team1, prediction.team2),
+                        isJoker: isUserJokerForMatch(username, match.id)
+                    };
+                }).filter(Boolean);
+
+                const resultGroups = {
+                    team1: picks.filter(pick => pick.result === 'team1'),
+                    team2: picks.filter(pick => pick.result === 'team2'),
+                    draw: picks.filter(pick => pick.result === 'draw')
+                };
+
+                ['team1', 'team2', 'draw'].forEach(result => {
+                    const group = resultGroups[result];
+                    if (group.length === 0 || group.length > 2) return;
+                    const jokerBackers = group.filter(entry => entry.isJoker);
+                    const usernames = group.map(entry => entry.username);
+                    contrarianCalls.push({
+                        match,
+                        label: buildScenarioResultText(match, result),
+                        names: joinNaturalLanguageList(group.map(entry => `<strong>${entry.nickname}</strong>`)),
+                        jokerNames: joinNaturalLanguageList(jokerBackers.map(entry => `<strong>${entry.nickname}</strong>`)),
+                        weight: jokerBackers.length * 3
+                            + group.filter(entry => topThreeSet.has(entry.username)).length * 2
+                            + group.filter(entry => bottomThreeSet.has(entry.username)).length
+                            - group.length
+                    });
+                });
+            });
+
+            contrarianCalls.sort((a, b) => b.weight - a.weight);
+            const jokerLine = remainingJokerUsers.length > 0
+                ? (() => {
+                    const jokerByMatch = remainingMatches.map(match => ({
+                        match,
+                        users: remainingJokerUsers.filter(entry => entry.jokerMatches.some(jokerMatch => jokerMatch.id === match.id))
+                    }));
+                    const loneJokerMatch = jokerByMatch.find(entry => entry.users.length === 1);
+                    const crowdJokerMatch = jokerByMatch
+                        .slice()
+                        .sort((a, b) => b.users.length - a.users.length)[0];
+
+                    if (loneJokerMatch && crowdJokerMatch && crowdJokerMatch.users.length > loneJokerMatch.users.length) {
+                        return `The joker subplot is split two ways: only <strong>${loneJokerMatch.users[0].nickname}</strong> has gone for <strong>${loneJokerMatch.match.team1} v ${loneJokerMatch.match.team2}</strong>, while ${crowdJokerMatch.users.length === allUsers.length - 1 ? 'everyone else has piled into' : `${joinNaturalLanguageList(crowdJokerMatch.users.slice(0, 4).map(entry => `<strong>${entry.nickname}</strong>`))} are clustered on`} <strong>${crowdJokerMatch.match.team1} v ${crowdJokerMatch.match.team2}</strong>.`;
+                    }
+
+                    const highlighted = remainingJokerUsers
+                        .slice(0, 3)
+                        .map(entry => `<strong>${entry.nickname}</strong> on ${joinNaturalLanguageList(entry.jokerMatches.map(match => `${match.team1} v ${match.team2}`))}`);
+                    return `There is joker ink all over this final edition too, with ${joinNaturalLanguageList(highlighted)} still carrying double-points dynamite.`;
+                })()
+                : '';
+            const swingLine = remainingMatches.length > 0
+                ? `With up to ${remainingMatches.length * maxScoreSwingPerMatch} points still available from here, one nerveless exact score or one ugly low-scoring arm wrestle can still shove the whole leaderboard sideways.`
+                : '';
+            const triesLine = projectedTournamentTries !== null
+                ? (() => {
+                    const candidatePointTotals = candidateSets.reduce((list, set) => {
+                        set.forEach(score => list.push(score.team1 + score.team2));
+                        return list;
+                    }, []);
+                    const avgCandidatePoints = candidatePointTotals.length > 0
+                        ? candidatePointTotals.reduce((sum, total) => sum + total, 0) / candidatePointTotals.length
+                        : 0;
+                    const finishingStyle = avgCandidatePoints >= 48
+                        ? 'The remaining scorecards are leaning lively as well'
+                        : avgCandidatePoints <= 38
+                            ? 'The remaining scorecards look a bit more arm-wrestle than exhibition'
+                            : 'The remaining scorecards are split between open rugby and trench warfare';
+                    return `The tries ticker is on ${currentActualTries} so far and still projects to finish around ${projectedTournamentTries}. ${finishingStyle}, so the total-tries race has not gone quiet either.`;
+                })()
+                : '';
+            const contrarianLine = contrarianCalls.length > 0
+                ? (() => {
+                    const standoutCalls = contrarianCalls.slice(0, 3).map(call => {
+                        const jokerSuffix = call.jokerNames
+                            ? `, with ${call.jokerNames} doubling down on it`
+                            : '';
+                        return `${call.label} in ${call.match.team1} v ${call.match.team2}, carried by ${call.names}${jokerSuffix}`;
+                    });
+                    return `The proper contrarian shouts are ${joinNaturalLanguageList(standoutCalls)}; if any of those land, the table could lurch in a hurry.`;
+                })()
+                : '';
+
+            return `${titleIntro} ${wideOpenLine} ${titleLines.join(' ')} ${bottomLines.join(' ')} ${contrarianLine} ${jokerLine} ${swingLine} ${triesLine}`.replace(/\s+/g, ' ').trim();
+        }
+
+        function buildTrevsCompletedTournamentSection(leaderboardData) {
+            if (!isTournamentComplete() || leaderboardData.length === 0) return '';
+
+            const topThree = leaderboardData.slice(0, 3);
+            const lastPlace = leaderboardData[leaderboardData.length - 1];
+            const leader = topThree[0];
+            const second = topThree[1] || null;
+            const third = topThree[2] || null;
+            const winningGroup = leaderboardData.filter(entry => entry.points === leader.points);
+            const losingGroup = leaderboardData.filter(entry => entry.points === lastPlace.points);
+            const actualTries = getTotalActualTries();
+            const triesLeaders = leaderboardData
+                .map(entry => {
+                    const predicted = users[entry.username] ? users[entry.username].totalTries : null;
+                    return {
+                        username: entry.username,
+                        nickname: entry.nickname,
+                        predicted: Number.isFinite(Number(predicted)) ? Number(predicted) : null,
+                        diff: Number.isFinite(Number(predicted)) ? Math.abs(Number(predicted) - actualTries) : null
+                    };
+                })
+                .filter(entry => entry.predicted !== null)
+                .sort((a, b) => {
+                    if (a.diff !== b.diff) return a.diff - b.diff;
+                    return a.nickname.localeCompare(b.nickname);
+                });
+            const bestTryDiff = triesLeaders.length > 0 ? triesLeaders[0].diff : null;
+            const tryWinners = bestTryDiff === null
+                ? []
+                : triesLeaders.filter(entry => entry.diff === bestTryDiff);
+            const formatNicknameGroup = (entries) => joinNaturalLanguageList(entries.map(entry => `<strong>${entry.nickname}</strong>`));
+            const classicGloucesterRefs = [
+                'with the sort of certainty Kingsholm used to reserve for the Cherry and Whites on a hard 90s afternoon',
+                'like an old Gloucester side rumbling into the Shed End with the job half done already',
+                'with the feel of one of those old West Country Saturdays when the boots were muddy and the crowd already knew the ending'
+            ];
+            const vintageSpoonRefs = [
+                'There will be no open-top bus for that little lot, more a quiet stare into the tea urn behind the old stand.',
+                'That is the kind of finish that would have had the old Kingsholm regulars muttering into their programmes.',
+                'No silver polish required there, just the sort of shrug you used to see after a long winter away at the Rec.'
+            ];
+            const randomClassicRef = pickRandomItem(classicGloucesterRefs);
+            const randomSpoonRef = pickRandomItem(vintageSpoonRefs);
+
+            let titleLine = '';
+            if (winningGroup.length > 1) {
+                titleLine = `So there we have it: ${formatNicknameGroup(winningGroup)} have finished locked together on ${leader.points} points at the top, which is exactly the sort of ending the back-page writers dream about.`;
+            } else if (!second) {
+                titleLine = `So there we have it: <strong>${leader.nickname}</strong> has taken the whole thing, and done so without needing much of a photo finish.`;
+            } else {
+                const gapToSecond = leader.points - second.points;
+                titleLine = `So there we have it: <strong>${leader.nickname}</strong> has landed the title on ${leader.points} points, finishing ${gapToSecond} clear of <strong>${second.nickname}</strong> after keeping the steadiest nerve when the scores were there to be found, ${randomClassicRef}.`;
+            }
+
+            let podiumLine = '';
+            if (second && third) {
+                const secondGap = second.points - third.points;
+                if (second.points === third.points) {
+                    podiumLine = `<strong>${second.nickname}</strong> and <strong>${third.nickname}</strong> could not be split on ${second.points}, so the chasing pack has ended in a proper scrap all the way to the line, like two old Gloucester forwards refusing to leave a ruck alone in 1989.`;
+                } else {
+                    podiumLine = `<strong>${second.nickname}</strong> takes second on ${second.points}, with <strong>${third.nickname}</strong> rounding out the podium on ${third.points}${secondGap > 0 ? ` after a final margin of ${secondGap}` : ''}. Not quite enough for the main headline, but enough to stay on the back page all right.`;
+                }
+            } else if (second) {
+                podiumLine = `<strong>${second.nickname}</strong> has to settle for second, which is handsome work even if it leaves the silverware elsewhere.`;
+            }
+
+            let woodenSpoonLine = '';
+            if (leaderboardData.length > 1) {
+                if (losingGroup.length > 1) {
+                    woodenSpoonLine = `At the other end, ${formatNicknameGroup(losingGroup)} share the wooden spoon on ${lastPlace.points} points, which is the kind of distinction nobody wants engraved twice. ${randomSpoonRef}`;
+                } else {
+                    woodenSpoonLine = `At the other end, <strong>${lastPlace.nickname}</strong> picks up the wooden spoon on ${lastPlace.points} points, which is the sort of honour best acknowledged quickly before someone changes the subject. ${randomSpoonRef}`;
+                }
+            }
+
+            let triesLine = '';
+            if (tryWinners.length > 0) {
+                if (tryWinners.length === 1) {
+                    triesLine = `${formatNicknameGroup(tryWinners)} wins the tries call as well, finishing closest to the actual tournament total of ${actualTries} with a prediction of ${tryWinners[0].predicted}. That is tidy work, the sort of neat read an old Kingsholm scoreboard man would have appreciated.`;
+                } else {
+                    triesLine = `${formatNicknameGroup(tryWinners)} share the tries honours, all finishing closest to the actual tournament total of ${actualTries}. A proper dead heat, and no complaints from the press box about that.`;
+                }
+            }
+
+            return `${titleLine} ${podiumLine} ${woodenSpoonLine} ${triesLine}`.replace(/\s+/g, ' ').trim();
+        }
+
+        function getTrevsCompletedTournamentSignoff(leaderboardData) {
+            if (!isTournamentComplete() || !leaderboardData || leaderboardData.length === 0) return '';
+
+            const winner = leaderboardData[0];
+            const firstDatedFixture = matches.find(match => parseDateForInput(match.date || ''));
+            const isoDate = firstDatedFixture ? parseDateForInput(firstDatedFixture.date || '') : '';
+            const currentYear = isoDate && /^\d{4}-/.test(isoDate)
+                ? Number(isoDate.slice(0, 4))
+                : new Date().getFullYear();
+            const nextYear = currentYear + 1;
+
+            return `That's it for ${currentYear}, tune in next year for the ${nextYear} competition under the stewardship of <strong>${winner.nickname}</strong>.`;
         }
 
         function joinStattoExamples(exampleList) {
@@ -3892,6 +4386,7 @@
             ];
 
             trevsTipsLoadout = {
+                aiCrowdAside: getAiCrowdAside(),
                 leadIn: pickRandomItem(leadIns),
                 soloOpener: pickRandomItem(soloOpeners),
                 minorityOpener: pickRandomItem(minorityOpeners),
@@ -3983,7 +4478,7 @@
 
         function getTrevsTipsDisplayName(username) {
             const displayName = getDisplayName(username);
-            return isAiPlayer(username) ? `${displayName} (boo, hiss!)` : displayName;
+            return isAiPlayer(username) ? formatAiDisplayName(displayName) : displayName;
         }
 
         // Update leaderboard
@@ -4053,10 +4548,18 @@
                 return;
             }
             const trevsLoadout = getTrevsTipsLoadout();
+            let hasUsedTrevsAiAside = false;
+            const getScopedTrevsTipsDisplayName = (username) => {
+                const displayName = getDisplayName(username);
+                if (!isAiPlayer(username)) return displayName;
+                if (hasUsedTrevsAiAside) return displayName;
+                hasUsedTrevsAiAside = true;
+                return formatAiDisplayName(displayName, trevsLoadout.aiCrowdAside);
+            };
             
             // Get leaderboard data
             const leaderboardData = allUsers.map(username => ({
-                nickname: getTrevsTipsDisplayName(username),
+                nickname: getScopedTrevsTipsDisplayName(username),
                 points: calculatePoints(username),
                 username: username
             })).sort((a, b) => b.points - a.points);
@@ -4087,7 +4590,7 @@
                 const nextPredictions = allUsers
                     .map(username => ({
                         username,
-                        nickname: getTrevsTipsDisplayName(username),
+                        nickname: getScopedTrevsTipsDisplayName(username),
                         prediction: users[username] && users[username].predictions
                             ? users[username].predictions[nextMatch.id]
                             : null
@@ -4145,8 +4648,15 @@
                     }
                 }
             }
+            const completedTournamentSection = buildTrevsCompletedTournamentSection(leaderboardData);
+            const completedTournamentSignoff = getTrevsCompletedTournamentSignoff(leaderboardData);
+            const finalRoundRunInSection = completedTournamentSection || buildTrevsRunInSection(leaderboardData, allUsers, getScopedTrevsTipsDisplayName);
+            const isCompletedTournamentTips = !!completedTournamentSection;
             const nextFixtureWithHistory = [nextMatchPredictionSummary].filter(Boolean).join(' ');
             const nextFixtureParagraph = nextFixtureWithHistory ? `<br><br>${nextFixtureWithHistory}` : '';
+            const finalRoundRunInParagraph = finalRoundRunInSection ? `<br><br>${finalRoundRunInSection}` : '';
+            const completedTournamentSignoffParagraph = completedTournamentSignoff ? `<br><br>${completedTournamentSignoff}` : '';
+            const standardSecondParagraph = (text) => finalRoundRunInSection ? finalRoundRunInParagraph : `<br><br>${text}`;
             
             if (completedMatches.length === 0) {
                 tip = `The presses are humming, but we have not had a ball kicked in anger yet. The mood is building like ${randomWorldCupClassic}, with every competitor convinced they have spotted the winning read before anyone else. Get those predictions filed before kick-off because this paper is not accepting late copy once the whistle goes. Call a draw correctly and you pocket a handy bonus; land the exact score and you will be strutting about like Gloucester have just lifted silverware again.${nextFixtureParagraph}`;
@@ -4257,7 +4767,7 @@
                     if (correctPredictions.length === 0) {
                         predictionAnalysis = `Nobody got that result right - ${recentMatch.team1} vs ${recentMatch.team2} caught everyone out! `;
                     } else if (correctPredictions.length === 1) {
-                        const winner = getTrevsTipsDisplayName(correctPredictions[0]);
+                        const winner = getScopedTrevsTipsDisplayName(correctPredictions[0]);
                         predictionAnalysis = `Only ${winner} called that one correctly - sharp stuff! `;
                     } else if (correctPredictions.length <= 3) {
                         predictionAnalysis = `Only ${correctPredictions.length} competitors got the result right - not an easy one to call! `;
@@ -4265,15 +4775,25 @@
                 }
                 
                 if (gap === 0) {
-                    tip = `${trevsLoadout.leadIn}: ${leader.nickname} and ${second.nickname} are locked together at the top on ${leader.points} points, ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}<br><br>${tieAnalysis}${bottomTableAnalysis}With ${remainingMatches} matches still to play, the Guesser has the pulse of a proper title decider. One inspired scoreline and the whole story gets rewritten before the next edition.${nextFixtureParagraph}`;
+                    tip = isCompletedTournamentTips
+                        ? `${completedTournamentSection}${completedTournamentSignoffParagraph}`
+                        : `${trevsLoadout.leadIn}: ${leader.nickname} and ${second.nickname} are locked together at the top on ${leader.points} points, ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}${standardSecondParagraph(`${tieAnalysis}${bottomTableAnalysis}With ${remainingMatches} matches still to play, the Guesser has the pulse of a proper title decider. One inspired scoreline and the whole story gets rewritten before the next edition.`)}${completedTournamentSignoffParagraph}${nextFixtureParagraph}`;
                 } else if (gap <= 3) {
-                    tip = `${leader.nickname} still has the headline on ${leader.points} points, but ${second.nickname} is right on the shoulder with only ${gap} point${gap > 1 ? 's' : ''} in it, like a Gloucester flanker sniffing around a loose carry. ${matchAnalysis}${predictionAnalysis}<br><br>${tieAnalysis}${bottomTableAnalysis}With ${remainingMatches} matches left, one good round of predictions could turn the whole table on its head. It has the late-drama feel of ${randomWorldCupClassic}.${nextFixtureParagraph}`;
+                    tip = isCompletedTournamentTips
+                        ? `${completedTournamentSection}${completedTournamentSignoffParagraph}`
+                        : `${leader.nickname} still has the headline on ${leader.points} points, but ${second.nickname} is right on the shoulder with only ${gap} point${gap > 1 ? 's' : ''} in it, like a Gloucester flanker sniffing around a loose carry. ${matchAnalysis}${predictionAnalysis}${standardSecondParagraph(`${tieAnalysis}${bottomTableAnalysis}With ${remainingMatches} matches left, one good round of predictions could turn the whole table on its head. It has the late-drama feel of ${randomWorldCupClassic}.`)}${completedTournamentSignoffParagraph}${nextFixtureParagraph}`;
                 } else if (gap <= 6) {
-                    tip = `${leader.nickname} has edged into a useful lead on ${leader.points} points, but ${second.nickname} on ${second.points} remains close enough to keep the back-page writers interested, ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}<br><br>${tieAnalysis}${bottomTableAnalysis}There are still ${remainingMatches} matches to play, which means plenty of room for a nerveless exact score and a leaderboard that suddenly looks very different by Monday morning.${nextFixtureParagraph}`;
+                    tip = isCompletedTournamentTips
+                        ? `${completedTournamentSection}${completedTournamentSignoffParagraph}`
+                        : `${leader.nickname} has edged into a useful lead on ${leader.points} points, but ${second.nickname} on ${second.points} remains close enough to keep the back-page writers interested, ${randomGloucester}. ${matchAnalysis}${predictionAnalysis}${standardSecondParagraph(`${tieAnalysis}${bottomTableAnalysis}There are still ${remainingMatches} matches to play, which means plenty of room for a nerveless exact score and a leaderboard that suddenly looks very different by Monday morning.`)}${completedTournamentSignoffParagraph}${nextFixtureParagraph}`;
                 } else if (gap <= 10) {
-                    tip = `${leader.nickname} is beginning to pull clear on ${leader.points} points, ${randomGloucester}. ${second.nickname} trails by ${gap} and needs the sort of revival that usually starts with one brave pick and a bit of scoreboard nerve. ${matchAnalysis}${predictionAnalysis}<br><br>${tieAnalysis}${bottomTableAnalysis}Still, this competition has not gone to print yet. Remember ${randomWorldCupClassic}; momentum can turn in a hurry when the fixtures get awkward.${nextFixtureParagraph}`;
+                    tip = isCompletedTournamentTips
+                        ? `${completedTournamentSection}${completedTournamentSignoffParagraph}`
+                        : `${leader.nickname} is beginning to pull clear on ${leader.points} points, ${randomGloucester}. ${second.nickname} trails by ${gap} and needs the sort of revival that usually starts with one brave pick and a bit of scoreboard nerve. ${matchAnalysis}${predictionAnalysis}${standardSecondParagraph(`${tieAnalysis}${bottomTableAnalysis}Still, this competition has not gone to print yet. Remember ${randomWorldCupClassic}; momentum can turn in a hurry when the fixtures get awkward.`)}${completedTournamentSignoffParagraph}${nextFixtureParagraph}`;
                 } else {
-                    tip = `${leader.nickname} has slapped a hefty headline across the top of the table with ${leader.points} points, ${randomGloucester}. ${second.nickname} is ${gap} back and now needs a comeback worthy of the 1999 French side against the All Blacks. ${matchAnalysis}${predictionAnalysis}<br><br>${tieAnalysis}${bottomTableAnalysis}It is a sizeable gap, but with ${remainingMatches} matches left there are still up to ${remainingMatches * 11} points available. Stranger final editions have been written, especially when the fixture list starts behaving like ${randomGloucester2}.${nextFixtureParagraph}`;
+                    tip = isCompletedTournamentTips
+                        ? `${completedTournamentSection}${completedTournamentSignoffParagraph}`
+                        : `${leader.nickname} has slapped a hefty headline across the top of the table with ${leader.points} points, ${randomGloucester}. ${second.nickname} is ${gap} back and now needs a comeback worthy of the 1999 French side against the All Blacks. ${matchAnalysis}${predictionAnalysis}${standardSecondParagraph(`${tieAnalysis}${bottomTableAnalysis}It is a sizeable gap, but with ${remainingMatches} matches left there are still up to ${remainingMatches * 11} points available. Stranger final editions have been written, especially when the fixture list starts behaving like ${randomGloucester2}.`)}${completedTournamentSignoffParagraph}${nextFixtureParagraph}`;
                 }
             }
             
