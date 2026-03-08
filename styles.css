@@ -1982,6 +1982,19 @@
             justify-self: start;
         }
 
+        .prize-rank-cell .prize-row-head {
+            color: var(--bright-gold);
+            font-weight: 800;
+            font-size: 0.9rem;
+        }
+
+        .prize-rank-cell .prize-row-amount {
+            color: var(--gold);
+            font-weight: 700;
+            font-size: 0.82rem;
+            text-align: left;
+        }
+
         .prize-row {
             border: 1px solid rgba(212, 175, 55, 0.25);
             border-radius: 8px;
@@ -1991,6 +2004,16 @@
             grid-template-columns: 170px 1fr auto;
             gap: 0.5rem;
             align-items: center;
+        }
+
+        .closest-tries-card {
+            width: 100%;
+        }
+
+        .closest-tries-card .prize-row-body,
+        .closest-tries-card .prize-row-amount {
+            justify-self: start;
+            text-align: left;
         }
 
         .prize-row-head {

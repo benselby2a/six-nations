@@ -60,6 +60,16 @@
             return `${displayName} (${chosenAside})`;
         }
 
+        function boldPlayerName(displayName) {
+            return `<strong>${displayName}</strong>`;
+        }
+
+        function getStattoDisplayName(username) {
+            const displayName = getDisplayName(username);
+            const narrativeName = isAiPlayer(username) ? formatAiDisplayName(displayName) : displayName;
+            return boldPlayerName(narrativeName);
+        }
+
         // 3-letter abbreviations for compact summary headers
         function getTeamAbbr(team) {
             const abbr = {
@@ -3545,7 +3555,7 @@
         }
 
         function formatStatNameList(usernames) {
-            const names = (usernames || []).map(username => isAiPlayer(username) ? formatAiDisplayName(getDisplayName(username)) : getDisplayName(username));
+            const names = (usernames || []).map(username => getStattoDisplayName(username));
             if (names.length === 0) return '';
             if (names.length === 1) return names[0];
             if (names.length === 2) return `${names[0]} and ${names[1]}`;
@@ -3785,16 +3795,16 @@
 
             const titleLive = topThree.filter(entry => (topThreeWinCounts.get(entry.username) || 0) > 0);
             const titleIntroCore = titleLive.length === 0
-                ? `the press-room sums say <strong>${topThree[0].nickname}</strong> has already got one hand on the trophy`
+                ? `the press-room sums say ${topThree[0].nickname} has already got one hand on the trophy`
                 : titleLive.length === 1
-                    ? `it has narrowed to <strong>${titleLive[0].nickname}</strong>, who is carrying the clearest title route into the closing games`
-                    : `it is really a ${titleLive.length}-way scrap between ${joinNaturalLanguageList(titleLive.map(entry => `<strong>${entry.nickname}</strong>`))}`;
+                    ? `it has narrowed to ${titleLive[0].nickname}, who is carrying the clearest title route into the closing games`
+                    : `it is really a ${titleLive.length}-way scrap between ${joinNaturalLanguageList(titleLive.map(entry => entry.nickname))}`;
             const titleIntro = `As we lead up to the final weekend, ${titleIntroCore}.`;
 
             const summarizeResultFavour = (bucketSet, sourceEntries) => {
                 const names = sourceEntries
                     .filter(entry => bucketSet.has(entry.username))
-                    .map(entry => `<strong>${entry.nickname}</strong>`);
+                    .map(entry => entry.nickname);
                 return names.length > 0 ? joinNaturalLanguageList(names) : '';
             };
 
@@ -3848,7 +3858,7 @@
             }).sort((a, b) => b.spread - a.spread);
 
             const wideOpenLine = fixtureSwingSummaries.length >= 2 && fixtureSwingSummaries[0].spread >= 3
-                ? `The fixtures most likely to throw this thing wide open look to be <strong>${fixtureSwingSummaries[0].match.team1} v ${fixtureSwingSummaries[0].match.team2}</strong>${fixtureSwingSummaries[1] && fixtureSwingSummaries[1].spread >= 3 ? ` and <strong>${fixtureSwingSummaries[1].match.team1} v ${fixtureSwingSummaries[1].match.team2}</strong>` : ''}.`
+                ? `The fixtures most likely to throw this thing wide open look to be ${fixtureSwingSummaries[0].match.team1} v ${fixtureSwingSummaries[0].match.team2}${fixtureSwingSummaries[1] && fixtureSwingSummaries[1].spread >= 3 ? ` and ${fixtureSwingSummaries[1].match.team1} v ${fixtureSwingSummaries[1].match.team2}` : ''}.`
                 : '';
 
             const contrarianCalls = [];
@@ -3880,8 +3890,8 @@
                     contrarianCalls.push({
                         match,
                         label: buildScenarioResultText(match, result),
-                        names: joinNaturalLanguageList(group.map(entry => `<strong>${entry.nickname}</strong>`)),
-                        jokerNames: joinNaturalLanguageList(jokerBackers.map(entry => `<strong>${entry.nickname}</strong>`)),
+                        names: joinNaturalLanguageList(group.map(entry => entry.nickname)),
+                        jokerNames: joinNaturalLanguageList(jokerBackers.map(entry => entry.nickname)),
                         weight: jokerBackers.length * 3
                             + group.filter(entry => topThreeSet.has(entry.username)).length * 2
                             + group.filter(entry => bottomThreeSet.has(entry.username)).length
@@ -3903,12 +3913,12 @@
                         .sort((a, b) => b.users.length - a.users.length)[0];
 
                     if (loneJokerMatch && crowdJokerMatch && crowdJokerMatch.users.length > loneJokerMatch.users.length) {
-                        return `The joker subplot is split two ways: only <strong>${loneJokerMatch.users[0].nickname}</strong> has gone for <strong>${loneJokerMatch.match.team1} v ${loneJokerMatch.match.team2}</strong>, while ${crowdJokerMatch.users.length === allUsers.length - 1 ? 'everyone else has piled into' : `${joinNaturalLanguageList(crowdJokerMatch.users.slice(0, 4).map(entry => `<strong>${entry.nickname}</strong>`))} are clustered on`} <strong>${crowdJokerMatch.match.team1} v ${crowdJokerMatch.match.team2}</strong>.`;
+                        return `The joker subplot is split two ways: only ${loneJokerMatch.users[0].nickname} has gone for ${loneJokerMatch.match.team1} v ${loneJokerMatch.match.team2}, while ${crowdJokerMatch.users.length === allUsers.length - 1 ? 'everyone else has piled into' : `${joinNaturalLanguageList(crowdJokerMatch.users.slice(0, 4).map(entry => entry.nickname))} are clustered on`} ${crowdJokerMatch.match.team1} v ${crowdJokerMatch.match.team2}.`;
                     }
 
                     const highlighted = remainingJokerUsers
                         .slice(0, 3)
-                        .map(entry => `<strong>${entry.nickname}</strong> on ${joinNaturalLanguageList(entry.jokerMatches.map(match => `${match.team1} v ${match.team2}`))}`);
+                        .map(entry => `${entry.nickname} on ${joinNaturalLanguageList(entry.jokerMatches.map(match => `${match.team1} v ${match.team2}`))}`);
                     return `There is joker ink all over this final edition too, with ${joinNaturalLanguageList(highlighted)} still carrying double-points dynamite.`;
                 })()
                 : '';
@@ -3977,7 +3987,7 @@
             const tryWinners = bestTryDiff === null
                 ? []
                 : triesLeaders.filter(entry => entry.diff === bestTryDiff);
-            const formatNicknameGroup = (entries) => joinNaturalLanguageList(entries.map(entry => `<strong>${entry.nickname}</strong>`));
+            const formatNicknameGroup = (entries) => joinNaturalLanguageList(entries.map(entry => entry.nickname));
             const classicGloucesterRefs = [
                 'with the sort of certainty Kingsholm used to reserve for the Cherry and Whites on a hard 90s afternoon',
                 'like an old Gloucester side rumbling into the Shed End with the job half done already',
@@ -3995,22 +4005,22 @@
             if (winningGroup.length > 1) {
                 titleLine = `So there we have it: ${formatNicknameGroup(winningGroup)} have finished locked together on ${leader.points} points at the top, which is exactly the sort of ending the back-page writers dream about.`;
             } else if (!second) {
-                titleLine = `So there we have it: <strong>${leader.nickname}</strong> has taken the whole thing, and done so without needing much of a photo finish.`;
+                titleLine = `So there we have it: ${leader.nickname} has taken the whole thing, and done so without needing much of a photo finish.`;
             } else {
                 const gapToSecond = leader.points - second.points;
-                titleLine = `So there we have it: <strong>${leader.nickname}</strong> has landed the title on ${leader.points} points, finishing ${gapToSecond} clear of <strong>${second.nickname}</strong> after keeping the steadiest nerve when the scores were there to be found, ${randomClassicRef}.`;
+                titleLine = `So there we have it: ${leader.nickname} has landed the title on ${leader.points} points, finishing ${gapToSecond} clear of ${second.nickname} after keeping the steadiest nerve when the scores were there to be found, ${randomClassicRef}.`;
             }
 
             let podiumLine = '';
             if (second && third) {
                 const secondGap = second.points - third.points;
                 if (second.points === third.points) {
-                    podiumLine = `<strong>${second.nickname}</strong> and <strong>${third.nickname}</strong> could not be split on ${second.points}, so the chasing pack has ended in a proper scrap all the way to the line, like two old Gloucester forwards refusing to leave a ruck alone in 1989.`;
+                    podiumLine = `${second.nickname} and ${third.nickname} could not be split on ${second.points}, so the chasing pack has ended in a proper scrap all the way to the line, like two old Gloucester forwards refusing to leave a ruck alone in 1989.`;
                 } else {
-                    podiumLine = `<strong>${second.nickname}</strong> takes second on ${second.points}, with <strong>${third.nickname}</strong> rounding out the podium on ${third.points}${secondGap > 0 ? ` after a final margin of ${secondGap}` : ''}. Not quite enough for the main headline, but enough to stay on the back page all right.`;
+                    podiumLine = `${second.nickname} takes second on ${second.points}, with ${third.nickname} rounding out the podium on ${third.points}${secondGap > 0 ? ` after a final margin of ${secondGap}` : ''}. Not quite enough for the main headline, but enough to stay on the back page all right.`;
                 }
             } else if (second) {
-                podiumLine = `<strong>${second.nickname}</strong> has to settle for second, which is handsome work even if it leaves the silverware elsewhere.`;
+                podiumLine = `${second.nickname} has to settle for second, which is handsome work even if it leaves the silverware elsewhere.`;
             }
 
             let woodenSpoonLine = '';
@@ -4018,7 +4028,7 @@
                 if (losingGroup.length > 1) {
                     woodenSpoonLine = `At the other end, ${formatNicknameGroup(losingGroup)} share the wooden spoon on ${lastPlace.points} points, which is the kind of distinction nobody wants engraved twice. ${randomSpoonRef}`;
                 } else {
-                    woodenSpoonLine = `At the other end, <strong>${lastPlace.nickname}</strong> picks up the wooden spoon on ${lastPlace.points} points, which is the sort of honour best acknowledged quickly before someone changes the subject. ${randomSpoonRef}`;
+                    woodenSpoonLine = `At the other end, ${lastPlace.nickname} picks up the wooden spoon on ${lastPlace.points} points, which is the sort of honour best acknowledged quickly before someone changes the subject. ${randomSpoonRef}`;
                 }
             }
 
@@ -4045,7 +4055,7 @@
                 : new Date().getFullYear();
             const nextYear = currentYear + 1;
 
-            return `That's it for ${currentYear}, tune in next year for the ${nextYear} competition under the stewardship of <strong>${winner.nickname}</strong>.`;
+            return `That's it for ${currentYear}, tune in next year for the ${nextYear} competition under the stewardship of ${winner.nickname}.`;
         }
 
         function joinStattoExamples(exampleList) {
@@ -4167,28 +4177,28 @@
 
                     if (breakdown.correctResult) userStats.correctResults += 1;
                     if (breakdown.correctResult) {
-                        userStats.correctResultExamples.push(`${getDisplayName(entry.username)} calling ${formatActualScoreline(match)}`);
+                        userStats.correctResultExamples.push(`${getStattoDisplayName(entry.username)} calling ${formatActualScoreline(match)}`);
                     }
                     if (breakdown.perfectScore) {
                         userStats.exactScores += 1;
-                        userStats.exactScoreExamples.push(`${getDisplayName(entry.username)} nailing ${formatActualScoreline(match)}`);
+                        userStats.exactScoreExamples.push(`${getStattoDisplayName(entry.username)} nailing ${formatActualScoreline(match)}`);
                     }
                     if (breakdown.drawBonus > 0) {
                         userStats.correctDraws += 1;
-                        userStats.drawExamples.push(`${getDisplayName(entry.username)} landing ${prediction.team1}-${prediction.team2} in ${match.team1} vs ${match.team2}`);
+                        userStats.drawExamples.push(`${getStattoDisplayName(entry.username)} landing ${prediction.team1}-${prediction.team2} in ${match.team1} vs ${match.team2}`);
                     }
                     if (!breakdown.perfectScore && (breakdown.team1CloseBonus > 0 || breakdown.team2CloseBonus > 0)) {
                         userStats.closeCalls += 1;
-                        userStats.closeCallExamples.push(`${getDisplayName(entry.username)} going ${prediction.team1}-${prediction.team2} on an actual ${match.actualScore1}-${match.actualScore2} in ${match.team1} vs ${match.team2}`);
+                        userStats.closeCallExamples.push(`${getStattoDisplayName(entry.username)} going ${prediction.team1}-${prediction.team2} on an actual ${match.actualScore1}-${match.actualScore2} in ${match.team1} vs ${match.team2}`);
                     }
                     if (breakdown.jokerApplied) {
                         userStats.jokerHits += 1;
                         userStats.jokerBonusPoints += breakdown.basePoints;
-                        userStats.jokerExamples.push(`${getDisplayName(entry.username)} doubling ${prediction.team1}-${prediction.team2} in ${match.team1} vs ${match.team2}`);
+                        userStats.jokerExamples.push(`${getStattoDisplayName(entry.username)} doubling ${prediction.team1}-${prediction.team2} in ${match.team1} vs ${match.team2}`);
                     }
                     if (!breakdown.perfectScore && totalDiff <= 2) {
                         userStats.nearMisses += 1;
-                        userStats.nearMissExamples.push(`${getDisplayName(entry.username)} going ${prediction.team1}-${prediction.team2} when ${formatActualScoreline(match)} was the final score`);
+                        userStats.nearMissExamples.push(`${getStattoDisplayName(entry.username)} going ${prediction.team1}-${prediction.team2} when ${formatActualScoreline(match)} was the final score`);
                     }
 
                     const baseResultPoints = breakdown.correctResult ? (Number(rules.correctResultPoints) || 0) : 0;
@@ -4198,7 +4208,7 @@
                     );
                     userStats.bonusPoints += extraPoints;
                     if (extraPoints > 0) {
-                        userStats.bonusExamples.push(`${getDisplayName(entry.username)} squeezing ${extraPoints} extra point${extraPoints === 1 ? '' : 's'} from ${prediction.team1}-${prediction.team2} in ${match.team1} vs ${match.team2}`);
+                        userStats.bonusExamples.push(`${getStattoDisplayName(entry.username)} squeezing ${extraPoints} extra point${extraPoints === 1 ? '' : 's'} from ${prediction.team1}-${prediction.team2} in ${match.team1} vs ${match.team2}`);
                     }
 
                     if (supportCounts[entry.predictedResult] > 0 && supportCounts[entry.predictedResult] < maxSupport) {
@@ -4210,13 +4220,13 @@
                     if (recentWindowMatchIds.includes(match.id)) {
                         userStats.recentPoints += breakdown.points;
                         if (breakdown.points > 0) {
-                            userStats.recentExamples.push(`${getDisplayName(entry.username)} taking ${breakdown.points} point${breakdown.points === 1 ? '' : 's'} from ${prediction.team1}-${prediction.team2} in ${match.team1} vs ${match.team2}`);
+                            userStats.recentExamples.push(`${getStattoDisplayName(entry.username)} taking ${breakdown.points} point${breakdown.points === 1 ? '' : 's'} from ${prediction.team1}-${prediction.team2} in ${match.team1} vs ${match.team2}`);
                         }
                     }
 
                     if (breakdown.correctResult) {
                         userStats.currentStreak += 1;
-                        userStats.streakExamples.push(`${getDisplayName(entry.username)} reading ${formatActualScoreline(match)} correctly`);
+                        userStats.streakExamples.push(`${getStattoDisplayName(entry.username)} reading ${formatActualScoreline(match)} correctly`);
                     } else {
                         userStats.currentStreak = 0;
                         userStats.streakExamples = [];
@@ -4578,11 +4588,10 @@
             const nextMatch = matches.find(m => m.actualScore1 === null || m.actualScore2 === null);
             const formatHighlightedNameList = (nameList) => {
                 if (!nameList || nameList.length === 0) return '';
-                const highlighted = nameList.map(name => `<strong>${name}</strong>`);
-                if (highlighted.length === 1) return highlighted[0];
-                if (highlighted.length === 2) return `${highlighted[0]} and ${highlighted[1]}`;
-                if (highlighted.length === 3) return `${highlighted[0]}, ${highlighted[1]} and ${highlighted[2]}`;
-                return `${highlighted.slice(0, 3).join(', ')} and ${highlighted.length - 3} others`;
+                if (nameList.length === 1) return nameList[0];
+                if (nameList.length === 2) return `${nameList[0]} and ${nameList[1]}`;
+                if (nameList.length === 3) return `${nameList[0]}, ${nameList[1]} and ${nameList[2]}`;
+                return `${nameList.slice(0, 3).join(', ')} and ${nameList.length - 3} others`;
             };
 
             let nextMatchPredictionSummary = '';
@@ -5185,8 +5194,7 @@
                 : 'Official results';
 
             container.innerHTML = `
-                <div class="tries-stats-title">Prize Money</div>
-                <div class="prize-subheading">${prizeStatusLabel}</div>
+                <div class="tries-stats-title">Prize Money ${prizeStatusLabel}</div>
                 <div class="prize-summary-grid">
                     <div class="prize-stat">
                         <div class="prize-stat-value">${projection.entrantCount}</div>
@@ -5207,7 +5215,7 @@
                         ${rankLine('2nd Place', rules.payoutSecondPct, rank2Group)}
                         ${rankLine('3rd Place', rules.payoutThirdPct, rank3Group)}
                     </div>
-                    <div class="prize-row">
+                    <div class="prize-rank-cell closest-tries-card">
                         <div class="prize-row-head">Closest Tries (${rules.payoutClosestTriesPct}%)</div>
                         <div class="prize-row-body">${closestNames}</div>
                         <div class="prize-row-amount">${formatCurrencyAmount(projection.closestTriesShare)}${closestSuffix}</div>
