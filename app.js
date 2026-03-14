@@ -5469,8 +5469,6 @@
             html += '</table>';
             html += '</div>';
 
-            html += buildWormGraphTable(sortedUsers);
-
             container.innerHTML = html;
             renderPrizeMoneyPanel(sortedUsers);
             updateLeaderboard();
@@ -5480,93 +5478,6 @@
             if (currentFilter === 'default') {
                 scrollToDefaultMatches();
             }
-        }
-
-        function buildWormGraphTable(sortedUsers) {
-            const completedMatches = matches.filter(match => match.actualScore1 !== null && match.actualScore2 !== null);
-            if (completedMatches.length === 0 || sortedUsers.length === 0) {
-                return '';
-            }
-
-            const rankingsByMatch = [];
-            const runningPoints = {};
-            sortedUsers.forEach(user => {
-                runningPoints[user.username] = 0;
-            });
-
-            completedMatches.forEach(match => {
-                sortedUsers.forEach(user => {
-                    const prediction = users[user.username].predictions[match.id];
-                    if (!prediction) {
-                        return;
-                    }
-
-                    const isJoker = isUserJokerForMatch(user.username, match.id);
-                    runningPoints[user.username] += calculateMatchPoints(prediction, match, isJoker);
-                });
-
-                const rankingSnapshot = sortedUsers
-                    .map(user => ({
-                        username: user.username,
-                        points: runningPoints[user.username]
-                    }))
-                    .sort((a, b) => {
-                        if (b.points !== a.points) return b.points - a.points;
-                        return a.username.localeCompare(b.username);
-                    });
-
-                const ranks = {};
-                rankingSnapshot.forEach((entry, index) => {
-                    let rank = index + 1;
-                    if (index > 0 && rankingSnapshot[index - 1].points === entry.points) {
-                        rank = ranks[rankingSnapshot[index - 1].username];
-                    }
-                    ranks[entry.username] = rank;
-                });
-
-                rankingsByMatch.push(ranks);
-            });
-
-            let html = '<div class="worm-graph-section">';
-            html += '<h3 class="worm-graph-title">Placing by Game (Worm Graph)</h3>';
-            html += '<div class="worm-graph-subtitle">Shows each competitor\'s rank after every completed game.</div>';
-            html += '<div class="worm-graph-container">';
-            html += '<table class="worm-graph-table">';
-            html += '<thead><tr><th>Competitor</th>';
-
-            completedMatches.forEach((match, index) => {
-                html += `<th title="${match.team1} vs ${match.team2}">G${index + 1}</th>`;
-            });
-            html += '</tr></thead><tbody>';
-
-            sortedUsers.forEach(user => {
-                const isCurrentUser = user.username === currentUsername;
-                html += `<tr class="${isCurrentUser ? 'current-user-row' : ''}">`;
-                html += `<td class="worm-competitor">${getUserFlags(user.username)}${user.nickname}</td>`;
-
-                rankingsByMatch.forEach((snapshot, matchIndex) => {
-                    const rank = snapshot[user.username];
-                    const previousRank = matchIndex > 0 ? rankingsByMatch[matchIndex - 1][user.username] : rank;
-                    const movement = previousRank - rank;
-
-                    let movementClass = 'steady';
-                    let movementSymbol = '→';
-                    if (movement > 0) {
-                        movementClass = 'up';
-                        movementSymbol = '↑';
-                    } else if (movement < 0) {
-                        movementClass = 'down';
-                        movementSymbol = '↓';
-                    }
-
-                    html += `<td class="worm-rank-cell ${movementClass}"><span class="worm-rank">${rank}</span><span class="worm-move">${movementSymbol}</span></td>`;
-                });
-
-                html += '</tr>';
-            });
-
-            html += '</tbody></table></div></div>';
-            return html;
         }
 
         // Scroll the summary table so the default matches (last 2 completed + next 3 upcoming) are visible
