@@ -5530,339 +5530,427 @@
                 return calculateMatchPoints(pred, match, isUserJokerForMatch(username, match.id));
             }
 
-            function hexToRgb(hex) {
-                const r = parseInt(hex.slice(1, 3), 16);
-                const g = parseInt(hex.slice(3, 5), 16);
-                const b = parseInt(hex.slice(5, 7), 16);
-                return [r, g, b];
-            }
-
-            // Printer-friendly palette
-            const C = {
-                black: '#111111',
-                gray: '#666666',
-                lightGray: '#DADADA',
-                border: '#BEBEBE',
-                white: '#FFFFFF',
-                winFg: '#0B6B2C',
-                loseFg: '#C0392B',
-                drawFg: '#D4820A',
-                pointsFg: '#5A4A00',
-                pendingHomeWin: '#2471A3',
-                pendingAwayWin: '#7D3C98',
-                pendingDraw: '#D4820A',
-                exactBg: '#C6EFCE',
+            const P = {
+                border: [84, 84, 84],
+                text: [17, 17, 17],
+                red: [200, 44, 44],
+                blue: [34, 121, 196],
+                green: [52, 137, 75],
+                homeBg: [204, 234, 210],
+                awayBg: [238, 201, 206],
+                predWinBg: [198, 230, 206],
+                predWinFg: [26, 110, 57],
+                predLoseBg: [244, 199, 199],
+                predLoseFg: [153, 27, 27],
+                predDrawBg: [233, 233, 233],
+                predDrawFg: [72, 72, 72],
+                pointsBg: [236, 228, 202],
+                jokerBg: [157, 190, 221],
+                gameTotalBg: [163, 197, 142],
+                triesBg: [234, 223, 205],
+                rankTopBg: [40, 176, 96],
+                rankMidBg: [238, 214, 128],
+                rankLowBg: [239, 205, 182],
+                neutralBg: [234, 234, 234],
+                moverUp: [40, 176, 96],
+                moverDown: [255, 49, 49],
             };
 
-            // --- Initialise PDF ---
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' });
-
-            // Title
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
             const now = new Date();
-            doc.setFontSize(20);
+            const exportDate = now.toLocaleDateString('en-GB', {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+            const exportTime = now.toLocaleTimeString('en-GB', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
             doc.setFont('helvetica', 'bold');
-            doc.text('Six Nations Guesser \u2014 Match Summary', 12, 14);
-
-            const dateStr = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-            doc.setFontSize(11);
+            doc.setFontSize(14);
+            doc.setTextColor(17, 17, 17);
+            doc.text(`${now.getFullYear()} Six Nations Guesser`, 3, 8);
             doc.setFont('helvetica', 'normal');
-            doc.setTextColor(102, 102, 102);
-            doc.text(`Exported ${dateStr} at ${timeStr}`, 12, 20);
-            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(9);
+            doc.setTextColor(95, 95, 95);
+            doc.text(`Exported ${exportDate} at ${exportTime}`, 3, 12);
+            doc.setTextColor(17, 17, 17);
 
-            // --- Calculate actual + estimated tries ---
-            const totalActualTries = getTotalActualTries();
-            const completedTriesMatches = allMatches.filter(m => m.actualTries1 !== null && m.actualTries2 !== null).length;
-            const totalMatchCount = allMatches.length;
-            let estimatedTotalTries = null;
-            if (completedTriesMatches > 0) {
-                estimatedTotalTries = Math.round((totalActualTries / completedTriesMatches) * totalMatchCount);
-            }
-
-            // --- Build header rows (fixture header spans Home/Away/Points columns) ---
-            const teamAbbr = {
-                England: 'ENG',
-                France: 'FRA',
-                Ireland: 'IRE',
-                Italy: 'ITA',
-                Scotland: 'SCO',
-                Wales: 'WAL'
+            const teamColors = {
+                England: [34, 34, 34],
+                France: [41, 143, 224],
+                Ireland: [28, 148, 88],
+                Italy: [0, 163, 224],
+                Scotland: [120, 78, 185],
+                Wales: [210, 44, 44]
             };
+            const verticalTeamName = teamName => String(teamName || '').split('').join('\n');
+
+            const rounds = [...new Set(allMatches.map(m => Number(m.round)).filter(Number.isFinite))].sort((a, b) => a - b);
+            const completedRounds = rounds.filter(round => {
+                const inRound = allMatches.filter(m => Number(m.round) === round);
+                return inRound.length > 0 && inRound.every(m => m.actualScore1 !== null && m.actualScore2 !== null);
+            });
+
+            const roundRanksByUser = {};
+            const calcRankMap = (pointRows) => {
+                const sorted = [...pointRows].sort((a, b) => b.points - a.points);
+                const rankMap = {};
+                sorted.forEach((entry, index) => {
+                    let rank = index + 1;
+                    if (index > 0 && sorted[index - 1].points === entry.points) {
+                        rank = rankMap[sorted[index - 1].username];
+                    }
+                    rankMap[entry.username] = rank;
+                });
+                return rankMap;
+            };
+            completedRounds.forEach(round => {
+                const matchesThroughRound = allMatches.filter(m =>
+                    Number(m.round) <= round && m.actualScore1 !== null && m.actualScore2 !== null
+                );
+                const pointsRows = sortedUsers.map(user => ({
+                    username: user.username,
+                    points: matchesThroughRound.reduce(
+                        (sum, match) => sum + (getMatchPoints(user.username, match) || 0),
+                        0
+                    )
+                }));
+                const rankMap = calcRankMap(pointsRows);
+                sortedUsers.forEach(user => {
+                    if (!roundRanksByUser[user.username]) roundRanksByUser[user.username] = {};
+                    roundRanksByUser[user.username][round] = rankMap[user.username] || '';
+                });
+            });
+
+            const fixedLeftCols = 1; // Name only (remove first rank column)
+            const matchSchemas = allMatches.map(match => {
+                const cols = ['home', 'away', 'pts'];
+                if (match.jokerEligible) cols.push('joker');
+                return { match, cols };
+            });
+            const matchColsCount = matchSchemas.reduce((sum, schema) => sum + schema.cols.length, 0);
+            const summaryColsCount = 3; // Game Total, Total Tries, Final Rank
+            const totalCols = fixedLeftCols + matchColsCount + summaryColsCount;
+            const summaryStartIndex = fixedLeftCols + matchColsCount;
+            const gameTotalCol = summaryStartIndex;
+            const totalTriesCol = summaryStartIndex + 1;
+            const finalRankCol = summaryStartIndex + 2;
+
+            const colMetaByIndex = {};
+            let rollingMatchCol = fixedLeftCols;
+            matchSchemas.forEach(schema => {
+                schema.cols.forEach((kind, offset) => {
+                    colMetaByIndex[rollingMatchCol + offset] = { kind, match: schema.match, offset, size: schema.cols.length };
+                });
+                rollingMatchCol += schema.cols.length;
+            });
 
             const headerRowTop = [
-                { content: '#', styles: { halign: 'center' } },
-                { content: 'Name', styles: { halign: 'left' } },
-                { content: 'Score', styles: { halign: 'center' } },
-                ...allMatches.map(m => ({
-                    content: m.date + '\n' + m.time,
-                    colSpan: 3,
-                    styles: {
-                        halign: 'center',
-                        overflow: 'visible',
-                        fontSize: 7.4,
-                        fillColor: m.round % 2 === 0 ? [255, 255, 255] : [242, 242, 242]
-                    }
+                { content: 'Date /\nKO', styles: { halign: 'center', textColor: P.red, fontStyle: 'bold' } },
+                ...matchSchemas.map(({ match, cols }) => ({
+                    content: `R${match.round}\n${match.date}\n${match.time}`,
+                    colSpan: cols.length,
+                    styles: { halign: 'center', textColor: P.red, fontStyle: 'bold', fontSize: 6.9 }
                 })),
-                { content: 'Predicted\nTries', styles: { halign: 'center' } }
+                { content: '', colSpan: 3, styles: { halign: 'center' } }
             ];
 
             const headerRowBottom = [
-                { content: '', styles: { halign: 'center' } },
-                { content: '', styles: { halign: 'left' } },
-                { content: '', styles: { halign: 'center' } },
-                ...allMatches.flatMap(m => ([
-                    { content: teamAbbr[m.team1] || m.team1, styles: { halign: 'center', fontSize: 6.8 } },
-                    { content: teamAbbr[m.team2] || m.team2, styles: { halign: 'center', fontSize: 6.8 } },
-                    { content: 'Pts', styles: { halign: 'center', fontSize: 6.6 } }
-                ])),
-                { content: '', styles: { halign: 'center' } }
-            ];
-
-            // --- Build actual results rows ---
-            const actualScoresRow = [
-                { content: '', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold' } },
-                { content: 'Actual Scores', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', halign: 'left' } },
-                { content: '', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold' } },
-                ...allMatches.map(m => {
-                    const hasResult = m.actualScore1 !== null && m.actualScore2 !== null;
-                    const home = hasResult ? String(m.actualScore1) : '';
-                    const away = hasResult ? String(m.actualScore2) : '';
-                    let homeColor = hexToRgb(C.gray);
-                    let awayColor = hexToRgb(C.gray);
-                    if (hasResult) {
-                        if (m.actualScore1 > m.actualScore2) {
-                            homeColor = hexToRgb(C.winFg);
-                            awayColor = hexToRgb(C.loseFg);
-                        } else if (m.actualScore1 < m.actualScore2) {
-                            homeColor = hexToRgb(C.loseFg);
-                            awayColor = hexToRgb(C.winFg);
-                        } else {
-                            homeColor = hexToRgb(C.drawFg);
-                            awayColor = hexToRgb(C.drawFg);
+                { content: 'Name', styles: { halign: 'left', fontStyle: 'bold' } },
+                ...matchSchemas.flatMap(({ match, cols }) => {
+                    return cols.map(kind => {
+                        if (kind === 'home') {
+                            return {
+                                content: verticalTeamName(match.team1),
+                                styles: { halign: 'center', valign: 'middle', textColor: teamColors[match.team1] || P.blue, fontStyle: 'bold', fontSize: 6.1 }
+                            };
                         }
-                    }
-                    return [
-                        { content: home, styles: { textColor: homeColor, fontStyle: 'bold', fontSize: 7.2, halign: 'center' } },
-                        { content: away, styles: { textColor: awayColor, fontStyle: 'bold', fontSize: 7.2, halign: 'center' } },
-                        { content: '', styles: { textColor: hexToRgb(C.gray), fontStyle: 'bold', fontSize: 7.2, halign: 'center' } }
-                    ];
-                }).flat(),
-                { content: '', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', fontSize: 7.4 } }
+                        if (kind === 'away') {
+                            return {
+                                content: verticalTeamName(match.team2),
+                                styles: { halign: 'center', valign: 'middle', textColor: teamColors[match.team2] || P.red, fontStyle: 'bold', fontSize: 6.1 }
+                            };
+                        }
+                        if (kind === 'pts') return { content: '', styles: { halign: 'center', fontStyle: 'bold' } };
+                        return { content: '', styles: { halign: 'center', fontStyle: 'bold' } };
+                    });
+                }),
+                { content: 'Game\nTotal', styles: { halign: 'center', fontStyle: 'bold' } },
+                { content: 'Total\nTries', styles: { halign: 'center', fontStyle: 'bold', textColor: P.blue } },
+                { content: 'Final\nRank', styles: { halign: 'center', fontStyle: 'bold' } }
             ];
 
-            const actualTriesRow = [
-                { content: '', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold' } },
-                { content: 'Actual Tries', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', halign: 'left' } },
-                { content: '', styles: { textColor: hexToRgb(C.black), fontStyle: 'bold' } },
-                ...allMatches.map(m => {
-                    const homeTries = m.actualTries1 !== null ? String(m.actualTries1) : '';
-                    const awayTries = m.actualTries2 !== null ? String(m.actualTries2) : '';
-                    return [
-                        {
-                            content: homeTries,
-                            styles: { textColor: m.actualTries1 !== null ? hexToRgb(C.black) : hexToRgb(C.gray), fontStyle: 'bold', fontSize: 7.2, halign: 'center' }
-                        },
-                        {
-                            content: awayTries,
-                            styles: { textColor: m.actualTries2 !== null ? hexToRgb(C.black) : hexToRgb(C.gray), fontStyle: 'bold', fontSize: 7.2, halign: 'center' }
-                        },
-                        { content: '', styles: { textColor: hexToRgb(C.gray), fontStyle: 'bold', fontSize: 7.2, halign: 'center' } }
-                    ];
-                }).flat(),
-                {
-                    content: completedTriesMatches > 0
-                            ? (completedTriesMatches === totalMatchCount
-                                ? `Act: ${totalActualTries}`
-                                : `Act: ${totalActualTries}\nProj: ${estimatedTotalTries}`)
-                        : '',
-                    styles: { textColor: hexToRgb(C.black), fontStyle: 'bold', fontSize: 7 }
-                }
+            const totalActualTries = getTotalActualTries();
+            const resultRow = [
+                { content: 'Result', styles: { fontStyle: 'bold', halign: 'left', textColor: P.red } },
+                ...matchSchemas.flatMap(({ match, cols }) => cols.map(kind => {
+                    if (kind === 'home') return { content: match.actualScore1 !== null ? String(match.actualScore1) : '', styles: { fontStyle: 'bold' } };
+                    if (kind === 'away') return { content: match.actualScore2 !== null ? String(match.actualScore2) : '', styles: { fontStyle: 'bold' } };
+                    return { content: '', styles: {} };
+                })),
+                { content: '', styles: {} },
+                { content: String(totalActualTries || ''), styles: { fontStyle: 'bold', textColor: P.blue } },
+                { content: '', styles: {} }
             ];
 
-            // --- Build data rows (single row per user with per-match points cell) ---
-            const dataRows = sortedUsers.map((user, index) => {
+            const tryCountRow = [
+                { content: 'Try Count', styles: { fontStyle: 'bold', halign: 'left', textColor: [33, 107, 165] } },
+                ...matchSchemas.flatMap(({ match, cols }) => {
+                    const sum = match.actualTries1 !== null && match.actualTries2 !== null
+                        ? match.actualTries1 + match.actualTries2
+                        : null;
+                    const cells = [
+                        {
+                            content: sum !== null ? String(sum) : '',
+                            colSpan: 2,
+                            styles: { fontStyle: 'bold', halign: 'center', textColor: P.green }
+                        },
+                        { content: 'Pts', styles: { fontStyle: 'bold', halign: 'center' } }
+                    ];
+                    if (cols.includes('joker')) cells.push({ content: 'Jkr', styles: { fontStyle: 'bold', halign: 'center' } });
+                    return cells;
+                }),
+                { content: '', styles: {} },
+                { content: '', styles: {} },
+                { content: '', styles: {} }
+            ];
+
+            const userRows = sortedUsers.map((user, index) => {
                 let rank = index + 1;
                 if (index > 0 && sortedUsers[index - 1].totalPoints === user.totalPoints) {
-                    for (let i = index - 1; i >= 0; i--) {
-                        if (sortedUsers[i].totalPoints === user.totalPoints) rank = i + 1; else break;
-                    }
+                    rank = userRowsRankForTie(sortedUsers, index);
                 }
 
-                const scoreRow = [
-                    { content: String(rank), styles: { fontStyle: 'bold', halign: 'center' } },
-                    { content: user.nickname, styles: { fontStyle: 'bold', halign: 'left', fontSize: 8.2 } },
-                    { content: String(user.totalPoints), styles: { fontStyle: 'bold', textColor: hexToRgb(C.pointsFg), fontSize: 14 } },
+                const row = [
+                    { content: user.nickname, styles: { halign: 'left', fontStyle: 'bold' } }
                 ];
 
-                allMatches.forEach(match => {
+                matchSchemas.forEach(({ match, cols }) => {
                     const pred = users[user.username].predictions[match.id];
-                    const hasResult = match.actualScore1 !== null && match.actualScore2 !== null;
                     const isJoker = isUserJokerForMatch(user.username, match.id);
                     const pts = getMatchPoints(user.username, match);
 
                     if (!pred) {
-                        scoreRow.push({ content: '\u2014', styles: { textColor: hexToRgb(C.gray), fontSize: 7.4 } });
-                        scoreRow.push({ content: '\u2014', styles: { textColor: hexToRgb(C.gray), fontSize: 7.4 } });
-                        scoreRow.push({ content: '\u2014', styles: { textColor: hexToRgb(C.gray), fontSize: 6.8, halign: 'center' } });
+                        cols.forEach(kind => {
+                            if (kind === 'joker') row.push({ content: '', styles: {} });
+                            else row.push({ content: '\u2014', styles: {} });
+                        });
                         return;
                     }
 
-                    let homeColor = hexToRgb(C.black);
-                    let awayColor = hexToRgb(C.black);
-                    if (pred.team1 > pred.team2) {
-                        homeColor = hexToRgb(C.winFg);
-                        awayColor = hexToRgb(C.loseFg);
-                    } else if (pred.team1 < pred.team2) {
-                        homeColor = hexToRgb(C.loseFg);
-                        awayColor = hexToRgb(C.winFg);
-                    } else {
-                        homeColor = hexToRgb(C.drawFg);
-                        awayColor = hexToRgb(C.drawFg);
-                    }
-
-                    const homeStyles = { textColor: homeColor, fontSize: 8.4, fontStyle: 'bold' };
-                    const awayStyles = { textColor: awayColor, fontSize: 8.4, fontStyle: 'bold' };
-
-                    if (hasResult && pred.team1 === match.actualScore1 && pred.team2 === match.actualScore2) {
-                        homeStyles.fillColor = hexToRgb(C.exactBg);
-                        awayStyles.fillColor = hexToRgb(C.exactBg);
-                    }
-
-                    scoreRow.push({ content: String(pred.team1) + (isJoker ? '*' : ''), styles: homeStyles });
-                    scoreRow.push({ content: String(pred.team2) + (isJoker ? '*' : ''), styles: awayStyles });
-
-                    const ptsText = pts === null ? '' : String(pts);
-                    const ptsColor = pts === null
-                        ? hexToRgb(C.gray)
-                        : hexToRgb('#1F5FBF'); // blue
-                    scoreRow.push({
-                        content: ptsText,
-                        styles: {
-                            textColor: ptsColor,
-                            fontSize: 7.6,
-                            halign: 'center',
-                            fontStyle: pts !== null && pts > 3 ? 'bold' : 'normal'
+                    cols.forEach(kind => {
+                        if (kind === 'home') {
+                            row.push({ content: String(pred.team1), styles: { fontStyle: 'bold' } });
+                            return;
                         }
+                        if (kind === 'away') {
+                            row.push({ content: String(pred.team2), styles: { fontStyle: 'bold' } });
+                            return;
+                        }
+                        if (kind === 'pts') {
+                            row.push({ content: pts === null ? '' : String(pts), styles: { fontStyle: pts > 3 ? 'bold' : 'normal' } });
+                            return;
+                        }
+                        row.push({ content: isJoker ? 'x' : '', styles: { fontStyle: 'bold' } });
                     });
                 });
 
-                // Predicted Tries
-                const userTries = users[user.username].totalTries;
-                scoreRow.push({
-                    content: userTries != null ? String(userTries) : '\u2014',
-                    styles: { textColor: hexToRgb(C.black) }
-                });
+                row.push({ content: String(user.totalPoints), styles: { fontStyle: 'bold' } });
+                row.push({ content: users[user.username].totalTries != null ? String(users[user.username].totalTries) : '\u2014', styles: { fontStyle: 'bold', textColor: P.blue } });
+                row.push({ content: String(rank), styles: { fontStyle: 'bold' } });
 
-                return scoreRow;
+                return row;
             });
 
-            // --- Render table ---
-            const pageWidth = doc.internal.pageSize.getWidth();
-            const marginLR = 6;
-            const tableWidth = pageWidth - marginLR * 2;
-            const scoreColumnCount = allMatches.length * 3;
-            const fixedWidth = 10 + 38 + 17 + 16; // rank + name + score + tries
-            const matchColWidth = Math.max(6.8, (tableWidth - fixedWidth) / scoreColumnCount);
-            const triesColIndex = 3 + scoreColumnCount;
-            const colStyles = {
-                0: { cellWidth: 10 },
-                1: { cellWidth: 38 },
-                2: { cellWidth: 17 },
-            };
-            for (let i = 3; i < triesColIndex; i++) {
-                colStyles[i] = { cellWidth: matchColWidth };
+            function userRowsRankForTie(sorted, idx) {
+                for (let i = idx - 1; i >= 0; i--) {
+                    if (sorted[i].totalPoints === sorted[idx].totalPoints) continue;
+                    return i + 2;
+                }
+                return 1;
             }
-            colStyles[triesColIndex] = { cellWidth: 16 };
+
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const marginLR = 3;
+            const tableWidth = pageWidth - marginLR * 2;
+            const fixedWidth = 22 + 9 + 9 + 9;
+            const matchColWidth = Math.max(4.2, (tableWidth - fixedWidth) / Math.max(1, matchColsCount));
+            const colStyles = {
+                0: { cellWidth: 22 }
+            };
+            for (let i = fixedLeftCols; i < summaryStartIndex; i++) colStyles[i] = { cellWidth: matchColWidth };
+            colStyles[gameTotalCol] = { cellWidth: 9 };
+            colStyles[totalTriesCol] = { cellWidth: 9 };
+            colStyles[finalRankCol] = { cellWidth: 9 };
 
             doc.autoTable({
                 head: [headerRowTop, headerRowBottom],
-                body: [actualScoresRow, actualTriesRow, ...dataRows],
-                startY: 25,
+                body: [resultRow, tryCountRow, ...userRows],
+                startY: 15,
                 theme: 'grid',
-                tableWidth: tableWidth,
+                tableWidth,
                 styles: {
-                    fontSize: 7,
-                    cellPadding: 0.75,
-                    lineColor: hexToRgb(C.border),
-                    lineWidth: 0.28,
+                    fontSize: 7.4,
+                    cellPadding: 0.25,
+                    lineColor: P.border,
+                    lineWidth: 0.35,
                     halign: 'center',
                     valign: 'middle',
                     overflow: 'hidden',
                     font: 'helvetica',
+                    textColor: P.text
                 },
                 headStyles: {
-                    fillColor: hexToRgb(C.white),
-                    textColor: hexToRgb(C.black),
+                    fillColor: [246, 246, 246],
+                    textColor: P.text,
                     fontStyle: 'bold',
-                    fontSize: 6.4,
-                    cellPadding: 0.55,
-                    halign: 'center',
-                    lineColor: hexToRgb(C.border),
-                    lineWidth: 0.36,
+                    fontSize: 7.0,
+                    cellPadding: 0.28,
+                    lineColor: P.border,
+                    lineWidth: 0.45
                 },
                 columnStyles: colStyles,
                 didParseCell: function(data) {
-                    // Subtle striping for user rows.
-                    // Keep any explicit per-cell fill (e.g. exact-score highlight) untouched.
-                    if (data.section === 'body' && data.row.index >= 2) {
-                        const hasExplicitFill = Array.isArray(data.cell.styles.fillColor);
-                        if (!hasExplicitFill) {
-                            const userRowIndex = data.row.index - 2;
-                            if (userRowIndex % 2 === 0) {
-                                data.cell.styles.fillColor = [248, 248, 248];
+                    const col = data.column.index;
+                    const isUserRow = data.section === 'body' && data.row.index >= 2;
+                    const isMetaRow = data.section === 'body' && data.row.index <= 1;
+                    const colMeta = colMetaByIndex[col];
+                    const isBody = data.section === 'body';
+                    const userIndex = isUserRow ? data.row.index - 2 : -1;
+                    const rowUser = userIndex >= 0 ? sortedUsers[userIndex] : null;
+
+                    if (colMeta) {
+                        if (isBody) {
+                            if (colMeta.kind === 'home') data.cell.styles.fillColor = [255, 255, 255];
+                            if (colMeta.kind === 'away') data.cell.styles.fillColor = [255, 255, 255];
+                            if (colMeta.kind === 'pts') data.cell.styles.fillColor = P.pointsBg;
+                            if (colMeta.kind === 'joker') data.cell.styles.fillColor = P.jokerBg;
+                        } else {
+                            data.cell.styles.fillColor = [246, 246, 246];
+                        }
+
+                        // Try Count row should be plain black text on white background.
+                        if (isBody && data.row.index === 1) {
+                            data.cell.styles.fillColor = [255, 255, 255];
+                            data.cell.styles.textColor = P.text;
+                        }
+
+                        if (colMeta.kind === 'home' || colMeta.kind === 'away') data.cell.styles.fontStyle = 'bold';
+                        if (colMeta.kind === 'pts' && isUserRow) data.cell.styles.textColor = [58, 50, 26];
+                        if (colMeta.kind === 'joker') data.cell.styles.textColor = [35, 43, 56];
+
+                        // Result row: color by winning/losing actual score, like prediction color coding.
+                        if (isBody && data.row.index === 0 && (colMeta.kind === 'home' || colMeta.kind === 'away')) {
+                            const match = colMeta.match;
+                            if (match.actualScore1 !== null && match.actualScore2 !== null) {
+                                const isDraw = match.actualScore1 === match.actualScore2;
+                                const homeWins = match.actualScore1 > match.actualScore2;
+                                const winningKind = homeWins ? 'home' : 'away';
+                                const cellIsWinner = !isDraw && colMeta.kind === winningKind;
+                                if (isDraw) {
+                                    data.cell.styles.fillColor = P.predDrawBg;
+                                    data.cell.styles.textColor = P.predDrawFg;
+                                } else if (cellIsWinner) {
+                                    data.cell.styles.fillColor = P.predWinBg;
+                                    data.cell.styles.textColor = P.predWinFg;
+                                } else {
+                                    data.cell.styles.fillColor = P.predLoseBg;
+                                    data.cell.styles.textColor = P.predLoseFg;
+                                }
                             }
                         }
+
+                        if (isUserRow && rowUser && (colMeta.kind === 'home' || colMeta.kind === 'away')) {
+                            const pred = users[rowUser.username] && users[rowUser.username].predictions
+                                ? users[rowUser.username].predictions[colMeta.match.id]
+                                : null;
+                            if (pred) {
+                                const isDraw = pred.team1 === pred.team2;
+                                const isHomeWin = pred.team1 > pred.team2;
+                                const winningKind = isHomeWin ? 'home' : 'away';
+                                const cellIsWinner = !isDraw && colMeta.kind === winningKind;
+                                if (isDraw) {
+                                    data.cell.styles.fillColor = P.predDrawBg;
+                                    data.cell.styles.textColor = P.predDrawFg;
+                                } else if (cellIsWinner) {
+                                    data.cell.styles.fillColor = P.predWinBg;
+                                    data.cell.styles.textColor = P.predWinFg;
+                                } else {
+                                    data.cell.styles.fillColor = P.predLoseBg;
+                                    data.cell.styles.textColor = P.predLoseFg;
+                                }
+                            }
+                        }
+
+                        const lw = typeof data.cell.styles.lineWidth === 'object'
+                            ? data.cell.styles.lineWidth
+                            : { top: 0.35, bottom: 0.35, left: 0.35, right: 0.35 };
+                        if (colMeta.offset === 0) lw.left = 0.9;
+                        if (colMeta.offset === colMeta.size - 1) lw.right = 0.9;
+                        data.cell.styles.lineWidth = lw;
                     }
 
-                    // Thicker right border on Score column to separate fixed columns from matches
-                    if (data.column.index === 2) {
-                        data.cell.styles.lineWidth = { bottom: 0.2, top: 0.2, left: 0.2, right: 0.5 };
+                    if (data.section === 'head' && data.row.index === 1 && colMeta && (colMeta.kind === 'home' || colMeta.kind === 'away')) {
+                        data.cell.styles.minCellHeight = 12.5;
                     }
-                    // Thicker separators after each match block (home, away, points).
-                    if (data.column.index >= 3 && data.column.index < triesColIndex && ((data.column.index - 3) % 3 === 2)) {
-                        const lw = data.cell.styles.lineWidth;
-                        if (typeof lw === 'object') {
-                            lw.right = 0.5;
+
+                    if (isUserRow) {
+                        data.cell.styles.minCellHeight = 4.8;
+                    }
+
+                    // Use a bold divider line between Try Count and first player row.
+                    if (isBody && data.row.index === 2) {
+                        const lw = typeof data.cell.styles.lineWidth === 'object'
+                            ? data.cell.styles.lineWidth
+                            : { top: data.cell.styles.lineWidth || 0.35, bottom: data.cell.styles.lineWidth || 0.35, left: data.cell.styles.lineWidth || 0.35, right: data.cell.styles.lineWidth || 0.35 };
+                        lw.top = Math.max(lw.top || 0.35, 0.9);
+                        data.cell.styles.lineWidth = lw;
+                    }
+
+                    if (col === gameTotalCol && isBody) {
+                        data.cell.styles.fillColor = P.gameTotalBg;
+                        data.cell.styles.fontStyle = 'bold';
+                    }
+                    if (col === totalTriesCol && isBody) {
+                        data.cell.styles.fillColor = P.triesBg;
+                        data.cell.styles.fontStyle = 'bold';
+                        data.cell.styles.textColor = P.blue;
+                    }
+                    if (col === finalRankCol) {
+                        if (isUserRow) {
+                            const rankValue = Number(data.cell.raw && data.cell.raw.content ? data.cell.raw.content : data.cell.text && data.cell.text[0]);
+                            if (rankValue <= 3) data.cell.styles.fillColor = P.rankTopBg;
+                            else if (rankValue <= 8) data.cell.styles.fillColor = P.rankMidBg;
+                            else data.cell.styles.fillColor = P.rankLowBg;
+                            data.cell.styles.fontStyle = 'bold';
                         } else {
-                            data.cell.styles.lineWidth = { bottom: 0.2, top: 0.2, left: 0.2, right: 0.5 };
+                            data.cell.styles.fillColor = P.neutralBg;
                         }
                     }
-                    // Thicker separators before each match block.
-                    if (data.column.index >= 3 && data.column.index < triesColIndex && ((data.column.index - 3) % 3 === 0)) {
-                        const lw = data.cell.styles.lineWidth;
-                        if (typeof lw === 'object') {
-                            lw.left = 0.5;
-                        } else {
-                            data.cell.styles.lineWidth = { bottom: 0.2, top: 0.2, left: 0.5, right: 0.2 };
-                        }
-                    }
-                    // Thicker bottom border after the actual rows block.
-                    if (data.section === 'body' && data.row.index === 1) {
-                        const lw = data.cell.styles.lineWidth;
-                        if (typeof lw === 'object') {
-                            lw.bottom = 0.5;
-                        } else {
-                            data.cell.styles.lineWidth = { bottom: 0.5, top: 0.2, left: 0.2, right: data.column.index === 2 ? 0.5 : 0.2 };
-                        }
-                    }
 
-                    // Thicker horizontal borders around each user's row.
-                    if (data.section === 'body' && data.row.index >= 2) {
-                        const current = data.cell.styles.lineWidth;
-                        const normalized = typeof current === 'object'
-                            ? current
-                            : { top: current || 0.2, bottom: current || 0.2, left: current || 0.2, right: current || 0.2 };
-
-                        normalized.top = Math.max(normalized.top || 0.2, 0.45);
-                        normalized.bottom = Math.max(normalized.bottom || 0.2, 0.45);
-
-                        data.cell.styles.lineWidth = normalized;
+                    if (isMetaRow) {
+                        data.cell.styles.fontStyle = 'bold';
                     }
                 },
-                margin: { top: 10, left: marginLR, right: marginLR },
+                margin: { top: 6, left: marginLR, right: marginLR }
             });
+
+            const mainTableBottomY = doc.lastAutoTable && doc.lastAutoTable.finalY ? doc.lastAutoTable.finalY : 31;
+            const footerStartY = mainTableBottomY + 8;
+            const footerBottomLimit = pageHeight - 8;
+            const footerGap = 4;
+            const leftX = 10;
+            const rightPanelWidth = completedRounds.length > 0 ? Math.min(108, pageWidth * 0.37) : 0;
+            const rightX = pageWidth - marginLR - rightPanelWidth;
+            const leftWidth = completedRounds.length > 0
+                ? Math.max(70, rightX - footerGap - leftX)
+                : (pageWidth - leftX - marginLR);
 
             const rules = getEffectiveScoringRules();
             const prizeProjection = calculatePrizeProjection(sortedUsers, rules);
@@ -5887,9 +5975,7 @@
                 renderedPrizeGroups.add(groupKey);
                 const label = formatPrizeRankLabel(group, fallbackLabel, fallbackPct, rules);
                 const names = formatNamesForUsers(group.users) || 'TBD';
-                const share = group.users.length > 0
-                    ? prizeProjection.leaderboardPayouts[group.users[0].username] || 0
-                    : 0;
+                const share = group.users.length > 0 ? prizeProjection.leaderboardPayouts[group.users[0].username] || 0 : 0;
                 prizeLines.push(`${label}: ${names} - ${formatCurrencyAmount(share)}${group.users.length > 1 ? ' each' : ''}`);
             };
             appendPrizeLine('1st Place', rules.payoutFirstPct, rank1Group);
@@ -5899,39 +5985,140 @@
                 ? prizeProjection.closestTriesWinners.map(w => `${getDisplayName(w.username)} (${w.predicted})`).join(', ')
                 : 'TBD';
             prizeLines.push(`Closest tries (${rules.payoutClosestTriesPct}%): ${closestNames} - ${formatCurrencyAmount(prizeProjection.closestTriesShare)}${prizeProjection.closestTriesWinners.length > 1 ? ' each' : ''}`);
-            const prizeFootnotes = [
-                prizeProjection.aiPrizeFootnote
-            ].filter(Boolean);
+            const prizeFootnotes = [prizeProjection.aiPrizeFootnote].filter(Boolean);
 
-            let cursorY = (doc.lastAutoTable && doc.lastAutoTable.finalY ? doc.lastAutoTable.finalY : 31) + 8;
-            const pageHeight = doc.internal.pageSize.getHeight();
-            const requiredHeight = 12 + (prizeLines.length * 6) + (prizeFootnotes.length * 5);
-            if (cursorY + requiredHeight > pageHeight - 14) {
-                doc.addPage();
-                cursorY = 16;
-            }
+            let cursorY = footerStartY;
 
-            doc.setFontSize(14);
+            doc.setFontSize(12);
             doc.setFont('helvetica', 'bold');
-            doc.text('Prize Summary', 16, cursorY);
-            cursorY += 6;
-            doc.setFontSize(10.5);
+            doc.setTextColor(17, 17, 17);
+            doc.text('Prize Summary', leftX, cursorY);
+            cursorY += 4.8;
+            doc.setFontSize(8.8);
             prizeLines.forEach((line, index) => {
                 doc.setFont('helvetica', index === 0 ? 'italic' : 'normal');
-                doc.text(line, 16, cursorY);
-                cursorY += 5.4;
+                const wrapped = doc.splitTextToSize(line, leftWidth);
+                if (cursorY + (wrapped.length * 3.6) > footerBottomLimit) return;
+                doc.text(wrapped, leftX, cursorY);
+                cursorY += wrapped.length * 3.6;
             });
             if (prizeFootnotes.length > 0) {
-                cursorY += 1.5;
+                cursorY += 0.8;
                 doc.setFont('helvetica', 'italic');
                 prizeFootnotes.forEach(line => {
-                    doc.text(line, 16, cursorY);
-                    cursorY += 4.8;
+                    const wrapped = doc.splitTextToSize(line, leftWidth);
+                    if (cursorY + (wrapped.length * 3.4) > footerBottomLimit) return;
+                    doc.text(wrapped, leftX, cursorY);
+                    cursorY += wrapped.length * 3.4;
                 });
                 doc.setFont('helvetica', 'normal');
             }
 
-            // --- Download ---
+            // Add three statto remarks beneath the prize summary.
+            const stattoFacts = buildTournamentStattoFacts();
+            const stattoRemarks = (Array.isArray(stattoFacts) ? stattoFacts : [])
+                .filter(Boolean)
+                .slice(0, 3)
+                .map(remark => String(remark)
+                    .replace(/<\/?strong>/gi, '')
+                    .replace(/\*\*/g, '')
+                );
+            while (stattoRemarks.length < 3) {
+                stattoRemarks.push('The Statto is still sharpening the pencil for the next set of numbers.');
+            }
+
+            cursorY += 1.5;
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(12);
+            doc.setTextColor(17, 17, 17);
+            if (cursorY + 4 < footerBottomLimit) {
+                doc.text('Statto Remarks', leftX, cursorY);
+                cursorY += 4.3;
+            }
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8.4);
+            const stattoMaxWidth = leftWidth;
+            stattoRemarks.forEach((remark, index) => {
+                if (cursorY > footerBottomLimit - 3) return;
+                const wrappedFull = doc.splitTextToSize(`${index + 1}. ${remark}`, stattoMaxWidth);
+                const wrapped = wrappedFull.slice(0, 2);
+                if (wrappedFull.length > 2) {
+                    wrapped[1] = `${wrapped[1].replace(/\s+$/, '')}...`;
+                }
+                if (cursorY + wrapped.length * 3.5 > footerBottomLimit) return;
+                doc.text(wrapped, leftX, cursorY);
+                cursorY += wrapped.length * 3.5 + 0.6;
+            });
+
+            // Movers & Shakers lives alongside the summary block (bottom-right) to keep everything on one page.
+            if (completedRounds.length > 0) {
+                const moversHead = [[
+                    { content: 'Name', styles: { halign: 'left' } },
+                    ...completedRounds.map(r => ({ content: `R${r}`, styles: { halign: 'center' } }))
+                ]];
+                const moversBody = sortedUsers.map(user => ([
+                    { content: user.nickname, styles: { halign: 'left' } },
+                    ...completedRounds.map(round => ({
+                        content: String((roundRanksByUser[user.username] && roundRanksByUser[user.username][round]) || ''),
+                        styles: { halign: 'center' }
+                    }))
+                ]));
+                const moverColWidth = completedRounds.length > 0
+                    ? Math.max(8, (rightPanelWidth - 30) / completedRounds.length)
+                    : 10;
+                const moversColStyles = { 0: { cellWidth: 30 } };
+                for (let i = 1; i <= completedRounds.length; i++) moversColStyles[i] = { cellWidth: moverColWidth };
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(10.5);
+                doc.setTextColor(17, 17, 17);
+                doc.text('Movers & Shakers', rightX, footerStartY);
+
+                doc.autoTable({
+                    head: moversHead,
+                    body: moversBody,
+                    startY: footerStartY + 2,
+                    tableWidth: rightPanelWidth,
+                    margin: { left: rightX, right: marginLR },
+                    theme: 'grid',
+                    styles: {
+                        font: 'helvetica',
+                        fontSize: 7.6,
+                        cellPadding: 0.22,
+                        lineColor: [96, 96, 96],
+                        lineWidth: 0.24,
+                        textColor: [17, 17, 17]
+                    },
+                    headStyles: {
+                        fillColor: [246, 246, 246],
+                        textColor: [17, 17, 17],
+                        fontStyle: 'bold',
+                        fontSize: 7.4
+                    },
+                    columnStyles: moversColStyles,
+                    didParseCell: function(data) {
+                        if (data.section !== 'body' || data.column.index === 0) return;
+                        const roundIdx = data.column.index - 1;
+                        const round = completedRounds[roundIdx];
+                        const user = sortedUsers[data.row.index];
+                        const currentRank = roundRanksByUser[user.username] ? roundRanksByUser[user.username][round] : null;
+                        const prevRound = roundIdx > 0 ? completedRounds[roundIdx - 1] : null;
+                        const previousRank = prevRound && roundRanksByUser[user.username]
+                            ? roundRanksByUser[user.username][prevRound]
+                            : null;
+                        data.cell.styles.fillColor = [234, 234, 234];
+                        if (currentRank != null && previousRank != null) {
+                            if (currentRank < previousRank) data.cell.styles.fillColor = P.moverUp;
+                            if (currentRank > previousRank) data.cell.styles.fillColor = P.moverDown;
+                        } else if (currentRank != null && previousRank == null && currentRank <= 3) {
+                            data.cell.styles.fillColor = P.moverUp;
+                        }
+                    }
+                });
+            }
+
             const filename = 'SixNations_Summary_' + now.toISOString().slice(0, 10) + '.pdf';
             if (openInBrowser) {
                 const blobUrl = doc.output('bloburl');
