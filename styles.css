@@ -2231,6 +2231,8 @@
             border: 1px solid rgba(255, 255, 255, 0.12);
             cursor: pointer;
             transition: opacity 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .worm-legend-item-current {
@@ -2248,6 +2250,7 @@
 
         .worm-series {
             transition: opacity 0.18s ease;
+            touch-action: manipulation;
         }
 
         .worm-series-line {
@@ -2257,6 +2260,8 @@
         .worm-point {
             cursor: pointer;
             transition: r 0.18s ease;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .worm-series.is-active .worm-series-line {

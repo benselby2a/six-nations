@@ -5436,12 +5436,44 @@
                 }
                 activate(username);
             };
+            const getClientPosition = (event, pointElement = null) => {
+                if (event && event.touches && event.touches.length > 0) {
+                    return {
+                        clientX: event.touches[0].clientX,
+                        clientY: event.touches[0].clientY
+                    };
+                }
+                if (event && event.changedTouches && event.changedTouches.length > 0) {
+                    return {
+                        clientX: event.changedTouches[0].clientX,
+                        clientY: event.changedTouches[0].clientY
+                    };
+                }
+                if (event && Number.isFinite(event.clientX) && Number.isFinite(event.clientY)) {
+                    return {
+                        clientX: event.clientX,
+                        clientY: event.clientY
+                    };
+                }
+                if (pointElement && typeof pointElement.getBoundingClientRect === 'function') {
+                    const rect = pointElement.getBoundingClientRect();
+                    return {
+                        clientX: rect.left + (rect.width / 2),
+                        clientY: rect.top + (rect.height / 2)
+                    };
+                }
+                return { clientX: 0, clientY: 0 };
+            };
 
             container.querySelectorAll('.worm-legend-item').forEach(item => {
                 const username = item.dataset.player;
                 item.addEventListener('mouseenter', () => activate(username));
                 item.addEventListener('mouseleave', clear);
                 item.addEventListener('click', () => togglePlayer(username));
+                item.addEventListener('touchstart', event => {
+                    event.preventDefault();
+                    togglePlayer(username);
+                }, { passive: false });
             });
 
             container.querySelectorAll('.worm-series').forEach(series => {
@@ -5449,6 +5481,10 @@
                 series.addEventListener('mouseenter', () => activate(username));
                 series.addEventListener('mouseleave', clear);
                 series.addEventListener('click', () => togglePlayer(username));
+                series.addEventListener('touchstart', event => {
+                    event.preventDefault();
+                    togglePlayer(username);
+                }, { passive: false });
             });
 
             document.querySelectorAll('.summary-table tbody tr[data-player]').forEach(row => {
@@ -5471,8 +5507,9 @@
                 tooltip.classList.remove('hidden');
 
                 const wrapRect = wrap.getBoundingClientRect();
-                const left = event.clientX - wrapRect.left + 12;
-                const top = event.clientY - wrapRect.top + 12;
+                const pointer = getClientPosition(event, point);
+                const left = pointer.clientX - wrapRect.left + 12;
+                const top = pointer.clientY - wrapRect.top + 12;
                 const maxLeft = Math.max(8, wrap.clientWidth - tooltip.offsetWidth - 8);
                 const maxTop = Math.max(8, wrap.clientHeight - tooltip.offsetHeight - 8);
 
@@ -5493,6 +5530,12 @@
                     activate(point.dataset.username || '');
                     showPointTooltip(event, point);
                 });
+                point.addEventListener('touchstart', event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    activate(point.dataset.username || '');
+                    showPointTooltip(event, point);
+                }, { passive: false });
             });
 
             wrap.addEventListener('click', event => {
@@ -5500,6 +5543,12 @@
                 hidePointTooltip();
                 clear();
             });
+            wrap.addEventListener('touchstart', event => {
+                const target = event.target;
+                if (target && target.classList && target.classList.contains('worm-point')) return;
+                hidePointTooltip();
+                clear();
+            }, { passive: true });
         }
 
         // Show comprehensive summary with matches as columns
