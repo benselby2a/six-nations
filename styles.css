@@ -2137,6 +2137,176 @@
             font-style: italic;
         }
 
+        .worm-chart-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--gold);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .worm-chart-title {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 1.5rem;
+            color: var(--bright-gold);
+            letter-spacing: 0.1em;
+            margin-bottom: 0.35rem;
+        }
+
+        .worm-chart-subtitle {
+            font-size: 0.82rem;
+            opacity: 0.82;
+            margin-bottom: 0.7rem;
+        }
+
+        .worm-chart-hover-hint {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 0.3rem;
+        }
+
+        .worm-chart-wrap {
+            overflow: hidden;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.16);
+            padding: 0.45rem 0.35rem 0.25rem;
+            position: relative;
+        }
+
+        .worm-chart-svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        .worm-axis-line {
+            stroke: rgba(255, 255, 255, 0.75);
+            stroke-width: 1.2;
+        }
+
+        .worm-grid-line {
+            stroke: rgba(255, 255, 255, 0.14);
+            stroke-width: 1;
+            stroke-dasharray: 3 4;
+        }
+
+        .worm-tick-line {
+            stroke: rgba(255, 255, 255, 0.55);
+            stroke-width: 1;
+        }
+
+        .worm-axis-label {
+            fill: rgba(255, 255, 255, 0.8);
+            font-size: 11px;
+            font-family: 'Titillium Web', sans-serif;
+        }
+
+        .worm-axis-match-label {
+            font-size: 10px;
+        }
+
+        .worm-axis-title {
+            fill: rgba(255, 255, 255, 0.92);
+            font-size: 12px;
+            letter-spacing: 0.03em;
+            font-family: 'Titillium Web', sans-serif;
+        }
+
+        .worm-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem 0.8rem;
+            margin-top: 0.7rem;
+        }
+
+        .worm-legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.2rem 0.45rem;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            cursor: pointer;
+            transition: opacity 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+        }
+
+        .worm-legend-item-current {
+            border-color: rgba(212, 175, 55, 0.65);
+            box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.25) inset;
+        }
+
+        .worm-legend-swatch {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+        }
+
+        .worm-series {
+            transition: opacity 0.18s ease;
+        }
+
+        .worm-series-line {
+            transition: stroke-width 0.18s ease;
+        }
+
+        .worm-point {
+            cursor: pointer;
+            transition: r 0.18s ease;
+        }
+
+        .worm-series.is-active .worm-series-line {
+            stroke-width: 3.8;
+        }
+
+        .worm-series.is-active .worm-point {
+            r: 9;
+        }
+
+        .worm-series.is-dimmed {
+            opacity: 0.18;
+        }
+
+        .worm-legend-item.is-active {
+            border-color: rgba(212, 175, 55, 0.9);
+            transform: translateY(-1px);
+        }
+
+        .worm-legend-item.is-dimmed {
+            opacity: 0.45;
+        }
+
+        .worm-chart-empty {
+            font-size: 0.92rem;
+            opacity: 0.8;
+        }
+
+        .worm-point-tooltip {
+            position: absolute;
+            z-index: 4;
+            min-width: 180px;
+            max-width: 280px;
+            background: rgba(8, 12, 20, 0.96);
+            border: 1px solid rgba(212, 175, 55, 0.65);
+            border-radius: 8px;
+            padding: 0.55rem 0.65rem;
+            font-size: 0.78rem;
+            line-height: 1.35;
+            color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            pointer-events: none;
+        }
+
+        .worm-point-tooltip-player {
+            color: var(--bright-gold);
+            font-weight: 700;
+            margin-bottom: 0.2rem;
+        }
+
         /* Joker styles - My Predictions page */
         .joker-selection {
             margin-top: 0.75rem;
