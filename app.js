@@ -5589,43 +5589,14 @@
                 Wales: [210, 44, 44]
             };
             const verticalTeamName = teamName => String(teamName || '').split('').join('\n');
-
-            const rounds = [...new Set(allMatches.map(m => Number(m.round)).filter(Number.isFinite))].sort((a, b) => a - b);
-            const completedRounds = rounds.filter(round => {
-                const inRound = allMatches.filter(m => Number(m.round) === round);
-                return inRound.length > 0 && inRound.every(m => m.actualScore1 !== null && m.actualScore2 !== null);
-            });
-
-            const roundRanksByUser = {};
-            const calcRankMap = (pointRows) => {
-                const sorted = [...pointRows].sort((a, b) => b.points - a.points);
-                const rankMap = {};
-                sorted.forEach((entry, index) => {
-                    let rank = index + 1;
-                    if (index > 0 && sorted[index - 1].points === entry.points) {
-                        rank = rankMap[sorted[index - 1].username];
-                    }
-                    rankMap[entry.username] = rank;
+            const blendTowardWhite = (rgb, amount = 0.12) => {
+                if (!Array.isArray(rgb) || rgb.length < 3) return [255, 255, 255];
+                return rgb.slice(0, 3).map(channel => {
+                    const numeric = Number(channel);
+                    if (!Number.isFinite(numeric)) return 255;
+                    return Math.max(0, Math.min(255, Math.round(numeric + (255 - numeric) * amount)));
                 });
-                return rankMap;
             };
-            completedRounds.forEach(round => {
-                const matchesThroughRound = allMatches.filter(m =>
-                    Number(m.round) <= round && m.actualScore1 !== null && m.actualScore2 !== null
-                );
-                const pointsRows = sortedUsers.map(user => ({
-                    username: user.username,
-                    points: matchesThroughRound.reduce(
-                        (sum, match) => sum + (getMatchPoints(user.username, match) || 0),
-                        0
-                    )
-                }));
-                const rankMap = calcRankMap(pointsRows);
-                sortedUsers.forEach(user => {
-                    if (!roundRanksByUser[user.username]) roundRanksByUser[user.username] = {};
-                    roundRanksByUser[user.username][round] = rankMap[user.username] || '';
-                });
-            });
 
             const fixedLeftCols = 1; // Name only (remove first rank column)
             const matchSchemas = allMatches.map(match => {
@@ -5635,11 +5606,23 @@
             });
             const matchColsCount = matchSchemas.reduce((sum, schema) => sum + schema.cols.length, 0);
             const summaryColsCount = 3; // Game Total, Total Tries, Final Rank
-            const totalCols = fixedLeftCols + matchColsCount + summaryColsCount;
             const summaryStartIndex = fixedLeftCols + matchColsCount;
             const gameTotalCol = summaryStartIndex;
             const totalTriesCol = summaryStartIndex + 1;
             const finalRankCol = summaryStartIndex + 2;
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const marginLR = 3;
+            const tableStartY = 15;
+            const tableBottomMargin = 3;
+            // Reserve space for headers plus Result/Try Count rows so user rows can scale safely.
+            const nonUserRowsReservedHeight = 34;
+            const estimatedUserRowHeight = (pageHeight - tableStartY - tableBottomMargin - nonUserRowsReservedHeight) / Math.max(1, sortedUsers.length);
+            const userRowMinHeight = Math.min(6.8, Math.max(3.6, estimatedUserRowHeight));
+            const bodyFontSize = Math.min(8.2, Math.max(6.8, userRowMinHeight * 1.55));
+            const headFontSize = Math.max(6.6, bodyFontSize - 0.4);
+            const roundHeaderFontSize = Math.max(6.4, headFontSize - 0.1);
+            const teamHeaderFontSize = Math.max(5.9, bodyFontSize - 1.2);
 
             const colMetaByIndex = {};
             let rollingMatchCol = fixedLeftCols;
@@ -5655,7 +5638,7 @@
                 ...matchSchemas.map(({ match, cols }) => ({
                     content: `R${match.round}\n${match.date}\n${match.time}`,
                     colSpan: cols.length,
-                    styles: { halign: 'center', textColor: P.red, fontStyle: 'bold', fontSize: 6.9 }
+                    styles: { halign: 'center', textColor: P.red, fontStyle: 'bold', fontSize: roundHeaderFontSize }
                 })),
                 { content: '', colSpan: 3, styles: { halign: 'center' } }
             ];
@@ -5667,13 +5650,13 @@
                         if (kind === 'home') {
                             return {
                                 content: verticalTeamName(match.team1),
-                                styles: { halign: 'center', valign: 'middle', textColor: teamColors[match.team1] || P.blue, fontStyle: 'bold', fontSize: 6.1 }
+                                styles: { halign: 'center', valign: 'middle', textColor: teamColors[match.team1] || P.blue, fontStyle: 'bold', fontSize: teamHeaderFontSize }
                             };
                         }
                         if (kind === 'away') {
                             return {
                                 content: verticalTeamName(match.team2),
-                                styles: { halign: 'center', valign: 'middle', textColor: teamColors[match.team2] || P.red, fontStyle: 'bold', fontSize: 6.1 }
+                                styles: { halign: 'center', valign: 'middle', textColor: teamColors[match.team2] || P.red, fontStyle: 'bold', fontSize: teamHeaderFontSize }
                             };
                         }
                         if (kind === 'pts') return { content: '', styles: { halign: 'center', fontStyle: 'bold' } };
@@ -5775,9 +5758,6 @@
                 return 1;
             }
 
-            const pageWidth = doc.internal.pageSize.getWidth();
-            const pageHeight = doc.internal.pageSize.getHeight();
-            const marginLR = 3;
             const tableWidth = pageWidth - marginLR * 2;
             const fixedWidth = 22 + 9 + 9 + 9;
             const matchColWidth = Math.max(4.2, (tableWidth - fixedWidth) / Math.max(1, matchColsCount));
@@ -5792,11 +5772,13 @@
             doc.autoTable({
                 head: [headerRowTop, headerRowBottom],
                 body: [resultRow, tryCountRow, ...userRows],
-                startY: 15,
+                startY: tableStartY,
                 theme: 'grid',
+                pageBreak: 'avoid',
+                rowPageBreak: 'avoid',
                 tableWidth,
                 styles: {
-                    fontSize: 7.4,
+                    fontSize: bodyFontSize,
                     cellPadding: 0.25,
                     lineColor: P.border,
                     lineWidth: 0.35,
@@ -5810,7 +5792,7 @@
                     fillColor: [246, 246, 246],
                     textColor: P.text,
                     fontStyle: 'bold',
-                    fontSize: 7.0,
+                    fontSize: headFontSize,
                     cellPadding: 0.28,
                     lineColor: P.border,
                     lineWidth: 0.45
@@ -5824,6 +5806,7 @@
                     const isBody = data.section === 'body';
                     const userIndex = isUserRow ? data.row.index - 2 : -1;
                     const rowUser = userIndex >= 0 ? sortedUsers[userIndex] : null;
+                    const shouldLightenAltRow = isUserRow && (userIndex % 2 === 1);
 
                     if (colMeta) {
                         if (isBody) {
@@ -5844,6 +5827,9 @@
                         if (colMeta.kind === 'home' || colMeta.kind === 'away') data.cell.styles.fontStyle = 'bold';
                         if (colMeta.kind === 'pts' && isUserRow) data.cell.styles.textColor = [58, 50, 26];
                         if (colMeta.kind === 'joker') data.cell.styles.textColor = [35, 43, 56];
+                        if (isBody && (colMeta.kind === 'home' || colMeta.kind === 'away' || colMeta.kind === 'pts')) {
+                            data.cell.styles.fontSize = Math.min(bodyFontSize + 0.8, 10.6);
+                        }
 
                         // Result row: color by winning/losing actual score, like prediction color coding.
                         if (isBody && data.row.index === 0 && (colMeta.kind === 'home' || colMeta.kind === 'away')) {
@@ -5901,7 +5887,7 @@
                     }
 
                     if (isUserRow) {
-                        data.cell.styles.minCellHeight = 4.8;
+                        data.cell.styles.minCellHeight = userRowMinHeight;
                     }
 
                     // Use a bold divider line between Try Count and first player row.
@@ -5934,190 +5920,30 @@
                         }
                     }
 
+                    if (shouldLightenAltRow) {
+                        const currentFill = Array.isArray(data.cell.styles.fillColor)
+                            ? data.cell.styles.fillColor
+                            : [255, 255, 255];
+                        const isNearWhite = currentFill.every(channel => Number(channel) >= 248);
+                        const isWinCell = currentFill.length >= 3
+                            && Number(currentFill[0]) === P.predWinBg[0]
+                            && Number(currentFill[1]) === P.predWinBg[1]
+                            && Number(currentFill[2]) === P.predWinBg[2];
+                        const isLoseCell = currentFill.length >= 3
+                            && Number(currentFill[0]) === P.predLoseBg[0]
+                            && Number(currentFill[1]) === P.predLoseBg[1]
+                            && Number(currentFill[2]) === P.predLoseBg[2];
+                        data.cell.styles.fillColor = isNearWhite
+                            ? [220, 220, 220]
+                            : blendTowardWhite(currentFill, (isWinCell || isLoseCell) ? 0.58 : 0.45);
+                    }
+
                     if (isMetaRow) {
                         data.cell.styles.fontStyle = 'bold';
                     }
                 },
-                margin: { top: 6, left: marginLR, right: marginLR }
+                margin: { top: 6, left: marginLR, right: marginLR, bottom: tableBottomMargin }
             });
-
-            const mainTableBottomY = doc.lastAutoTable && doc.lastAutoTable.finalY ? doc.lastAutoTable.finalY : 31;
-            const footerStartY = mainTableBottomY + 8;
-            const footerBottomLimit = pageHeight - 8;
-            const footerGap = 4;
-            const leftX = 10;
-            const rightPanelWidth = completedRounds.length > 0 ? Math.min(108, pageWidth * 0.37) : 0;
-            const rightX = pageWidth - marginLR - rightPanelWidth;
-            const leftWidth = completedRounds.length > 0
-                ? Math.max(70, rightX - footerGap - leftX)
-                : (pageWidth - leftX - marginLR);
-
-            const rules = getEffectiveScoringRules();
-            const prizeProjection = calculatePrizeProjection(sortedUsers, rules);
-            const rank1Group = getRankGroupForRank(prizeProjection.groups, 1);
-            const rank2Group = getRankGroupForRank(prizeProjection.groups, 2);
-            const rank3Group = getRankGroupForRank(prizeProjection.groups, 3);
-            const renderedPrizeGroups = new Set();
-            const prizeStatusLabel = allMatches.some(match => match.actualScore1 === null || match.actualScore2 === null)
-                ? 'As things stand'
-                : 'Official results';
-            const prizeLines = [
-                prizeStatusLabel,
-                `Eligible entrants: ${prizeProjection.entrantCount}    Entry fee: ${formatCurrencyAmount(rules.entryFeeAmount)}    Total fund: ${formatCurrencyAmount(prizeProjection.totalPool)}`
-            ];
-            const appendPrizeLine = (fallbackLabel, fallbackPct, group) => {
-                if (!group) {
-                    prizeLines.push(`${fallbackLabel} (${fallbackPct}%): TBD`);
-                    return;
-                }
-                const groupKey = `${group.startRank}-${group.endRank}`;
-                if (renderedPrizeGroups.has(groupKey)) return;
-                renderedPrizeGroups.add(groupKey);
-                const label = formatPrizeRankLabel(group, fallbackLabel, fallbackPct, rules);
-                const names = formatNamesForUsers(group.users) || 'TBD';
-                const share = group.users.length > 0 ? prizeProjection.leaderboardPayouts[group.users[0].username] || 0 : 0;
-                prizeLines.push(`${label}: ${names} - ${formatCurrencyAmount(share)}${group.users.length > 1 ? ' each' : ''}`);
-            };
-            appendPrizeLine('1st Place', rules.payoutFirstPct, rank1Group);
-            appendPrizeLine('2nd Place', rules.payoutSecondPct, rank2Group);
-            appendPrizeLine('3rd Place', rules.payoutThirdPct, rank3Group);
-            const closestNames = prizeProjection.closestTriesWinners.length > 0
-                ? prizeProjection.closestTriesWinners.map(w => `${getDisplayName(w.username)} (${w.predicted})`).join(', ')
-                : 'TBD';
-            prizeLines.push(`Closest tries (${rules.payoutClosestTriesPct}%): ${closestNames} - ${formatCurrencyAmount(prizeProjection.closestTriesShare)}${prizeProjection.closestTriesWinners.length > 1 ? ' each' : ''}`);
-            const prizeFootnotes = [prizeProjection.aiPrizeFootnote].filter(Boolean);
-
-            let cursorY = footerStartY;
-
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(17, 17, 17);
-            doc.text('Prize Summary', leftX, cursorY);
-            cursorY += 4.8;
-            doc.setFontSize(8.8);
-            prizeLines.forEach((line, index) => {
-                doc.setFont('helvetica', index === 0 ? 'italic' : 'normal');
-                const wrapped = doc.splitTextToSize(line, leftWidth);
-                if (cursorY + (wrapped.length * 3.6) > footerBottomLimit) return;
-                doc.text(wrapped, leftX, cursorY);
-                cursorY += wrapped.length * 3.6;
-            });
-            if (prizeFootnotes.length > 0) {
-                cursorY += 0.8;
-                doc.setFont('helvetica', 'italic');
-                prizeFootnotes.forEach(line => {
-                    const wrapped = doc.splitTextToSize(line, leftWidth);
-                    if (cursorY + (wrapped.length * 3.4) > footerBottomLimit) return;
-                    doc.text(wrapped, leftX, cursorY);
-                    cursorY += wrapped.length * 3.4;
-                });
-                doc.setFont('helvetica', 'normal');
-            }
-
-            // Add three statto remarks beneath the prize summary.
-            const stattoFacts = buildTournamentStattoFacts();
-            const stattoRemarks = (Array.isArray(stattoFacts) ? stattoFacts : [])
-                .filter(Boolean)
-                .slice(0, 3)
-                .map(remark => String(remark)
-                    .replace(/<\/?strong>/gi, '')
-                    .replace(/\*\*/g, '')
-                );
-            while (stattoRemarks.length < 3) {
-                stattoRemarks.push('The Statto is still sharpening the pencil for the next set of numbers.');
-            }
-
-            cursorY += 1.5;
-
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.setTextColor(17, 17, 17);
-            if (cursorY + 4 < footerBottomLimit) {
-                doc.text('Statto Remarks', leftX, cursorY);
-                cursorY += 4.3;
-            }
-
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(8.4);
-            const stattoMaxWidth = leftWidth;
-            stattoRemarks.forEach((remark, index) => {
-                if (cursorY > footerBottomLimit - 3) return;
-                const wrappedFull = doc.splitTextToSize(`${index + 1}. ${remark}`, stattoMaxWidth);
-                const wrapped = wrappedFull.slice(0, 2);
-                if (wrappedFull.length > 2) {
-                    wrapped[1] = `${wrapped[1].replace(/\s+$/, '')}...`;
-                }
-                if (cursorY + wrapped.length * 3.5 > footerBottomLimit) return;
-                doc.text(wrapped, leftX, cursorY);
-                cursorY += wrapped.length * 3.5 + 0.6;
-            });
-
-            // Movers & Shakers lives alongside the summary block (bottom-right) to keep everything on one page.
-            if (completedRounds.length > 0) {
-                const moversHead = [[
-                    { content: 'Name', styles: { halign: 'left' } },
-                    ...completedRounds.map(r => ({ content: `R${r}`, styles: { halign: 'center' } }))
-                ]];
-                const moversBody = sortedUsers.map(user => ([
-                    { content: user.nickname, styles: { halign: 'left' } },
-                    ...completedRounds.map(round => ({
-                        content: String((roundRanksByUser[user.username] && roundRanksByUser[user.username][round]) || ''),
-                        styles: { halign: 'center' }
-                    }))
-                ]));
-                const moverColWidth = completedRounds.length > 0
-                    ? Math.max(8, (rightPanelWidth - 30) / completedRounds.length)
-                    : 10;
-                const moversColStyles = { 0: { cellWidth: 30 } };
-                for (let i = 1; i <= completedRounds.length; i++) moversColStyles[i] = { cellWidth: moverColWidth };
-
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(10.5);
-                doc.setTextColor(17, 17, 17);
-                doc.text('Movers & Shakers', rightX, footerStartY);
-
-                doc.autoTable({
-                    head: moversHead,
-                    body: moversBody,
-                    startY: footerStartY + 2,
-                    tableWidth: rightPanelWidth,
-                    margin: { left: rightX, right: marginLR },
-                    theme: 'grid',
-                    styles: {
-                        font: 'helvetica',
-                        fontSize: 7.6,
-                        cellPadding: 0.22,
-                        lineColor: [96, 96, 96],
-                        lineWidth: 0.24,
-                        textColor: [17, 17, 17]
-                    },
-                    headStyles: {
-                        fillColor: [246, 246, 246],
-                        textColor: [17, 17, 17],
-                        fontStyle: 'bold',
-                        fontSize: 7.4
-                    },
-                    columnStyles: moversColStyles,
-                    didParseCell: function(data) {
-                        if (data.section !== 'body' || data.column.index === 0) return;
-                        const roundIdx = data.column.index - 1;
-                        const round = completedRounds[roundIdx];
-                        const user = sortedUsers[data.row.index];
-                        const currentRank = roundRanksByUser[user.username] ? roundRanksByUser[user.username][round] : null;
-                        const prevRound = roundIdx > 0 ? completedRounds[roundIdx - 1] : null;
-                        const previousRank = prevRound && roundRanksByUser[user.username]
-                            ? roundRanksByUser[user.username][prevRound]
-                            : null;
-                        data.cell.styles.fillColor = [234, 234, 234];
-                        if (currentRank != null && previousRank != null) {
-                            if (currentRank < previousRank) data.cell.styles.fillColor = P.moverUp;
-                            if (currentRank > previousRank) data.cell.styles.fillColor = P.moverDown;
-                        } else if (currentRank != null && previousRank == null && currentRank <= 3) {
-                            data.cell.styles.fillColor = P.moverUp;
-                        }
-                    }
-                });
-            }
 
             const filename = 'SixNations_Summary_' + now.toISOString().slice(0, 10) + '.pdf';
             if (openInBrowser) {
