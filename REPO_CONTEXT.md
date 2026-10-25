@@ -254,6 +254,11 @@ This is the main browser-to-Supabase boundary.
 
 - Start in the `Storage` object and verify matching SQL/recovery generation code later in the file.
 
+## Cache busting
+
+- The site is served as static files with a browser cache of roughly 10 minutes. `index.html` loads `styles.css?v=...` and `app.js?v=...`, so a browser with a fresh page never pairs it with stale scripts or styles (that mismatch showed up as an empty dropdown and a tab that never hid).
+- **Bump the `v=` value in both tags of `index.html` whenever `app.js` or `styles.css` changes.** Use `YYYYMMDD-n`.
+
 ## Practical Guidance For Future Turns
 
 - Read only the relevant sections of `app.js` first; avoid loading the whole file unless required.
