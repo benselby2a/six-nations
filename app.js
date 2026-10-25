@@ -2567,6 +2567,33 @@
                 `Signed in as ${currentAuthEmail}. Create your competitor profile to start predicting.`;
             document.getElementById('setupFeedback').className = 'login-feedback hidden';
             renderTeamFlagsPicker('setupTeamsPicker', []);
+
+            const usernameInput = document.getElementById('setupUsername');
+            if (!usernameInput.value.trim()) {
+                usernameInput.value = suggestUsernameFromEmail(currentAuthEmail);
+            }
+            const nicknameInput = document.getElementById('setupNickname');
+            if (!nicknameInput.value.trim()) {
+                nicknameInput.value = suggestDisplayNameFromEmail(currentAuthEmail);
+            }
+        }
+
+        // Default display name: the first name guessed from the email prefix (ben.selby@... -> Ben)
+        function suggestDisplayNameFromEmail(email) {
+            const prefix = String(email || '').split('@')[0].toLowerCase();
+            const firstName = prefix.split(/[^a-z]+/).find(Boolean) || '';
+            return toTitleCase(firstName);
+        }
+
+        // Default username: the email prefix reduced to letters/numbers, made unique if already taken
+        function suggestUsernameFromEmail(email) {
+            const prefix = String(email || '').split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+            const base = (prefix || 'player').slice(0, 26);
+            let candidate = base;
+            for (let suffix = 2; candidate === 'guest' || users[candidate]; suffix++) {
+                candidate = `${base}${suffix}`;
+            }
+            return candidate;
         }
 
         async function createMyProfile() {
