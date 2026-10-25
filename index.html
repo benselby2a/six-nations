@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261025-11">
+    <link rel="stylesheet" href="styles.css?v=20261025-12">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -39,21 +39,26 @@
                 
                 <!-- Magic Link Login -->
                 <div id="magicLinkForm" class="login-form">
-                    <div class="input-group">
-                        <label for="loginEmail">Email</label>
-                        <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email" oninput="onLoginEmailInput()" onkeypress="handleLoginKeyPress(event)">
-                        <span class="profile-hint">We'll email you a link to sign in. New here? The same link creates your account.</span>
-                    </div>
-                    <button id="sendMagicLinkBtn" onclick="sendMagicLink()">Email Me a Login Link</button>
+                    <form id="loginEmailForm" onsubmit="return false" novalidate>
+                        <div class="input-group">
+                            <label for="loginEmail">Email</label>
+                            <input type="email" id="loginEmail" name="email" placeholder="you@example.com" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="onLoginEmailInput()" onkeypress="handleLoginKeyPress(event)">
+                            <span class="profile-hint">We'll email you a link to sign in. New here? The same link creates your account.</span>
+                        </div>
+                        <button type="button" id="sendMagicLinkBtn" onclick="sendMagicLink()">Email Me a Login Link</button>
+                    </form>
 
-                    <div id="loginCodeEntry" class="login-code-entry hidden">
+                    <!-- Kept as its own form with a single code field so Safari treats it as a one-time-code
+                         entry and not as a login (which makes it offer saved passwords) -->
+                    <form id="loginCodeEntry" class="login-code-entry hidden" onsubmit="return false" novalidate>
                         <div class="input-group">
                             <label for="loginCode">Code from the email</label>
-                            <input type="text" id="loginCode" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="123456" onkeypress="handleCodeKeyPress(event)">
-                            <span class="profile-hint">Using the home-screen app? Type the code here to sign in without leaving the app. The link in the email opens in Safari instead.</span>
+                            <input type="text" id="loginCode" name="one-time-code" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="10" placeholder="123456" onkeypress="handleCodeKeyPress(event)">
+                            <span class="profile-hint">Using the home-screen app? Type or paste the code here to sign in without leaving the app. The link in the email opens in Safari instead.</span>
                         </div>
-                        <button id="verifyCodeBtn" onclick="verifyLoginCode()">Sign In With Code</button>
-                    </div>
+                        <button type="button" id="pasteCodeBtn" class="btn-cancel hidden" onclick="pasteLoginCode()">Paste Code From Clipboard</button>
+                        <button type="button" id="verifyCodeBtn" onclick="verifyLoginCode()">Sign In With Code</button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -721,6 +726,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=20261025-11"></script>
+    <script src="app.js?v=20261025-12"></script>
 </body>
 </html>
