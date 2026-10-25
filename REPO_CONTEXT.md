@@ -9,7 +9,7 @@
 - Export: PDF generation via `jsPDF` and `jspdf-autotable`.
 - Current notable summary surfaces:
   - `Tournament Stats` panel with live tries totals plus a per-load `The Statto` fact.
-  - `Trev's Tips` panel with per-load cached commentary phrasing.
+  - `Trev's Tips` panel with per-load cached commentary phrasing. Currently hidden on the page (`#trevsTipsContainer` has `hidden` + inline `display:none`); `updateTrevsTips` still renders into it.
 
 ## File Map
 
