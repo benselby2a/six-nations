@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261025-14">
+    <link rel="stylesheet" href="styles.css?v=20261025-15">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -70,20 +70,28 @@
                 <div id="setupFeedback" class="login-feedback hidden"></div>
                 <p class="profile-hint" id="setupIntro" style="margin-bottom: 1.5rem;"></p>
 
-                <div class="input-group">
-                    <label for="setupNickname">Display Name</label>
-                    <input type="text" id="setupNickname" placeholder="How you'll appear on the leaderboard" autocomplete="off">
-                </div>
-                <div class="input-group">
-                    <label>Supported Teams (up to 2)</label>
-                    <div class="team-flags-picker" id="setupTeamsPicker"></div>
-                </div>
-                <button onclick="createMyProfile()">Create My Profile</button>
+                <div id="setupForm" class="hidden">
+                    <div class="input-group">
+                        <label for="setupNickname">Display Name</label>
+                        <input type="text" id="setupNickname" placeholder="How you'll appear on the leaderboard" autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <label>Supported Teams (up to 2)</label>
+                        <div class="team-flags-picker" id="setupTeamsPicker"></div>
+                    </div>
+                    <button onclick="createMyProfile()">Create My Profile</button>
 
-                <div class="guest-login-divider" style="margin-top: 1.5rem;">
-                    <span>played before?</span>
+                    <div class="guest-login-divider" style="margin-top: 1.5rem;">
+                        <span>played before?</span>
+                    </div>
+                    <p class="profile-hint" style="margin-bottom: 1rem;">Ask an admin to link your email to your existing competitor, then refresh this page.</p>
                 </div>
-                <p class="profile-hint" style="margin-bottom: 1rem;">Ask an admin to link your email to your existing competitor, then refresh this page.</p>
+
+                <div id="setupClosed" class="hidden">
+                    <p style="margin-bottom: 1rem;">This email isn't registered for the game yet.</p>
+                    <p class="profile-hint" style="margin-bottom: 1.5rem;">Ask an admin to add it to your competitor, then sign in again. If you play under a different email, sign out and use that one.</p>
+                </div>
+
                 <button class="btn-cancel" onclick="logout()">Sign Out</button>
             </div>
         </div>
@@ -270,6 +278,22 @@
                 <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Competitors</h2>
                     <p style="margin-bottom: 1rem;">Manage competitor accounts - edit details or remove users.</p>
+                </div>
+
+                <div class="signup-control">
+                    <label class="signup-control-label">
+                        <input type="checkbox" id="allowSelfSignupToggle" onchange="toggleAllowSelfSignup(this.checked)">
+                        <span><strong>Allow new people to create their own profile</strong><br>
+                        <span class="profile-hint">Off: only competitors whose sign-in email you have registered below (or linked by hand) can play. Anyone else who signs in is told to ask an admin.</span></span>
+                    </label>
+                </div>
+
+                <div class="email-import">
+                    <label for="emailImportData"><strong>Register sign-in emails in bulk</strong></label>
+                    <p class="profile-hint" style="margin: 0.3rem 0 0.6rem;">One competitor per line: <code>username or display name, email</code>. When they first sign in with that email they are linked automatically.</p>
+                    <textarea id="emailImportData" rows="5" placeholder="ben, ben@example.com&#10;Nic, nic@example.com"></textarea>
+                    <div id="emailImportFeedback" class="login-feedback hidden"></div>
+                    <button class="btn-small btn-success" onclick="importCompetitorEmails()">Save Emails</button>
                 </div>
 
                 <div id="competitorManagementContainer"></div>
@@ -726,6 +750,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=20261025-14"></script>
+    <script src="app.js?v=20261025-15"></script>
 </body>
 </html>
