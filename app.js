@@ -2568,10 +2568,6 @@
             document.getElementById('setupFeedback').className = 'login-feedback hidden';
             renderTeamFlagsPicker('setupTeamsPicker', []);
 
-            const usernameInput = document.getElementById('setupUsername');
-            if (!usernameInput.value.trim()) {
-                usernameInput.value = suggestUsernameFromEmail(currentAuthEmail);
-            }
             const nicknameInput = document.getElementById('setupNickname');
             if (!nicknameInput.value.trim()) {
                 nicknameInput.value = suggestDisplayNameFromEmail(currentAuthEmail);
@@ -2597,20 +2593,11 @@
         }
 
         async function createMyProfile() {
-            const username = document.getElementById('setupUsername').value.trim().toLowerCase();
             const nickname = document.getElementById('setupNickname').value.trim();
             const supportedTeams = getSelectedTeams('setupTeamsPicker');
 
-            if (!username || !nickname) {
-                showSetupFeedback('Please enter a username and display name.', 'error');
-                return;
-            }
-            if (!/^[a-z0-9]+$/.test(username)) {
-                showSetupFeedback('Username can only contain letters and numbers.', 'error');
-                return;
-            }
-            if (users[username]) {
-                showSetupFeedback('This username is already taken. If this is you from a previous year, ask an admin to link your account.', 'error');
+            if (!nickname) {
+                showSetupFeedback('Please enter a display name.', 'error');
                 return;
             }
             const nicknameTaken = Object.keys(users).some(u =>
@@ -2621,11 +2608,18 @@
                 return;
             }
 
-            const { error } = await supabaseClient.rpc('create_my_profile', {
-                p_username: username,
-                p_nickname: nickname,
-                p_supported_teams: supportedTeams.length > 0 ? supportedTeams.join(',') : null
-            });
+            // The username is an internal handle derived from the email. If someone else
+            // grabbed it since we last loaded users, refresh and pick the next free one.
+            let error = null;
+            for (let attempt = 0; attempt < 3; attempt++) {
+                ({ error } = await supabaseClient.rpc('create_my_profile', {
+                    p_username: suggestUsernameFromEmail(currentAuthEmail),
+                    p_nickname: nickname,
+                    p_supported_teams: supportedTeams.length > 0 ? supportedTeams.join(',') : null
+                }));
+                if (!error || !/username is already taken/i.test(error.message || '')) break;
+                users = await Storage.getUsers();
+            }
             if (error) {
                 showSetupFeedback(error.message || 'Could not create your profile. Please try again.', 'error');
                 return;
@@ -2678,7 +2672,6 @@
 
             document.getElementById('loginEmail').value = '';
             document.getElementById('loginFeedback').className = 'login-feedback hidden';
-            document.getElementById('setupUsername').value = '';
             document.getElementById('setupNickname').value = '';
 
             if (!wasGuest) {
