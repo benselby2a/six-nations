@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261025-13">
+    <link rel="stylesheet" href="styles.css?v=20261025-14">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -53,7 +53,7 @@
                     <form id="loginCodeEntry" class="login-code-entry hidden" onsubmit="return false" novalidate>
                         <div class="input-group">
                             <label for="loginCode">Login code</label>
-                            <input type="text" id="loginCode" name="one-time-code" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="10" enterkeyhint="go" aria-label="One-time login code" placeholder="123456" onkeypress="handleCodeKeyPress(event)">
+                            <input type="text" id="loginCode" name="one-time-code" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="10" enterkeyhint="go" aria-label="One-time login code" placeholder="123456" onpaste="handleCodePaste(event)" onkeypress="handleCodeKeyPress(event)">
                             <span class="profile-hint">Using the home-screen app? Type or paste the code here to sign in without leaving the app. The link in the message opens in Safari instead.</span>
                         </div>
                         <button type="button" id="pasteCodeBtn" class="btn-cancel hidden" onclick="pasteLoginCode()">Paste Code From Clipboard</button>
@@ -726,6 +726,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=20261025-13"></script>
+    <script src="app.js?v=20261025-14"></script>
 </body>
 </html>

@@ -3272,6 +3272,16 @@
             verifyLoginCode();
         }
 
+        // Pasting a code (or the whole line it came in) into the box signs in straight away
+        function handleCodePaste(event) {
+            const text = (event.clipboardData && event.clipboardData.getData('text')) || '';
+            const match = text.match(/\b\d{6,10}\b/);
+            if (!match) return;  // let the browser paste normally
+            event.preventDefault();
+            document.getElementById('loginCode').value = match[0];
+            verifyLoginCode();
+        }
+
         function handleCodeKeyPress(event) {
             if (event.key === 'Enter') {
                 verifyLoginCode();
