@@ -100,7 +100,7 @@ Array of fixtures/results:
 ## Years
 
 - Everything competition-related belongs to a year: fixtures (`matches.year`), predictions and jokers (via `match_id`), tournament tries (`user_tries`, per competitor per year), scoring/prize rules (`scoring_rules.year`, one row per year; `scoring_close_tiers.year`), and the prediction lock (`settings` key `predictions_locked:<year>`). Competitors and admins are global.
-- `seasons` lists the years in the header dropdown (`#yearSelect`); admins add one with the `+` button (`addYear`), which copies the viewed year's rules.
+- `seasons` lists the years in the header dropdown (`#yearSelect`). Admins add and remove years in the Years admin tab (`addYearFromAdmin`, `removeYear`); a new year can copy another year's rules, and removing a year deletes its fixtures, predictions, jokers, tries, rules and lock (competitors are kept; confirmed by typing the year).
 - State: `selectedYear`, `availableYears`, `allMatches` (every year). The `matches` const array always holds the selected year's fixtures only (`applySelectedYearMatches`); `users[u].predictions`, `users[u].totalTries`, `userJokerSelections`, `activeScoringRules` and `appSettings` are loaded for the selected year by `loadYearData`. `switchYear` reloads and re-renders.
 - Storage writes must stay year-scoped: `savePredictions` / `saveUserJokerSelections` only touch the selected year's match ids, `saveMatches` only deletes within the selected year. Match ids are one global sequence (`getNextMatchId`).
 - Tables (summary, leaderboard, prizes, stats, PDF) list `getParticipantUsernames()`, i.e. competitors with predictions in the selected year. Admin competitor/score-correction screens still list everyone.
@@ -381,7 +381,7 @@ This is the main browser-to-Supabase boundary.
 
 ### Recovery/export regression
 
-- Recovery output must include:
+- Recovery output (usage events are intentionally not exported; the empty `usage_events` table is still created) must include:
   - `scoring_rules`
   - `scoring_close_tiers`
   - `user_joker_selections`
