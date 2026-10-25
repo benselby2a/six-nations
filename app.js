@@ -484,8 +484,15 @@
 
             // How much data belongs to a year (for the remove confirmation)
             getSeasonCounts: async (year) => {
-                const { data: matchRows } = await supabaseClient.from('matches').select('id').eq('year', year);
+                const { data: matchRows } = await supabaseClient
+                    .from('matches')
+                    .select('id, actual_score1, actual_score2')
+                    .eq('year', year);
                 const matchIds = (matchRows || []).map(row => row.id);
+                const results = (matchRows || []).filter(row =>
+                    (row.actual_score1 !== null && row.actual_score1 !== undefined) ||
+                    (row.actual_score2 !== null && row.actual_score2 !== undefined)
+                ).length;
                 let predictionRows = [];
                 if (matchIds.length > 0) {
                     const { data } = await supabaseClient.from('predictions').select('user_id').in('match_id', matchIds);
@@ -498,6 +505,7 @@
                 const tries = (triesRows || []).filter(row => row.total_tries !== null && row.total_tries !== undefined).length;
                 return {
                     matches: matchIds.length,
+                    results,
                     predictions: predictionRows.length,
                     tries,
                     competitors: new Set(predictionRows.map(row => row.user_id)).size
@@ -506,6 +514,12 @@
 
             // Clear every competitor's predictions, jokers and tries for a year (fixtures are kept)
             clearSeasonPredictions: async (year) => {
+                const counts = await Storage.getSeasonCounts(year);
+                if (counts.results > 0) {
+                    console.error(`Refusing to clear ${year}: it has results entered.`);
+                    return false;
+                }
+
                 const { data: matchRows, error: matchReadError } = await supabaseClient
                     .from('matches')
                     .select('id')
@@ -538,6 +552,10 @@
             // Delete a year and everything that belongs to it. Competitors are kept.
             removeSeason: async (year) => {
                 const counts = await Storage.getSeasonCounts(year);
+                if (counts.results > 0) {
+                    console.error(`Refusing to remove ${year}: it has results entered.`);
+                    return false;
+                }
                 if (counts.predictions > 0 || counts.tries > 0) {
                     console.error(`Refusing to remove ${year}: it still has predictions.`);
                     return false;
@@ -1313,6 +1331,7 @@
                 const results = yearMatches.filter(m => m.actualScore1 !== null && m.actualScore2 !== null).length;
                 const counts = countsByYear[year];
                 const hasPredictions = counts.predictions > 0 || counts.tries > 0;
+                const hasResults = counts.results > 0;
                 const isCurrent = year === selectedYear;
                 const predictionsLabel = hasPredictions
                     ? `${counts.predictions} from ${counts.competitors} competitor${counts.competitors !== 1 ? 's' : ''}${counts.tries > 0 ? `, ${counts.tries} tries` : ''}`
@@ -1326,8 +1345,9 @@
                         <td>
                             <div class="competitor-actions">
                                 ${isCurrent ? '' : `<button class="btn-small btn-success" onclick="switchYear(${year})">View</button>`}
-                                ${hasPredictions ? `<button class="btn-small btn-warning" onclick="clearYearPredictions(${year})">Clear predictions</button>` : ''}
-                                ${hasPredictions ? '' : `<button class="btn-small btn-danger" onclick="removeYear(${year})">Remove</button>`}
+                                ${hasResults ? '<span class="profile-hint">Results entered: locked</span>' : ''}
+                                ${hasPredictions && !hasResults ? `<button class="btn-small btn-warning" onclick="clearYearPredictions(${year})">Clear predictions</button>` : ''}
+                                ${hasPredictions || hasResults ? '' : `<button class="btn-small btn-danger" onclick="removeYear(${year})">Remove</button>`}
                             </div>
                         </td>
                     </tr>`;
@@ -1340,12 +1360,16 @@
                     </thead>
                     <tbody>${rows}</tbody>
                 </table>
-                <p class="profile-hint" style="margin-top: 0.75rem;">A year can only be removed once it has no predictions. Use Clear predictions first (fixtures and results are kept).</p>`;
+                <p class="profile-hint" style="margin-top: 0.75rem;">A year with results entered is locked: it cannot be cleared or removed here. Otherwise a year can only be removed once it has no predictions; use Clear predictions first (fixtures are kept).</p>`;
         }
 
         async function clearYearPredictions(year) {
             if (!isCurrentUserAdmin()) return;
             const counts = await Storage.getSeasonCounts(year);
+            if (counts.results > 0) {
+                setYearsFeedback(`${year} has results entered, so its predictions cannot be cleared here.`, 'error');
+                return;
+            }
             const typed = prompt(
                 `Clear all predictions for ${year}?\n\nThis permanently deletes ${counts.predictions} prediction${counts.predictions !== 1 ? 's' : ''} from ` +
                 `${counts.competitors} competitor${counts.competitors !== 1 ? 's' : ''}, plus their joker selections and tournament tries for ${year}. ` +
@@ -1405,6 +1429,10 @@
             }
 
             const counts = await Storage.getSeasonCounts(year);
+            if (counts.results > 0) {
+                setYearsFeedback(`${year} has results entered, so it cannot be removed here.`, 'error');
+                return;
+            }
             if (counts.predictions > 0 || counts.tries > 0) {
                 setYearsFeedback(
                     `${year} still has ${counts.predictions} prediction${counts.predictions !== 1 ? 's' : ''} from ${counts.competitors} competitor${counts.competitors !== 1 ? 's' : ''}. ` +
