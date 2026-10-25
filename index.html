@@ -37,45 +37,45 @@
                     <span>or</span>
                 </div>
                 
-                <!-- Toggle buttons -->
-                <div class="login-toggle">
-                    <button class="toggle-btn active" onclick="showLoginForm('existing')">Existing Competitor</button>
-                    <!--<button class="toggle-btn" onclick="showLoginForm('new')">New Competitor</button> -->
+                <!-- Magic Link Login -->
+                <div id="magicLinkForm" class="login-form">
+                    <div class="input-group">
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email" onkeypress="handleLoginKeyPress(event)">
+                        <span class="profile-hint">We'll email you a link to sign in. New here? The same link creates your account.</span>
+                    </div>
+                    <button id="sendMagicLinkBtn" onclick="sendMagicLink()">Email Me a Login Link</button>
                 </div>
+            </div>
+        </div>
 
-                <!-- Existing User Form -->
-                <div id="existingUserForm" class="login-form">
-                    <div class="input-group">
-                        <label for="existingUsername">Username</label>
-                        <input type="text" id="existingUsername" placeholder="Enter your username" onkeypress="handleLoginKeyPress(event, 'existing')">
-                    </div>
-                    <div class="input-group">
-                        <label for="existingPassword">Password</label>
-                        <input type="password" id="existingPassword" placeholder="Enter password" onkeypress="handleLoginKeyPress(event, 'existing')">
-                    </div>
-                    <button onclick="loginExisting()">Login</button>
+        <!-- Profile Setup View (signed in, no competitor linked yet) -->
+        <div id="setupView" class="hidden">
+            <div class="login-section">
+                <h2>Set Up Your Profile</h2>
+                <div id="setupFeedback" class="login-feedback hidden"></div>
+                <p class="profile-hint" id="setupIntro" style="margin-bottom: 1.5rem;"></p>
+
+                <div class="input-group">
+                    <label for="setupUsername">Username</label>
+                    <input type="text" id="setupUsername" placeholder="Letters and numbers only" autocomplete="off">
                 </div>
+                <div class="input-group">
+                    <label for="setupNickname">Display Name</label>
+                    <input type="text" id="setupNickname" placeholder="How you'll appear on the leaderboard" autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label>Supported Teams (up to 2)</label>
+                    <div class="team-flags-picker" id="setupTeamsPicker"></div>
+                </div>
+                <button onclick="createMyProfile()">Create My Profile</button>
 
-                <!-- New User Form
-                <div id="newUserForm" class="login-form hidden">
-                    <div class="input-group">
-                        <label for="newUsername">Username</label>
-                        <input type="text" id="newUsername" placeholder="Choose a username" onkeypress="handleLoginKeyPress(event, 'new')">
-                    </div>
-                    <div class="input-group">
-                        <label for="nickname">Display Name</label>
-                        <input type="text" id="nickname" placeholder="How you'll appear on the leaderboard" onkeypress="handleLoginKeyPress(event, 'new')">
-                    </div>
-                    <div class="input-group">
-                        <label for="newPassword">Password</label>
-                        <input type="password" id="newPassword" placeholder="Create a password" onkeypress="handleLoginKeyPress(event, 'new')">
-                    </div>
-                    <div class="input-group">
-                        <label>Supported Teams (up to 2)</label>
-                        <div class="team-flags-picker" id="registerTeamsPicker"></div>
-                    </div>
-                    <button onclick="registerNewUser()">Create Account</button>
-                </div> -->
+                <div class="guest-login-divider" style="margin-top: 1.5rem;">
+                    <span>played before?</span>
+                </div>
+                <p class="profile-hint" style="margin-bottom: 1rem;">Ask an admin to link your email to your existing competitor, then check again.</p>
+                <button class="btn-cancel" onclick="recheckProfileLink()">Check Again</button>
+                <button class="btn-cancel" onclick="logout()">Sign Out</button>
             </div>
         </div>
 
@@ -88,7 +88,7 @@
                 <div class="input-group">
                     <label for="profileUsername">Username</label>
                     <input type="text" id="profileUsername" readonly style="opacity: 0.6; cursor: default;">
-                    <span class="profile-hint">This is what you use to log in.</span>
+                    <span class="profile-hint">Your unique handle. Only admins can change it.</span>
                 </div>
 
                 <div class="input-group">
@@ -106,20 +106,9 @@
                 <div class="profile-divider"></div>
 
                 <div class="input-group">
-                    <label>Change Password</label>
-                    <span class="profile-hint" id="profilePasswordHint" style="margin-bottom: 0.5rem;">Leave blank to keep your current password.</span>
-                </div>
-                <div class="input-group">
-                    <label for="profileCurrentPassword">Current Password</label>
-                    <input type="password" id="profileCurrentPassword" placeholder="Enter current password" autocomplete="off">
-                </div>
-                <div class="input-group">
-                    <label for="profileNewPassword">New Password</label>
-                    <input type="password" id="profileNewPassword" placeholder="Enter new password" autocomplete="new-password">
-                </div>
-                <div class="input-group">
-                    <label for="profileConfirmPassword">Confirm New Password</label>
-                    <input type="password" id="profileConfirmPassword" placeholder="Confirm new password" autocomplete="new-password">
+                    <label for="profileEmail">Email</label>
+                    <input type="text" id="profileEmail" readonly style="opacity: 0.6; cursor: default;">
+                    <span class="profile-hint">You sign in with a link sent to this address.</span>
                 </div>
 
                 <div id="profileFeedback" class="login-feedback hidden"></div>
