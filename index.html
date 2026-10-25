@@ -22,7 +22,7 @@
     <div class="container">
         <header>
             <h1>Six Nations</h1>
-            <div class="subtitle" id="challengeSubtitle">Prediction Challenge 2026</div>
+            <div class="subtitle" id="challengeSubtitle">Prediction Challenge</div>
         </header>
 
         <!-- Login View -->
@@ -122,6 +122,9 @@
                         <option value="retro">Teletext</option>
                         <option value="dark">Dark Mode</option>
                     </select>
+                    <label for="yearSelect">Year:</label>
+                    <select id="yearSelect" onchange="switchYear(this.value)"></select>
+                    <button class="header-help-btn admin-only hidden" onclick="addYear()" title="Add a year" aria-label="Add a year">+</button>
                     <button class="header-help-btn" onclick="toggleGlobalHelp()" title="Open help" aria-label="Open help">?</button>
                 </div>
                 <div class="user-info">

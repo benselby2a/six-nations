@@ -49,9 +49,9 @@ Object keyed by normalized lowercase username:
 {
   [username]: {
     nickname,
-    totalTries,
+    totalTries,          // selected year only
     supportedTeams: [],
-    predictions: {
+    predictions: {       // selected year only
       [matchId]: { team1, team2 }
     }
   }
@@ -74,14 +74,15 @@ Array of fixtures/results:
   actualScore2,
   actualTries1,
   actualTries2,
-  jokerEligible
+  jokerEligible,
+  year
 }
 ```
 
 ### Other Global State
 
 - `adminUsernames`: lowercase usernames with admin access.
-- `appSettings`: includes prediction locking and other app-wide settings.
+- `appSettings`: prediction locking for the selected year.
 - `activeScoringRules`: current scoring and prize configuration.
 - `userJokerSelections`: selected joker match ids per user.
 - `currentUsername`: active logged-in competitor username, or `null` for guests.
@@ -95,6 +96,16 @@ Array of fixtures/results:
 - Guests are remembered with the `rugbyPredictorUser=guest` cookie only; usernames are no longer remembered.
 - Authorization is enforced by RLS, not the UI: admins are `admin_usernames` rows whose username belongs to a linked competitor (`is_admin()`). `users.auth_user_id` is not readable by clients. See `supabase/auth_migration.sql` (run once; idempotent) and bootstrap notes at its top.
 - `Storage.saveAdminUsernames` diffs rather than clearing the table, because emptying it mid-save would remove the admin's own rights.
+
+## Years
+
+- Everything competition-related belongs to a year: fixtures (`matches.year`), predictions and jokers (via `match_id`), tournament tries (`user_tries`, per competitor per year), scoring/prize rules (`scoring_rules.year`, one row per year; `scoring_close_tiers.year`), and the prediction lock (`settings` key `predictions_locked:<year>`). Competitors and admins are global.
+- `seasons` lists the years in the header dropdown (`#yearSelect`); admins add one with the `+` button (`addYear`), which copies the viewed year's rules.
+- State: `selectedYear`, `availableYears`, `allMatches` (every year). The `matches` const array always holds the selected year's fixtures only (`applySelectedYearMatches`); `users[u].predictions`, `users[u].totalTries`, `userJokerSelections`, `activeScoringRules` and `appSettings` are loaded for the selected year by `loadYearData`. `switchYear` reloads and re-renders.
+- Storage writes must stay year-scoped: `savePredictions` / `saveUserJokerSelections` only touch the selected year's match ids, `saveMatches` only deletes within the selected year. Match ids are one global sequence (`getNextMatchId`).
+- Tables (summary, leaderboard, prizes, stats, PDF) list `getParticipantUsernames()`, i.e. competitors with predictions in the selected year. Admin competitor/score-correction screens still list everyone.
+- The default year is the latest one with fixtures, or the last choice (localStorage `rugbyPredictorSelectedYear`).
+- Schema: `supabase/years_migration.sql` (additive, idempotent, run after `auth_migration.sql`). The recovery tab exports every year from a raw snapshot of each table (`fetchRecoverySnapshot`).
 
 ## Main Runtime Flow
 
