@@ -3265,6 +3265,29 @@
         let isPdfExportMode = false;
         let magicLinkCooldownTimer = null;
         let pendingLoginEmail = '';
+        const LAST_LOGIN_EMAIL_KEY = 'rugbyPredictorLastEmail';
+
+        // The last email used to sign in on this device, so it can be pre-filled next time
+        function getRememberedLoginEmail() {
+            try {
+                return localStorage.getItem(LAST_LOGIN_EMAIL_KEY) || '';
+            } catch (error) {
+                return '';
+            }
+        }
+
+        function rememberLoginEmail(email) {
+            try {
+                localStorage.setItem(LAST_LOGIN_EMAIL_KEY, email);
+            } catch (error) {
+                // Ignore storage errors; it just will not be pre-filled.
+            }
+        }
+
+        function prefillLoginEmail() {
+            const input = document.getElementById('loginEmail');
+            if (input && !input.value.trim()) input.value = getRememberedLoginEmail();
+        }
 
         function getAuthRedirectUrl() {
             return window.location.href.split(/[?#]/)[0];
@@ -3319,6 +3342,7 @@
             }
 
             pendingLoginEmail = email;
+            rememberLoginEmail(email);
             showLoginFeedback(`Check ${email} for your login message. Tap the link, or type the code below.`, 'success');
             document.getElementById('loginCodeEntry').classList.remove('hidden');
             // Only offer the clipboard button where the browser can read the clipboard
@@ -3634,7 +3658,7 @@
             const logoutBtn = document.getElementById('logoutBtn');
             logoutBtn.textContent = 'Logout';
 
-            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginEmail').value = getRememberedLoginEmail();
             document.getElementById('loginFeedback').className = 'login-feedback hidden';
             document.getElementById('setupNickname').value = '';
             pendingLoginEmail = '';
@@ -8190,6 +8214,8 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
                 exportToPDF({ openInBrowser: true });
             }
         });
+
+        prefillLoginEmail();
 
         // Restores a saved session on load (INITIAL_SESSION) and handles magic link sign-ins.
         // Deferred with setTimeout so the callback never awaits Supabase calls inside the auth lock.

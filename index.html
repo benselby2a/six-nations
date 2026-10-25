@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261025-16">
+    <link rel="stylesheet" href="styles.css?v=20261025-17">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -42,7 +42,7 @@
                     <form id="loginEmailForm" onsubmit="return false" novalidate>
                         <div class="input-group">
                             <label for="loginEmail">Email</label>
-                            <input type="email" id="loginEmail" name="email" placeholder="you@example.com" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="onLoginEmailInput()" onkeypress="handleLoginKeyPress(event)">
+                            <input type="email" id="loginEmail" name="email" placeholder="you@example.com" autocomplete="email" inputmode="email" enterkeyhint="send" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="onLoginEmailInput()" onkeypress="handleLoginKeyPress(event)">
                             <span class="profile-hint">We'll email you a link to sign in. New here? The same link creates your account.</span>
                         </div>
                         <button type="button" id="sendMagicLinkBtn" onclick="sendMagicLink()">Email Me a Login Link</button>
@@ -742,6 +742,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=20261025-16"></script>
+    <script src="app.js?v=20261025-17"></script>
 </body>
 </html>
