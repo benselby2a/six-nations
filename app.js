@@ -2463,7 +2463,7 @@
             }
 
             showLoginFeedback(`Check ${email} for your login link. Open it on this device to sign in.`, 'success');
-            startMagicLinkCooldown(button, 60);
+            startMagicLinkCooldown(button, 30);
         }
 
         function startMagicLinkCooldown(button, seconds) {
