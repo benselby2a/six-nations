@@ -1327,7 +1327,7 @@
                             <div class="competitor-actions">
                                 ${isCurrent ? '' : `<button class="btn-small btn-success" onclick="switchYear(${year})">View</button>`}
                                 ${hasPredictions ? `<button class="btn-small btn-warning" onclick="clearYearPredictions(${year})">Clear predictions</button>` : ''}
-                                <button class="btn-small btn-danger" ${hasPredictions ? 'disabled title="Clear this year\'s predictions first"' : ''} onclick="removeYear(${year})">Remove</button>
+                                ${hasPredictions ? '' : `<button class="btn-small btn-danger" onclick="removeYear(${year})">Remove</button>`}
                             </div>
                         </td>
                     </tr>`;
