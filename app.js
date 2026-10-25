@@ -173,7 +173,7 @@
                     if (!normalizedUsername) return;
 
                     usersObj[normalizedUsername] = {
-                        nickname: user.nickname,
+                        nickname: (user.nickname === null || user.nickname === undefined) ? user.nickname : cleanDisplayText(user.nickname),
                         totalTries: null,  // Per-year, filled in from user_tries below
                         supportedTeams: user.supported_teams ? user.supported_teams.split(',') : [],
                         predictions: {}  // Will be populated separately
@@ -807,6 +807,32 @@
                 }
             },
 
+            // Whether people without a registered email may create their own profile (default: closed)
+            getAllowSelfSignup: async () => {
+                const { data, error } = await supabaseClient
+                    .from('settings')
+                    .select('value')
+                    .eq('key', 'allow_self_signup')
+                    .maybeSingle();
+                if (error) {
+                    console.error('Error reading the sign-up setting:', error);
+                    return false;
+                }
+                return !!data && (data.value === 'true' || data.value === true);
+            },
+
+            setAllowSelfSignup: async (allowed) => {
+                const { error } = await supabaseClient
+                    .from('settings')
+                    .upsert({ key: 'allow_self_signup', value: allowed ? 'true' : 'false' }, { onConflict: 'key' });
+                if (error) {
+                    console.error('Error saving the sign-up setting:', error);
+                    return false;
+                }
+                trackUsage('update self sign-up setting', formatUsagePayload({ allowed: !!allowed }));
+                return true;
+            },
+
             saveSettings: async (settings) => {
                 const { error } = await supabaseClient
                     .from('settings')
@@ -1162,6 +1188,8 @@
         function trackUsage(action, payload = '', actorOverride = null) {
             const normalizedAction = (action || '').trim();
             if (!normalizedAction) return;
+            // Guests are read-only: the database only accepts usage events from signed-in people
+            if (!currentUsername) return;
             Storage.trackUsageEvent(getUsageActor(actorOverride), normalizedAction, payload);
         }
 
@@ -1173,6 +1201,15 @@
             } catch (error) {
                 return String(input);
             }
+        }
+
+        // Display names are put into page templates, so markup characters are never allowed in them
+        function hasUnsafeDisplayChars(text) {
+            return /[<>"]/.test(String(text || ''));
+        }
+
+        function cleanDisplayText(text) {
+            return String(text || '').replace(/[<>"]/g, '');
         }
 
         function escapeHtml(value) {
@@ -2573,6 +2610,8 @@
         let authAccounts = [];
         let authAccountsLoaded = false;
         let authAccountsRequested = false;
+        let competitorEmails = {};   // username -> the email they are expected to sign in with (admin only)
+        let allowSelfSignup = false;
 
         async function loadAuthAccounts() {
             const { data, error } = await supabaseClient.rpc('admin_list_accounts');
@@ -2583,6 +2622,90 @@
             }
             authAccounts = data || [];
             authAccountsLoaded = true;
+
+            const { data: emailRows, error: emailError } = await supabaseClient.rpc('admin_list_competitor_emails');
+            if (emailError) {
+                console.error('Error loading competitor emails:', emailError);
+            } else {
+                competitorEmails = {};
+                (emailRows || []).forEach(row => { competitorEmails[row.username] = row.email; });
+            }
+
+            allowSelfSignup = await Storage.getAllowSelfSignup();
+            const toggle = document.getElementById('allowSelfSignupToggle');
+            if (toggle) toggle.checked = allowSelfSignup;
+        }
+
+        async function toggleAllowSelfSignup(allowed) {
+            if (!isCurrentUserAdmin()) return;
+            if (allowed && !confirm('Anyone who signs in with an email you have not registered will be able to create their own competitor profile. Turn this on?')) {
+                document.getElementById('allowSelfSignupToggle').checked = false;
+                return;
+            }
+            const ok = await Storage.setAllowSelfSignup(allowed);
+            if (!ok) {
+                alert('Could not save that setting. Please try again.');
+                document.getElementById('allowSelfSignupToggle').checked = allowSelfSignup;
+                return;
+            }
+            allowSelfSignup = !!allowed;
+        }
+
+        function setEmailImportFeedback(message, type) {
+            const el = document.getElementById('emailImportFeedback');
+            if (!el) return;
+            el.textContent = message;
+            el.className = `login-feedback ${type}`;
+        }
+
+        // Paste "name or username, email" lines to register everyone's sign-in email at once
+        async function importCompetitorEmails() {
+            if (!isCurrentUserAdmin()) return;
+            const text = document.getElementById('emailImportData').value;
+            const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+            if (lines.length === 0) {
+                setEmailImportFeedback('Paste one line per competitor, for example: ben, ben@example.com', 'error');
+                return;
+            }
+
+            const rows = [];
+            const problems = [];
+            lines.forEach((line, index) => {
+                const parts = line.split(/[,;\t]+/).map(part => part.trim()).filter(Boolean);
+                const emailPart = parts.find(part => part.includes('@'));
+                const namePart = parts.find(part => !part.includes('@'));
+                if (!emailPart || !namePart) {
+                    problems.push(`line ${index + 1}: needs a name and an email`);
+                    return;
+                }
+                const key = namePart.toLowerCase();
+                const username = users[key]
+                    ? key
+                    : Object.keys(users).find(u => (users[u].nickname || '').toLowerCase() === key);
+                if (!username) {
+                    problems.push(`line ${index + 1}: no competitor called "${namePart}"`);
+                    return;
+                }
+                rows.push({ username, email: emailPart });
+            });
+
+            let applied = 0;
+            if (rows.length > 0) {
+                const { data, error } = await supabaseClient.rpc('admin_import_competitor_emails', { p_rows: rows });
+                if (error) {
+                    setEmailImportFeedback('Could not save the emails: ' + (error.message || 'unknown error'), 'error');
+                    return;
+                }
+                applied = data.applied;
+                (data.skipped || []).forEach(item => problems.push(`${item.username}: ${item.reason}`));
+            }
+
+            await loadAuthAccounts();
+            renderCompetitorManagement();
+            trackUsage('import competitor emails', formatUsagePayload({ applied, skipped: problems.length }));
+            const summary = `${applied} email${applied !== 1 ? 's' : ''} saved.`;
+            setEmailImportFeedback(problems.length > 0 ? `${summary} Skipped: ${problems.join('; ')}` : summary, problems.length > 0 ? 'info' : 'success');
+            if (problems.length === 0) document.getElementById('emailImportData').value = '';
         }
 
         async function refreshCompetitorAccounts() {
@@ -2599,8 +2722,11 @@
             }
             const unlinked = authAccounts.filter(a => !a.linked_username);
             if (!authAccountsLoaded) return '<span class="profile-hint">Loading accounts...</span>';
-            if (unlinked.length === 0) return '<span class="profile-hint">No unlinked accounts</span>';
-            return `<select id="link-account-${username}" style="font-size: 0.85rem; max-width: 220px;">
+            const waiting = competitorEmails[username]
+                ? '<div class="profile-hint" style="margin-bottom: 0.4rem;">Links automatically when they first sign in</div>'
+                : '';
+            if (unlinked.length === 0) return `${waiting}<span class="profile-hint">No unlinked accounts</span>`;
+            return `${waiting}<select id="link-account-${username}" style="font-size: 0.85rem; max-width: 220px;">
                     <option value="">Choose account...</option>
                     ${unlinked.map(a => `<option value="${a.auth_user_id}">${escapeHtml(a.email || a.auth_user_id)}</option>`).join('')}
                 </select>
@@ -2666,6 +2792,7 @@
                         <tr>
                             <th>Username</th>
                             <th>Display Name</th>
+                            <th>Sign-in email</th>
                             <th>Supported Teams</th>
                             <th>Playing ${selectedYear}</th>
                             <th>Admin</th>
@@ -2679,6 +2806,7 @@
                             <td>
                                 <input type="text" id="new-nickname-admin" placeholder="Display name" style="max-width: 150px;">
                             </td>
+                            <td><input type="email" id="new-email-admin" placeholder="sign-in email" style="max-width: 190px;"></td>
                             <td>
                                 <select id="new-team1-admin" style="font-size: 0.85rem; margin-bottom: 0.25rem;">
                                     <option value="">None</option>
@@ -2712,7 +2840,8 @@
                 html += `
                     <tr id="user-row-${username}">
                         <td><input type="text" id="edit-username-${username}" value="${username}" style="max-width: 150px;"></td>
-                        <td><input type="text" id="edit-nickname-${username}" value="${user.nickname || ''}" style="max-width: 150px;"></td>
+                        <td><input type="text" id="edit-nickname-${username}" value="${escapeHtml(user.nickname || '')}" style="max-width: 150px;"></td>
+                        <td><input type="email" id="edit-email-${username}" value="${escapeHtml(competitorEmails[username] || '')}" placeholder="sign-in email" style="max-width: 190px;"></td>
                         <td>
                             <select id="edit-team1-${username}" style="font-size: 0.85rem; margin-bottom: 0.25rem;">
                                 <option value="">None</option>
@@ -2752,6 +2881,12 @@
             const team2 = (document.getElementById('new-team2-admin').value || '').trim();
             const makeAdmin = !!document.getElementById('new-admin-admin').checked;
             const makeActive = !!document.getElementById('new-active-admin').checked;
+            const newEmail = (document.getElementById('new-email-admin').value || '').trim().toLowerCase();
+
+            if (newEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+                alert('That sign-in email does not look right.');
+                return;
+            }
 
             if (!username) {
                 alert('Username is required.');
@@ -2770,6 +2905,11 @@
 
             if (!nickname) {
                 alert('Display name is required.');
+                return;
+            }
+
+            if (hasUnsafeDisplayChars(nickname)) {
+                alert('Display name cannot contain < > or " characters.');
                 return;
             }
 
@@ -2803,6 +2943,15 @@
                 if (await Storage.saveActiveOverrides(overrides)) appSettings.activeOverrides = overrides;
             }
 
+            if (newEmail) {
+                const { error: emailError } = await supabaseClient.rpc('admin_set_competitor_email', { p_username: username, p_email: newEmail });
+                if (emailError) {
+                    alert('The competitor was added, but the email was not saved: ' + (emailError.message || 'unknown error'));
+                } else {
+                    competitorEmails[username] = newEmail;
+                }
+            }
+
             alert(`Competitor ${toTitleCase(nickname)} added.`);
             renderCompetitorManagement();
             updateLeaderboard();
@@ -2812,6 +2961,12 @@
         async function saveUserChanges(username) {
             const newUsername = document.getElementById(`edit-username-${username}`).value.trim().toLowerCase();
             const nickname = document.getElementById(`edit-nickname-${username}`).value.trim();
+            const emailInput = document.getElementById(`edit-email-${username}`);
+            const newEmail = emailInput ? emailInput.value.trim().toLowerCase() : null;
+            if (newEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+                alert('That sign-in email does not look right.');
+                return;
+            }
 
             if (!newUsername) {
                 alert('Username is required.');
@@ -2825,6 +2980,11 @@
 
             if (!nickname) {
                 alert('Display name is required.');
+                return;
+            }
+
+            if (hasUnsafeDisplayChars(nickname)) {
+                alert('Display name cannot contain < > or " characters.');
                 return;
             }
 
@@ -2880,6 +3040,23 @@
 
             await Storage.saveUser(newUsername, users[newUsername]);
             updateAdminTabsSubheading();
+
+            // Keep the registered email in step with the (possibly renamed) competitor
+            if (newUsername !== username && competitorEmails[username] !== undefined) {
+                competitorEmails[newUsername] = competitorEmails[username];
+                delete competitorEmails[username];
+            }
+            if (newEmail !== null && newEmail !== (competitorEmails[newUsername] || '')) {
+                const { error: emailError } = await supabaseClient.rpc('admin_set_competitor_email', { p_username: newUsername, p_email: newEmail });
+                if (emailError) {
+                    alert('Saved, but the sign-in email was not: ' + (emailError.message || 'unknown error'));
+                } else if (newEmail) {
+                    competitorEmails[newUsername] = newEmail;
+                } else {
+                    delete competitorEmails[newUsername];
+                }
+            }
+
             alert('User updated successfully.');
 
             // Update current user display if editing self
@@ -3020,6 +3197,13 @@
 
             if (!nickname) {
                 feedbackEl.textContent = 'Display name is required.';
+                feedbackEl.classList.remove('hidden');
+                feedbackEl.classList.add('error');
+                return;
+            }
+
+            if (hasUnsafeDisplayChars(nickname)) {
+                feedbackEl.textContent = 'Display name cannot contain < > or " characters.';
                 feedbackEl.classList.remove('hidden');
                 feedbackEl.classList.add('error');
                 return;
@@ -3381,13 +3565,24 @@
         }
 
         // Signed in but no competitor linked: let them create one (or wait for an admin to link them)
-        function showProfileSetup() {
+        async function showProfileSetup() {
             document.getElementById('loginView').classList.add('hidden');
             document.getElementById('appView').classList.add('hidden');
             document.getElementById('setupView').classList.remove('hidden');
+            document.getElementById('setupFeedback').className = 'login-feedback hidden';
+
+            // Hide both panels until we know whether new sign-ups are allowed
+            document.getElementById('setupForm').classList.add('hidden');
+            document.getElementById('setupClosed').classList.add('hidden');
+            document.getElementById('setupIntro').textContent = `Signed in as ${currentAuthEmail}.`;
+
+            const open = await Storage.getAllowSelfSignup();
+            document.getElementById('setupForm').classList.toggle('hidden', !open);
+            document.getElementById('setupClosed').classList.toggle('hidden', open);
+            if (!open) return;
+
             document.getElementById('setupIntro').textContent =
                 `Signed in as ${currentAuthEmail}. Create your competitor profile to start predicting.`;
-            document.getElementById('setupFeedback').className = 'login-feedback hidden';
             renderTeamFlagsPicker('setupTeamsPicker', []);
 
             const nicknameInput = document.getElementById('setupNickname');
@@ -3420,6 +3615,10 @@
 
             if (!nickname) {
                 showSetupFeedback('Please enter a display name.', 'error');
+                return;
+            }
+            if (hasUnsafeDisplayChars(nickname)) {
+                showSetupFeedback('Display name cannot contain < > or " characters.', 'error');
                 return;
             }
             const nicknameTaken = Object.keys(users).some(u =>
@@ -3498,6 +3697,12 @@
             pendingLoginEmail = '';
             document.getElementById('loginCode').value = '';
             document.getElementById('loginCodeEntry').classList.add('hidden');
+
+            // A fresh login form: drop any resend countdown left over from the last sign-in
+            clearInterval(magicLinkCooldownTimer);
+            const sendButton = document.getElementById('sendMagicLinkBtn');
+            sendButton.disabled = false;
+            sendButton.textContent = 'Email Me a Login Link';
 
             if (!wasGuest) {
                 await supabaseClient.auth.signOut();
