@@ -482,6 +482,58 @@
                 return true;
             },
 
+            // How much data belongs to a year (for the remove confirmation)
+            getSeasonCounts: async (year) => {
+                const { data: matchRows } = await supabaseClient.from('matches').select('id').eq('year', year);
+                const matchIds = (matchRows || []).map(row => row.id);
+                let predictionRows = [];
+                if (matchIds.length > 0) {
+                    const { data } = await supabaseClient.from('predictions').select('user_id').in('match_id', matchIds);
+                    predictionRows = data || [];
+                }
+                return {
+                    matches: matchIds.length,
+                    predictions: predictionRows.length,
+                    competitors: new Set(predictionRows.map(row => row.user_id)).size
+                };
+            },
+
+            // Delete a year and everything that belongs to it. Competitors are kept.
+            removeSeason: async (year) => {
+                const { data: matchRows, error: matchReadError } = await supabaseClient
+                    .from('matches')
+                    .select('id')
+                    .eq('year', year);
+                if (matchReadError) {
+                    console.error('Error reading fixtures before removing year:', matchReadError);
+                    return false;
+                }
+                const matchIds = (matchRows || []).map(row => row.id);
+
+                const steps = [];
+                if (matchIds.length > 0) {
+                    steps.push(['predictions', () => supabaseClient.from('predictions').delete().in('match_id', matchIds)]);
+                    steps.push(['user_joker_selections', () => supabaseClient.from('user_joker_selections').delete().in('match_id', matchIds)]);
+                    steps.push(['matches', () => supabaseClient.from('matches').delete().eq('year', year)]);
+                }
+                steps.push(['user_tries', () => supabaseClient.from('user_tries').delete().eq('year', year)]);
+                steps.push(['scoring_close_tiers', () => supabaseClient.from('scoring_close_tiers').delete().eq('year', year)]);
+                steps.push(['scoring_rules', () => supabaseClient.from('scoring_rules').delete().eq('year', year)]);
+                steps.push(['settings', () => supabaseClient.from('settings').delete().eq('key', `predictions_locked:${year}`)]);
+                steps.push(['seasons', () => supabaseClient.from('seasons').delete().eq('year', year)]);
+
+                for (const [table, run] of steps) {
+                    const { error } = await run();
+                    if (error) {
+                        console.error(`Error removing ${year} from ${table}:`, error);
+                        return false;
+                    }
+                }
+
+                trackUsage('remove year', formatUsagePayload({ year, fixtures: matchIds.length }));
+                return true;
+            },
+
             saveMatches: async (matchesData, options = {}) => {
                 // Keep the all-years cache in step with the selected year's fixtures
                 allMatches = allMatches
@@ -960,7 +1012,6 @@
         let editingPredictionContext = null;
         let adminPredictionUsername = null;
         let usageReportEvents = [];
-        let usageEventsForRecovery = [];
         let usageReportHideLogins = true;
         const THEME_COOKIE_NAME = 'rugbyPredictorTheme';
         const THEME_STORAGE_KEY = 'rugbyPredictorTheme';
@@ -1191,30 +1242,118 @@
             }
         }
 
-        // Admin: add a new year (rules are copied from the year being viewed)
-        async function addYear() {
-            if (!isCurrentUserAdmin()) return;
-            const input = prompt('Add which year? Fixtures, predictions and tables for it start empty; scoring and prize rules are copied from ' + selectedYear + '.');
-            if (input === null) return;
+        // ---- Admin: Years tab ----
+        function setYearsFeedback(message, type) {
+            const feedbackEl = document.getElementById('yearsFeedback');
+            if (!feedbackEl) return;
+            feedbackEl.textContent = message;
+            feedbackEl.className = `login-feedback ${type}`;
+        }
 
-            const year = parseInt(String(input).trim(), 10);
+        function renderYearsTab() {
+            const container = document.getElementById('yearsListContainer');
+            const copySelect = document.getElementById('newYearCopyRules');
+            if (!container || !copySelect) return;
+
+            copySelect.innerHTML = availableYears
+                .map(year => `<option value="${year}" ${year === selectedYear ? 'selected' : ''}>${year}</option>`)
+                .join('') + '<option value="">Start with default rules</option>';
+
+            const rows = [...availableYears].reverse().map(year => {
+                const yearMatches = allMatches.filter(m => m.year === year);
+                const results = yearMatches.filter(m => m.actualScore1 !== null && m.actualScore2 !== null).length;
+                const isCurrent = year === selectedYear;
+                return `
+                    <tr>
+                        <td><strong>${year}</strong>${isCurrent ? ' <span class="admin-badge">Viewing</span>' : ''}</td>
+                        <td>${yearMatches.length}</td>
+                        <td>${results}</td>
+                        <td>
+                            <div class="competitor-actions">
+                                ${isCurrent ? '' : `<button class="btn-small btn-success" onclick="switchYear(${year})">View</button>`}
+                                <button class="btn-small btn-danger" onclick="removeYear(${year})">Remove</button>
+                            </div>
+                        </td>
+                    </tr>`;
+            }).join('');
+
+            container.innerHTML = `
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>Year</th><th>Fixtures</th><th>Results entered</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>`;
+        }
+
+        async function addYearFromAdmin() {
+            if (!isCurrentUserAdmin()) return;
+            const year = parseInt(document.getElementById('newYearInput').value, 10);
+            const copyFrom = parseInt(document.getElementById('newYearCopyRules').value, 10) || null;
+
             if (!Number.isInteger(year) || year < 2000 || year > 2100) {
-                alert('Please enter a four-digit year, for example 2027.');
+                setYearsFeedback('Please enter a four-digit year, for example 2027.', 'error');
                 return;
             }
             if (availableYears.includes(year)) {
-                alert(`${year} already exists.`);
+                setYearsFeedback(`${year} already exists.`, 'error');
                 return;
             }
 
-            const ok = await Storage.addSeason(year, selectedYear);
+            const ok = await Storage.addSeason(year, copyFrom);
             if (!ok) {
-                alert('Could not add the year. Please try again.');
+                setYearsFeedback('Could not add the year. Please try again.', 'error');
                 return;
             }
 
-            availableYears = [...availableYears, year].sort((a, b) => a - b);
-            await switchYear(year);
+            availableYears = [...availableYears, year].sort((x, y) => x - y);
+            document.getElementById('newYearInput').value = '';
+            renderYearSelect();
+            renderYearsTab();
+            setYearsFeedback(`${year} added. Use View to switch to it, then add its fixtures.`, 'success');
+        }
+
+        async function removeYear(year) {
+            if (!isCurrentUserAdmin()) return;
+            if (availableYears.length <= 1) {
+                setYearsFeedback('You cannot remove the only year.', 'error');
+                return;
+            }
+
+            const counts = await Storage.getSeasonCounts(year);
+            const typed = prompt(
+                `Remove ${year}?\n\nThis permanently deletes ${counts.matches} fixture${counts.matches !== 1 ? 's' : ''}, ` +
+                `${counts.predictions} prediction${counts.predictions !== 1 ? 's' : ''} from ${counts.competitors} competitor${counts.competitors !== 1 ? 's' : ''}, ` +
+                `plus that year's jokers, tries, scoring and prize rules, and prediction lock. Competitors themselves are kept.\n\n` +
+                `This cannot be undone. Consider exporting a backup from Database Recovery first.\n\nType ${year} to confirm.`
+            );
+            if (typed === null) return;
+            if (typed.trim() !== String(year)) {
+                setYearsFeedback('The year you typed did not match, so nothing was removed.', 'error');
+                return;
+            }
+
+            const ok = await Storage.removeSeason(year);
+            if (!ok) {
+                setYearsFeedback(`Could not fully remove ${year}. Check the console and try again.`, 'error');
+                return;
+            }
+
+            allMatches = allMatches.filter(m => m.year !== year);
+            availableYears = availableYears.filter(y => y !== year);
+
+            if (year === selectedYear) {
+                const withFixtures = availableYears.filter(y => allMatches.some(m => m.year === y));
+                const fallbackYears = withFixtures.length > 0 ? withFixtures : availableYears;
+                const fallback = fallbackYears[fallbackYears.length - 1];
+                await switchYear(fallback);
+                alert(`${year} removed. Now showing ${fallback}.`);
+                return;
+            }
+
+            renderYearSelect();
+            renderYearsTab();
+            setYearsFeedback(`${year} removed.`, 'success');
         }
 
         // Competitors who have made predictions in the selected year (predictions are loaded per year)
@@ -2961,6 +3100,7 @@
             document.getElementById('prizeFundTab').classList.add('hidden');
             document.getElementById('recoveryTab').classList.add('hidden');
             document.getElementById('usageReportTab').classList.add('hidden');
+            document.getElementById('yearsTab').classList.add('hidden');
             document.getElementById('adminHomeTab').classList.add('hidden');
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             const summaryTabBtn = Array.from(document.querySelectorAll('.tab')).find(
@@ -3002,6 +3142,7 @@
             document.getElementById('prizeFundTab').classList.add('hidden');
             document.getElementById('recoveryTab').classList.add('hidden');
             document.getElementById('usageReportTab').classList.add('hidden');
+            document.getElementById('yearsTab').classList.add('hidden');
             document.getElementById('adminHomeTab').classList.add('hidden');
 
             // Show summary
@@ -7147,18 +7288,6 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
                 sql += `SELECT setval('user_joker_selections_id_seq', (SELECT MAX(id) FROM user_joker_selections));\n`;
             }
 
-            if (usageEventsForRecovery.length > 0) {
-                sql += '\n-- Insert usage events\n';
-                usageEventsForRecovery.forEach(evt => {
-                    const actor = esc(evt.actor || 'guest');
-                    const action = esc(evt.action || '');
-                    const payload = esc(evt.payload || '');
-                    const createdAt = evt.created_at ? `'${esc(evt.created_at)}'` : 'NOW()';
-                    sql += `INSERT INTO usage_events (created_at, actor, action, payload) VALUES (${createdAt}, '${actor}', '${action}', '${payload}');\n`;
-                });
-                sql += `SELECT setval('usage_events_id_seq', (SELECT MAX(id) FROM usage_events));\n`;
-            }
-
             return sql;
         }
 
@@ -7189,7 +7318,6 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
                     <li>User joker selections</li>
                     <li>Admin usernames list</li>
                     <li>App settings (including the prediction lock for each year)</li>
-                    <li>Usage events</li>
                 `;
             } else {
                 description.textContent = 'This SQL will recreate empty tables only:';
@@ -7228,7 +7356,6 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
 
         async function initRecoveryTab() {
             renderRecoveryConnectionDetails();
-            usageEventsForRecovery = await Storage.getUsageEvents(1000);
             recoverySnapshot = await fetchRecoverySnapshot();
             // Display the SQL based on checkbox state
             updateRecoverySQL();
@@ -7380,6 +7507,7 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
             document.getElementById('prizeFundTab').classList.add('hidden');
             document.getElementById('recoveryTab').classList.add('hidden');
             document.getElementById('usageReportTab').classList.add('hidden');
+            document.getElementById('yearsTab').classList.add('hidden');
 
             // Update tab buttons
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
@@ -7424,6 +7552,11 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
                 document.getElementById('prizeFundTab').classList.remove('hidden');
                 event.target.classList.add('active');
                 renderPrizeFundTab();
+            } else if (tabName === 'years') {
+                if (!isCurrentUserAdmin()) return;
+                document.getElementById('yearsTab').classList.remove('hidden');
+                event.target.classList.add('active');
+                renderYearsTab();
             } else if (tabName === 'recovery') {
                 if (!isCurrentUserAdmin()) return;
                 document.getElementById('recoveryTab').classList.remove('hidden');

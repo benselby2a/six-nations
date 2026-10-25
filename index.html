@@ -124,7 +124,6 @@
                     </select>
                     <label for="yearSelect">Year:</label>
                     <select id="yearSelect" onchange="switchYear(this.value)"></select>
-                    <button class="header-help-btn admin-only hidden" onclick="addYear()" title="Add a year" aria-label="Add a year">+</button>
                     <button class="header-help-btn" onclick="toggleGlobalHelp()" title="Open help" aria-label="Open help">?</button>
                 </div>
                 <div class="user-info">
@@ -154,6 +153,7 @@
                         <button class="tab" onclick="showTab('competitors')">Competitors</button>
                         <button class="tab" onclick="showTab('rules')">Guesser Rules</button>
                         <button class="tab" onclick="showTab('prizeFund')">Prize Fund</button>
+                        <button class="tab" onclick="showTab('years')">Years</button>
                         <button class="tab" onclick="showTab('recovery')">Database Recovery</button>
                         <button class="tab" onclick="showTab('usageReport')">Usage Report</button>
                     </div>
@@ -522,6 +522,30 @@
                 </div>
             </div>
 
+            <!-- Years Tab (Admin Only) -->
+            <div id="yearsTab" class="prediction-section admin-only hidden" style="margin-top: 2rem;">
+                <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
+                    <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Years</h2>
+                    <p style="margin-bottom: 0;">Each year has its own fixtures, predictions, scoring and prize rules, and prediction lock. Competitors are shared across years.</p>
+                </div>
+
+                <div id="yearsFeedback" class="login-feedback hidden"></div>
+
+                <div class="input-group" style="max-width: 420px;">
+                    <label for="newYearInput">Add a year</label>
+                    <input type="number" id="newYearInput" min="2000" max="2100" placeholder="e.g. 2027">
+                </div>
+                <div class="input-group" style="max-width: 420px;">
+                    <label for="newYearCopyRules">Copy scoring and prize rules from</label>
+                    <select id="newYearCopyRules"></select>
+                </div>
+                <button class="btn-small btn-success" onclick="addYearFromAdmin()">Add Year</button>
+
+                <div class="profile-divider"></div>
+
+                <div id="yearsListContainer"></div>
+            </div>
+
             <!-- Database Recovery Tab (Admin Only) -->
             <div id="recoveryTab" class="prediction-section hidden" style="margin-top: 4rem;">
                 <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
@@ -535,19 +559,18 @@
                         <div style="margin-bottom: 1rem;">
                             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                                 <input type="checkbox" id="includeDataCheckbox" checked onchange="updateRecoverySQL()" style="width: 18px; height: 18px; cursor: pointer;">
-                                <span>Include current data (users, predictions, rules, jokers, settings, usage events)</span>
+                                <span>Include current data (users, predictions, rules, jokers, settings)</span>
                             </label>
                         </div>
                         <p id="recoveryDescription">This SQL will recreate all tables and restore:</p>
                         <ul id="recoveryList" style="margin: 0.5rem 0 1rem 1.5rem; line-height: 1.6;">
                             <li>All matches and fixtures</li>
-                            <li>All user accounts (usernames, password hashes)</li>
+                            <li>All competitors (usernames, display names)</li>
                             <li>All predictions</li>
                             <li>Single scoring rules config, prize settings, and close-score tiers</li>
                             <li>User joker selections</li>
                             <li>Admin usernames list</li>
                             <li>App settings</li>
-                            <li>Usage events</li>
                         </ul>
                         <pre class="sql-preview" id="sqlPreview"></pre>
                         <button class="btn-small" onclick="copySqlToClipboard()" style="margin-top: 1rem;">Copy SQL to Clipboard</button>
@@ -617,6 +640,7 @@
                 <div><strong>Competitors</strong> Add, edit, or remove competitors, update display names, assign teams, and manage admin access.</div>
                 <div><strong>Prize Fund</strong> Set entry fee and payout allocation for 1st/2nd/3rd and closest tries prize.</div>
                 <div><strong>Database Recovery</strong> Generate SQL to recreate schema and optionally restore current data.</div>
+                <div><strong>Years</strong> Add a new year or remove one, including all of its fixtures, predictions and rules.</div>
                 <div><strong>Usage Report</strong> View the most recent 100 login and database write events.</div>
             </div>
             <div class="fixture-modal-actions">
