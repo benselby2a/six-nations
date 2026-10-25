@@ -139,22 +139,6 @@
             ).join(' ');
         }
 
-        // Simple hash function for password storage (SHA-256)
-        async function hashPassword(password) {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(password);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-            return hashHex;
-        }
-
-        // Check if a password matches a hash
-        async function verifyPassword(password, hash) {
-            const passwordHash = await hashPassword(password);
-            return passwordHash === hash;
-        }
-
         // ============================================
         // SUPABASE CONFIGURATION
         // Replace these with your Supabase project details
@@ -173,7 +157,7 @@
             getUsers: async () => {
                 const { data, error } = await supabaseClient
                     .from('users')
-                    .select('*');
+                    .select('id, username, nickname, total_tries, supported_teams');
                 
                 if (error) {
                     console.error('Error fetching users:', error);
@@ -188,7 +172,6 @@
 
                     usersObj[normalizedUsername] = {
                         nickname: user.nickname,
-                        passwordHash: user.password_hash,
                         totalTries: user.total_tries,
                         supportedTeams: user.supported_teams ? user.supported_teams.split(',') : [],
                         predictions: {}  // Will be populated separately
@@ -239,7 +222,6 @@
                         .from('users')
                         .update({
                             nickname: userData.nickname,
-                            password_hash: userData.passwordHash,
                             total_tries: userData.totalTries,
                             supported_teams: userData.supportedTeams && userData.supportedTeams.length > 0 ? userData.supportedTeams.join(',') : null
                         })
@@ -253,7 +235,6 @@
                         username,
                         userData: {
                             nickname: userData.nickname,
-                            passwordHash: userData.passwordHash,
                             totalTries: userData.totalTries,
                             supportedTeams: userData.supportedTeams || []
                         }
@@ -265,7 +246,6 @@
                         .insert({
                             username: username,
                             nickname: userData.nickname,
-                            password_hash: userData.passwordHash,
                             total_tries: userData.totalTries,
                             supported_teams: userData.supportedTeams && userData.supportedTeams.length > 0 ? userData.supportedTeams.join(',') : null
                         });
@@ -278,7 +258,6 @@
                         username,
                         userData: {
                             nickname: userData.nickname,
-                            passwordHash: userData.passwordHash,
                             totalTries: userData.totalTries,
                             supportedTeams: userData.supportedTeams || []
                         }
@@ -490,32 +469,50 @@
             },
 
             saveAdminUsernames: async (usernames) => {
-                // Delete all and re-insert
-                const { error: deleteError } = await supabaseClient.from('admin_usernames').delete().neq('username', '');
-                if (deleteError) {
-                    console.error('Error clearing admin usernames:', deleteError);
+                const normalized = [...new Set(
+                    (usernames || [])
+                        .map(username => (username || '').trim().toLowerCase())
+                        .filter(Boolean)
+                )];
+
+                // Diff against the stored list rather than clearing it: RLS ties admin
+                // rights to this table, so emptying it mid-save would lock the admin out.
+                const { data: existingRows, error: readError } = await supabaseClient
+                    .from('admin_usernames')
+                    .select('username');
+                if (readError) {
+                    console.error('Error reading admin usernames before save:', readError);
                     return;
                 }
 
-                if (usernames.length > 0) {
-                    const normalized = [...new Set(
-                        usernames
-                            .map(username => (username || '').trim().toLowerCase())
-                            .filter(Boolean)
-                    )];
-                    const rows = normalized.map(username => ({ username }));
-                    const { error } = await supabaseClient.from('admin_usernames').insert(rows);
+                const existing = new Set((existingRows || []).map(row => (row.username || '').trim().toLowerCase()));
+                const toAdd = normalized.filter(username => !existing.has(username));
+                const toRemove = [...existing].filter(username => !normalized.includes(username));
+
+                if (toAdd.length > 0) {
+                    const { error } = await supabaseClient
+                        .from('admin_usernames')
+                        .insert(toAdd.map(username => ({ username })));
                     if (error) {
                         console.error('Error saving admin usernames:', error);
                         return;
                     }
-                    trackUsage('save admin usernames', formatUsagePayload({ usernames: normalized }));
-                    return;
                 }
 
-                trackUsage('save admin usernames', formatUsagePayload({ usernames: [] }));
+                if (toRemove.length > 0) {
+                    const { error } = await supabaseClient
+                        .from('admin_usernames')
+                        .delete()
+                        .in('username', toRemove);
+                    if (error) {
+                        console.error('Error removing admin usernames:', error);
+                        return;
+                    }
+                }
+
+                trackUsage('save admin usernames', formatUsagePayload({ usernames: normalized }));
             },
-            
+
             // App settings
             getSettings: async () => {
                 const { data, error } = await supabaseClient
@@ -1862,10 +1859,94 @@
             });
         }
 
+        // Auth accounts (admin only), used to link competitors to sign-in accounts
+        let authAccounts = [];
+        let authAccountsLoaded = false;
+        let authAccountsRequested = false;
+
+        async function loadAuthAccounts() {
+            const { data, error } = await supabaseClient.rpc('admin_list_accounts');
+            if (error) {
+                console.error('Error loading accounts:', error);
+                alert('Could not load accounts: ' + (error.message || 'unknown error'));
+                return;
+            }
+            authAccounts = data || [];
+            authAccountsLoaded = true;
+        }
+
+        async function refreshCompetitorAccounts() {
+            await loadAuthAccounts();
+            renderCompetitorManagement();
+        }
+
+        function renderCompetitorAccountCell(username) {
+            const linked = authAccounts.find(a => (a.linked_username || '').toLowerCase() === username);
+            const safeUsername = username.replace(/'/g, "\\'");
+            if (linked) {
+                return `${escapeHtml(linked.email || 'unknown email')}
+                    <div class="competitor-actions"><button class="btn-small btn-warning" onclick="unlinkCompetitorAccount('${safeUsername}')">Unlink</button></div>`;
+            }
+            const unlinked = authAccounts.filter(a => !a.linked_username);
+            if (!authAccountsLoaded) return '<span class="profile-hint">Loading accounts...</span>';
+            if (unlinked.length === 0) return '<span class="profile-hint">No unlinked accounts</span>';
+            return `<select id="link-account-${username}" style="font-size: 0.85rem; max-width: 220px;">
+                    <option value="">Choose account...</option>
+                    ${unlinked.map(a => `<option value="${a.auth_user_id}">${escapeHtml(a.email || a.auth_user_id)}</option>`).join('')}
+                </select>
+                <div class="competitor-actions"><button class="btn-small btn-success" onclick="linkCompetitorAccount('${safeUsername}')">Link</button></div>`;
+        }
+
+        async function linkCompetitorAccount(username) {
+            const select = document.getElementById(`link-account-${username}`);
+            const accountId = select ? select.value : '';
+            if (!accountId) {
+                alert('Choose an account to link.');
+                return;
+            }
+            const account = authAccounts.find(a => a.auth_user_id === accountId);
+            const displayName = toTitleCase((users[username] && users[username].nickname) || username);
+            if (!confirm(`Link ${account ? account.email : 'this account'} to ${displayName}? They will sign in as this competitor.`)) {
+                return;
+            }
+            const { error } = await supabaseClient.rpc('admin_link_competitor', {
+                p_username: username,
+                p_auth_user_id: accountId
+            });
+            if (error) {
+                alert('Could not link account: ' + (error.message || 'unknown error'));
+                return;
+            }
+            trackUsage('link competitor account', formatUsagePayload({ username, email: account ? account.email : null }));
+            await refreshCompetitorAccounts();
+        }
+
+        async function unlinkCompetitorAccount(username) {
+            const displayName = toTitleCase((users[username] && users[username].nickname) || username);
+            if (!confirm(`Unlink the account from ${displayName}? They will not be able to sign in as this competitor until it is linked again.`)) {
+                return;
+            }
+            const { error } = await supabaseClient.rpc('admin_link_competitor', {
+                p_username: username,
+                p_auth_user_id: null
+            });
+            if (error) {
+                alert('Could not unlink account: ' + (error.message || 'unknown error'));
+                return;
+            }
+            trackUsage('unlink competitor account', formatUsagePayload({ username }));
+            await refreshCompetitorAccounts();
+        }
+
         // Render competitor management table
         function renderCompetitorManagement() {
             const container = document.getElementById('competitorManagementContainer');
             const allUsers = Object.keys(users).sort((a, b) => a.localeCompare(b));
+
+            if (!authAccountsRequested) {
+                authAccountsRequested = true;
+                loadAuthAccounts().then(renderCompetitorManagement);
+            }
 
             const teams = Object.keys(countryFlags);
 
@@ -1877,6 +1958,7 @@
                             <th>Display Name</th>
                             <th>Supported Teams</th>
                             <th>Admin</th>
+                            <th>Account</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -1885,7 +1967,6 @@
                             <td><input type="text" id="new-username-admin" placeholder="username" style="max-width: 150px;"></td>
                             <td>
                                 <input type="text" id="new-nickname-admin" placeholder="Display name" style="max-width: 150px;">
-                                <input type="password" id="new-password-admin" placeholder="Password (optional)" style="max-width: 150px; margin-top: 0.25rem;">
                             </td>
                             <td>
                                 <select id="new-team1-admin" style="font-size: 0.85rem; margin-bottom: 0.25rem;">
@@ -1900,6 +1981,7 @@
                             <td style="text-align: center;">
                                 <input type="checkbox" id="new-admin-admin">
                             </td>
+                            <td><span class="profile-hint">Link after adding</span></td>
                             <td>
                                 <div class="competitor-actions">
                                     <button class="btn-small btn-success" onclick="addCompetitorFromAdmin()">Add Competitor</button>
@@ -1930,10 +2012,10 @@
                         <td>
                             <input type="checkbox" id="edit-admin-${username}" ${isAdmin ? 'checked' : ''} onchange="toggleUserAdmin('${safeUsername}')">
                         </td>
+                        <td>${renderCompetitorAccountCell(username)}</td>
                         <td>
                             <div class="competitor-actions">
                                 <button class="btn-small btn-success" onclick="saveUserChanges('${safeUsername}')">Save</button>
-                                <button class="btn-small btn-warning" onclick="resetUserPassword('${safeUsername}')">Reset Password</button>
                                 <button class="btn-small btn-danger" onclick="deleteUser('${safeUsername}')">Delete</button>
                             </div>
                         </td>
@@ -1949,7 +2031,6 @@
         async function addCompetitorFromAdmin() {
             const username = (document.getElementById('new-username-admin').value || '').trim().toLowerCase();
             const nickname = (document.getElementById('new-nickname-admin').value || '').trim();
-            const password = document.getElementById('new-password-admin').value || '';
             const team1 = (document.getElementById('new-team1-admin').value || '').trim();
             const team2 = (document.getElementById('new-team2-admin').value || '').trim();
             const makeAdmin = !!document.getElementById('new-admin-admin').checked;
@@ -1982,15 +2063,9 @@
                 return;
             }
 
-            if (password && password.length < 4) {
-                alert('If set, password must be at least 4 characters long.');
-                return;
-            }
-
             const supportedTeams = [team1, team2].filter(Boolean);
             const newUser = {
                 nickname,
-                passwordHash: password ? await hashPassword(password) : null,
                 predictions: {},
                 totalTries: null,
                 supportedTeams
@@ -2070,7 +2145,6 @@
                 // Update current session if editing self
                 if (currentUsername === username) {
                     currentUsername = newUsername;
-                    setRememberedUsername(newUsername);
                 }
             }
 
@@ -2137,26 +2211,6 @@
             updateLeaderboard();
         }
 
-        // Reset a user's password
-        async function resetUserPassword(username) {
-            if (!username || !users[username]) {
-                alert('User not found.');
-                return;
-            }
-
-            const displayName = toTitleCase(users[username].nickname || username);
-            if (!confirm(`Are you sure you want to remove the password for ${displayName}? Their password will be cleared.`)) {
-                return;
-            }
-
-            // Remove existing password
-            users[username].passwordHash = null;
-            await Storage.saveUser(username, users[username]);
-            
-            alert(`Password removed for ${displayName}.`);
-            renderCompetitorManagement();
-        }
-
         let profileInitialState = null;
         let profileHasInteracted = false;
 
@@ -2167,9 +2221,6 @@
         function getProfileFormState() {
             return {
                 nickname: document.getElementById('profileDisplayName').value.trim(),
-                currentPassword: document.getElementById('profileCurrentPassword').value,
-                newPassword: document.getElementById('profileNewPassword').value,
-                confirmPassword: document.getElementById('profileConfirmPassword').value,
                 supportedTeams: normalizeTeamSelection(getSelectedTeams('profileTeamsPicker'))
             };
         }
@@ -2186,9 +2237,6 @@
             const currentState = getProfileFormState();
             const hasChanges =
                 currentState.nickname !== profileInitialState.nickname ||
-                currentState.currentPassword !== profileInitialState.currentPassword ||
-                currentState.newPassword !== profileInitialState.newPassword ||
-                currentState.confirmPassword !== profileInitialState.confirmPassword ||
                 currentState.supportedTeams.join('|') !== profileInitialState.supportedTeams.join('|');
 
             reminder.classList.toggle('hidden', !hasChanges);
@@ -2204,27 +2252,10 @@
         function openProfile() {
             if (!currentUsername || !users[currentUsername]) return;
             const user = users[currentUsername];
-            const hasExistingPassword = !!user.passwordHash;
-            const currentPasswordInput = document.getElementById('profileCurrentPassword');
-            const passwordHint = document.getElementById('profilePasswordHint');
 
             document.getElementById('profileUsername').value = currentUsername;
+            document.getElementById('profileEmail').value = currentAuthEmail || '';
             document.getElementById('profileDisplayName').value = user.nickname || '';
-            currentPasswordInput.value = '';
-            document.getElementById('profileNewPassword').value = '';
-            document.getElementById('profileConfirmPassword').value = '';
-
-            if (hasExistingPassword) {
-                currentPasswordInput.disabled = false;
-                currentPasswordInput.placeholder = 'Enter current password';
-                currentPasswordInput.title = '';
-                passwordHint.textContent = 'Leave blank to keep your current password.';
-            } else {
-                currentPasswordInput.disabled = true;
-                currentPasswordInput.placeholder = 'No current password set';
-                currentPasswordInput.title = 'There is no current password set';
-                passwordHint.textContent = 'No current password is set. Enter a new password below to add one, or leave blank to keep no password.';
-            }
 
             const feedbackEl = document.getElementById('profileFeedback');
             feedbackEl.classList.add('hidden');
@@ -2240,9 +2271,6 @@
             profileInitialState = getProfileFormState();
 
             document.getElementById('profileDisplayName').oninput = markProfileInteraction;
-            document.getElementById('profileCurrentPassword').oninput = markProfileInteraction;
-            document.getElementById('profileNewPassword').oninput = markProfileInteraction;
-            document.getElementById('profileConfirmPassword').oninput = markProfileInteraction;
         }
 
         function closeProfile() {
@@ -2256,11 +2284,7 @@
 
         async function saveProfile() {
             const user = users[currentUsername];
-            const hasExistingPassword = !!user.passwordHash;
             const nickname = document.getElementById('profileDisplayName').value.trim();
-            const currentPassword = document.getElementById('profileCurrentPassword').value;
-            const newPassword = document.getElementById('profileNewPassword').value;
-            const confirmPassword = document.getElementById('profileConfirmPassword').value;
             const feedbackEl = document.getElementById('profileFeedback');
 
             feedbackEl.classList.add('hidden');
@@ -2282,54 +2306,6 @@
                 feedbackEl.classList.remove('hidden');
                 feedbackEl.classList.add('error');
                 return;
-            }
-
-            // Handle password change
-            const isChangingPassword = hasExistingPassword
-                ? !!(currentPassword || newPassword || confirmPassword)
-                : !!(newPassword || confirmPassword);
-
-            if (isChangingPassword) {
-                if (hasExistingPassword) {
-                    if (!currentPassword) {
-                        feedbackEl.textContent = 'Please enter your current password.';
-                        feedbackEl.classList.remove('hidden');
-                        feedbackEl.classList.add('error');
-                        return;
-                    }
-
-                    const isValid = await verifyPassword(currentPassword, user.passwordHash);
-
-                    if (!isValid) {
-                        feedbackEl.textContent = 'Current password is incorrect.';
-                        feedbackEl.classList.remove('hidden');
-                        feedbackEl.classList.add('error');
-                        return;
-                    }
-                }
-
-                if (!newPassword) {
-                    feedbackEl.textContent = 'Please enter a new password.';
-                    feedbackEl.classList.remove('hidden');
-                    feedbackEl.classList.add('error');
-                    return;
-                }
-
-                if (newPassword !== confirmPassword) {
-                    feedbackEl.textContent = 'New passwords do not match.';
-                    feedbackEl.classList.remove('hidden');
-                    feedbackEl.classList.add('error');
-                    return;
-                }
-
-                if (newPassword.length < 4) {
-                    feedbackEl.textContent = 'Password must be at least 4 characters.';
-                    feedbackEl.classList.remove('hidden');
-                    feedbackEl.classList.add('error');
-                    return;
-                }
-
-                user.passwordHash = await hashPassword(newPassword);
             }
 
             // Update display name and teams
@@ -2423,29 +2399,32 @@
             return total;
         }
 
-        // Show/hide login forms
-        function showLoginForm(type) {
-            const existingForm = document.getElementById('existingUserForm');
-            const newForm = document.getElementById('newUserForm');
-            const toggleBtns = document.querySelectorAll('.toggle-btn');
-            const feedbackEl = document.getElementById('loginFeedback');
+        // ============================================
+        // AUTH (Supabase Auth magic links)
+        // ============================================
+        // A signed-in Supabase account maps to a competitor through users.auth_user_id
+        // (looked up via the my_competitor RPC). Supabase persists the session in
+        // localStorage and refreshes it automatically, so returning visitors stay signed in.
+        let currentAuthEmail = '';
+        let authHandledUserId = null;
+        let isPdfExportMode = false;
+        let magicLinkCooldownTimer = null;
 
-            // Clear feedback
-            feedbackEl.classList.add('hidden');
-            feedbackEl.className = 'login-feedback hidden';
+        function getAuthRedirectUrl() {
+            return window.location.href.split(/[?#]/)[0];
+        }
 
-            // Toggle forms
-            if (type === 'existing') {
-                existingForm.classList.remove('hidden');
-                newForm.classList.add('hidden');
-                toggleBtns[0].classList.add('active');
-                toggleBtns[1].classList.remove('active');
-            } else {
-                existingForm.classList.add('hidden');
-                newForm.classList.remove('hidden');
-                toggleBtns[0].classList.remove('active');
-                toggleBtns[1].classList.add('active');
-            }
+        function showLoginScreen() {
+            document.getElementById('loginView').classList.remove('hidden');
+            document.getElementById('setupView').classList.add('hidden');
+            document.getElementById('appView').classList.add('hidden');
+        }
+
+        function showSetupFeedback(message, type) {
+            const feedbackEl = document.getElementById('setupFeedback');
+            feedbackEl.textContent = message;
+            feedbackEl.classList.remove('hidden', 'success', 'error', 'info');
+            feedbackEl.classList.add(type);
         }
 
         // Login as guest (view only)
@@ -2457,125 +2436,227 @@
             showAppAsGuest();
         }
 
-        // Login existing user
-        async function loginExisting() {
-            const username = document.getElementById('existingUsername').value.trim().toLowerCase();
-            const password = document.getElementById('existingPassword').value;
-            const feedbackEl = document.getElementById('loginFeedback');
+        // Email a magic link (also creates the account on first use)
+        async function sendMagicLink() {
+            const emailInput = document.getElementById('loginEmail');
+            const button = document.getElementById('sendMagicLinkBtn');
+            const email = emailInput.value.trim().toLowerCase();
 
-            // Clear previous feedback
-            feedbackEl.classList.add('hidden');
+            const feedbackEl = document.getElementById('loginFeedback');
             feedbackEl.className = 'login-feedback hidden';
 
-            if (!username) {
-                showLoginFeedback('Please enter your username.', 'error');
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showLoginFeedback('Please enter a valid email address.', 'error');
                 return;
             }
 
-            // Check if user exists
-            if (!users[username]) {
-                showLoginFeedback('Username not found. Please check and try again.', 'error');
+            button.disabled = true;
+            const { error } = await supabaseClient.auth.signInWithOtp({
+                email,
+                options: { emailRedirectTo: getAuthRedirectUrl(), shouldCreateUser: true }
+            });
+
+            if (error) {
+                showLoginFeedback(error.message || 'Could not send the login link. Please try again.', 'error');
+                button.disabled = false;
                 return;
             }
 
-            const hasPassword = !!users[username].passwordHash;
-            if (hasPassword && !password) {
-                showLoginFeedback('Please enter both username and password.', 'error');
-                return;
-            }
-
-            // Check password
-            let passwordValid = false;
-            if (!hasPassword) {
-                passwordValid = true;
-            } else {
-                passwordValid = await verifyPassword(password, users[username].passwordHash);
-            }
-
-            if (!passwordValid) {
-                showLoginFeedback('Incorrect password. Please try again.', 'error');
-                return;
-            }
-
-            // Successful login
-            showLoginFeedback('Login successful. Welcome back, ' + toTitleCase(users[username].nickname) + '.', 'success');
-            currentUsername = username;
-            setRememberedUsername(username);
-            trackUsage('user logs in', formatUsagePayload({ username }), username);
-            setTimeout(() => {
-                showApp();
-            }, 800);
+            showLoginFeedback(`Check ${email} for your login link. Open it on this device to sign in.`, 'success');
+            startMagicLinkCooldown(button, 60);
         }
 
-        // Register new user
-        async function registerNewUser() {
-            const username = document.getElementById('newUsername').value.trim().toLowerCase();
-            const nickname = document.getElementById('nickname').value.trim();
-            const password = document.getElementById('newPassword').value;
+        function startMagicLinkCooldown(button, seconds) {
+            clearInterval(magicLinkCooldownTimer);
+            let remaining = seconds;
+            const label = 'Email Me a Login Link';
+            button.disabled = true;
+            button.textContent = `Resend in ${remaining}s`;
+            magicLinkCooldownTimer = setInterval(() => {
+                remaining -= 1;
+                if (remaining <= 0) {
+                    clearInterval(magicLinkCooldownTimer);
+                    button.disabled = false;
+                    button.textContent = label;
+                    return;
+                }
+                button.textContent = `Resend in ${remaining}s`;
+            }, 1000);
+        }
 
-            // Validation
-            if (!username || !nickname || !password) {
-                showLoginFeedback('Please fill in all fields.', 'error');
+        // Auth state changes (initial session restore, magic link sign-in, sign-out)
+        async function handleAuthChange(event, session) {
+            await appReady;
+            if (isPdfExportMode) return;
+
+            if (event === 'SIGNED_OUT') {
+                authHandledUserId = null;
+                currentAuthEmail = '';
+                if (currentUsername) {
+                    currentUsername = null;
+                    showLoginScreen();
+                }
                 return;
             }
 
-            // Username format validation
-            if (!/^[a-z0-9]+$/.test(username)) {
-                showLoginFeedback('Username can only contain letters and numbers.', 'error');
+            if (!session) {
+                if (event === 'INITIAL_SESSION') {
+                    if (getRememberedUsername() === 'guest') {
+                        isGuest = true;
+                        currentUsername = null;
+                        trackUsage('guest logs in', formatUsagePayload({ source: 'cookie_auto_login' }), 'guest');
+                        showAppAsGuest();
+                    } else {
+                        // Remembered usernames from the pre-auth login system are no longer used.
+                        clearRememberedUsername();
+                    }
+                }
                 return;
             }
 
-            // Check if username already exists
-            if (users[username]) {
-                showLoginFeedback('This username is already taken. Please choose another.', 'error');
+            if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+                if (authHandledUserId === session.user.id) return;
+                authHandledUserId = session.user.id;
+                await resolveSignedInUser(session, event === 'INITIAL_SESSION' ? 'session_restore' : 'magic_link');
+            }
+        }
+
+        // Map the signed-in account to its competitor, or ask the person to set one up
+        async function resolveSignedInUser(session, source) {
+            currentAuthEmail = (session.user && session.user.email) || '';
+
+            const { data, error } = await supabaseClient.rpc('my_competitor');
+            if (error) {
+                console.error('Error loading competitor for account:', error);
+                authHandledUserId = null;
+                showLoginScreen();
+                showLoginFeedback('Signed in, but could not load your profile. Please refresh and try again.', 'error');
                 return;
             }
 
-            // Check if nickname already exists
-            const existingUser = Object.keys(users).find(u =>
-                users[u].nickname && users[u].nickname.toLowerCase() === nickname.toLowerCase()
-            );
-            if (existingUser) {
-                showLoginFeedback('This display name is already taken. Please choose another.', 'error');
+            const row = Array.isArray(data) ? data[0] : data;
+            if (!row) {
+                showProfileSetup();
                 return;
             }
 
-            // Check if this is the first user - they become admin automatically
-            const isFirstUser = Object.keys(users).length === 0;
-
-            // Hash the password
-            const passwordHash = await hashPassword(password);
-
-            // Get selected supported teams
-            const supportedTeams = getSelectedTeams('registerTeamsPicker');
-
-            // Create new user with hashed password
-            users[username] = {
-                nickname: nickname,
-                passwordHash: passwordHash,
-                predictions: {},
-                totalTries: null,
-                supportedTeams: supportedTeams
-            };
-
-            await Storage.saveUser(username, users[username]);
-
-            // Make first user an admin
-            if (isFirstUser) {
-                adminUsernames.push(username);
-                await Storage.saveAdminUsernames(adminUsernames);
-                showLoginFeedback('Account created. As the first user, you are now an Admin. Welcome, ' + toTitleCase(nickname) + '.', 'info');
-            } else {
-                showLoginFeedback('Competitor account created. Welcome, ' + toTitleCase(nickname) + '.', 'info');
+            const username = (row.username || '').trim().toLowerCase();
+            if (!users[username]) {
+                users = await Storage.getUsers();
+            }
+            if (!users[username]) {
+                showLoginScreen();
+                showLoginFeedback('Your competitor profile could not be loaded. Please refresh and try again.', 'error');
+                return;
             }
 
             currentUsername = username;
-            setRememberedUsername(username);
-            trackUsage('user logs in', formatUsagePayload({ username, source: 'register' }), username);
+            isGuest = false;
+            clearRememberedUsername();
+            adminUsernames = await Storage.getAdminUsernames();
+            trackUsage('user logs in', formatUsagePayload({ username, source }), username);
+            showApp();
+        }
 
-            setTimeout(() => {
-                showApp();
-            }, 1000);
+        // Signed in but no competitor linked: let them create one (or wait for an admin to link them)
+        function showProfileSetup() {
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('appView').classList.add('hidden');
+            document.getElementById('setupView').classList.remove('hidden');
+            document.getElementById('setupIntro').textContent =
+                `Signed in as ${currentAuthEmail}. Create your competitor profile to start predicting.`;
+            document.getElementById('setupFeedback').className = 'login-feedback hidden';
+            renderTeamFlagsPicker('setupTeamsPicker', []);
+        }
+
+        async function createMyProfile() {
+            const username = document.getElementById('setupUsername').value.trim().toLowerCase();
+            const nickname = document.getElementById('setupNickname').value.trim();
+            const supportedTeams = getSelectedTeams('setupTeamsPicker');
+
+            if (!username || !nickname) {
+                showSetupFeedback('Please enter a username and display name.', 'error');
+                return;
+            }
+            if (!/^[a-z0-9]+$/.test(username)) {
+                showSetupFeedback('Username can only contain letters and numbers.', 'error');
+                return;
+            }
+            if (users[username]) {
+                showSetupFeedback('This username is already taken. If this is you from a previous year, ask an admin to link your account.', 'error');
+                return;
+            }
+            const nicknameTaken = Object.keys(users).some(u =>
+                users[u].nickname && users[u].nickname.toLowerCase() === nickname.toLowerCase()
+            );
+            if (nicknameTaken) {
+                showSetupFeedback('This display name is already taken. Please choose another.', 'error');
+                return;
+            }
+
+            const { error } = await supabaseClient.rpc('create_my_profile', {
+                p_username: username,
+                p_nickname: nickname,
+                p_supported_teams: supportedTeams.length > 0 ? supportedTeams.join(',') : null
+            });
+            if (error) {
+                showSetupFeedback(error.message || 'Could not create your profile. Please try again.', 'error');
+                return;
+            }
+
+            users = await Storage.getUsers();
+            await recheckProfileLink();
+        }
+
+        // Re-run the account -> competitor lookup (e.g. after an admin links the account)
+        async function recheckProfileLink() {
+            const { data } = await supabaseClient.auth.getSession();
+            const session = data && data.session;
+            if (!session) {
+                showLoginScreen();
+                return;
+            }
+            users = await Storage.getUsers();
+            authHandledUserId = session.user.id;
+            await resolveSignedInUser(session, 'profile_check');
+            if (!currentUsername) {
+                showSetupFeedback('No competitor is linked to this account yet.', 'info');
+            }
+        }
+
+        // Handle Enter key on the login email input
+        function handleLoginKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMagicLink();
+            }
+        }
+
+        // Logout
+        async function logout() {
+            const wasGuest = isGuest;
+            currentUsername = null;
+            isGuest = false;
+            authHandledUserId = null;
+            currentAuthEmail = '';
+            adminUsernames = [];
+            authAccounts = [];
+            authAccountsLoaded = false;
+            authAccountsRequested = false;
+            clearRememberedUsername();
+            showLoginScreen();
+
+            // Reset logout button text
+            const logoutBtn = document.getElementById('logoutBtn');
+            logoutBtn.textContent = 'Logout';
+
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginFeedback').className = 'login-feedback hidden';
+            document.getElementById('setupUsername').value = '';
+            document.getElementById('setupNickname').value = '';
+
+            if (!wasGuest) {
+                await supabaseClient.auth.signOut();
+            }
         }
 
         // Show login feedback
@@ -2586,44 +2667,11 @@
             feedbackEl.classList.add(type);
         }
 
-        // Handle Enter key on login inputs
-        function handleLoginKeyPress(event, formType) {
-            if (event.key === 'Enter') {
-                if (formType === 'existing') {
-                    loginExisting();
-                } else if (formType === 'new') {
-                    registerNewUser();
-                }
-            }
-        }
-
-        // Logout
-        function logout() {
-            currentUsername = null;
-            isGuest = false;
-            clearRememberedUsername();
-            document.getElementById('loginView').classList.remove('hidden');
-            document.getElementById('appView').classList.add('hidden');
-
-            // Reset logout button text
-            const logoutBtn = document.getElementById('logoutBtn');
-            logoutBtn.textContent = 'Logout';
-
-            // Clear all login form fields
-            document.getElementById('existingUsername').value = '';
-            document.getElementById('existingPassword').value = '';
-            document.getElementById('newUsername').value = '';
-            document.getElementById('nickname').value = '';
-            document.getElementById('newPassword').value = '';
-
-            // Reset to existing user form
-            showLoginForm('existing');
-        }
-
         // Show app
         function showApp() {
             isGuest = false;
             document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('setupView').classList.add('hidden');
             document.getElementById('appView').classList.remove('hidden');
 
             const user = users[currentUsername];
@@ -6658,9 +6706,9 @@ CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(255) UNIQUE NOT NULL,
     nickname VARCHAR(255),
-    password_hash VARCHAR(255),
     total_tries INTEGER,
     supported_teams VARCHAR(255),
+    auth_user_id UUID UNIQUE REFERENCES auth.users(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -6746,7 +6794,8 @@ CREATE TABLE usage_events (
     payload TEXT
 );
 
--- Enable Row Level Security (optional - adjust as needed)
+-- Row Level Security, auth policies and helper functions live in supabase/auth_migration.sql.
+-- Run that file after restoring (it is idempotent). Until then the tables are locked down.
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE predictions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
@@ -6755,18 +6804,7 @@ ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE scoring_rules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE scoring_close_tiers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_joker_selections ENABLE ROW LEVEL SECURITY;
-ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;
-
--- Create policies for public access (adjust based on your security needs)
-CREATE POLICY "Allow all access to users" ON users FOR ALL USING (true);
-CREATE POLICY "Allow all access to predictions" ON predictions FOR ALL USING (true);
-CREATE POLICY "Allow all access to matches" ON matches FOR ALL USING (true);
-CREATE POLICY "Allow all access to admin_usernames" ON admin_usernames FOR ALL USING (true);
-CREATE POLICY "Allow all access to settings" ON settings FOR ALL USING (true);
-CREATE POLICY "Allow all access to scoring_rules" ON scoring_rules FOR ALL USING (true);
-CREATE POLICY "Allow all access to scoring_close_tiers" ON scoring_close_tiers FOR ALL USING (true);
-CREATE POLICY "Allow all access to user_joker_selections" ON user_joker_selections FOR ALL USING (true);
-CREATE POLICY "Allow all access to usage_events" ON usage_events FOR ALL USING (true);`;
+ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
         }
 
         function generateDataSQL() {
@@ -6820,7 +6858,7 @@ CREATE POLICY "Allow all access to usage_events" ON usage_events FOR ALL USING (
                     const u = users[username];
                     const oderId = index + 1;
                     const supportedTeamsVal = u.supportedTeams && u.supportedTeams.length > 0 ? `'${esc(u.supportedTeams.join(','))}'` : 'NULL';
-                    sql += `INSERT INTO users (id, username, nickname, password_hash, total_tries, supported_teams) VALUES (${oderId}, '${esc(username)}', '${esc(u.nickname)}', '${esc(u.passwordHash)}', ${u.totalTries === null || u.totalTries === undefined ? 'NULL' : u.totalTries}, ${supportedTeamsVal});\n`;
+                    sql += `INSERT INTO users (id, username, nickname, total_tries, supported_teams) VALUES (${oderId}, '${esc(username)}', '${esc(u.nickname)}', ${u.totalTries === null || u.totalTries === undefined ? 'NULL' : u.totalTries}, ${supportedTeamsVal});\n`;
                 });
 
                 // Generate predictions INSERT statements
@@ -6890,7 +6928,7 @@ CREATE POLICY "Allow all access to usage_events" ON usage_events FOR ALL USING (
                 description.textContent = 'This SQL will recreate all tables and restore:';
                 list.innerHTML = `
                     <li>All matches and fixtures</li>
-                    <li>All user accounts (usernames, password hashes)</li>
+                    <li>All competitors (usernames, display names; sign-in account links are re-created by an admin)</li>
                     <li>All predictions</li>
                     <li>Single scoring rules config, prize settings, and close-score tiers</li>
                     <li>User joker selections</li>
@@ -7184,7 +7222,7 @@ CREATE POLICY "Allow all access to usage_events" ON usage_events FOR ALL USING (
         }
 
         // Initialize on load - load data from Supabase first
-        initializeData().then(() => {
+        const appReady = initializeData().then(() => {
             init();
 
             // Apply previously selected theme from cookie immediately on load
@@ -7200,23 +7238,13 @@ CREATE POLICY "Allow all access to usage_events" ON usage_events FOR ALL USING (
             // Direct PDF URL support: index.html?export=pdf
             const params = new URLSearchParams(window.location.search);
             if ((params.get('export') || '').toLowerCase() === 'pdf') {
+                isPdfExportMode = true;
                 exportToPDF({ openInBrowser: true });
-                return;
             }
+        });
 
-            // Check for saved user cookie and auto-login
-            const savedUsername = getRememberedUsername();
-            if (savedUsername === 'guest') {
-                isGuest = true;
-                currentUsername = null;
-                trackUsage('guest logs in', formatUsagePayload({ source: 'cookie_auto_login' }), 'guest');
-                showAppAsGuest();
-            } else if (savedUsername && users[savedUsername]) {
-                currentUsername = savedUsername;
-                trackUsage('user logs in', formatUsagePayload({ username: savedUsername, source: 'cookie_auto_login' }), savedUsername);
-                showApp();
-            } else if (savedUsername) {
-                // Clean up stale remembered usernames that no longer exist.
-                clearRememberedUsername();
-            }
+        // Restores a saved session on load (INITIAL_SESSION) and handles magic link sign-ins.
+        // Deferred with setTimeout so the callback never awaits Supabase calls inside the auth lock.
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            setTimeout(() => handleAuthChange(event, session), 0);
         });

@@ -49,7 +49,6 @@ Object keyed by normalized lowercase username:
 {
   [username]: {
     nickname,
-    passwordHash,
     totalTries,
     supportedTeams: [],
     predictions: {
@@ -85,13 +84,23 @@ Array of fixtures/results:
 - `appSettings`: includes prediction locking and other app-wide settings.
 - `activeScoringRules`: current scoring and prize configuration.
 - `userJokerSelections`: selected joker match ids per user.
-- `currentUsername`: active logged-in user or `guest`.
+- `currentUsername`: active logged-in competitor username, or `null` for guests.
+- `currentAuthEmail`: email of the signed-in Supabase Auth account.
+
+## Authentication
+
+- Login is Supabase Auth magic link only (`sendMagicLink` -> `signInWithOtp`); first use creates the account. supabase-js persists the session in localStorage, so returning visitors stay signed in.
+- `handleAuthChange` (wired to `onAuthStateChange`) restores the session and calls `resolveSignedInUser`, which maps the account to a competitor through the `my_competitor` RPC (`users.auth_user_id`).
+- Accounts with no competitor see `#setupView` (`createMyProfile` -> `create_my_profile` RPC) or wait for an admin to link them (Competitors tab -> `admin_list_accounts` / `admin_link_competitor` RPCs).
+- Guests are remembered with the `rugbyPredictorUser=guest` cookie only; usernames are no longer remembered.
+- Authorization is enforced by RLS, not the UI: admins are `admin_usernames` rows whose username belongs to a linked competitor (`is_admin()`). `users.auth_user_id` is not readable by clients. See `supabase/auth_migration.sql` (run once; idempotent) and bootstrap notes at its top.
+- `Storage.saveAdminUsernames` diffs rather than clearing the table, because emptying it mid-save would remove the admin's own rights.
 
 ## Main Runtime Flow
 
 1. `initializeData()` loads users, admins, settings, matches, scoring rules, and joker selections from Supabase.
 2. `init()` renders the main UI shells.
-3. `showApp()` or `showAppAsGuest()` selects the visible mode.
+3. Auth restores the session; `showApp()`, `showAppAsGuest()` or the profile setup view selects the visible mode.
 4. Most user actions save via `Storage.*`, mutate in-memory globals, then re-render affected sections.
 
 ## Important Function Clusters In `app.js`
