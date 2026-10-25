@@ -21,6 +21,7 @@
             { id: 14, round: 5, date: 'Sat, Mar 14', time: '16:40', team1: 'Wales', team2: 'Italy', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null, jokerEligible: false },
             { id: 15, round: 5, date: 'Sat, Mar 14', time: '20:10', team1: 'France', team2: 'England', actualScore1: null, actualScore2: null, actualTries1: null, actualTries2: null, jokerEligible: false }
         ];
+        const DEFAULT_FIXTURES = matches.map(m => ({ ...m, year: 2026 }));
         let stattoFactIndex = null;
         let trevsTipsLoadout = null;
 
@@ -155,9 +156,10 @@
         const Storage = {
             // Users - get all users as object keyed by username
             getUsers: async () => {
+                const yearMatchIds = new Set(matches.map(m => m.id));
                 const { data, error } = await supabaseClient
                     .from('users')
-                    .select('id, username, nickname, total_tries, supported_teams');
+                    .select('id, username, nickname, supported_teams');
                 
                 if (error) {
                     console.error('Error fetching users:', error);
@@ -172,7 +174,7 @@
 
                     usersObj[normalizedUsername] = {
                         nickname: user.nickname,
-                        totalTries: user.total_tries,
+                        totalTries: null,  // Per-year, filled in from user_tries below
                         supportedTeams: user.supported_teams ? user.supported_teams.split(',') : [],
                         predictions: {}  // Will be populated separately
                     };
@@ -192,7 +194,7 @@
                     
                     predictions.forEach(pred => {
                         const username = userIdToUsername[pred.user_id];
-                        if (username && usersObj[username]) {
+                        if (username && usersObj[username] && yearMatchIds.has(pred.match_id)) {
                             usersObj[username].predictions[pred.match_id] = {
                                 team1: pred.team1_score,
                                 team2: pred.team2_score
@@ -200,7 +202,27 @@
                         }
                     });
                 }
-                
+
+                // Tournament tries are stored per competitor per year
+                const { data: triesRows, error: triesError } = await supabaseClient
+                    .from('user_tries')
+                    .select('user_id, total_tries')
+                    .eq('year', selectedYear);
+                if (triesError) {
+                    console.error('Error fetching user tries:', triesError);
+                } else {
+                    const idToUsername = {};
+                    data.forEach(user => {
+                        idToUsername[user.id] = (user.username || '').trim().toLowerCase();
+                    });
+                    (triesRows || []).forEach(row => {
+                        const username = idToUsername[row.user_id];
+                        if (username && usersObj[username]) {
+                            usersObj[username].totalTries = row.total_tries;
+                        }
+                    });
+                }
+
                 return usersObj;
             },
             
@@ -222,7 +244,6 @@
                         .from('users')
                         .update({
                             nickname: userData.nickname,
-                            total_tries: userData.totalTries,
                             supported_teams: userData.supportedTeams && userData.supportedTeams.length > 0 ? userData.supportedTeams.join(',') : null
                         })
                         .eq('username', username);
@@ -246,7 +267,6 @@
                         .insert({
                             username: username,
                             nickname: userData.nickname,
-                            total_tries: userData.totalTries,
                             supported_teams: userData.supportedTeams && userData.supportedTeams.length > 0 ? userData.supportedTeams.join(',') : null
                         });
                     
@@ -300,38 +320,49 @@
                     return;
                 }
                 
-                // Update total tries
+                // Tournament tries are stored per year
                 const { error: totalTriesError } = await supabaseClient
-                    .from('users')
-                    .update({ total_tries: totalTries })
-                    .eq('id', user.id);
+                    .from('user_tries')
+                    .upsert({
+                        user_id: user.id,
+                        year: selectedYear,
+                        total_tries: totalTries === undefined ? null : totalTries
+                    }, { onConflict: 'user_id,year' });
                 if (totalTriesError) {
                     console.error('Error updating total tries:', totalTriesError);
                     return;
                 }
 
-                // Replace all stored predictions for this user so cleared rows are
-                // persisted as deletions (not left behind in Supabase).
-                const { error: deleteError } = await supabaseClient
-                    .from('predictions')
-                    .delete()
-                    .eq('user_id', user.id);
-                if (deleteError) {
-                    console.error('Error clearing existing predictions:', deleteError);
-                    return;
+                // Replace the stored predictions for this user in the selected year only, so
+                // cleared rows are persisted as deletions and other years are never touched.
+                const yearMatchIds = matches.map(m => m.id);
+                if (yearMatchIds.length > 0) {
+                    const { error: deleteError } = await supabaseClient
+                        .from('predictions')
+                        .delete()
+                        .eq('user_id', user.id)
+                        .in('match_id', yearMatchIds);
+                    if (deleteError) {
+                        console.error('Error clearing existing predictions:', deleteError);
+                        return;
+                    }
                 }
 
-                const predictionRows = Object.entries(predictions || {}).map(([matchId, pred]) => ({
-                    user_id: user.id,
-                    match_id: parseInt(matchId, 10),
-                    team1_score: pred.team1,
-                    team2_score: pred.team2,
-                    updated_at: new Date().toISOString()
-                }));
+                const yearMatchIdSet = new Set(yearMatchIds);
+                const predictionRows = Object.entries(predictions || {})
+                    .filter(([matchId]) => yearMatchIdSet.has(parseInt(matchId, 10)))
+                    .map(([matchId, pred]) => ({
+                        user_id: user.id,
+                        match_id: parseInt(matchId, 10),
+                        team1_score: pred.team1,
+                        team2_score: pred.team2,
+                        updated_at: new Date().toISOString()
+                    }));
 
                 if (predictionRows.length === 0) {
                     trackUsage('save predictions', formatUsagePayload({
                         username,
+                        year: selectedYear,
                         predictions: predictions || {},
                         totalTries
                     }), username);
@@ -347,6 +378,7 @@
                 }
                 trackUsage('save predictions', formatUsagePayload({
                     username,
+                    year: selectedYear,
                     predictions: predictions || {},
                     totalTries
                 }), username);
@@ -386,6 +418,7 @@
                 // Convert to app format
                 return data.map(m => ({
                     id: m.id,
+                    year: m.year || 2026,
                     round: m.round,
                     date: m.date,
                     time: m.time,
@@ -399,9 +432,65 @@
                 }));
             },
 
+            // Years available in the year dropdown
+            getSeasons: async () => {
+                const { data, error } = await supabaseClient
+                    .from('seasons')
+                    .select('year')
+                    .order('year', { ascending: true });
+                if (error) {
+                    console.error('Error fetching seasons:', error);
+                    return [];
+                }
+                return (data || []).map(row => row.year);
+            },
+
+            // Add a year, copying scoring/prize rules from another year when given
+            addSeason: async (year, copyRulesFromYear = null) => {
+                const { error } = await supabaseClient.from('seasons').insert({ year });
+                if (error) {
+                    console.error('Error adding season:', error);
+                    return false;
+                }
+
+                if (copyRulesFromYear) {
+                    const { data: rule } = await supabaseClient
+                        .from('scoring_rules')
+                        .select('*')
+                        .eq('year', copyRulesFromYear)
+                        .maybeSingle();
+                    if (rule) {
+                        const { error: ruleError } = await supabaseClient
+                            .from('scoring_rules')
+                            .insert({ ...rule, id: year, year, updated_at: new Date().toISOString() });
+                        if (ruleError) console.error('Error copying scoring rules to new year:', ruleError);
+
+                        const { data: tiers } = await supabaseClient
+                            .from('scoring_close_tiers')
+                            .select('tier_order, within_points, bonus_points')
+                            .eq('year', copyRulesFromYear);
+                        if (tiers && tiers.length > 0) {
+                            const { error: tierError } = await supabaseClient
+                                .from('scoring_close_tiers')
+                                .insert(tiers.map(t => ({ ...t, year })));
+                            if (tierError) console.error('Error copying close tiers to new year:', tierError);
+                        }
+                    }
+                }
+
+                trackUsage('add year', formatUsagePayload({ year, copyRulesFromYear }));
+                return true;
+            },
+
             saveMatches: async (matchesData, options = {}) => {
+                // Keep the all-years cache in step with the selected year's fixtures
+                allMatches = allMatches
+                    .filter(m => m.year !== selectedYear)
+                    .concat(matchesData.map(m => ({ ...m, year: selectedYear })));
+
                 const rows = matchesData.map(m => ({
                     id: m.id,
+                    year: selectedYear,
                     round: m.round,
                     date: m.date,
                     time: m.time,
@@ -416,7 +505,8 @@
 
                 const { data: existingMatches, error: existingError } = await supabaseClient
                     .from('matches')
-                    .select('id');
+                    .select('id')
+                    .eq('year', selectedYear);
                 if (existingError) {
                     console.error('Error reading existing matches before save:', existingError);
                     return;
@@ -523,9 +613,10 @@
                     return { predictionsLocked: false };
                 }
                 
-                const settings = {};
+                const settings = { predictionsLocked: false };
+                const lockKey = `predictions_locked:${selectedYear}`;
                 data.forEach(row => {
-                    if (row.key === 'predictions_locked') {
+                    if (row.key === lockKey) {
                         settings.predictionsLocked = row.value === 'true' || row.value === true;
                     }
                 });
@@ -537,7 +628,7 @@
                 const { error } = await supabaseClient
                     .from('settings')
                     .upsert({
-                        key: 'predictions_locked',
+                        key: `predictions_locked:${selectedYear}`,
                         value: settings.predictionsLocked ? 'true' : 'false'
                     }, {
                         onConflict: 'key'
@@ -619,7 +710,7 @@
                 const { data: rule, error: rulesError } = await supabaseClient
                     .from('scoring_rules')
                     .select('*')
-                    .eq('id', 1)
+                    .eq('year', selectedYear)
                     .maybeSingle();
 
                 if (rulesError || !rule) {
@@ -630,6 +721,7 @@
                 const { data: tierRows, error: tiersError } = await supabaseClient
                     .from('scoring_close_tiers')
                     .select('*')
+                    .eq('year', selectedYear)
                     .order('tier_order', { ascending: true });
 
                 if (tiersError) {
@@ -677,6 +769,7 @@
                     if (normalizedUsername) userIdToUsername[u.id] = normalizedUsername;
                 });
 
+                const yearMatchIds = new Set(matches.map(m => m.id));
                 const { data: selectionRows, error: selectionError } = await supabaseClient
                     .from('user_joker_selections')
                     .select('user_id, match_id');
@@ -689,7 +782,7 @@
                 const byUsername = {};
                 (selectionRows || []).forEach(row => {
                     const username = userIdToUsername[row.user_id];
-                    if (!username) return;
+                    if (!username || !yearMatchIds.has(row.match_id)) return;
                     if (!byUsername[username]) byUsername[username] = [];
                     byUsername[username].push(row.match_id);
                 });
@@ -704,8 +797,14 @@
             // Save singleton scoring rules and replace close tiers.
             // Returns 1 on success, or null on failure.
             saveScoringRulesDraft: async (rules) => {
+                const { data: existingRule } = await supabaseClient
+                    .from('scoring_rules')
+                    .select('id')
+                    .eq('year', selectedYear)
+                    .maybeSingle();
                 const normalized = {
-                    id: 1,
+                    id: existingRule ? existingRule.id : selectedYear,
+                    year: selectedYear,
                     correct_result_points: Math.max(0, parseInt(rules && rules.correctResultPoints, 10) || 0),
                     perfect_score_bonus: Math.max(0, parseInt(rules && rules.perfectScoreBonus, 10) || 0),
                     draw_bonus: Math.max(0, parseInt(rules && rules.drawBonus, 10) || 0),
@@ -729,7 +828,7 @@
                 const { error: deleteTiersError } = await supabaseClient
                     .from('scoring_close_tiers')
                     .delete()
-                    .gte('tier_order', 1);
+                    .eq('year', selectedYear);
                 if (deleteTiersError) {
                     console.error('Error clearing existing scoring close tiers:', deleteTiersError);
                     return null;
@@ -739,7 +838,8 @@
                     .map((tier, index) => ({
                         tier_order: Math.min(3, Math.max(1, parseInt(tier && tier.tierOrder, 10) || index + 1)),
                         within_points: Math.max(0, parseInt(tier && tier.withinPoints, 10) || 0),
-                        bonus_points: Math.max(0, parseInt(tier && tier.bonusPoints, 10) || 0)
+                        bonus_points: Math.max(0, parseInt(tier && tier.bonusPoints, 10) || 0),
+                        year: selectedYear
                     }))
                     .slice(0, 3)
                     .sort((a, b) => a.tier_order - b.tier_order);
@@ -778,10 +878,12 @@
                     .filter(id => Number.isInteger(id) && id > 0))]
                     .sort((a, b) => a - b);
 
+                const yearMatchIds = matches.map(m => m.id);
                 const { data: existingRows, error: existingError } = await supabaseClient
                     .from('user_joker_selections')
                     .select('match_id')
-                    .eq('user_id', user.id);
+                    .eq('user_id', user.id)
+                    .in('match_id', yearMatchIds);
                 if (existingError) {
                     console.error('Error reading existing joker selections:', existingError);
                     return false;
@@ -813,7 +915,8 @@
                         const { error: deleteAllError } = await supabaseClient
                             .from('user_joker_selections')
                             .delete()
-                            .eq('user_id', user.id);
+                            .eq('user_id', user.id)
+                            .in('match_id', yearMatchIds);
                         if (deleteAllError) {
                             console.error('Error clearing existing joker selections:', deleteAllError);
                             return false;
@@ -845,6 +948,9 @@
         let currentUsername = null;
         let adminUsernames = [];
         let appSettings = { predictionsLocked: false };
+        let selectedYear = null;
+        let availableYears = [];
+        let allMatches = [];  // Fixtures for every year; `matches` holds the selected year only
         let activeScoringRules = null;
         let userJokerSelections = {};
         let rulesFormInitialized = false;
@@ -860,6 +966,7 @@
         const THEME_STORAGE_KEY = 'rugbyPredictorTheme';
         const COOKIE_FALLBACK_PREFIX = 'rugbyPredictorCookieFallback:';
         const REMEMBERED_USER_KEY = 'rugbyPredictorRememberedUser';
+        const SELECTED_YEAR_KEY = 'rugbyPredictorSelectedYear';
 
         // Loading state
         let isLoading = true;
@@ -980,34 +1087,160 @@
             return '';
         }
 
+        // ============================================
+        // YEARS
+        // ============================================
+        // Fixtures, predictions, jokers, tries, scoring rules and the prediction lock all belong to a
+        // year. `matches` always holds the selected year's fixtures; users/predictions/jokers/rules
+        // are loaded for that year only.
+        function buildAvailableYears(seasonYears) {
+            const years = new Set((seasonYears || []).map(Number).filter(Number.isInteger));
+            allMatches.forEach(m => { if (Number.isInteger(m.year)) years.add(m.year); });
+            if (years.size === 0) years.add(2026);
+            return [...years].sort((a, b) => a - b);
+        }
+
+        function pickInitialYear() {
+            let stored = null;
+            try {
+                stored = parseInt(localStorage.getItem(SELECTED_YEAR_KEY), 10);
+            } catch (error) {
+                stored = null;
+            }
+            if (Number.isInteger(stored) && availableYears.includes(stored)) return stored;
+
+            // Default to the latest year that has fixtures, so a newly added empty year is not the landing page
+            const yearsWithFixtures = availableYears.filter(year => allMatches.some(m => m.year === year));
+            const candidates = yearsWithFixtures.length > 0 ? yearsWithFixtures : availableYears;
+            return candidates[candidates.length - 1];
+        }
+
+        // Point `matches` at the selected year's fixtures (mutated in place: it is a const array)
+        function applySelectedYearMatches() {
+            let yearMatches = allMatches.filter(m => m.year === selectedYear);
+            if (allMatches.length === 0 && selectedYear === 2026) {
+                yearMatches = DEFAULT_FIXTURES.map(m => ({ ...m }));
+            }
+            matches.length = 0;
+            yearMatches.forEach(m => matches.push(m));
+        }
+
+        // Next fixture id, unique across all years (ids are a single global sequence)
+        function getNextMatchId() {
+            const ids = [...allMatches.map(m => m.id), ...matches.map(m => m.id)];
+            return (ids.length > 0 ? Math.max(...ids) : 0) + 1;
+        }
+
+        // Load everything that depends on the selected year
+        async function loadYearData() {
+            applySelectedYearMatches();
+            const [loadedUsers, loadedSettings, loadedRules, loadedJokerSelections] = await Promise.all([
+                Storage.getUsers(),
+                Storage.getSettings(),
+                Storage.getActiveScoringRules(),
+                Storage.getUserJokerSelections()
+            ]);
+            users = loadedUsers;
+            appSettings = loadedSettings;
+            activeScoringRules = loadedRules;
+            userJokerSelections = loadedJokerSelections;
+            updateChallengeSubtitleYear();
+        }
+
+        function renderYearSelect() {
+            const select = document.getElementById('yearSelect');
+            if (!select) return;
+            select.innerHTML = availableYears
+                .map(year => `<option value="${year}" ${year === selectedYear ? 'selected' : ''}>${year}</option>`)
+                .join('');
+        }
+
+        async function switchYear(value) {
+            const year = parseInt(value, 10);
+            if (!availableYears.includes(year) || year === selectedYear) {
+                renderYearSelect();
+                return;
+            }
+
+            showLoadingScreen();
+            try {
+                selectedYear = year;
+                try {
+                    localStorage.setItem(SELECTED_YEAR_KEY, String(year));
+                } catch (error) {
+                    // Ignore storage errors; the choice just won't be remembered.
+                }
+
+                // Drop UI state that belongs to the previous year
+                rulesFormInitialized = false;
+                adminPredictionUsername = null;
+                editingFixtureId = null;
+                nextMatchScoreId = null;
+                editingPredictionContext = null;
+
+                await loadYearData();
+            } finally {
+                hideLoadingScreen();
+            }
+
+            init();
+            if (currentUsername && users[currentUsername]) {
+                showApp();
+            } else {
+                showAppAsGuest();
+            }
+        }
+
+        // Admin: add a new year (rules are copied from the year being viewed)
+        async function addYear() {
+            if (!isCurrentUserAdmin()) return;
+            const input = prompt('Add which year? Fixtures, predictions and tables for it start empty; scoring and prize rules are copied from ' + selectedYear + '.');
+            if (input === null) return;
+
+            const year = parseInt(String(input).trim(), 10);
+            if (!Number.isInteger(year) || year < 2000 || year > 2100) {
+                alert('Please enter a four-digit year, for example 2027.');
+                return;
+            }
+            if (availableYears.includes(year)) {
+                alert(`${year} already exists.`);
+                return;
+            }
+
+            const ok = await Storage.addSeason(year, selectedYear);
+            if (!ok) {
+                alert('Could not add the year. Please try again.');
+                return;
+            }
+
+            availableYears = [...availableYears, year].sort((a, b) => a - b);
+            await switchYear(year);
+        }
+
+        // Competitors who have made predictions in the selected year (predictions are loaded per year)
+        function getParticipantUsernames() {
+            return Object.keys(users).filter(username => Object.keys(users[username].predictions || {}).length > 0);
+        }
+
         // Initialize data from supabaseClient
         async function initializeData() {
             try {
                 // Show loading indicator
                 showLoadingScreen();
                 
-                // Load all data in parallel
-                const [loadedUsers, loadedAdmins, loadedSettings, loadedMatches, loadedRules, loadedJokerSelections] = await Promise.all([
-                    Storage.getUsers(),
-                    Storage.getAdminUsernames(),
-                    Storage.getSettings(),
+                // Years and fixtures first: everything else is scoped to the selected year
+                const [loadedSeasons, loadedMatches, loadedAdmins] = await Promise.all([
+                    Storage.getSeasons(),
                     Storage.getMatches(),
-                    Storage.getActiveScoringRules(),
-                    Storage.getUserJokerSelections()
+                    Storage.getAdminUsernames()
                 ]);
-                
-                users = loadedUsers;
+
+                allMatches = loadedMatches || [];
                 adminUsernames = loadedAdmins;
-                appSettings = loadedSettings;
-                activeScoringRules = loadedRules;
-                userJokerSelections = loadedJokerSelections;
-                
-                // Load matches from database or use defaults
-                if (loadedMatches && loadedMatches.length > 0) {
-                    matches.length = 0;
-                    loadedMatches.forEach(m => matches.push(m));
-                }
-                updateChallengeSubtitleYear();
+                availableYears = buildAvailableYears(loadedSeasons);
+                selectedYear = pickInitialYear();
+
+                await loadYearData();
                 
                 isLoading = false;
                 hideLoadingScreen();
@@ -1033,14 +1266,7 @@
         function updateChallengeSubtitleYear() {
             const subtitle = document.getElementById('challengeSubtitle');
             if (!subtitle) return;
-
-            const firstDatedFixture = matches.find(match => parseDateForInput(match.date || ''));
-            const isoDate = firstDatedFixture ? parseDateForInput(firstDatedFixture.date || '') : '';
-            const year = isoDate && /^\d{4}-/.test(isoDate)
-                ? isoDate.slice(0, 4)
-                : '';
-
-            subtitle.textContent = year ? `Prediction Challenge ${year}` : 'Prediction Challenge';
+            subtitle.textContent = selectedYear ? `Prediction Challenge ${selectedYear}` : 'Prediction Challenge';
         }
 
         // Check if current user is admin
@@ -1066,6 +1292,7 @@
 
         // Initialize app
         function init() {
+            renderYearSelect();
             renderMatches();
             renderAdminMatches();
         }
@@ -1510,7 +1737,7 @@
             if (monthDayMatch) {
                 const month = monthLookup[monthDayMatch[1].toLowerCase()];
                 const day = monthDayMatch[2];
-                const year = monthDayMatch[3] || '2026';
+                const year = monthDayMatch[3] || String(selectedYear || 2026);
                 if (month) return toIsoIfValid(year, month, day);
             }
 
@@ -1518,7 +1745,7 @@
             if (dayMonthMatch) {
                 const month = monthLookup[dayMonthMatch[2].toLowerCase()];
                 const day = dayMonthMatch[1];
-                const year = dayMonthMatch[3] || '2026';
+                const year = dayMonthMatch[3] || String(selectedYear || 2026);
                 if (month) return toIsoIfValid(year, month, day);
             }
 
@@ -1542,13 +1769,13 @@
 
         // Add a new match
         async function addNewMatch() {
-            // Find the highest existing ID
-            const maxId = matches.length > 0 ? Math.max(...matches.map(m => m.id)) : 0;
+            // Ids are unique across all years
+            const nextId = getNextMatchId();
             // Find the highest round
             const maxRound = matches.length > 0 ? Math.max(...matches.map(m => m.round)) : 0;
             
             const newMatch = {
-                id: maxId + 1,
+                id: nextId,
                 round: maxRound,
                 date: 'TBD',
                 time: '15:00',
@@ -1593,7 +1820,7 @@
             if (!confirm('Are you sure you want to remove ALL fixtures? This cannot be undone.')) {
                 return;
             }
-            if (!confirm('This will delete all match data. Are you really sure?')) {
+            if (!confirm(`This will delete all fixtures for ${selectedYear}. Are you really sure?`)) {
                 return;
             }
             
@@ -1630,9 +1857,8 @@
             const newFixtures = [];
             const errors = [];
             
-            // Find the highest existing ID
-            const maxId = matches.length > 0 ? Math.max(...matches.map(m => m.id)) : 0;
-            let nextId = maxId + 1;
+            // Ids are unique across all years
+            let nextId = getNextMatchId();
             
             lines.forEach((line, index) => {
                 const parts = line.split(',').map(p => p.trim());
@@ -4116,11 +4342,7 @@
             if (!isTournamentComplete() || !leaderboardData || leaderboardData.length === 0) return '';
 
             const winner = leaderboardData[0];
-            const firstDatedFixture = matches.find(match => parseDateForInput(match.date || ''));
-            const isoDate = firstDatedFixture ? parseDateForInput(firstDatedFixture.date || '') : '';
-            const currentYear = isoDate && /^\d{4}-/.test(isoDate)
-                ? Number(isoDate.slice(0, 4))
-                : new Date().getFullYear();
+            const currentYear = selectedYear || new Date().getFullYear();
             const nextYear = currentYear + 1;
 
             return `That's it for ${currentYear}, tune in next year for the ${nextYear} competition under the stewardship of ${winner.nickname}.`;
@@ -4139,7 +4361,7 @@
         }
 
         function buildTournamentStattoFacts() {
-            const allUsers = Object.keys(users);
+            const allUsers = getParticipantUsernames();
             const completedScoreMatches = matches.filter(match => match.actualScore1 !== null && match.actualScore2 !== null);
             if (allUsers.length === 0 || completedScoreMatches.length === 0) {
                 return ['The Statto is still sharpening the pencil. Once results land, the numbers will start talking.'];
@@ -4620,7 +4842,7 @@
             const container = document.getElementById('trevsTipsContainer');
             if (!container) return;
             
-            const allUsers = Object.keys(users);
+            const allUsers = getParticipantUsernames();
             if (allUsers.length === 0) {
                 container.innerHTML = '';
                 return;
@@ -5622,10 +5844,13 @@
         // Show comprehensive summary with matches as columns
         function showSummary() {
             const container = document.getElementById('summaryContainer');
-            const allUsers = Object.keys(users);
+            const allUsers = getParticipantUsernames();
             
-            if (allUsers.length === 0) {
-                container.innerHTML = '<p style="text-align: center; font-size: 1.2rem; opacity: 0.7;">No competitors have registered yet.</p>';
+            if (matches.length === 0 || allUsers.length === 0) {
+                const emptyMessage = matches.length === 0
+                    ? `No fixtures have been added for ${selectedYear} yet.`
+                    : `No competitors have made predictions for ${selectedYear} yet.`;
+                container.innerHTML = `<p style="text-align: center; font-size: 1.2rem; opacity: 0.7;">${emptyMessage}</p>`;
                 renderPrizeMoneyPanel([]);
                 renderWormChart([]);
                 updateLeaderboard();
@@ -5636,7 +5861,7 @@
             
             if (filteredMatches.length === 0) {
                 container.innerHTML = '<p style="text-align: center; font-size: 1.2rem; opacity: 0.7;">No matches match the current filter.</p>';
-                const sortedUsersForPrizeOnly = Object.keys(users)
+                const sortedUsersForPrizeOnly = allUsers
                     .map(username => ({
                         username: username,
                         nickname: toTitleCase(users[username].nickname || username),
@@ -5705,7 +5930,7 @@
             html += '<tbody>';
             
             // Sort competitors by total points
-            const sortedUsers = Object.keys(users)
+            const sortedUsers = allUsers
                 .map(username => ({
                     username: username,
                     nickname: toTitleCase(users[username].nickname || username),
@@ -5909,7 +6134,7 @@
             const { openInBrowser = false } = options;
             const allMatches = matches;
 
-            const sortedUsers = Object.keys(users)
+            const sortedUsers = getParticipantUsernames()
                 .map(username => ({
                     username,
                     nickname: toTitleCase(users[username].nickname || username),
@@ -5965,7 +6190,7 @@
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(14);
             doc.setTextColor(17, 17, 17);
-            doc.text(`${now.getFullYear()} Six Nations Guesser`, 3, 8);
+            doc.text(`${selectedYear || now.getFullYear()} Six Nations Guesser`, 3, 8);
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(9);
             doc.setTextColor(95, 95, 95);
@@ -6712,6 +6937,8 @@
         function generateSchemaSQL() {
             return `-- Drop existing tables (in correct order due to foreign keys)
 DROP TABLE IF EXISTS predictions;
+DROP TABLE IF EXISTS user_tries;
+DROP TABLE IF EXISTS seasons;
 DROP TABLE IF EXISTS user_joker_selections;
 DROP TABLE IF EXISTS scoring_close_tiers;
 DROP TABLE IF EXISTS scoring_rules;
@@ -6732,9 +6959,16 @@ CREATE TABLE users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Create seasons table (years in the year dropdown)
+CREATE TABLE seasons (
+    year INTEGER PRIMARY KEY,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Create matches table
 CREATE TABLE matches (
     id INTEGER PRIMARY KEY,
+    year INTEGER NOT NULL DEFAULT 2026,
     round INTEGER NOT NULL,
     date VARCHAR(50),
     time VARCHAR(10),
@@ -6758,6 +6992,14 @@ CREATE TABLE predictions (
     UNIQUE(user_id, match_id)
 );
 
+-- Create tournament tries per competitor per year
+CREATE TABLE user_tries (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    year INTEGER NOT NULL,
+    total_tries INTEGER,
+    PRIMARY KEY (user_id, year)
+);
+
 -- Create admin_usernames table
 CREATE TABLE admin_usernames (
     id SERIAL PRIMARY KEY,
@@ -6771,9 +7013,10 @@ CREATE TABLE settings (
     value TEXT
 );
 
--- Create single-row scoring rules table
+-- Create scoring rules table (one row per year)
 CREATE TABLE scoring_rules (
-    id INTEGER PRIMARY KEY CHECK (id = 1),
+    id INTEGER PRIMARY KEY,
+    year INTEGER NOT NULL DEFAULT 2026 UNIQUE,
     correct_result_points INTEGER NOT NULL DEFAULT 3,
     perfect_score_bonus INTEGER NOT NULL DEFAULT 3,
     draw_bonus INTEGER NOT NULL DEFAULT 2,
@@ -6789,11 +7032,12 @@ CREATE TABLE scoring_rules (
 -- Create close score tiers table
 CREATE TABLE scoring_close_tiers (
     id SERIAL PRIMARY KEY,
+    year INTEGER NOT NULL DEFAULT 2026,
     tier_order INTEGER NOT NULL CHECK (tier_order BETWEEN 1 AND 3),
     within_points INTEGER NOT NULL CHECK (within_points >= 0),
     bonus_points INTEGER NOT NULL CHECK (bonus_points >= 0),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(tier_order)
+    UNIQUE(year, tier_order)
 );
 
 -- Create multi-joker selections table
@@ -6814,8 +7058,11 @@ CREATE TABLE usage_events (
     payload TEXT
 );
 
--- Row Level Security, auth policies and helper functions live in supabase/auth_migration.sql.
--- Run that file after restoring (it is idempotent). Until then the tables are locked down.
+-- Row Level Security, auth policies and helper functions live in supabase/auth_migration.sql
+-- and supabase/years_migration.sql. Run both, in that order, after restoring (they are
+-- idempotent). Until then the tables are locked down.
+ALTER TABLE seasons ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_tries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE predictions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
@@ -6827,82 +7074,70 @@ ALTER TABLE user_joker_selections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
         }
 
+        // Raw copy of every table (all years), fetched when the recovery tab opens
+        let recoverySnapshot = null;
+
+        async function fetchRecoverySnapshot() {
+            const tables = {
+                seasons: '*',
+                matches: '*',
+                users: 'id, username, nickname, supported_teams, created_at',
+                user_tries: '*',
+                predictions: '*',
+                admin_usernames: '*',
+                settings: '*',
+                scoring_rules: '*',
+                scoring_close_tiers: '*',
+                user_joker_selections: '*'
+            };
+            const snapshot = {};
+            for (const [table, columns] of Object.entries(tables)) {
+                const { data, error } = await supabaseClient.from(table).select(columns);
+                if (error) {
+                    console.error(`Error fetching ${table} for recovery:`, error);
+                    snapshot[table] = [];
+                } else {
+                    snapshot[table] = data || [];
+                }
+            }
+            return snapshot;
+        }
+
         function generateDataSQL() {
-            let sql = '';
+            const snapshot = recoverySnapshot || {};
 
             // Helper to escape single quotes in SQL strings
-            const esc = (str) => str ? str.replace(/'/g, "''") : '';
-
-            // Generate matches INSERT statements
-            if (matches.length > 0) {
-                sql += '\n-- Insert matches data\n';
-                matches.forEach(m => {
-                    sql += `INSERT INTO matches (id, round, date, time, team1, team2, actual_score1, actual_score2, actual_tries1, actual_tries2, joker_eligible) VALUES (${m.id}, ${m.round}, '${esc(m.date)}', '${esc(m.time)}', '${esc(m.team1)}', '${esc(m.team2)}', ${m.actualScore1 === null ? 'NULL' : m.actualScore1}, ${m.actualScore2 === null ? 'NULL' : m.actualScore2}, ${m.actualTries1 === null ? 'NULL' : m.actualTries1}, ${m.actualTries2 === null ? 'NULL' : m.actualTries2}, ${m.jokerEligible ? 'TRUE' : 'FALSE'});\n`;
+            const esc = (str) => str ? String(str).replace(/'/g, "''") : '';
+            const sqlValue = (value) => {
+                if (value === null || value === undefined) return 'NULL';
+                if (typeof value === 'number') return String(value);
+                if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
+                return `'${esc(value)}'`;
+            };
+            const insertRows = (title, table, columns) => {
+                const rows = snapshot[table] || [];
+                if (rows.length === 0) return '';
+                let out = `\n-- Insert ${title}\n`;
+                rows.forEach(row => {
+                    out += `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${columns.map(c => sqlValue(row[c])).join(', ')});\n`;
                 });
-            }
+                return out;
+            };
 
-            // Generate admin_usernames INSERT statements
-            if (adminUsernames.length > 0) {
-                sql += '\n-- Insert admin usernames\n';
-                adminUsernames.forEach(u => {
-                    sql += `INSERT INTO admin_usernames (username) VALUES ('${esc(u)}');\n`;
-                });
-            }
+            let sql = '';
+            sql += insertRows('seasons', 'seasons', ['year']);
+            sql += insertRows('matches (all years)', 'matches', ['id', 'year', 'round', 'date', 'time', 'team1', 'team2', 'actual_score1', 'actual_score2', 'actual_tries1', 'actual_tries2', 'joker_eligible']);
+            sql += insertRows('users', 'users', ['id', 'username', 'nickname', 'supported_teams']);
+            sql += insertRows('tournament tries per year', 'user_tries', ['user_id', 'year', 'total_tries']);
+            sql += insertRows('predictions (all years)', 'predictions', ['user_id', 'match_id', 'team1_score', 'team2_score']);
+            sql += insertRows('user joker selections', 'user_joker_selections', ['user_id', 'match_id']);
+            sql += insertRows('admin usernames', 'admin_usernames', ['username']);
+            sql += insertRows('settings (including per-year prediction locks)', 'settings', ['key', 'value']);
+            sql += insertRows('scoring rules (one row per year)', 'scoring_rules', ['id', 'year', 'correct_result_points', 'perfect_score_bonus', 'draw_bonus', 'max_jokers_per_user', 'entry_fee_amount', 'payout_first_pct', 'payout_second_pct', 'payout_third_pct', 'payout_closest_tries_pct']);
+            sql += insertRows('scoring close tiers', 'scoring_close_tiers', ['year', 'tier_order', 'within_points', 'bonus_points']);
 
-            // Generate settings INSERT statements
-            sql += '\n-- Insert settings\n';
-            sql += `INSERT INTO settings (key, value) VALUES ('predictions_locked', '${appSettings.predictionsLocked}');\n`;
-
-            // Generate scoring rules INSERT statement
-            const rules = getEffectiveScoringRules();
-            sql += '\n-- Insert scoring rules\n';
-            sql += `INSERT INTO scoring_rules (id, correct_result_points, perfect_score_bonus, draw_bonus, max_jokers_per_user, entry_fee_amount, payout_first_pct, payout_second_pct, payout_third_pct, payout_closest_tries_pct, updated_at) VALUES (1, ${rules.correctResultPoints}, ${rules.perfectScoreBonus}, ${rules.drawBonus}, ${rules.maxJokersPerUser}, ${Number(rules.entryFeeAmount || 0)}, ${Number(rules.payoutFirstPct || 0)}, ${Number(rules.payoutSecondPct || 0)}, ${Number(rules.payoutThirdPct || 0)}, ${Number(rules.payoutClosestTriesPct || 0)}, NOW());\n`;
-
-            // Generate close score tiers INSERT statements
-            const closeTiers = (rules.closeTiers || []).slice(0, 3);
-            if (closeTiers.length > 0) {
-                sql += '\n-- Insert scoring close tiers\n';
-                closeTiers.forEach((tier, index) => {
-                    const tierOrder = Number.isInteger(tier.tierOrder) ? tier.tierOrder : (index + 1);
-                    const withinPoints = Number.isFinite(tier.withinPoints) ? tier.withinPoints : 0;
-                    const bonusPoints = Number.isFinite(tier.bonusPoints) ? tier.bonusPoints : 0;
-                    sql += `INSERT INTO scoring_close_tiers (tier_order, within_points, bonus_points) VALUES (${tierOrder}, ${withinPoints}, ${bonusPoints});\n`;
-                });
-            }
-
-            // Generate users INSERT statements
-            const userList = Object.keys(users);
-            if (userList.length > 0) {
-                sql += '\n-- Insert users\n';
-                userList.forEach((username, index) => {
-                    const u = users[username];
-                    const oderId = index + 1;
-                    const supportedTeamsVal = u.supportedTeams && u.supportedTeams.length > 0 ? `'${esc(u.supportedTeams.join(','))}'` : 'NULL';
-                    sql += `INSERT INTO users (id, username, nickname, total_tries, supported_teams) VALUES (${oderId}, '${esc(username)}', '${esc(u.nickname)}', ${u.totalTries === null || u.totalTries === undefined ? 'NULL' : u.totalTries}, ${supportedTeamsVal});\n`;
-                });
-
-                // Generate predictions INSERT statements
-                sql += '\n-- Insert predictions\n';
-                userList.forEach((username, userIndex) => {
-                    const userId = userIndex + 1;
-                    const predictions = users[username].predictions || {};
-                    Object.keys(predictions).forEach(matchId => {
-                        const pred = predictions[matchId];
-                        sql += `INSERT INTO predictions (user_id, match_id, team1_score, team2_score) VALUES (${userId}, ${matchId}, ${pred.team1}, ${pred.team2});\n`;
-                    });
-                });
-
-                // Generate multi-joker selections INSERT statements
-                sql += '\n-- Insert user joker selections\n';
-                userList.forEach((username, userIndex) => {
-                    const userId = userIndex + 1;
-                    const selectedJokers = getStoredUserJokerMatchIds(username);
-                    selectedJokers.forEach(matchId => {
-                        sql += `INSERT INTO user_joker_selections (user_id, match_id) VALUES (${userId}, ${matchId});\n`;
-                    });
-                });
-
-                // Reset the sequence for users table
+            // Reset sequences so new rows get fresh ids.
+            if ((snapshot.users || []).length > 0) {
                 sql += '\n-- Reset sequences\n';
                 sql += `SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));\n`;
                 sql += `SELECT setval('predictions_id_seq', (SELECT MAX(id) FROM predictions));\n`;
@@ -6947,21 +7182,21 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
             if (includeData) {
                 description.textContent = 'This SQL will recreate all tables and restore:';
                 list.innerHTML = `
-                    <li>All matches and fixtures</li>
+                    <li>The list of years, with fixtures and results for every year</li>
                     <li>All competitors (usernames, display names; sign-in account links are re-created by an admin)</li>
-                    <li>All predictions</li>
-                    <li>Single scoring rules config, prize settings, and close-score tiers</li>
+                    <li>All predictions and tournament tries predictions, for every year</li>
+                    <li>Scoring rules, prize settings and close-score tiers, for every year</li>
                     <li>User joker selections</li>
                     <li>Admin usernames list</li>
-                    <li>App settings</li>
+                    <li>App settings (including the prediction lock for each year)</li>
                     <li>Usage events</li>
                 `;
             } else {
                 description.textContent = 'This SQL will recreate empty tables only:';
                 list.innerHTML = `
-                    <li>Empty matches table</li>
+                    <li>Empty seasons and matches tables</li>
                     <li>Empty users table</li>
-                    <li>Empty predictions table</li>
+                    <li>Empty predictions and user_tries tables</li>
                     <li>Empty scoring_rules (including prize fields) and scoring_close_tiers tables</li>
                     <li>Empty user_joker_selections table</li>
                     <li>Empty admin_usernames table</li>
@@ -6994,6 +7229,7 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
         async function initRecoveryTab() {
             renderRecoveryConnectionDetails();
             usageEventsForRecovery = await Storage.getUsageEvents(1000);
+            recoverySnapshot = await fetchRecoverySnapshot();
             // Display the SQL based on checkbox state
             updateRecoverySQL();
         }
@@ -7214,19 +7450,9 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
                 }
 
                 // Fetch fresh data from Supabase
-                const [loadedUsers, loadedMatches] = await Promise.all([
-                    Storage.getUsers(),
-                    Storage.getMatches()
-                ]);
-
-                // Update local data
-                users = loadedUsers;
-                activeScoringRules = await Storage.getActiveScoringRules();
-                userJokerSelections = await Storage.getUserJokerSelections();
-                if (loadedMatches && loadedMatches.length > 0) {
-                    matches.length = 0;
-                    loadedMatches.forEach(m => matches.push(m));
-                }
+                const loadedMatches = await Storage.getMatches();
+                if (loadedMatches) allMatches = loadedMatches;
+                await loadYearData();
 
                 // Restore opacity and show summary
                 if (container) {
