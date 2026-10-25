@@ -4080,3 +4080,14 @@
         margin-left: 2.25rem;
     }
 }
+
+.readiness-outstanding {
+    margin: 0.4rem 0 0;
+    padding-left: 1.1rem;
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+
+.readiness-outstanding li {
+    margin: 0.15rem 0;
+}
