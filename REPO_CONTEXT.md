@@ -90,6 +90,7 @@ Array of fixtures/results:
 
 ## Authentication
 
+- The login email field (`autocomplete="email"`) pre-fills with the last email used on this device (localStorage `rugbyPredictorLastEmail`), including after logout. iOS's own contact suggestion depends on the phone's Settings.
 - The login email also carries a numeric code. The login screen shows a code box after the email is sent (`verifyLoginCode` -> `verifyOtp({ type: 'email' })`), so a home-screen (standalone) iPhone app can sign in without the link opening in Safari. This needs `{{ .Token }}` in the Supabase email templates (Magic Link and Confirm signup).
 - Login is Supabase Auth magic link only (`sendMagicLink` -> `signInWithOtp`); first use creates the account. supabase-js persists the session in localStorage, so returning visitors stay signed in.
 - `handleAuthChange` (wired to `onAuthStateChange`) restores the session and calls `resolveSignedInUser`, which maps the account to a competitor through the `my_competitor` RPC (`users.auth_user_id`).
