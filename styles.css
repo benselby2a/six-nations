@@ -3827,6 +3827,12 @@
             margin-top: 0;
         }
 
+        /* Bulk import: Cancel and Import Fixtures share one box (no stray margin, same border) */
+        .bulk-import-actions button {
+            margin-top: 0;
+            border: 2px solid var(--gold);
+        }
+
         /* Results table styles */
         .results-table-container {
             overflow-x: auto;
