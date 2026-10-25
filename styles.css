@@ -323,7 +323,8 @@
             gap: 0.5rem;
         }
 
-        .theme-selector select {
+        .theme-selector select,
+        .years-form select {
             padding: 0.5rem 2.5rem 0.5rem 1rem;
             border: 2px solid rgba(212, 175, 55, 0.3);
             border-radius: 5px;
@@ -343,14 +344,27 @@
             min-width: 130px;
         }
 
-        .theme-selector select:hover {
+        .theme-selector select:hover,
+        .years-form select:hover {
             background-color: rgba(255, 255, 255, 0.15);
             border-color: var(--gold);
         }
 
-        .theme-selector select:focus {
+        .theme-selector select:focus,
+        .years-form select:focus {
             border-color: var(--bright-gold);
             background-color: rgba(212, 175, 55, 0.2);
+        }
+
+        .years-form select {
+            width: 100%;
+            max-width: 420px;
+            min-height: 2.6rem;
+        }
+
+        .years-form select option {
+            background: #14301f;
+            color: #ffffff;
         }
 
         .theme-selector label {
