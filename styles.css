@@ -4134,9 +4134,8 @@
     margin-bottom: 0.75rem;
 }
 
-/* Competitors screen: sign-up control and bulk email import */
-.signup-control,
-.email-import {
+/* Competitors screen: sign-up control */
+.signup-control {
     margin-bottom: 1.5rem;
     padding: 1rem 1.25rem;
     border: 2px solid rgba(212, 175, 55, 0.3);
@@ -4156,17 +4155,4 @@
 .signup-control-label input[type="checkbox"] {
     width: auto;
     margin-top: 0.25rem;
-}
-
-.email-import textarea {
-    width: 100%;
-    padding: 0.75rem;
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(212, 175, 55, 0.3);
-    color: var(--white);
-    font-family: monospace;
-    font-size: 0.9rem;
-    border-radius: 5px;
-    resize: vertical;
-    margin-bottom: 0.75rem;
 }

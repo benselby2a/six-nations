@@ -2651,63 +2651,6 @@
             allowSelfSignup = !!allowed;
         }
 
-        function setEmailImportFeedback(message, type) {
-            const el = document.getElementById('emailImportFeedback');
-            if (!el) return;
-            el.textContent = message;
-            el.className = `login-feedback ${type}`;
-        }
-
-        // Paste "name or username, email" lines to register everyone's sign-in email at once
-        async function importCompetitorEmails() {
-            if (!isCurrentUserAdmin()) return;
-            const text = document.getElementById('emailImportData').value;
-            const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-            if (lines.length === 0) {
-                setEmailImportFeedback('Paste one line per competitor, for example: ben, ben@example.com', 'error');
-                return;
-            }
-
-            const rows = [];
-            const problems = [];
-            lines.forEach((line, index) => {
-                const parts = line.split(/[,;\t]+/).map(part => part.trim()).filter(Boolean);
-                const emailPart = parts.find(part => part.includes('@'));
-                const namePart = parts.find(part => !part.includes('@'));
-                if (!emailPart || !namePart) {
-                    problems.push(`line ${index + 1}: needs a name and an email`);
-                    return;
-                }
-                const key = namePart.toLowerCase();
-                const username = users[key]
-                    ? key
-                    : Object.keys(users).find(u => (users[u].nickname || '').toLowerCase() === key);
-                if (!username) {
-                    problems.push(`line ${index + 1}: no competitor called "${namePart}"`);
-                    return;
-                }
-                rows.push({ username, email: emailPart });
-            });
-
-            let applied = 0;
-            if (rows.length > 0) {
-                const { data, error } = await supabaseClient.rpc('admin_import_competitor_emails', { p_rows: rows });
-                if (error) {
-                    setEmailImportFeedback('Could not save the emails: ' + (error.message || 'unknown error'), 'error');
-                    return;
-                }
-                applied = data.applied;
-                (data.skipped || []).forEach(item => problems.push(`${item.username}: ${item.reason}`));
-            }
-
-            await loadAuthAccounts();
-            renderCompetitorManagement();
-            trackUsage('import competitor emails', formatUsagePayload({ applied, skipped: problems.length }));
-            const summary = `${applied} email${applied !== 1 ? 's' : ''} saved.`;
-            setEmailImportFeedback(problems.length > 0 ? `${summary} Skipped: ${problems.join('; ')}` : summary, problems.length > 0 ? 'info' : 'success');
-            if (problems.length === 0) document.getElementById('emailImportData').value = '';
-        }
-
         async function refreshCompetitorAccounts() {
             await loadAuthAccounts();
             renderCompetitorManagement();
