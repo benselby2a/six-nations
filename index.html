@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261025-4">
+    <link rel="stylesheet" href="styles.css?v=20261025-5">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -299,7 +299,7 @@
                         <span style="font-family: monospace;">1, 01/02/2026, 17:00, Ireland, Wales</span><br>
                         <span style="font-family: monospace;">2, 08/02/2026, 14:30, France, Ireland</span></p>
                         <textarea id="bulkImportData" rows="10" style="width: 100%; padding: 1rem; background: rgba(255,255,255,0.1); border: 2px solid rgba(212,175,55,0.3); color: var(--white); font-family: monospace; font-size: 0.9rem; border-radius: 5px; resize: vertical;" placeholder="1, 01/02/2026, 14:30, England, France&#10;1, 01/02/2026, 17:00, Ireland, Wales&#10;2, 08/02/2026, 14:30, France, Ireland"></textarea>
-                        <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: flex-end;">
+                        <div class="bulk-import-actions" style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: flex-end;">
                             <button class="btn-cancel" onclick="closeBulkImport()">Cancel</button>
                             <button onclick="processBulkImport()">Import Fixtures</button>
                         </div>
@@ -711,6 +711,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=20261025-4"></script>
+    <script src="app.js?v=20261025-5"></script>
 </body>
 </html>
