@@ -4129,3 +4129,7 @@
     font-size: 1.3rem;
     text-align: center;
 }
+
+.login-code-entry .btn-cancel {
+    margin-bottom: 0.75rem;
+}
