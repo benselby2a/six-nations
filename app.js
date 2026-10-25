@@ -3192,7 +3192,7 @@
             }
 
             pendingLoginEmail = email;
-            showLoginFeedback(`Check ${email} for your login email. Tap the link, or type the code from the email below.`, 'success');
+            showLoginFeedback(`Check ${email} for your login message. Tap the link, or type the code below.`, 'success');
             document.getElementById('loginCodeEntry').classList.remove('hidden');
             // Only offer the clipboard button where the browser can read the clipboard
             if (navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
