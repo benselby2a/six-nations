@@ -1640,14 +1640,21 @@
             const doneCount = items.filter(item => item.ok).length;
             const allDone = doneCount === items.length;
 
+            // Nothing outstanding: nothing to show. It comes back as soon as a step is outstanding again.
+            if (allDone) {
+                container.innerHTML = '';
+                container.className = 'readiness-checklist hidden';
+                return;
+            }
+
             const collapsed = isReadinessChecklistCollapsed();
-            container.className = `readiness-checklist${allDone ? ' ready' : ''}${collapsed ? ' collapsed' : ''}`;
+            container.className = `readiness-checklist${collapsed ? ' collapsed' : ''}`;
             container.innerHTML = `
                 <div class="readiness-header" role="button" tabindex="0" aria-expanded="${collapsed ? 'false' : 'true'}"
                      onclick="toggleReadinessChecklist()"
                      onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleReadinessChecklist(); }">
                     <div>
-                        <div class="readiness-title">${allDone ? `${selectedYear} is ready to go` : `Ready for ${selectedYear}?`}</div>
+                        <div class="readiness-title">Ready for ${selectedYear}?</div>
                         <div class="readiness-summary">${doneCount} of ${items.length} steps done</div>
                     </div>
                     <span class="readiness-chevron" aria-hidden="true">${collapsed ? '▸' : '▾'}</span>
