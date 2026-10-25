@@ -300,6 +300,7 @@
                     console.error('Error renaming user:', error);
                     return;
                 }
+                await Storage.updateActiveOverrideUsername(oldUsername, newUsername);
                 trackUsage('rename user', formatUsagePayload({ oldUsername, newUsername }), newUsername);
             },
 
@@ -398,6 +399,7 @@
                     console.error('Error deleting user:', error);
                     return;
                 }
+                await Storage.updateActiveOverrideUsername(username, null);
                 trackUsage('delete user', formatUsagePayload({ username }), username);
             },
             
@@ -583,7 +585,8 @@
                 steps.push(['settings', () => supabaseClient.from('settings').delete().in('key', [
                     `predictions_locked:${year}`,
                     `rules_saved:${year}`,
-                    `prize_saved:${year}`
+                    `prize_saved:${year}`,
+                    `active_overrides:${year}`
                 ])]);
                 steps.push(['seasons', () => supabaseClient.from('seasons').delete().eq('year', year)]);
 
@@ -730,7 +733,7 @@
                     return { predictionsLocked: false };
                 }
                 
-                const settings = { predictionsLocked: false, rulesSavedAt: null, prizeSavedAt: null };
+                const settings = { predictionsLocked: false, rulesSavedAt: null, prizeSavedAt: null, activeOverrides: {} };
                 const lockKey = `predictions_locked:${selectedYear}`;
                 data.forEach(row => {
                     if (row.key === lockKey) {
@@ -739,6 +742,13 @@
                         settings.rulesSavedAt = row.value || null;
                     } else if (row.key === `prize_saved:${selectedYear}`) {
                         settings.prizeSavedAt = row.value || null;
+                    } else if (row.key === `active_overrides:${selectedYear}`) {
+                        try {
+                            const parsed = JSON.parse(row.value || '{}');
+                            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) settings.activeOverrides = parsed;
+                        } catch (error) {
+                            console.error('Could not read active competitor overrides:', error);
+                        }
                     }
                 });
                 
@@ -758,6 +768,43 @@
                     return null;
                 }
                 return savedAt;
+            },
+
+            // Which competitors are playing in the selected year: { username: true|false }.
+            // Anyone not listed counts as playing if they have predictions that year.
+            saveActiveOverrides: async (overrides) => {
+                const { error } = await supabaseClient
+                    .from('settings')
+                    .upsert({ key: `active_overrides:${selectedYear}`, value: JSON.stringify(overrides || {}) }, { onConflict: 'key' });
+                if (error) {
+                    console.error('Error saving active competitors:', error);
+                    return false;
+                }
+                return true;
+            },
+
+            // Rewrite (or drop, when newUsername is null) a competitor's entry in every year's overrides
+            updateActiveOverrideUsername: async (oldUsername, newUsername) => {
+                const { data, error } = await supabaseClient
+                    .from('settings')
+                    .select('key, value')
+                    .like('key', 'active_overrides:%');
+                if (error) {
+                    console.error('Error reading active competitor overrides:', error);
+                    return;
+                }
+                for (const row of data || []) {
+                    let parsed;
+                    try { parsed = JSON.parse(row.value || '{}'); } catch (e) { continue; }
+                    if (!parsed || !Object.prototype.hasOwnProperty.call(parsed, oldUsername)) continue;
+                    const value = parsed[oldUsername];
+                    delete parsed[oldUsername];
+                    if (newUsername) parsed[newUsername] = value;
+                    const { error: saveError } = await supabaseClient
+                        .from('settings')
+                        .upsert({ key: row.key, value: JSON.stringify(parsed) }, { onConflict: 'key' });
+                    if (saveError) console.error('Error updating active competitor overrides:', saveError);
+                }
             },
 
             saveSettings: async (settings) => {
@@ -1083,7 +1130,7 @@
         let users = {};
         let currentUsername = null;
         let adminUsernames = [];
-        let appSettings = { predictionsLocked: false, rulesSavedAt: null, prizeSavedAt: null };
+        let appSettings = { predictionsLocked: false, rulesSavedAt: null, prizeSavedAt: null, activeOverrides: {} };
         let selectedYear = null;
         let availableYears = [];
         let allMatches = [];  // Fixtures for every year; `matches` holds the selected year only
@@ -1529,22 +1576,34 @@
                     ? `${fixtureCount} fixtures added, but a tournament has ${EXPECTED_FIXTURE_COUNT}`
                     : `${fixtureCount} of ${EXPECTED_FIXTURE_COUNT} fixtures added`;
 
-            // 2. Predictions: everyone who has started must have scores, tries and jokers in
-            const participants = getParticipantUsernames();
-            const incomplete = participants.filter(username => !getPredictionChecklistStatus(username).allComplete);
-            const notStarted = Object.keys(users).length - participants.length;
-            const predictionsOk = participants.length > 0 && incomplete.length === 0;
+            // 2. Predictions: every active competitor must have scores, tries and jokers in
+            const activeUsernames = getActiveUsernames();
+            const outstanding = activeUsernames
+                .map(username => {
+                    const status = getPredictionChecklistStatus(username);
+                    const missing = [];
+                    if (status.pendingPredictions > 0) missing.push(`${status.pendingPredictions} prediction${status.pendingPredictions !== 1 ? 's' : ''}`);
+                    if (!status.triesEntered) missing.push('tournament tries');
+                    if (!status.jokerComplete) missing.push(`jokers ${status.jokerSelectedCount}/${status.jokerRequiredCount}`);
+                    return { username, missing };
+                })
+                .filter(entry => entry.missing.length > 0)
+                .sort((x, y) => getDisplayName(x.username).localeCompare(getDisplayName(y.username)));
+            const inactiveCount = Object.keys(users).length - activeUsernames.length;
+            const predictionsOk = activeUsernames.length > 0 && outstanding.length === 0;
             let predictionsDetail;
-            if (participants.length === 0) {
-                predictionsDetail = `No competitor has made predictions for ${selectedYear} yet`;
+            if (activeUsernames.length === 0) {
+                predictionsDetail = `No competitors are playing in ${selectedYear} yet. Tick Playing on the Competitors screen`;
             } else {
-                const names = incomplete.slice(0, 5).map(username => getDisplayName(username)).join(', ');
-                predictionsDetail = `${participants.length - incomplete.length} of ${participants.length} competitors have everything in`
-                    + (incomplete.length > 0 ? `. Waiting on ${names}${incomplete.length > 5 ? ` and ${incomplete.length - 5} more` : ''}` : '');
+                predictionsDetail = `${activeUsernames.length - outstanding.length} of ${activeUsernames.length} playing competitors have everything in`;
             }
-            if (notStarted > 0 && participants.length > 0) {
-                predictionsDetail += ` (${notStarted} other competitor${notStarted !== 1 ? 's have' : ' has'} not started and ${notStarted !== 1 ? 'are' : 'is'} not counted)`;
+            if (inactiveCount > 0 && activeUsernames.length > 0) {
+                predictionsDetail += ` (${inactiveCount} not playing)`;
             }
+            const predictionsExtra = outstanding.length === 0 ? '' : `
+                <ul class="readiness-outstanding">
+                    ${outstanding.map(entry => `<li><strong>${escapeHtml(getDisplayName(entry.username))}</strong>: ${escapeHtml(entry.missing.join(', '))} outstanding</li>`).join('')}
+                </ul>`;
 
             // 3 & 4. Rules and prize fund saved for this year
             const rulesOk = !!appSettings.rulesSavedAt;
@@ -1555,7 +1614,7 @@
 
             const items = [
                 { ok: fixturesOk, label: 'Fixtures', detail: fixturesDetail, tab: 'results', action: 'Fixtures and Scores' },
-                { ok: predictionsOk, label: 'All predictions in', detail: predictionsDetail, tab: 'scoreCorrections', action: 'Predictions' },
+                { ok: predictionsOk, label: 'All predictions in', detail: predictionsDetail, extra: predictionsExtra, tab: 'scoreCorrections', action: 'Predictions' },
                 { ok: rulesOk, label: 'Guesser rules saved', detail: savedDetail(appSettings.rulesSavedAt, rulesOk, 'Guesser rules'), tab: 'rules', action: 'Guesser Rules' },
                 { ok: prizeOk, label: 'Prize fund saved', detail: savedDetail(appSettings.prizeSavedAt, prizeOk, 'Prize fund'), tab: 'prizeFund', action: 'Prize Fund' }
             ];
@@ -1572,9 +1631,37 @@
                         <div class="readiness-text">
                             <div class="readiness-label">${item.label}</div>
                             <div class="readiness-detail">${escapeHtml(item.detail)}</div>
+                            ${item.extra || ''}
                         </div>
                         ${item.ok ? '' : `<button class="btn-small" onclick="goToAdminTab('${item.tab}')">${item.action}</button>`}
                     </div>`).join('')}`;
+        }
+
+        // Is this competitor playing in the selected year? An explicit setting on the Competitors screen
+        // wins; otherwise they count as playing once they have made a prediction that year.
+        function isCompetitorActive(username) {
+            const overrides = appSettings.activeOverrides || {};
+            if (Object.prototype.hasOwnProperty.call(overrides, username)) return !!overrides[username];
+            return Object.keys((users[username] && users[username].predictions) || {}).length > 0;
+        }
+
+        function getActiveUsernames() {
+            return Object.keys(users).filter(isCompetitorActive);
+        }
+
+        async function toggleCompetitorActive(username, active) {
+            if (!isCurrentUserAdmin() || !users[username]) return;
+            const previous = { ...(appSettings.activeOverrides || {}) };
+            const next = { ...previous, [username]: !!active };
+            appSettings.activeOverrides = next;
+            const ok = await Storage.saveActiveOverrides(next);
+            if (!ok) {
+                appSettings.activeOverrides = previous;
+                alert('Could not save that change. Please try again.');
+                renderCompetitorManagement();
+                return;
+            }
+            renderReadinessChecklist();
         }
 
         // Competitors who have made predictions in the selected year (predictions are loaded per year)
@@ -2546,6 +2633,7 @@
                             <th>Username</th>
                             <th>Display Name</th>
                             <th>Supported Teams</th>
+                            <th>Playing ${selectedYear}</th>
                             <th>Admin</th>
                             <th>Account</th>
                             <th>Actions</th>
@@ -2566,6 +2654,9 @@
                                     <option value="">None</option>
                                     ${teams.map(t => `<option value="${t}">${getFlag(t)} ${t}</option>`).join('')}
                                 </select>
+                            </td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" id="new-active-admin" checked>
                             </td>
                             <td style="text-align: center;">
                                 <input type="checkbox" id="new-admin-admin">
@@ -2598,6 +2689,9 @@
                                 ${teams.map(t => `<option value="${t}" ${userTeams[1] === t ? 'selected' : ''}>${getFlag(t)} ${t}</option>`).join('')}
                             </select>
                         </td>
+                        <td style="text-align: center;">
+                            <input type="checkbox" id="edit-active-${username}" ${isCompetitorActive(username) ? 'checked' : ''} onchange="toggleCompetitorActive('${safeUsername}', this.checked)" title="Playing in ${selectedYear}">
+                        </td>
                         <td>
                             <input type="checkbox" id="edit-admin-${username}" ${isAdmin ? 'checked' : ''} onchange="toggleUserAdmin('${safeUsername}')">
                         </td>
@@ -2623,6 +2717,7 @@
             const team1 = (document.getElementById('new-team1-admin').value || '').trim();
             const team2 = (document.getElementById('new-team2-admin').value || '').trim();
             const makeAdmin = !!document.getElementById('new-admin-admin').checked;
+            const makeActive = !!document.getElementById('new-active-admin').checked;
 
             if (!username) {
                 alert('Username is required.');
@@ -2667,6 +2762,11 @@
                 adminUsernames.push(username);
                 await Storage.saveAdminUsernames(adminUsernames);
                 updateAdminTabsSubheading();
+            }
+
+            if (makeActive) {
+                const overrides = { ...(appSettings.activeOverrides || {}), [username]: true };
+                if (await Storage.saveActiveOverrides(overrides)) appSettings.activeOverrides = overrides;
             }
 
             alert(`Competitor ${toTitleCase(nickname)} added.`);
@@ -2730,6 +2830,10 @@
                 // Re-key in local users object
                 users[newUsername] = users[username];
                 delete users[username];
+                if (appSettings.activeOverrides && Object.prototype.hasOwnProperty.call(appSettings.activeOverrides, username)) {
+                    appSettings.activeOverrides[newUsername] = appSettings.activeOverrides[username];
+                    delete appSettings.activeOverrides[username];
+                }
 
                 // Update current session if editing self
                 if (currentUsername === username) {
@@ -2795,6 +2899,7 @@
             updateAdminTabsSubheading();
 
             delete users[username];
+            if (appSettings.activeOverrides) delete appSettings.activeOverrides[username];
             await Storage.deleteUser(username);
             renderCompetitorManagement();
             updateLeaderboard();
@@ -3496,54 +3601,6 @@
             renderAdminScoreCorrections();
         }
 
-        function renderAdminPredictionOutstandingBox() {
-            const usernames = Object.keys(users);
-            if (usernames.length === 0) {
-                return `
-                    <div class="admin-prediction-audit-box complete">
-                        <div class="admin-prediction-audit-title">Competitor Completion Check</div>
-                        <div class="admin-prediction-audit-empty">No competitors found.</div>
-                    </div>
-                `;
-            }
-
-            const issues = usernames
-                .sort((a, b) => getDisplayName(a).localeCompare(getDisplayName(b)))
-                .map(username => {
-                    const status = getPredictionChecklistStatus(username);
-                    const missing = [];
-                    if (status.pendingPredictions > 0) missing.push(`${status.pendingPredictions} prediction${status.pendingPredictions !== 1 ? 's' : ''}`);
-                    if (!status.triesEntered) missing.push('tournament tries');
-                    if (!status.jokerComplete) missing.push(`jokers ${status.jokerSelectedCount}/${status.jokerRequiredCount}`);
-                    return { username, missing };
-                })
-                .filter(entry => entry.missing.length > 0);
-
-            if (issues.length === 0) {
-                return `
-                    <div class="admin-prediction-audit-box complete">
-                        <div class="admin-prediction-audit-title">Competitor Completion Check</div>
-                        <div class="admin-prediction-audit-empty">All competitors are complete.</div>
-                    </div>
-                `;
-            }
-
-            const rows = issues.map(entry => `
-                <div class="admin-prediction-audit-row">
-                    <span class="admin-prediction-audit-user">${getDisplayName(entry.username)}</span>
-                    <span class="admin-prediction-audit-missing">${entry.missing.join(', ')} outstanding</span>
-                </div>
-            `).join('');
-
-            return `
-                <div class="admin-prediction-audit-box">
-                    <div class="admin-prediction-audit-title">Competitor Completion Check</div>
-                    <div class="admin-prediction-audit-subtitle">Select a competitor to edit. The following still have outstanding items:</div>
-                    <div class="admin-prediction-audit-list">${rows}</div>
-                </div>
-            `;
-        }
-
         function getCompactFixtureLabel(match) {
             return `<span class="prediction-fixture-label"><span class="prediction-fixture-team">${getFlag(match.team1)} ${getTeamAbbr(match.team1)}</span><span class="prediction-fixture-v">v</span><span class="prediction-fixture-team">${getTeamAbbr(match.team2)} ${getFlag(match.team2)}</span></span>`;
         }
@@ -3732,7 +3789,7 @@
 
             const username = adminPredictionUsername;
             if (!username || !users[username]) {
-                container.innerHTML = renderAdminPredictionOutstandingBox();
+                container.innerHTML = '<p class="profile-hint">Select a competitor above to edit their predictions. Who is still outstanding is shown in the readiness checklist on Admin Functions.</p>';
                 const triesInput = document.getElementById('adminTotalTries');
                 if (triesInput) triesInput.value = '';
                 if (triesSection) triesSection.classList.add('hidden');
