@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261025-5">
+    <link rel="stylesheet" href="styles.css?v=20261025-7">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -157,6 +157,7 @@
                         <button class="tab" onclick="showTab('recovery')">Database Recovery</button>
                         <button class="tab" onclick="showTab('usageReport')">Usage Report</button>
                     </div>
+                    <div id="readinessChecklist" class="readiness-checklist hidden"></div>
                 </div>
             </div>
 
@@ -177,6 +178,15 @@
                 <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Predictions</h2>
                     <p style="margin-bottom: 0;">Review and update any competitor's match predictions, joker selection, and tournament tries entry from one place.</p>
+                </div>
+
+                <!-- Lock Predictions Toggle -->
+                <div class="lock-toggle">
+                    <label>
+                        <strong style="color: var(--gold);">LOCK PREDICTIONS<span id="lockToggleYear"></span></strong>
+                        <p style="font-size: 0.9rem; opacity: 0.8; margin-top: 0.3rem;">When enabled, competitors cannot change their predictions.</p>
+                    </label>
+                    <div id="lockToggle" class="toggle-switch" onclick="togglePredictionsLock()"></div>
                 </div>
 
                 <div class="admin-score-corrections-toolbar">
@@ -256,15 +266,6 @@
                 <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Fixtures and Scores</h2>
                     <p style="margin-bottom: 1rem;">Manage fixtures and results. Click a row or Edit to update all fixture fields.</p>
-                </div>
-
-                <!-- Lock Predictions Toggle -->
-                <div class="lock-toggle">
-                    <label>
-                        <strong style="color: var(--gold);">LOCK PREDICTIONS</strong>
-                        <p style="font-size: 0.9rem; opacity: 0.8; margin-top: 0.3rem;">When enabled, competitors cannot change their predictions.</p>
-                    </label>
-                    <div id="lockToggle" class="toggle-switch" onclick="togglePredictionsLock()"></div>
                 </div>
 
                 <div class="results-table-container">
@@ -467,7 +468,7 @@
                 </div>
 
                 <div class="rules-action-row">
-                    <button class="btn-small btn-success" id="rulesSaveUpdatedBtn" onclick="saveUpdatedRules()">Save Updated Rules</button>
+                    <button class="btn-small btn-success" id="rulesSaveUpdatedBtn" onclick="saveUpdatedRules('rules')">Save Updated Rules</button>
                     <button class="btn-small btn-cancel" id="rulesRevertBtn" onclick="revertRulesToSaved()">Revert to Saved Rules</button>
                 </div>
             </div>
@@ -518,7 +519,7 @@
                 </div>
 
                 <div class="rules-action-row">
-                    <button class="btn-small btn-success" id="prizeSaveUpdatedBtn" onclick="saveUpdatedRules()">Save Updated Prize Rules</button>
+                    <button class="btn-small btn-success" id="prizeSaveUpdatedBtn" onclick="saveUpdatedRules('prize')">Save Updated Prize Rules</button>
                     <button class="btn-small btn-cancel" id="prizeRevertBtn" onclick="revertRulesToSaved()">Revert to Saved Prize Rules</button>
                 </div>
             </div>
@@ -711,6 +712,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=20261025-5"></script>
+    <script src="app.js?v=20261025-7"></script>
 </body>
 </html>
