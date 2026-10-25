@@ -1547,6 +1547,25 @@
 
         // ---- Admin: readiness checklist for the selected year's tournament ----
         const EXPECTED_FIXTURE_COUNT = 15;
+        const CHECKLIST_COLLAPSED_KEY = 'rugbyPredictorChecklistCollapsed';
+
+        function isReadinessChecklistCollapsed() {
+            try {
+                return localStorage.getItem(CHECKLIST_COLLAPSED_KEY) === '1';
+            } catch (error) {
+                return false;
+            }
+        }
+
+        function toggleReadinessChecklist() {
+            const collapsed = !isReadinessChecklistCollapsed();
+            try {
+                localStorage.setItem(CHECKLIST_COLLAPSED_KEY, collapsed ? '1' : '0');
+            } catch (error) {
+                // Ignore storage errors; the choice just won't be remembered.
+            }
+            renderReadinessChecklist();
+        }
 
         function goToAdminTab(tabName) {
             const button = document.querySelector(`.admin-tabs button[onclick="showTab('${tabName}')"]`);
@@ -1621,11 +1640,19 @@
             const doneCount = items.filter(item => item.ok).length;
             const allDone = doneCount === items.length;
 
-            container.className = `readiness-checklist${allDone ? ' ready' : ''}`;
+            const collapsed = isReadinessChecklistCollapsed();
+            container.className = `readiness-checklist${allDone ? ' ready' : ''}${collapsed ? ' collapsed' : ''}`;
             container.innerHTML = `
-                <div class="readiness-title">${allDone ? `${selectedYear} is ready to go` : `Ready for ${selectedYear}?`}</div>
-                <div class="readiness-summary">${doneCount} of ${items.length} steps done</div>
-                ${items.map(item => `
+                <div class="readiness-header" role="button" tabindex="0" aria-expanded="${collapsed ? 'false' : 'true'}"
+                     onclick="toggleReadinessChecklist()"
+                     onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleReadinessChecklist(); }">
+                    <div>
+                        <div class="readiness-title">${allDone ? `${selectedYear} is ready to go` : `Ready for ${selectedYear}?`}</div>
+                        <div class="readiness-summary">${doneCount} of ${items.length} steps done</div>
+                    </div>
+                    <span class="readiness-chevron" aria-hidden="true">${collapsed ? '▸' : '▾'}</span>
+                </div>
+                ${collapsed ? '' : items.map(item => `
                     <div class="readiness-item ${item.ok ? 'ok' : 'todo'}">
                         <span class="readiness-icon">${item.ok ? '✓' : ''}</span>
                         <div class="readiness-text">
@@ -3103,6 +3130,7 @@
         let authHandledUserId = null;
         let isPdfExportMode = false;
         let magicLinkCooldownTimer = null;
+        let pendingLoginEmail = '';
 
         function getAuthRedirectUrl() {
             return window.location.href.split(/[?#]/)[0];
@@ -3156,8 +3184,65 @@
                 return;
             }
 
-            showLoginFeedback(`Check ${email} for your login link. Open it on this device to sign in.`, 'success');
+            pendingLoginEmail = email;
+            showLoginFeedback(`Check ${email} for your login email. Tap the link, or type the code from the email below.`, 'success');
+            document.getElementById('loginCodeEntry').classList.remove('hidden');
+            document.getElementById('loginCode').focus();
             startMagicLinkCooldown(button, 30);
+        }
+
+        // Typing a different email makes any code we were waiting for irrelevant
+        function onLoginEmailInput() {
+            const typed = document.getElementById('loginEmail').value.trim().toLowerCase();
+            if (pendingLoginEmail && typed !== pendingLoginEmail) {
+                pendingLoginEmail = '';
+                document.getElementById('loginCodeEntry').classList.add('hidden');
+                document.getElementById('loginCode').value = '';
+
+                // The resend cooldown belonged to the previous address
+                clearInterval(magicLinkCooldownTimer);
+                const sendButton = document.getElementById('sendMagicLinkBtn');
+                sendButton.disabled = false;
+                sendButton.textContent = 'Email Me a Login Link';
+            }
+        }
+
+        // Sign in with the code from the email (works inside a home-screen app, where the link would
+        // open in Safari and sign in the wrong browser). Success arrives through onAuthStateChange.
+        async function verifyLoginCode() {
+            const email = pendingLoginEmail || document.getElementById('loginEmail').value.trim().toLowerCase();
+            const codeInput = document.getElementById('loginCode');
+            const button = document.getElementById('verifyCodeBtn');
+            const code = codeInput.value.replace(/\s+/g, '');
+
+            document.getElementById('loginFeedback').className = 'login-feedback hidden';
+
+            if (!email) {
+                showLoginFeedback('Enter your email and request a code first.', 'error');
+                return;
+            }
+            if (!/^\d{6,10}$/.test(code)) {
+                showLoginFeedback('Enter the numeric code from the email.', 'error');
+                return;
+            }
+
+            button.disabled = true;
+            const { error } = await supabaseClient.auth.verifyOtp({ email, token: code, type: 'email' });
+            button.disabled = false;
+
+            if (error) {
+                showLoginFeedback("That code didn't work. Check it and try again, or request a new one.", 'error');
+                return;
+            }
+
+            codeInput.value = '';
+            showLoginFeedback('Signing you in...', 'success');
+        }
+
+        function handleCodeKeyPress(event) {
+            if (event.key === 'Enter') {
+                verifyLoginCode();
+            }
         }
 
         function startMagicLinkCooldown(button, seconds) {
@@ -3367,6 +3452,9 @@
             document.getElementById('loginEmail').value = '';
             document.getElementById('loginFeedback').className = 'login-feedback hidden';
             document.getElementById('setupNickname').value = '';
+            pendingLoginEmail = '';
+            document.getElementById('loginCode').value = '';
+            document.getElementById('loginCodeEntry').classList.add('hidden');
 
             if (!wasGuest) {
                 await supabaseClient.auth.signOut();
