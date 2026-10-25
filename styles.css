@@ -4024,6 +4024,32 @@
     margin-bottom: 0.6rem;
 }
 
+.readiness-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.readiness-header:focus-visible {
+    outline: 2px solid var(--bright-gold);
+    outline-offset: 4px;
+    border-radius: 6px;
+}
+
+.readiness-chevron {
+    flex: none;
+    font-size: 1.3rem;
+    line-height: 1.2;
+    color: var(--gold);
+}
+
+.readiness-checklist.collapsed .readiness-summary {
+    margin-bottom: 0;
+}
+
 .readiness-item {
     display: flex;
     align-items: flex-start;
@@ -4090,4 +4116,16 @@
 
 .readiness-outstanding li {
     margin: 0.15rem 0;
+}
+
+.login-code-entry {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+#loginCode {
+    letter-spacing: 0.3em;
+    font-size: 1.3rem;
+    text-align: center;
 }
