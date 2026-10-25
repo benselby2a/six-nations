@@ -580,7 +580,11 @@
                 steps.push(['user_tries', () => supabaseClient.from('user_tries').delete().eq('year', year)]);
                 steps.push(['scoring_close_tiers', () => supabaseClient.from('scoring_close_tiers').delete().eq('year', year)]);
                 steps.push(['scoring_rules', () => supabaseClient.from('scoring_rules').delete().eq('year', year)]);
-                steps.push(['settings', () => supabaseClient.from('settings').delete().eq('key', `predictions_locked:${year}`)]);
+                steps.push(['settings', () => supabaseClient.from('settings').delete().in('key', [
+                    `predictions_locked:${year}`,
+                    `rules_saved:${year}`,
+                    `prize_saved:${year}`
+                ])]);
                 steps.push(['seasons', () => supabaseClient.from('seasons').delete().eq('year', year)]);
 
                 for (const [table, run] of steps) {
@@ -726,17 +730,36 @@
                     return { predictionsLocked: false };
                 }
                 
-                const settings = { predictionsLocked: false };
+                const settings = { predictionsLocked: false, rulesSavedAt: null, prizeSavedAt: null };
                 const lockKey = `predictions_locked:${selectedYear}`;
                 data.forEach(row => {
                     if (row.key === lockKey) {
                         settings.predictionsLocked = row.value === 'true' || row.value === true;
+                    } else if (row.key === `rules_saved:${selectedYear}`) {
+                        settings.rulesSavedAt = row.value || null;
+                    } else if (row.key === `prize_saved:${selectedYear}`) {
+                        settings.prizeSavedAt = row.value || null;
                     }
                 });
                 
                 return settings;
             },
             
+            // Record that the admin saved the Guesser Rules or Prize Fund for the selected year.
+            // (A new year's rules are copied forward, so a stored row alone does not mean they were reviewed.)
+            markSettingsSaved: async (kind) => {
+                if (kind !== 'rules' && kind !== 'prize') return null;
+                const savedAt = new Date().toISOString();
+                const { error } = await supabaseClient
+                    .from('settings')
+                    .upsert({ key: `${kind}_saved:${selectedYear}`, value: savedAt }, { onConflict: 'key' });
+                if (error) {
+                    console.error(`Error recording ${kind} saved:`, error);
+                    return null;
+                }
+                return savedAt;
+            },
+
             saveSettings: async (settings) => {
                 const { error } = await supabaseClient
                     .from('settings')
@@ -1060,7 +1083,7 @@
         let users = {};
         let currentUsername = null;
         let adminUsernames = [];
-        let appSettings = { predictionsLocked: false };
+        let appSettings = { predictionsLocked: false, rulesSavedAt: null, prizeSavedAt: null };
         let selectedYear = null;
         let availableYears = [];
         let allMatches = [];  // Fixtures for every year; `matches` holds the selected year only
@@ -1475,6 +1498,85 @@
             setYearsFeedback(`${year} removed.`, 'success');
         }
 
+        // ---- Admin: readiness checklist for the selected year's tournament ----
+        const EXPECTED_FIXTURE_COUNT = 15;
+
+        function goToAdminTab(tabName) {
+            const button = document.querySelector(`.admin-tabs button[onclick="showTab('${tabName}')"]`);
+            if (button) button.click();
+        }
+
+        function renderReadinessChecklist() {
+            const container = document.getElementById('readinessChecklist');
+            if (!container) return;
+            if (!isCurrentUserAdmin() || !selectedYear) {
+                container.innerHTML = '';
+                container.className = 'readiness-checklist hidden';
+                return;
+            }
+
+            const formatSavedDate = (iso) => {
+                const date = new Date(iso);
+                return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            };
+
+            // 1. Fixtures
+            const fixtureCount = matches.length;
+            const fixturesOk = fixtureCount === EXPECTED_FIXTURE_COUNT;
+            const fixturesDetail = fixturesOk
+                ? `${fixtureCount} of ${EXPECTED_FIXTURE_COUNT} fixtures added`
+                : fixtureCount > EXPECTED_FIXTURE_COUNT
+                    ? `${fixtureCount} fixtures added, but a tournament has ${EXPECTED_FIXTURE_COUNT}`
+                    : `${fixtureCount} of ${EXPECTED_FIXTURE_COUNT} fixtures added`;
+
+            // 2. Predictions: everyone who has started must have scores, tries and jokers in
+            const participants = getParticipantUsernames();
+            const incomplete = participants.filter(username => !getPredictionChecklistStatus(username).allComplete);
+            const notStarted = Object.keys(users).length - participants.length;
+            const predictionsOk = participants.length > 0 && incomplete.length === 0;
+            let predictionsDetail;
+            if (participants.length === 0) {
+                predictionsDetail = `No competitor has made predictions for ${selectedYear} yet`;
+            } else {
+                const names = incomplete.slice(0, 5).map(username => getDisplayName(username)).join(', ');
+                predictionsDetail = `${participants.length - incomplete.length} of ${participants.length} competitors have everything in`
+                    + (incomplete.length > 0 ? `. Waiting on ${names}${incomplete.length > 5 ? ` and ${incomplete.length - 5} more` : ''}` : '');
+            }
+            if (notStarted > 0 && participants.length > 0) {
+                predictionsDetail += ` (${notStarted} other competitor${notStarted !== 1 ? 's have' : ' has'} not started and ${notStarted !== 1 ? 'are' : 'is'} not counted)`;
+            }
+
+            // 3 & 4. Rules and prize fund saved for this year
+            const rulesOk = !!appSettings.rulesSavedAt;
+            const prizeOk = !!appSettings.prizeSavedAt;
+            const savedDetail = (savedAt, ok, what) => ok
+                ? `Saved for ${selectedYear}${formatSavedDate(savedAt) ? ` on ${formatSavedDate(savedAt)}` : ''}`
+                : `${what} not saved for ${selectedYear} yet. Review and click Save`;
+
+            const items = [
+                { ok: fixturesOk, label: 'Fixtures', detail: fixturesDetail, tab: 'results', action: 'Fixtures and Scores' },
+                { ok: predictionsOk, label: 'All predictions in', detail: predictionsDetail, tab: 'scoreCorrections', action: 'Predictions' },
+                { ok: rulesOk, label: 'Guesser rules saved', detail: savedDetail(appSettings.rulesSavedAt, rulesOk, 'Guesser rules'), tab: 'rules', action: 'Guesser Rules' },
+                { ok: prizeOk, label: 'Prize fund saved', detail: savedDetail(appSettings.prizeSavedAt, prizeOk, 'Prize fund'), tab: 'prizeFund', action: 'Prize Fund' }
+            ];
+            const doneCount = items.filter(item => item.ok).length;
+            const allDone = doneCount === items.length;
+
+            container.className = `readiness-checklist${allDone ? ' ready' : ''}`;
+            container.innerHTML = `
+                <div class="readiness-title">${allDone ? `${selectedYear} is ready to go` : `Ready for ${selectedYear}?`}</div>
+                <div class="readiness-summary">${doneCount} of ${items.length} steps done</div>
+                ${items.map(item => `
+                    <div class="readiness-item ${item.ok ? 'ok' : 'todo'}">
+                        <span class="readiness-icon">${item.ok ? '✓' : ''}</span>
+                        <div class="readiness-text">
+                            <div class="readiness-label">${item.label}</div>
+                            <div class="readiness-detail">${escapeHtml(item.detail)}</div>
+                        </div>
+                        ${item.ok ? '' : `<button class="btn-small" onclick="goToAdminTab('${item.tab}')">${item.action}</button>`}
+                    </div>`).join('')}`;
+        }
+
         // Competitors who have made predictions in the selected year (predictions are loaded per year)
         function getParticipantUsernames() {
             return Object.keys(users).filter(username => Object.keys(users[username].predictions || {}).length > 0);
@@ -1565,6 +1667,8 @@
 
         // Update lock toggle UI
         function updateLockToggleUI() {
+            const yearLabel = document.getElementById('lockToggleYear');
+            if (yearLabel) yearLabel.textContent = selectedYear ? ` (${selectedYear})` : '';
             const toggle = document.getElementById('lockToggle');
             if (toggle) {
                 if (appSettings.predictionsLocked) {
@@ -1587,6 +1691,7 @@
 
         // Render admin matches for entering results
         function renderAdminMatches() {
+            renderReadinessChecklist();
             const container = document.getElementById('adminMatchesContainer');
             if (!container) return;
             updateNextMatchScoreButtonState();
@@ -3198,6 +3303,7 @@
             document.getElementById('logoutBtn').classList.remove('hidden');
             updateAdminTabsSubheading();
             updateNextMatchScoreButtonState();
+            renderReadinessChecklist();
 
             // Load user's saved theme
             loadUserTheme();
@@ -3617,6 +3723,7 @@
         }
 
         function renderAdminScoreCorrections() {
+            renderReadinessChecklist();
             const container = document.getElementById('adminUserMatchesContainer');
             const triesSection = document.getElementById('adminTriesSection');
             if (!container) return;
@@ -7142,7 +7249,7 @@
             updateRulesPublishState();
         }
 
-        async function saveUpdatedRules() {
+        async function saveUpdatedRules(kind = null) {
             if (!isCurrentUserAdmin()) return;
             const { payload, errors } = getRulesPayloadFromForm();
             if (errors.length > 0) {
@@ -7170,9 +7277,14 @@
                 }
 
                 activeScoringRules = await Storage.getActiveScoringRules();
+                if (kind === 'rules' || kind === 'prize') {
+                    const savedAt = await Storage.markSettingsSaved(kind);
+                    if (savedAt) appSettings[`${kind}SavedAt`] = savedAt;
+                }
                 populateRulesForm(activeScoringRules);
                 setRulesFeedback('Rules saved successfully.', 'success');
                 renderRulesPreview();
+                renderReadinessChecklist();
             } catch (error) {
                 console.error('Error saving rules:', error);
                 setRulesFeedback('Error while saving rules.', 'error');
@@ -7654,12 +7766,12 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
                 adminPredictionUsername = null;
                 document.getElementById('scoreCorrectionsTab').classList.remove('hidden');
                 event.target.classList.add('active');
+                updateLockToggleUI();
                 renderAdminScoreCorrections();
             } else if (tabName === 'results') {
                 if (!isCurrentUserAdmin()) return;
                 document.getElementById('resultsTab').classList.remove('hidden');
                 event.target.classList.add('active');
-                updateLockToggleUI();
                 renderAdminMatches();
             } else if (tabName === 'rules') {
                 if (!isCurrentUserAdmin()) return;
@@ -7691,6 +7803,8 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
                 document.getElementById('adminHomeTab').classList.remove('hidden');
                 event.target.classList.add('active');
             }
+
+            renderReadinessChecklist();
         }
 
         async function refreshSummaryData() {
