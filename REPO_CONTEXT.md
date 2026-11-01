@@ -91,8 +91,7 @@ Array of fixtures/results:
 ## Authentication
 
 - The login email field (`autocomplete="email"`, plus a `datalist`) stays empty and offers the last three emails used on this device as suggestions (localStorage `rugbyPredictorRecentEmails`). It is deliberately not pre-filled: iOS shows no suggestions in a field that already has text. iOS's own contact-card suggestion depends on the phone's Settings.
-- The login email also carries a numeric code. The login screen shows a code box after the email is sent (`verifyLoginCode` -> `verifyOtp({ type: 'email' })`), so a home-screen (standalone) iPhone app can sign in without the link opening in Safari. This needs `{{ .Token }}` in the Supabase email templates (Magic Link and Confirm signup).
-- Login is Supabase Auth magic link only (`sendMagicLink` -> `signInWithOtp`); first use creates the account. supabase-js persists the session in localStorage, so returning visitors stay signed in.
+- Login is Supabase Auth with an emailed code only: `sendLoginCode` -> `signInWithOtp` (no redirect), then `verifyLoginCode` -> `verifyOtp({ type: 'email' })` (the code box also accepts a paste, and a Paste Code button reads the clipboard). First use creates the account. The Supabase email templates (Magic Link and Confirm signup) should contain `{{ .Token }}` and no link. Because there is no redirect, the Site URL / Redirect URLs settings no longer matter for sign-in and a Home Screen shortcut signs in the same way as the browser. supabase-js persists the session in localStorage, so returning visitors stay signed in.
 - `handleAuthChange` (wired to `onAuthStateChange`) restores the session and calls `resolveSignedInUser`, which maps the account to a competitor through the `my_competitor` RPC (`users.auth_user_id`).
 - Accounts with no competitor see `#setupView` (`createMyProfile` -> `create_my_profile` RPC) or wait for an admin to link them (Competitors tab -> `admin_list_accounts` / `admin_link_competitor` RPCs).
 - Sign-in emails are pre-registered per competitor (`competitor_emails`, admin-only; Competitors screen has a Sign-in email column). `my_competitor()` links the account to the unlinked competitor whose registered email matches the account's confirmed email on first sign-in. Self-signup (`create_my_profile`) is refused unless the `allow_self_signup` setting is true (toggle on the Competitors screen); the setup screen then tells unregistered people to ask an admin. Migration: `supabase/preregistered_emails_migration.sql` (run after `auth_migration.sql` and `years_migration.sql`).
@@ -267,9 +266,9 @@ This is the main browser-to-Supabase boundary.
 
 ## App icon
 
-- Original artwork (not the official Six Nations crest): a gold rugby ball inside a ring of six dots on green. Sources are `icons/icon.svg` (full), `icons/icon-small.svg` (favicon, ball only) and `icons/icon-maskable.svg` (Android, inside the safe zone). The PNGs in `icons/` and `favicon.ico` are rendered from them (opaque, as iOS requires for `apple-touch-icon`).
+- Original artwork (not the official Six Nations crest): a gold rugby ball inside a ring of the six nations' flags (England, France, Italy, Wales, Ireland, Scotland) on green. Sources are `icons/icon.svg` (full), `icons/icon-small.svg` (favicon, ball only) and `icons/icon-maskable.svg` (Android, inside the safe zone). The PNGs in `icons/` and `favicon.ico` are rendered from them (opaque, as iOS requires for `apple-touch-icon`).
 - `index.html` links the favicons, the 180px `apple-touch-icon`, a theme colour and `manifest.json`. The manifest uses `display: browser` on purpose: switching to `standalone` would make a Home Screen shortcut a full-screen app with its own storage, so the email link would sign in Safari and not the app (the login code box exists for that case).
-- If the artwork changes, re-render the PNGs and `favicon.ico`; browsers cache icons hard.
+- If the artwork changes, re-render the PNGs and `favicon.ico` and bump the `?v=` on the icon links in `index.html` and `manifest.json`; browsers cache icons hard.
 
 ## Cache busting
 

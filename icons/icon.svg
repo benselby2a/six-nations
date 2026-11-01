@@ -10,18 +10,15 @@
     </linearGradient>
   </defs>
   <rect width="1024" height="1024" fill="url(#bg)"/>
-  <circle cx="512" cy="512" r="372" fill="none" stroke="#d4af37" stroke-opacity="0.35" stroke-width="10"/>
-  <circle cx="512.0" cy="140.0" r="46" fill="#f5e6a8"/>
-    <circle cx="834.2" cy="326.0" r="46" fill="#f5e6a8"/>
-    <circle cx="834.2" cy="698.0" r="46" fill="#f5e6a8"/>
-    <circle cx="512.0" cy="884.0" r="46" fill="#f5e6a8"/>
-    <circle cx="189.8" cy="698.0" r="46" fill="#f5e6a8"/>
-    <circle cx="189.8" cy="326.0" r="46" fill="#f5e6a8"/>
-  <g transform="translate(512 512) rotate(-32)">
+  <circle cx="512" cy="512" r="390" fill="none" stroke="#d4af37" stroke-opacity="0.35" stroke-width="10"/>
+  <g transform="translate(512.0 122.0)"><clipPath id="f0"><circle r="68"/></clipPath><g clip-path="url(#f0)"><rect x="-68" y="-68" width="136" height="136" fill="#ffffff"/><rect x="-68" y="-12.2" width="136" height="24.5" fill="#ce1124"/><rect x="-12.2" y="-68" width="24.5" height="136" fill="#ce1124"/></g><circle r="68" fill="none" stroke="#f5e6a8" stroke-width="6.1"/></g>
+  <g transform="translate(849.7 317.0)"><clipPath id="f1"><circle r="68"/></clipPath><g clip-path="url(#f1)"><rect x="-68.0" y="-68" width="45.9" height="136" fill="#0055a4"/><rect x="-22.7" y="-68" width="45.9" height="136" fill="#ffffff"/><rect x="22.7" y="-68" width="45.9" height="136" fill="#ef4135"/></g><circle r="68" fill="none" stroke="#f5e6a8" stroke-width="6.1"/></g>
+  <g transform="translate(849.7 707.0)"><clipPath id="f2"><circle r="68"/></clipPath><g clip-path="url(#f2)"><rect x="-68.0" y="-68" width="45.9" height="136" fill="#009246"/><rect x="-22.7" y="-68" width="45.9" height="136" fill="#ffffff"/><rect x="22.7" y="-68" width="45.9" height="136" fill="#ce2b37"/></g><circle r="68" fill="none" stroke="#f5e6a8" stroke-width="6.1"/></g>
+  <g transform="translate(512.0 902.0)"><clipPath id="f3"><circle r="68"/></clipPath><g clip-path="url(#f3)"><rect x="-68" y="-68" width="136" height="68" fill="#ffffff"/><rect x="-68" y="0" width="136" height="68" fill="#00712d"/><g transform="scale(0.6800)" fill="#d4213d"><path d="M -48 22 C -30 6 -8 14 6 -2 C 14 -12 10 -26 22 -34 C 30 -40 40 -34 44 -26 C 38 -28 32 -24 30 -18 C 36 -10 30 4 18 12 C 6 22 -4 34 -22 38 C -34 40 -44 34 -48 22 Z"/><path d="M -6 0 C -14 -22 2 -40 18 -42 C 10 -30 12 -14 6 -2 Z"/><path d="M -48 22 C -58 26 -62 36 -54 42 C -56 34 -50 30 -44 30 Z"/></g></g><circle r="68" fill="none" stroke="#f5e6a8" stroke-width="6.1"/></g>
+  <g transform="translate(174.3 707.0)"><clipPath id="f4"><circle r="68"/></clipPath><g clip-path="url(#f4)"><rect x="-68.0" y="-68" width="45.9" height="136" fill="#169b62"/><rect x="-22.7" y="-68" width="45.9" height="136" fill="#ffffff"/><rect x="22.7" y="-68" width="45.9" height="136" fill="#ff883e"/></g><circle r="68" fill="none" stroke="#f5e6a8" stroke-width="6.1"/></g>
+  <g transform="translate(174.3 317.0)"><clipPath id="f5"><circle r="68"/></clipPath><g clip-path="url(#f5)"><rect x="-68" y="-68" width="136" height="136" fill="#0065bd"/><line x1="-68" y1="-68" x2="68" y2="68" stroke="#ffffff" stroke-width="23.1"/><line x1="68" y1="-68" x2="-68" y2="68" stroke="#ffffff" stroke-width="23.1"/></g><circle r="68" fill="none" stroke="#f5e6a8" stroke-width="6.1"/></g>
+  <g transform="translate(512 512) scale(0.9) translate(-512 -512)"><g transform="translate(512 512) rotate(-32)">
       <ellipse rx="290.0" ry="190.0" fill="url(#gold)" stroke="#f7e08a" stroke-width="10.0"/>
-      <path d="M -269.7 -22.8 Q 0 -117.8 269.7 -22.8" fill="none" stroke="#7a5d12" stroke-opacity="0.8" stroke-width="11.0" stroke-linecap="round"/>
-      <path d="M -269.7 22.8 Q 0 117.8 269.7 22.8" fill="none" stroke="#7a5d12" stroke-opacity="0.8" stroke-width="11.0" stroke-linecap="round"/>
-      <path d="M -159.5 -140.6 Q -116.0 0 -159.5 140.6" fill="none" stroke="#7a5d12" stroke-opacity="0.8" stroke-width="11.0" stroke-linecap="round"/>
-      <path d="M 159.5 -140.6 Q 116.0 0 159.5 140.6" fill="none" stroke="#7a5d12" stroke-opacity="0.8" stroke-width="11.0" stroke-linecap="round"/>
-    </g>
+      <path d="M -269.7 -22.8 Q 0 -117.8 269.7 -22.8" fill="none" stroke="#7a5d12" stroke-opacity="0.8" stroke-width="11.0" stroke-linecap="round"/><path d="M -269.7 22.8 Q 0 117.8 269.7 22.8" fill="none" stroke="#7a5d12" stroke-opacity="0.8" stroke-width="11.0" stroke-linecap="round"/><path d="M -159.5 -140.6 Q -116.0 0 -159.5 140.6" fill="none" stroke="#7a5d12" stroke-opacity="0.8" stroke-width="11.0" stroke-linecap="round"/><path d="M 159.5 -140.6 Q 116.0 0 159.5 140.6" fill="none" stroke="#7a5d12" stroke-opacity="0.8" stroke-width="11.0" stroke-linecap="round"/>
+    </g></g>
 </svg>
