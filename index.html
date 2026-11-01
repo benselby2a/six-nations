@@ -5,17 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Six Nations Predictor</title>
     <meta name="theme-color" content="#0d2818">
-    <link rel="icon" href="favicon.ico" sizes="48x48">
-    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+    <link rel="icon" href="favicon.ico?v=2" sizes="48x48">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=2">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png?v=2">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=2">
     <meta name="apple-mobile-web-app-title" content="Six Nations">
     <link rel="manifest" href="manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;600;800&family=VT323&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261025-18">
+    <link rel="stylesheet" href="styles.css?v=20261025-19">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -44,16 +44,16 @@
                     <span>or</span>
                 </div>
                 
-                <!-- Magic Link Login -->
-                <div id="magicLinkForm" class="login-form">
+                <!-- Email-code login -->
+                <div id="loginForm" class="login-form">
                     <form id="loginEmailForm" onsubmit="return false" novalidate>
                         <div class="input-group">
                             <label for="loginEmail">Email</label>
                             <input type="email" id="loginEmail" name="email" placeholder="you@example.com" autocomplete="email" list="loginEmailOptions" inputmode="email" enterkeyhint="send" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="onLoginEmailInput()" onkeypress="handleLoginKeyPress(event)">
                             <datalist id="loginEmailOptions"></datalist>
-                            <span class="profile-hint">We'll email you a link to sign in. New here? The same link creates your account.</span>
+                            <span class="profile-hint">We'll email you a code to sign in. New here? The same code creates your account.</span>
                         </div>
-                        <button type="button" id="sendMagicLinkBtn" onclick="sendMagicLink()">Email Me a Login Link</button>
+                        <button type="button" id="sendLoginCodeBtn" onclick="sendLoginCode()">Email Me a Code</button>
                     </form>
 
                     <!-- Kept as its own form with a single code field so Safari treats it as a one-time-code
@@ -62,7 +62,7 @@
                         <div class="input-group">
                             <label for="loginCode">Login code</label>
                             <input type="text" id="loginCode" name="one-time-code" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="10" enterkeyhint="go" aria-label="One-time login code" placeholder="123456" onpaste="handleCodePaste(event)" onkeypress="handleCodeKeyPress(event)">
-                            <span class="profile-hint">Using the home-screen app? Type or paste the code here to sign in without leaving the app. The link in the message opens in Safari instead.</span>
+                            <span class="profile-hint">Enter the code from the email. It can take a minute to arrive.</span>
                         </div>
                         <button type="button" id="pasteCodeBtn" class="btn-cancel hidden" onclick="pasteLoginCode()">Paste Code From Clipboard</button>
                         <button type="button" id="verifyCodeBtn" onclick="verifyLoginCode()">Sign In With Code</button>
@@ -133,7 +133,7 @@
                 <div class="input-group">
                     <label for="profileEmail">Email</label>
                     <input type="text" id="profileEmail" readonly style="opacity: 0.6; cursor: default;">
-                    <span class="profile-hint">You sign in with a link sent to this address.</span>
+                    <span class="profile-hint">You sign in with a code sent to this address.</span>
                 </div>
 
                 <div id="profileFeedback" class="login-feedback hidden"></div>
@@ -750,6 +750,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=20261025-18"></script>
+    <script src="app.js?v=20261025-19"></script>
 </body>
 </html>

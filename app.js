@@ -3255,7 +3255,7 @@
         }
 
         // ============================================
-        // AUTH (Supabase Auth magic links)
+        // AUTH (Supabase Auth email codes)
         // ============================================
         // A signed-in Supabase account maps to a competitor through users.auth_user_id
         // (looked up via the my_competitor RPC). Supabase persists the session in
@@ -3263,7 +3263,7 @@
         let currentAuthEmail = '';
         let authHandledUserId = null;
         let isPdfExportMode = false;
-        let magicLinkCooldownTimer = null;
+        let loginCodeCooldownTimer = null;
         let pendingLoginEmail = '';
         const RECENT_LOGIN_EMAILS_KEY = 'rugbyPredictorRecentEmails';
         const LEGACY_LAST_LOGIN_EMAIL_KEY = 'rugbyPredictorLastEmail';
@@ -3298,10 +3298,6 @@
             list.innerHTML = getRecentLoginEmails().map(email => `<option value="${escapeHtml(email)}"></option>`).join('');
         }
 
-        function getAuthRedirectUrl() {
-            return window.location.href.split(/[?#]/)[0];
-        }
-
         function showLoginScreen() {
             document.getElementById('loginView').classList.remove('hidden');
             document.getElementById('setupView').classList.add('hidden');
@@ -3324,10 +3320,10 @@
             showAppAsGuest();
         }
 
-        // Email a magic link (also creates the account on first use)
-        async function sendMagicLink() {
+        // Email a login code (also creates the account on first use)
+        async function sendLoginCode() {
             const emailInput = document.getElementById('loginEmail');
-            const button = document.getElementById('sendMagicLinkBtn');
+            const button = document.getElementById('sendLoginCodeBtn');
             const email = emailInput.value.trim().toLowerCase();
 
             const feedbackEl = document.getElementById('loginFeedback');
@@ -3341,25 +3337,25 @@
             button.disabled = true;
             const { error } = await supabaseClient.auth.signInWithOtp({
                 email,
-                options: { emailRedirectTo: getAuthRedirectUrl(), shouldCreateUser: true }
+                options: { shouldCreateUser: true }
             });
 
             if (error) {
-                showLoginFeedback(error.message || 'Could not send the login link. Please try again.', 'error');
+                showLoginFeedback(error.message || 'Could not send the code. Please try again.', 'error');
                 button.disabled = false;
                 return;
             }
 
             pendingLoginEmail = email;
             rememberLoginEmail(email);
-            showLoginFeedback(`Check ${email} for your login message. Tap the link, or type the code below.`, 'success');
+            showLoginFeedback(`We've emailed a code to ${email}. Enter it below.`, 'success');
             document.getElementById('loginCodeEntry').classList.remove('hidden');
             // Only offer the clipboard button where the browser can read the clipboard
             if (navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
                 document.getElementById('pasteCodeBtn').classList.remove('hidden');
             }
             document.getElementById('loginCode').focus();
-            startMagicLinkCooldown(button, 30);
+            startLoginCodeCooldown(button, 30);
         }
 
         // Typing a different email makes any code we were waiting for irrelevant
@@ -3371,15 +3367,14 @@
                 document.getElementById('loginCode').value = '';
 
                 // The resend cooldown belonged to the previous address
-                clearInterval(magicLinkCooldownTimer);
-                const sendButton = document.getElementById('sendMagicLinkBtn');
+                clearInterval(loginCodeCooldownTimer);
+                const sendButton = document.getElementById('sendLoginCodeBtn');
                 sendButton.disabled = false;
-                sendButton.textContent = 'Email Me a Login Link';
+                sendButton.textContent = 'Email Me a Code';
             }
         }
 
-        // Sign in with the code from the email (works inside a home-screen app, where the link would
-        // open in Safari and sign in the wrong browser). Success arrives through onAuthStateChange.
+        // Sign in with the code from the email. Success arrives through onAuthStateChange.
         async function verifyLoginCode() {
             const email = pendingLoginEmail || document.getElementById('loginEmail').value.trim().toLowerCase();
             const codeInput = document.getElementById('loginCode');
@@ -3448,16 +3443,16 @@
             }
         }
 
-        function startMagicLinkCooldown(button, seconds) {
-            clearInterval(magicLinkCooldownTimer);
+        function startLoginCodeCooldown(button, seconds) {
+            clearInterval(loginCodeCooldownTimer);
             let remaining = seconds;
-            const label = 'Email Me a Login Link';
+            const label = 'Email Me a Code';
             button.disabled = true;
             button.textContent = `Resend in ${remaining}s`;
-            magicLinkCooldownTimer = setInterval(() => {
+            loginCodeCooldownTimer = setInterval(() => {
                 remaining -= 1;
                 if (remaining <= 0) {
-                    clearInterval(magicLinkCooldownTimer);
+                    clearInterval(loginCodeCooldownTimer);
                     button.disabled = false;
                     button.textContent = label;
                     return;
@@ -3466,7 +3461,7 @@
             }, 1000);
         }
 
-        // Auth state changes (initial session restore, magic link sign-in, sign-out)
+        // Auth state changes (initial session restore, sign-in, sign-out)
         async function handleAuthChange(event, session) {
             await appReady;
             if (isPdfExportMode) return;
@@ -3499,7 +3494,7 @@
             if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
                 if (authHandledUserId === session.user.id) return;
                 authHandledUserId = session.user.id;
-                await resolveSignedInUser(session, event === 'INITIAL_SESSION' ? 'session_restore' : 'magic_link');
+                await resolveSignedInUser(session, event === 'INITIAL_SESSION' ? 'session_restore' : 'email_code');
             }
         }
 
@@ -3645,7 +3640,7 @@
         // Handle Enter key on the login email input
         function handleLoginKeyPress(event) {
             if (event.key === 'Enter') {
-                sendMagicLink();
+                sendLoginCode();
             }
         }
 
@@ -3675,10 +3670,10 @@
             document.getElementById('loginCodeEntry').classList.add('hidden');
 
             // A fresh login form: drop any resend countdown left over from the last sign-in
-            clearInterval(magicLinkCooldownTimer);
-            const sendButton = document.getElementById('sendMagicLinkBtn');
+            clearInterval(loginCodeCooldownTimer);
+            const sendButton = document.getElementById('sendLoginCodeBtn');
             sendButton.disabled = false;
-            sendButton.textContent = 'Email Me a Login Link';
+            sendButton.textContent = 'Email Me a Code';
 
             if (!wasGuest) {
                 await supabaseClient.auth.signOut();
@@ -8226,7 +8221,7 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
 
         fillLoginEmailOptions();
 
-        // Restores a saved session on load (INITIAL_SESSION) and handles magic link sign-ins.
+        // Restores a saved session on load (INITIAL_SESSION) and handles sign-ins.
         // Deferred with setTimeout so the callback never awaits Supabase calls inside the auth lock.
         supabaseClient.auth.onAuthStateChange((event, session) => {
             setTimeout(() => handleAuthChange(event, session), 0);
