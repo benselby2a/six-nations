@@ -4,7 +4,7 @@
   "description": "Six Nations prediction challenge",
   "start_url": "./",
   "scope": "./",
-  "display": "browser",
+  "display": "standalone",
   "background_color": "#0d2818",
   "theme_color": "#0d2818",
   "icons": [

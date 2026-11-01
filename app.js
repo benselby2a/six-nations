@@ -1351,6 +1351,40 @@
         }
 
         // Load everything that depends on the selected year
+        // When the data on screen was last fetched (the full-screen app has no reload button)
+        let lastDataRefreshAt = Date.now();
+        let summaryRefreshInFlight = false;
+        const FOREGROUND_REFRESH_AFTER_MS = 5 * 60 * 1000;
+
+        function updateSummaryUpdatedAt() {
+            const el = document.getElementById('summaryUpdatedAt');
+            if (el) el.textContent = 'Updated ' + new Date(lastDataRefreshAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        async function manualRefreshSummary() {
+            if (summaryRefreshInFlight) return;
+            const button = document.getElementById('summaryRefreshBtn');
+            summaryRefreshInFlight = true;
+            if (button) { button.disabled = true; button.textContent = 'Refreshing...'; }
+            try {
+                await refreshSummaryData();
+            } finally {
+                summaryRefreshInFlight = false;
+                if (button) { button.disabled = false; button.textContent = 'Refresh'; }
+            }
+        }
+
+        // Coming back to the app after a while: refresh the scores, but only on the summary so that
+        // nobody's half-typed predictions are disturbed. Other tabs refresh when you open the summary.
+        function refreshWhenReturning() {
+            if (document.visibilityState !== 'visible' || isLoading || summaryRefreshInFlight) return;
+            if (Date.now() - lastDataRefreshAt < FOREGROUND_REFRESH_AFTER_MS) return;
+            const appView = document.getElementById('appView');
+            const summaryTab = document.getElementById('summaryTab');
+            if (!appView || appView.classList.contains('hidden') || !summaryTab || summaryTab.classList.contains('hidden')) return;
+            manualRefreshSummary();
+        }
+
         async function loadYearData() {
             applySelectedYearMatches();
             const [loadedUsers, loadedSettings, loadedRules, loadedJokerSelections] = await Promise.all([
@@ -1364,6 +1398,8 @@
             activeScoringRules = loadedRules;
             userJokerSelections = loadedJokerSelections;
             updateChallengeSubtitleYear();
+            lastDataRefreshAt = Date.now();
+            updateSummaryUpdatedAt();
         }
 
         function renderYearSelect() {
@@ -8220,6 +8256,46 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
         });
 
         fillLoginEmailOptions();
+
+        // ---- Home Screen install tip (iPhone Safari only) ----
+        const INSTALL_TIP_DISMISSED_KEY = 'rugbyPredictorInstallTipDismissed';
+
+        function isStandaloneApp() {
+            return window.navigator.standalone === true
+                || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+        }
+
+        function shouldShowInstallTip() {
+            const ua = navigator.userAgent || '';
+            const isIosDevice = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA\//.test(ua);
+            if (!isIosDevice || !isSafari || isStandaloneApp()) return false;
+            try {
+                if (localStorage.getItem(INSTALL_TIP_DISMISSED_KEY) === '1') return false;
+            } catch (error) {
+                // Storage unavailable: show the tip.
+            }
+            return true;
+        }
+
+        function showInstallTipIfNeeded() {
+            const tip = document.getElementById('installTip');
+            if (tip) tip.classList.toggle('hidden', !shouldShowInstallTip());
+        }
+
+        function dismissInstallTip() {
+            try {
+                localStorage.setItem(INSTALL_TIP_DISMISSED_KEY, '1');
+            } catch (error) {
+                // Ignore storage errors; the tip just comes back next time.
+            }
+            const tip = document.getElementById('installTip');
+            if (tip) tip.classList.add('hidden');
+        }
+
+        showInstallTipIfNeeded();
+        document.addEventListener('visibilitychange', refreshWhenReturning);
+        window.addEventListener('pageshow', (event) => { if (event.persisted) refreshWhenReturning(); });
 
         // Restores a saved session on load (INITIAL_SESSION) and handles sign-ins.
         // Deferred with setTimeout so the callback never awaits Supabase calls inside the auth lock.
