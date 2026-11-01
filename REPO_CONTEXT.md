@@ -265,6 +265,12 @@ This is the main browser-to-Supabase boundary.
 
 - Start in the `Storage` object and verify matching SQL/recovery generation code later in the file.
 
+## App icon
+
+- Original artwork (not the official Six Nations crest): a gold rugby ball inside a ring of six dots on green. Sources are `icons/icon.svg` (full), `icons/icon-small.svg` (favicon, ball only) and `icons/icon-maskable.svg` (Android, inside the safe zone). The PNGs in `icons/` and `favicon.ico` are rendered from them (opaque, as iOS requires for `apple-touch-icon`).
+- `index.html` links the favicons, the 180px `apple-touch-icon`, a theme colour and `manifest.json`. The manifest uses `display: browser` on purpose: switching to `standalone` would make a Home Screen shortcut a full-screen app with its own storage, so the email link would sign in Safari and not the app (the login code box exists for that case).
+- If the artwork changes, re-render the PNGs and `favicon.ico`; browsers cache icons hard.
+
 ## Cache busting
 
 - The site is served as static files with a browser cache of roughly 10 minutes. `index.html` loads `styles.css?v=...` and `app.js?v=...`, so a browser with a fresh page never pairs it with stale scripts or styles (that mismatch showed up as an empty dropdown and a tab that never hid).

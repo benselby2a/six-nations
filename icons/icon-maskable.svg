@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d2818"/>
+      <stop offset="1" stop-color="#1f6b3a"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffd700"/>
+      <stop offset="1" stop-color="#c79a1e"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <circle cx="512.0" cy="250.0" r="33" fill="#f5e6a8"/>
+    <circle cx="738.9" cy="381.0" r="33" fill="#f5e6a8"/>
+    <circle cx="738.9" cy="643.0" r="33" fill="#f5e6a8"/>
+    <circle cx="512.0" cy="774.0" r="33" fill="#f5e6a8"/>
+    <circle cx="285.1" cy="643.0" r="33" fill="#f5e6a8"/>
+    <circle cx="285.1" cy="381.0" r="33" fill="#f5e6a8"/>
+  <g transform="translate(512 512) scale(0.7) translate(-512 -512)"><g transform="translate(512 512) rotate(-32)">
+      <ellipse rx="290.0" ry="190.0" fill="url(#gold)" stroke="#f7e08a" stroke-width="10.0"/>
+      <path d="M -269.7 -22.8 Q 0 -117.8 269.7 -22.8" fill="none" stroke="#7a5d12" stroke-opacity="0.8" stroke-width="11.0" stroke-linecap="round"/>
+      <path d="M -269.7 22.8 Q 0 117.8 269.7 22.8" fill="none" stroke="#7a5d12" stroke-opacity="0.8" stroke-width="11.0" stroke-linecap="round"/>
+      <path d="M -159.5 -140.6 Q -116.0 0 -159.5 140.6" fill="none" stroke="#7a5d12" stroke-opacity="0.8" stroke-width="11.0" stroke-linecap="round"/>
+      <path d="M 159.5 -140.6 Q 116.0 0 159.5 140.6" fill="none" stroke="#7a5d12" stroke-opacity="0.8" stroke-width="11.0" stroke-linecap="round"/>
+    </g></g>
+</svg>
