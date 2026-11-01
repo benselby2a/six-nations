@@ -430,6 +430,8 @@
             min-height: 100vh;
             position: relative;
             overflow-x: hidden;
+            /* Keep content clear of the notch, status bar and home bar when running full screen (0 in a normal browser) */
+            padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
         }
 
         /* Animated background pattern */
@@ -3794,7 +3796,7 @@
             justify-content: center;
             align-items: flex-start;
             overflow-y: auto;
-            padding: 2rem 0;
+            padding: calc(2rem + env(safe-area-inset-top, 0px)) 0 calc(2rem + env(safe-area-inset-bottom, 0px));
             z-index: 2000;
         }
 
@@ -4155,4 +4157,70 @@
 .signup-control-label input[type="checkbox"] {
     width: auto;
     margin-top: 0.25rem;
+}
+
+/* Refresh control on the Match Summary heading */
+.summary-heading-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.summary-refresh {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.4rem;
+}
+
+.summary-refresh .profile-hint {
+    margin: 0;
+}
+
+.summary-refresh .btn-small {
+    margin: 0;
+}
+
+/* Install tip (iPhone Safari, until dismissed) */
+.install-tip {
+    position: fixed;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    max-width: 520px;
+    margin: 0 auto;
+    z-index: 3000;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    background: #0d2818;
+    border: 2px solid var(--gold);
+    border-radius: 10px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.install-tip.hidden {
+    display: none;
+}
+
+.install-tip-share {
+    vertical-align: -3px;
+    color: var(--bright-gold);
+}
+
+.install-tip-close {
+    flex: none;
+    width: auto;
+    padding: 0.25rem 0.5rem;
+    margin: 0;
+    background: transparent;
+    color: var(--gold);
+    font-size: 1rem;
+    letter-spacing: 0;
+    border: none;
 }
