@@ -3265,28 +3265,37 @@
         let isPdfExportMode = false;
         let magicLinkCooldownTimer = null;
         let pendingLoginEmail = '';
-        const LAST_LOGIN_EMAIL_KEY = 'rugbyPredictorLastEmail';
+        const RECENT_LOGIN_EMAILS_KEY = 'rugbyPredictorRecentEmails';
+        const LEGACY_LAST_LOGIN_EMAIL_KEY = 'rugbyPredictorLastEmail';
 
-        // The last email used to sign in on this device, so it can be pre-filled next time
-        function getRememberedLoginEmail() {
+        // Emails used to sign in on this device (most recent first). They are offered as suggestions
+        // above the keyboard; the box itself stays empty so iOS can also suggest the contact card email
+        // (iOS shows no suggestions in a field that already has text).
+        function getRecentLoginEmails() {
             try {
-                return localStorage.getItem(LAST_LOGIN_EMAIL_KEY) || '';
+                const stored = JSON.parse(localStorage.getItem(RECENT_LOGIN_EMAILS_KEY) || 'null');
+                if (Array.isArray(stored)) return stored.filter(email => typeof email === 'string').slice(0, 3);
+                const legacy = localStorage.getItem(LEGACY_LAST_LOGIN_EMAIL_KEY);
+                return legacy ? [legacy] : [];
             } catch (error) {
-                return '';
+                return [];
             }
         }
 
         function rememberLoginEmail(email) {
             try {
-                localStorage.setItem(LAST_LOGIN_EMAIL_KEY, email);
+                const recent = [email, ...getRecentLoginEmails().filter(existing => existing !== email)].slice(0, 3);
+                localStorage.setItem(RECENT_LOGIN_EMAILS_KEY, JSON.stringify(recent));
             } catch (error) {
-                // Ignore storage errors; it just will not be pre-filled.
+                // Ignore storage errors; it just will not be suggested next time.
             }
+            fillLoginEmailOptions();
         }
 
-        function prefillLoginEmail() {
-            const input = document.getElementById('loginEmail');
-            if (input && !input.value.trim()) input.value = getRememberedLoginEmail();
+        function fillLoginEmailOptions() {
+            const list = document.getElementById('loginEmailOptions');
+            if (!list) return;
+            list.innerHTML = getRecentLoginEmails().map(email => `<option value="${escapeHtml(email)}"></option>`).join('');
         }
 
         function getAuthRedirectUrl() {
@@ -3658,7 +3667,7 @@
             const logoutBtn = document.getElementById('logoutBtn');
             logoutBtn.textContent = 'Logout';
 
-            document.getElementById('loginEmail').value = getRememberedLoginEmail();
+            document.getElementById('loginEmail').value = '';
             document.getElementById('loginFeedback').className = 'login-feedback hidden';
             document.getElementById('setupNickname').value = '';
             pendingLoginEmail = '';
@@ -8215,7 +8224,7 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
             }
         });
 
-        prefillLoginEmail();
+        fillLoginEmailOptions();
 
         // Restores a saved session on load (INITIAL_SESSION) and handles magic link sign-ins.
         // Deferred with setTimeout so the callback never awaits Supabase calls inside the auth lock.
