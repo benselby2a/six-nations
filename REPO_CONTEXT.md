@@ -269,6 +269,11 @@ This is the main browser-to-Supabase boundary.
 - Original artwork (not the official Six Nations crest): a gold rugby ball inside a ring of the six nations' flags (England, France, Italy, Wales, Ireland, Scotland) on green. Sources are `icons/icon.svg` (full), `icons/icon-small.svg` (favicon, ball only) and `icons/icon-maskable.svg` (Android, inside the safe zone). The PNGs in `icons/` and `favicon.ico` are rendered from them (opaque, as iOS requires for `apple-touch-icon`).
 - `index.html` links the favicons, the 180px `apple-touch-icon`, a theme colour and `manifest.json`.
 
+## Competitors screen
+
+- Each competitor is an expandable `<details class="competitor-card">` (name, @username and status chips in the summary; fields stacked one per row inside, two columns from 700px wide). The add-competitor form is the first card. Field ids are unchanged (`edit-*-<username>`, `new-*-admin`) so the save/link/toggle functions are unchanged.
+- `renderCompetitorManagement` re-renders itself (when accounts load, after linking or saving); `captureCompetitorScreenState` / `restoreCompetitorScreenState` keep open cards and unsaved edits across that. Only the add-competitor checkboxes are restored; the playing/admin checkboxes save immediately so the data is the truth.
+
 ## Home Screen app
 
 - The app is installable as a full-screen web app: `manifest.json` has `display: standalone`, `index.html` has the `apple-mobile-web-app-*` meta tags and `viewport-fit=cover`, and `body` / `.modal` pad for `env(safe-area-inset-*)` (0 in a normal browser). A full-screen app has its own storage, separate from Safari, so it signs in on its own (login is a code for this reason).

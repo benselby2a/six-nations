@@ -2754,6 +2754,39 @@
         }
 
         // Render competitor management table
+        // What the admin has changed but not saved, and which cards are open, survive a re-render
+        // (the screen re-renders itself when the account list loads, after linking, and after saving)
+        function captureCompetitorScreenState(container) {
+            const open = {};
+            container.querySelectorAll('details[id]').forEach(d => { if (d.open) open[d.id] = true; });
+            const dirty = {};
+            container.querySelectorAll('input[id], select[id]').forEach(el => {
+                if (el.type === 'checkbox') {
+                    // Saved straight away, so the data is the truth; only the add-competitor form is a draft
+                    if (el.id.startsWith('new-')) dirty[el.id] = el.checked;
+                } else if (el.tagName === 'SELECT') {
+                    const original = Array.from(el.options).findIndex(o => o.defaultSelected);
+                    if (el.selectedIndex !== original) dirty[el.id] = el.value;
+                } else if (el.value !== el.defaultValue) {
+                    dirty[el.id] = el.value;
+                }
+            });
+            return { open, dirty };
+        }
+
+        function restoreCompetitorScreenState(container, state) {
+            Object.keys(state.open).forEach(id => {
+                const d = document.getElementById(id);
+                if (d) d.open = true;
+            });
+            Object.keys(state.dirty).forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                if (el.type === 'checkbox') el.checked = state.dirty[id];
+                else el.value = state.dirty[id];
+            });
+        }
+
         function renderCompetitorManagement() {
             const container = document.getElementById('competitorManagementContainer');
             const allUsers = Object.keys(users).sort((a, b) => a.localeCompare(b));
@@ -2763,93 +2796,110 @@
                 loadAuthAccounts().then(renderCompetitorManagement);
             }
 
+            const previousState = captureCompetitorScreenState(container);
             const teams = Object.keys(countryFlags);
+            const teamOptions = (selected) => `<option value="">None</option>` +
+                teams.map(t => `<option value="${t}" ${selected === t ? 'selected' : ''}>${getFlag(t)} ${t}</option>`).join('');
 
             let html = `
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th>Username</th>
-                            <th>Display Name</th>
-                            <th>Sign-in email</th>
-                            <th>Supported Teams</th>
-                            <th>Playing ${selectedYear}</th>
-                            <th>Admin</th>
-                            <th>Account</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr style="background: rgba(52, 152, 219, 0.08);">
-                            <td><input type="text" id="new-username-admin" placeholder="username" style="max-width: 150px;"></td>
-                            <td>
-                                <input type="text" id="new-nickname-admin" placeholder="Display name" style="max-width: 150px;">
-                            </td>
-                            <td><input type="email" id="new-email-admin" placeholder="sign-in email" style="max-width: 190px;"></td>
-                            <td>
-                                <select id="new-team1-admin" style="font-size: 0.85rem; margin-bottom: 0.25rem;">
-                                    <option value="">None</option>
-                                    ${teams.map(t => `<option value="${t}">${getFlag(t)} ${t}</option>`).join('')}
-                                </select><br>
-                                <select id="new-team2-admin" style="font-size: 0.85rem;">
-                                    <option value="">None</option>
-                                    ${teams.map(t => `<option value="${t}">${getFlag(t)} ${t}</option>`).join('')}
-                                </select>
-                            </td>
-                            <td style="text-align: center;">
-                                <input type="checkbox" id="new-active-admin" checked>
-                            </td>
-                            <td style="text-align: center;">
-                                <input type="checkbox" id="new-admin-admin">
-                            </td>
-                            <td><span class="profile-hint">Link after adding</span></td>
-                            <td>
-                                <div class="competitor-actions">
-                                    <button class="btn-small btn-success" onclick="addCompetitorFromAdmin()">Add Competitor</button>
-                                </div>
-                            </td>
-                        </tr>
+                <div class="competitor-cards">
+                    <details class="competitor-card competitor-card-new" id="new-competitor-card">
+                        <summary>
+                            <span class="cc-title"><span class="cc-name">+ Add a competitor</span></span>
+                            <span class="cc-chevron" aria-hidden="true"></span>
+                        </summary>
+                        <div class="cc-fields">
+                            <div class="cc-field">
+                                <label for="new-username-admin">Username</label>
+                                <input type="text" id="new-username-admin" placeholder="letters and numbers only" autocapitalize="none" autocorrect="off" spellcheck="false">
+                            </div>
+                            <div class="cc-field">
+                                <label for="new-nickname-admin">Display name</label>
+                                <input type="text" id="new-nickname-admin" placeholder="How they appear on the leaderboard">
+                            </div>
+                            <div class="cc-field cc-wide">
+                                <label for="new-email-admin">Sign-in email</label>
+                                <input type="email" id="new-email-admin" placeholder="The email they will sign in with" autocapitalize="none" autocorrect="off" spellcheck="false">
+                            </div>
+                            <div class="cc-field">
+                                <label for="new-team1-admin">Supported team 1</label>
+                                <select id="new-team1-admin">${teamOptions('')}</select>
+                            </div>
+                            <div class="cc-field">
+                                <label for="new-team2-admin">Supported team 2</label>
+                                <select id="new-team2-admin">${teamOptions('')}</select>
+                            </div>
+                            <label class="cc-toggle"><input type="checkbox" id="new-active-admin" checked><span>Playing in ${selectedYear}</span></label>
+                            <label class="cc-toggle"><input type="checkbox" id="new-admin-admin"><span>Admin</span></label>
+                            <div class="cc-actions cc-wide">
+                                <button type="button" class="btn-success" onclick="addCompetitorFromAdmin()">Add Competitor</button>
+                            </div>
+                        </div>
+                    </details>
             `;
 
             allUsers.forEach(username => {
                 const user = users[username];
                 const isAdmin = adminUsernames.includes(username);
+                const isActive = isCompetitorActive(username);
                 const safeUsername = username.replace(/'/g, "\\'");
                 const userTeams = user.supportedTeams || [];
+                const linked = authAccountsLoaded && authAccounts.some(acc => (acc.linked_username || '').toLowerCase() === username);
+                const waiting = authAccountsLoaded && !linked && !!competitorEmails[username];
+                const displayName = escapeHtml(toTitleCase(user.nickname || username));
                 html += `
-                    <tr id="user-row-${username}">
-                        <td><input type="text" id="edit-username-${username}" value="${username}" style="max-width: 150px;"></td>
-                        <td><input type="text" id="edit-nickname-${username}" value="${escapeHtml(user.nickname || '')}" style="max-width: 150px;"></td>
-                        <td><input type="email" id="edit-email-${username}" value="${escapeHtml(competitorEmails[username] || '')}" placeholder="sign-in email" style="max-width: 190px;"></td>
-                        <td>
-                            <select id="edit-team1-${username}" style="font-size: 0.85rem; margin-bottom: 0.25rem;">
-                                <option value="">None</option>
-                                ${teams.map(t => `<option value="${t}" ${userTeams[0] === t ? 'selected' : ''}>${getFlag(t)} ${t}</option>`).join('')}
-                            </select><br>
-                            <select id="edit-team2-${username}" style="font-size: 0.85rem;">
-                                <option value="">None</option>
-                                ${teams.map(t => `<option value="${t}" ${userTeams[1] === t ? 'selected' : ''}>${getFlag(t)} ${t}</option>`).join('')}
-                            </select>
-                        </td>
-                        <td style="text-align: center;">
-                            <input type="checkbox" id="edit-active-${username}" ${isCompetitorActive(username) ? 'checked' : ''} onchange="toggleCompetitorActive('${safeUsername}', this.checked)" title="Playing in ${selectedYear}">
-                        </td>
-                        <td>
-                            <input type="checkbox" id="edit-admin-${username}" ${isAdmin ? 'checked' : ''} onchange="toggleUserAdmin('${safeUsername}')">
-                        </td>
-                        <td>${renderCompetitorAccountCell(username)}</td>
-                        <td>
-                            <div class="competitor-actions">
-                                <button class="btn-small btn-success" onclick="saveUserChanges('${safeUsername}')">Save</button>
-                                <button class="btn-small btn-danger" onclick="deleteUser('${safeUsername}')">Delete</button>
+                    <details class="competitor-card" id="user-row-${username}">
+                        <summary>
+                            <span class="cc-title">
+                                <span class="cc-name">${displayName}</span>
+                                <span class="cc-username">@${username}</span>
+                            </span>
+                            <span class="cc-chips">
+                                ${isAdmin ? '<span class="cc-chip cc-chip-admin">Admin</span>' : ''}
+                                <span class="cc-chip ${isActive ? 'cc-chip-on' : 'cc-chip-off'}">${isActive ? `Playing ${selectedYear}` : 'Not playing'}</span>
+                                ${linked ? '<span class="cc-chip cc-chip-on">Signed up</span>' : (waiting ? '<span class="cc-chip">Awaiting sign-in</span>' : '')}
+                            </span>
+                            <span class="cc-chevron" aria-hidden="true"></span>
+                        </summary>
+                        <div class="cc-fields">
+                            <div class="cc-field">
+                                <label for="edit-username-${username}">Username</label>
+                                <input type="text" id="edit-username-${username}" value="${username}" autocapitalize="none" autocorrect="off" spellcheck="false">
                             </div>
-                        </td>
-                    </tr>
+                            <div class="cc-field">
+                                <label for="edit-nickname-${username}">Display name</label>
+                                <input type="text" id="edit-nickname-${username}" value="${escapeHtml(user.nickname || '')}">
+                            </div>
+                            <div class="cc-field cc-wide">
+                                <label for="edit-email-${username}">Sign-in email</label>
+                                <input type="email" id="edit-email-${username}" value="${escapeHtml(competitorEmails[username] || '')}" placeholder="The email they will sign in with" autocapitalize="none" autocorrect="off" spellcheck="false">
+                            </div>
+                            <div class="cc-field">
+                                <label for="edit-team1-${username}">Supported team 1</label>
+                                <select id="edit-team1-${username}">${teamOptions(userTeams[0])}</select>
+                            </div>
+                            <div class="cc-field">
+                                <label for="edit-team2-${username}">Supported team 2</label>
+                                <select id="edit-team2-${username}">${teamOptions(userTeams[1])}</select>
+                            </div>
+                            <label class="cc-toggle"><input type="checkbox" id="edit-active-${username}" ${isActive ? 'checked' : ''} onchange="toggleCompetitorActive('${safeUsername}', this.checked)"><span>Playing in ${selectedYear}</span></label>
+                            <label class="cc-toggle"><input type="checkbox" id="edit-admin-${username}" ${isAdmin ? 'checked' : ''} onchange="toggleUserAdmin('${safeUsername}')"><span>Admin</span></label>
+                            <div class="cc-field cc-wide">
+                                <span class="cc-label">Sign-in account</span>
+                                ${renderCompetitorAccountCell(username)}
+                            </div>
+                            <div class="cc-actions cc-wide">
+                                <button type="button" class="btn-success" onclick="saveUserChanges('${safeUsername}')">Save</button>
+                                <button type="button" class="btn-danger" onclick="deleteUser('${safeUsername}')">Delete</button>
+                            </div>
+                        </div>
+                    </details>
                 `;
             });
 
-            html += '</tbody></table>';
+            html += '</div>';
             container.innerHTML = html;
+            restoreCompetitorScreenState(container, previousState);
         }
 
         // Add a new competitor from admin management screen
