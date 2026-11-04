@@ -807,32 +807,6 @@
                 }
             },
 
-            // Whether people without a registered email may create their own profile (default: closed)
-            getAllowSelfSignup: async () => {
-                const { data, error } = await supabaseClient
-                    .from('settings')
-                    .select('value')
-                    .eq('key', 'allow_self_signup')
-                    .maybeSingle();
-                if (error) {
-                    console.error('Error reading the sign-up setting:', error);
-                    return false;
-                }
-                return !!data && (data.value === 'true' || data.value === true);
-            },
-
-            setAllowSelfSignup: async (allowed) => {
-                const { error } = await supabaseClient
-                    .from('settings')
-                    .upsert({ key: 'allow_self_signup', value: allowed ? 'true' : 'false' }, { onConflict: 'key' });
-                if (error) {
-                    console.error('Error saving the sign-up setting:', error);
-                    return false;
-                }
-                trackUsage('update self sign-up setting', formatUsagePayload({ allowed: !!allowed }));
-                return true;
-            },
-
             saveSettings: async (settings) => {
                 const { error } = await supabaseClient
                     .from('settings')
@@ -2647,7 +2621,6 @@
         let authAccountsLoaded = false;
         let authAccountsRequested = false;
         let competitorEmails = {};   // username -> the email they are expected to sign in with (admin only)
-        let allowSelfSignup = false;
 
         async function loadAuthAccounts() {
             const { data, error } = await supabaseClient.rpc('admin_list_accounts');
@@ -2666,25 +2639,6 @@
                 competitorEmails = {};
                 (emailRows || []).forEach(row => { competitorEmails[row.username] = row.email; });
             }
-
-            allowSelfSignup = await Storage.getAllowSelfSignup();
-            const toggle = document.getElementById('allowSelfSignupToggle');
-            if (toggle) toggle.checked = allowSelfSignup;
-        }
-
-        async function toggleAllowSelfSignup(allowed) {
-            if (!isCurrentUserAdmin()) return;
-            if (allowed && !confirm('Anyone who signs in with an email you have not registered will be able to create their own competitor profile. Turn this on?')) {
-                document.getElementById('allowSelfSignupToggle').checked = false;
-                return;
-            }
-            const ok = await Storage.setAllowSelfSignup(allowed);
-            if (!ok) {
-                alert('Could not save that setting. Please try again.');
-                document.getElementById('allowSelfSignupToggle').checked = allowSelfSignup;
-                return;
-            }
-            allowSelfSignup = !!allowed;
         }
 
         async function refreshCompetitorAccounts() {
@@ -2820,6 +2774,7 @@
                             <div class="cc-field cc-wide">
                                 <label for="new-email-admin">Sign-in email</label>
                                 <input type="email" id="new-email-admin" placeholder="The email they will sign in with" autocapitalize="none" autocorrect="off" spellcheck="false">
+                                <span class="profile-hint">They can only sign in once an email is set.</span>
                             </div>
                             <div class="cc-field">
                                 <label for="new-team1-admin">Supported team 1</label>
@@ -2873,6 +2828,7 @@
                             <div class="cc-field cc-wide">
                                 <label for="edit-email-${username}">Sign-in email</label>
                                 <input type="email" id="edit-email-${username}" value="${escapeHtml(competitorEmails[username] || '')}" placeholder="The email they will sign in with" autocapitalize="none" autocorrect="off" spellcheck="false">
+                                <span class="profile-hint">Changing or clearing this moves their login: the old email stops working.</span>
                             </div>
                             <div class="cc-field">
                                 <label for="edit-team1-${username}">Supported team 1</label>
@@ -3079,10 +3035,11 @@
                 const { error: emailError } = await supabaseClient.rpc('admin_set_competitor_email', { p_username: newUsername, p_email: newEmail });
                 if (emailError) {
                     alert('Saved, but the sign-in email was not: ' + (emailError.message || 'unknown error'));
-                } else if (newEmail) {
-                    competitorEmails[newUsername] = newEmail;
                 } else {
-                    delete competitorEmails[newUsername];
+                    if (newEmail) competitorEmails[newUsername] = newEmail;
+                    else delete competitorEmails[newUsername];
+                    // Changing the email releases their old sign-in account: reload who is linked
+                    await loadAuthAccounts();
                 }
             }
 
@@ -3386,16 +3343,42 @@
 
         function showLoginScreen() {
             document.getElementById('loginView').classList.remove('hidden');
-            document.getElementById('setupView').classList.add('hidden');
             document.getElementById('appView').classList.add('hidden');
         }
 
-        function showSetupFeedback(message, type) {
-            const feedbackEl = document.getElementById('setupFeedback');
-            feedbackEl.textContent = message;
-            feedbackEl.classList.remove('hidden', 'success', 'error', 'info');
-            feedbackEl.classList.add(type);
+        // Shown when an email is not registered for the game: tells them who to ask
+        async function showUnrecognisedEmailModal(email) {
+            const modal = document.getElementById('unrecognisedEmailModal');
+            const body = document.getElementById('unrecognisedEmailBody');
+            if (!modal || !body) return;
+
+            const { data } = await supabaseClient.rpc('login_admin_names');
+            const names = (Array.isArray(data) ? data : [])
+                .map(name => toTitleCase(String(name || '').trim()))
+                .filter(Boolean);
+            const adminsHtml = names.length > 0
+                ? `<ul class="unrecognised-admins">${names.map(name => `<li>${escapeHtml(name)}</li>`).join('')}</ul>`
+                : '<p class="profile-hint">Ask whoever runs the game.</p>';
+
+            body.innerHTML = `
+                <p><strong>${escapeHtml(email)}</strong> isn't registered for this game.</p>
+                <p>Please check you've typed the email you registered with, or contact an admin to get access:</p>
+                ${adminsHtml}`;
+            modal.classList.remove('hidden');
+            const closeButton = document.getElementById('unrecognisedEmailClose');
+            if (closeButton) closeButton.focus();
         }
+
+        function closeUnrecognisedEmailModal() {
+            const modal = document.getElementById('unrecognisedEmailModal');
+            if (modal) modal.classList.add('hidden');
+            const emailInput = document.getElementById('loginEmail');
+            if (emailInput && !document.getElementById('loginView').classList.contains('hidden')) emailInput.focus();
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') closeUnrecognisedEmailModal();
+        });
 
         // Login as guest (view only)
         function loginAsGuest() {
@@ -3421,6 +3404,20 @@
             }
 
             button.disabled = true;
+
+            // Only emails an admin has registered can sign in: check before sending anything
+            const { data: registered, error: checkError } = await supabaseClient.rpc('check_login_email', { p_email: email });
+            if (checkError) {
+                showLoginFeedback('Could not check your email. Please try again.', 'error');
+                button.disabled = false;
+                return;
+            }
+            if (registered !== true) {
+                button.disabled = false;
+                await showUnrecognisedEmailModal(email);
+                return;
+            }
+
             const { error } = await supabaseClient.auth.signInWithOtp({
                 email,
                 options: { shouldCreateUser: true }
@@ -3599,7 +3596,10 @@
 
             const row = Array.isArray(data) ? data[0] : data;
             if (!row) {
-                showProfileSetup();
+                // Signed in, but this email is not registered for the game: back out with the same message
+                const unrecognisedEmail = currentAuthEmail;
+                await logout();
+                await showUnrecognisedEmailModal(unrecognisedEmail);
                 return;
             }
 
@@ -3619,108 +3619,6 @@
             adminUsernames = await Storage.getAdminUsernames();
             trackUsage('user logs in', formatUsagePayload({ username, source }), username);
             showApp();
-        }
-
-        // Signed in but no competitor linked: let them create one (or wait for an admin to link them)
-        async function showProfileSetup() {
-            document.getElementById('loginView').classList.add('hidden');
-            document.getElementById('appView').classList.add('hidden');
-            document.getElementById('setupView').classList.remove('hidden');
-            document.getElementById('setupFeedback').className = 'login-feedback hidden';
-
-            // Hide both panels until we know whether new sign-ups are allowed
-            document.getElementById('setupForm').classList.add('hidden');
-            document.getElementById('setupClosed').classList.add('hidden');
-            document.getElementById('setupIntro').textContent = `Signed in as ${currentAuthEmail}.`;
-
-            const open = await Storage.getAllowSelfSignup();
-            document.getElementById('setupForm').classList.toggle('hidden', !open);
-            document.getElementById('setupClosed').classList.toggle('hidden', open);
-            if (!open) return;
-
-            document.getElementById('setupIntro').textContent =
-                `Signed in as ${currentAuthEmail}. Create your competitor profile to start predicting.`;
-            renderTeamFlagsPicker('setupTeamsPicker', []);
-
-            const nicknameInput = document.getElementById('setupNickname');
-            if (!nicknameInput.value.trim()) {
-                nicknameInput.value = suggestDisplayNameFromEmail(currentAuthEmail);
-            }
-        }
-
-        // Default display name: the first name guessed from the email prefix (ben.selby@... -> Ben)
-        function suggestDisplayNameFromEmail(email) {
-            const prefix = String(email || '').split('@')[0].toLowerCase();
-            const firstName = prefix.split(/[^a-z]+/).find(Boolean) || '';
-            return toTitleCase(firstName);
-        }
-
-        // Default username: the email prefix reduced to letters/numbers, made unique if already taken
-        function suggestUsernameFromEmail(email) {
-            const prefix = String(email || '').split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-            const base = (prefix || 'player').slice(0, 26);
-            let candidate = base;
-            for (let suffix = 2; candidate === 'guest' || users[candidate]; suffix++) {
-                candidate = `${base}${suffix}`;
-            }
-            return candidate;
-        }
-
-        async function createMyProfile() {
-            const nickname = document.getElementById('setupNickname').value.trim();
-            const supportedTeams = getSelectedTeams('setupTeamsPicker');
-
-            if (!nickname) {
-                showSetupFeedback('Please enter a display name.', 'error');
-                return;
-            }
-            if (hasUnsafeDisplayChars(nickname)) {
-                showSetupFeedback('Display name cannot contain < > or " characters.', 'error');
-                return;
-            }
-            const nicknameTaken = Object.keys(users).some(u =>
-                users[u].nickname && users[u].nickname.toLowerCase() === nickname.toLowerCase()
-            );
-            if (nicknameTaken) {
-                showSetupFeedback('This display name is already taken. Please choose another.', 'error');
-                return;
-            }
-
-            // The username is an internal handle derived from the email. If someone else
-            // grabbed it since we last loaded users, refresh and pick the next free one.
-            let error = null;
-            for (let attempt = 0; attempt < 3; attempt++) {
-                ({ error } = await supabaseClient.rpc('create_my_profile', {
-                    p_username: suggestUsernameFromEmail(currentAuthEmail),
-                    p_nickname: nickname,
-                    p_supported_teams: supportedTeams.length > 0 ? supportedTeams.join(',') : null
-                }));
-                if (!error || !/username is already taken/i.test(error.message || '')) break;
-                users = await Storage.getUsers();
-            }
-            if (error) {
-                showSetupFeedback(error.message || 'Could not create your profile. Please try again.', 'error');
-                return;
-            }
-
-            users = await Storage.getUsers();
-            await recheckProfileLink();
-        }
-
-        // Re-run the account -> competitor lookup (e.g. after an admin links the account)
-        async function recheckProfileLink() {
-            const { data } = await supabaseClient.auth.getSession();
-            const session = data && data.session;
-            if (!session) {
-                showLoginScreen();
-                return;
-            }
-            users = await Storage.getUsers();
-            authHandledUserId = session.user.id;
-            await resolveSignedInUser(session, 'profile_check');
-            if (!currentUsername) {
-                showSetupFeedback('No competitor is linked to this account yet.', 'info');
-            }
         }
 
         // Handle Enter key on the login email input
@@ -3750,7 +3648,6 @@
 
             document.getElementById('loginEmail').value = '';
             document.getElementById('loginFeedback').className = 'login-feedback hidden';
-            document.getElementById('setupNickname').value = '';
             pendingLoginEmail = '';
             document.getElementById('loginCode').value = '';
             document.getElementById('loginCodeEntry').classList.add('hidden');
@@ -3778,7 +3675,6 @@
         function showApp() {
             isGuest = false;
             document.getElementById('loginView').classList.add('hidden');
-            document.getElementById('setupView').classList.add('hidden');
             document.getElementById('appView').classList.remove('hidden');
 
             const user = users[currentUsername];
