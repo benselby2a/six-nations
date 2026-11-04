@@ -4366,3 +4366,35 @@
     background: rgba(255, 255, 255, 0.06);
     font-weight: 700;
 }
+
+/* Invited, not signed in yet */
+.pending-invites {
+    padding: 0.85rem 1rem;
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.pending-invite {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.pending-invite:first-of-type {
+    margin-top: 0.4rem;
+}
+
+.pending-invite-email {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.pending-invite .btn-small {
+    flex: none;
+    margin: 0;
+    padding: 0.6rem 1rem;
+}

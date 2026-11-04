@@ -20,7 +20,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261025-22">
+    <link rel="stylesheet" href="styles.css?v=20261025-23">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -73,6 +73,26 @@
                         <button type="button" id="verifyCodeBtn" onclick="verifyLoginCode()">Sign In With Code</button>
                     </form>
                 </div>
+            </div>
+        </div>
+
+        <!-- First sign-in: an invited person fills in their own details -->
+        <div id="setupView" class="hidden">
+            <div class="login-section">
+                <h2>Welcome</h2>
+                <div id="setupFeedback" class="login-feedback hidden"></div>
+                <p class="profile-hint" id="setupIntro" style="margin-bottom: 1.5rem;"></p>
+
+                <div class="input-group">
+                    <label for="setupNickname">Display Name</label>
+                    <input type="text" id="setupNickname" placeholder="How you'll appear on the leaderboard" autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label>Supported Teams (up to 2)</label>
+                    <div class="team-flags-picker" id="setupTeamsPicker"></div>
+                </div>
+                <button type="button" onclick="createMyProfile()">Join The Game</button>
+                <button type="button" class="btn-cancel" onclick="logout()">Sign Out</button>
             </div>
         </div>
 
@@ -739,6 +759,6 @@
         <button type="button" class="install-tip-close" aria-label="Dismiss" onclick="dismissInstallTip()">&#10005;</button>
     </div>
 
-    <script src="app.js?v=20261025-22"></script>
+    <script src="app.js?v=20261025-23"></script>
 </body>
 </html>

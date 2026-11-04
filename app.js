@@ -2621,6 +2621,7 @@
         let authAccountsLoaded = false;
         let authAccountsRequested = false;
         let competitorEmails = {};   // username -> the email they are expected to sign in with (admin only)
+        let pendingInvites = [];     // emails invited but not signed in yet (admin only)
 
         async function loadAuthAccounts() {
             const { data, error } = await supabaseClient.rpc('admin_list_accounts');
@@ -2639,6 +2640,46 @@
                 competitorEmails = {};
                 (emailRows || []).forEach(row => { competitorEmails[row.username] = row.email; });
             }
+
+            const { data: inviteRows, error: inviteError } = await supabaseClient.rpc('admin_list_invites');
+            if (inviteError) {
+                console.error('Error loading invitations:', inviteError);
+            } else {
+                pendingInvites = inviteRows || [];
+            }
+        }
+
+        // Admin: invite someone by email alone. They fill in their own details the first time they sign in.
+        async function inviteByEmail() {
+            if (!isCurrentUserAdmin()) return;
+            const input = document.getElementById('new-invite-email');
+            const email = ((input && input.value) || '').trim().toLowerCase();
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                alert('That email does not look right.');
+                return;
+            }
+            const { error } = await supabaseClient.rpc('admin_invite_email', { p_email: email });
+            if (error) {
+                alert(error.message || 'Could not add that email.');
+                return;
+            }
+            trackUsage('invite email', formatUsagePayload({ email }));
+            if (input) input.value = '';
+            await loadAuthAccounts();
+            renderCompetitorManagement();
+        }
+
+        async function removeInvite(email) {
+            if (!isCurrentUserAdmin() || !email) return;
+            if (!confirm(`Remove the invitation for ${email}? They will no longer be able to sign in.`)) return;
+            const { error } = await supabaseClient.rpc('admin_remove_invite', { p_email: email });
+            if (error) {
+                alert(error.message || 'Could not remove that invitation.');
+                return;
+            }
+            trackUsage('remove invitation', formatUsagePayload({ email }));
+            await loadAuthAccounts();
+            renderCompetitorManagement();
         }
 
         async function refreshCompetitorAccounts() {
@@ -2757,9 +2798,34 @@
 
             let html = `
                 <div class="competitor-cards">
+                    <details class="competitor-card competitor-card-new" id="invite-card">
+                        <summary>
+                            <span class="cc-title"><span class="cc-name">+ Invite someone</span></span>
+                            <span class="cc-chevron" aria-hidden="true"></span>
+                        </summary>
+                        <div class="cc-fields">
+                            <div class="cc-field cc-wide">
+                                <label for="new-invite-email">Email</label>
+                                <input type="email" id="new-invite-email" placeholder="The email they will sign in with" autocapitalize="none" autocorrect="off" spellcheck="false">
+                                <span class="profile-hint">That is all you need. Nothing is emailed: tell them to open the app and sign in with this email, and they fill in their own name and teams the first time.</span>
+                            </div>
+                            <div class="cc-actions cc-wide">
+                                <button type="button" class="btn-success" onclick="inviteByEmail()">Add Email</button>
+                            </div>
+                        </div>
+                    </details>
+                    ${pendingInvites.length > 0 ? `
+                    <div class="pending-invites">
+                        <div class="cc-label">Invited, not signed in yet</div>
+                        ${pendingInvites.map(invite => `
+                            <div class="pending-invite">
+                                <span class="pending-invite-email">${escapeHtml(invite.email)}</span>
+                                <button type="button" class="btn-small btn-danger" data-email="${escapeHtml(invite.email)}" onclick="removeInvite(this.dataset.email)">Remove</button>
+                            </div>`).join('')}
+                    </div>` : ''}
                     <details class="competitor-card competitor-card-new" id="new-competitor-card">
                         <summary>
-                            <span class="cc-title"><span class="cc-name">+ Add a competitor</span></span>
+                            <span class="cc-title"><span class="cc-name">+ Add a competitor manually</span></span>
                             <span class="cc-chevron" aria-hidden="true"></span>
                         </summary>
                         <div class="cc-fields">
@@ -2774,7 +2840,7 @@
                             <div class="cc-field cc-wide">
                                 <label for="new-email-admin">Sign-in email</label>
                                 <input type="email" id="new-email-admin" placeholder="The email they will sign in with" autocapitalize="none" autocorrect="off" spellcheck="false">
-                                <span class="profile-hint">They can only sign in once an email is set.</span>
+                                <span class="profile-hint">Leave empty for someone who will not sign in. They can only sign in once an email is set.</span>
                             </div>
                             <div class="cc-field">
                                 <label for="new-team1-admin">Supported team 1</label>
@@ -3343,7 +3409,15 @@
 
         function showLoginScreen() {
             document.getElementById('loginView').classList.remove('hidden');
+            document.getElementById('setupView').classList.add('hidden');
             document.getElementById('appView').classList.add('hidden');
+        }
+
+        function showSetupFeedback(message, type) {
+            const feedbackEl = document.getElementById('setupFeedback');
+            feedbackEl.textContent = message;
+            feedbackEl.classList.remove('hidden', 'success', 'error', 'info');
+            feedbackEl.classList.add(type);
         }
 
         // Shown when an email is not registered for the game: tells them who to ask
@@ -3596,6 +3670,13 @@
 
             const row = Array.isArray(data) ? data[0] : data;
             if (!row) {
+                // No competitor yet. An invited email fills in its own details; anything else is turned away
+                const { data: invited } = await supabaseClient.rpc('am_i_invited');
+                if (invited === true) {
+                    await showProfileSetup();
+                    return;
+                }
+
                 // Signed in, but this email is not registered for the game: back out with the same message
                 const unrecognisedEmail = currentAuthEmail;
                 await logout();
@@ -3619,6 +3700,70 @@
             adminUsernames = await Storage.getAdminUsernames();
             trackUsage('user logs in', formatUsagePayload({ username, source }), username);
             showApp();
+        }
+
+        // First sign-in by an invited person: they choose how they appear on the leaderboard
+        async function showProfileSetup() {
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('appView').classList.add('hidden');
+            document.getElementById('setupView').classList.remove('hidden');
+            document.getElementById('setupFeedback').className = 'login-feedback hidden';
+            document.getElementById('setupIntro').textContent =
+                `Signed in as ${currentAuthEmail}. Choose how you'll appear on the leaderboard.`;
+            renderTeamFlagsPicker('setupTeamsPicker', []);
+
+            const nicknameInput = document.getElementById('setupNickname');
+            if (!nicknameInput.value.trim()) {
+                nicknameInput.value = suggestDisplayNameFromEmail(currentAuthEmail);
+            }
+        }
+
+        // Default display name: the first name guessed from the email prefix (ben.selby@... -> Ben)
+        function suggestDisplayNameFromEmail(email) {
+            const prefix = String(email || '').split('@')[0].toLowerCase();
+            const firstName = prefix.split(/[^a-z]+/).find(Boolean) || '';
+            return toTitleCase(firstName);
+        }
+
+        async function createMyProfile() {
+            const nickname = document.getElementById('setupNickname').value.trim();
+            const supportedTeams = getSelectedTeams('setupTeamsPicker');
+
+            if (!nickname) {
+                showSetupFeedback('Please enter a display name.', 'error');
+                return;
+            }
+            if (hasUnsafeDisplayChars(nickname)) {
+                showSetupFeedback('Display name cannot contain < > or " characters.', 'error');
+                return;
+            }
+            const nicknameTaken = Object.keys(users).some(u =>
+                users[u].nickname && users[u].nickname.toLowerCase() === nickname.toLowerCase()
+            );
+            if (nicknameTaken) {
+                showSetupFeedback('This display name is already taken. Please choose another.', 'error');
+                return;
+            }
+
+            const { error } = await supabaseClient.rpc('create_my_profile', {
+                p_nickname: nickname,
+                p_supported_teams: supportedTeams.length > 0 ? supportedTeams.join(',') : null
+            });
+            if (error) {
+                showSetupFeedback(error.message || 'Could not create your profile. Please try again.', 'error');
+                return;
+            }
+
+            // The competitor exists now: load it and carry on into the app
+            const { data } = await supabaseClient.auth.getSession();
+            const session = data && data.session;
+            if (!session) {
+                showLoginScreen();
+                return;
+            }
+            users = await Storage.getUsers();
+            authHandledUserId = session.user.id;
+            await resolveSignedInUser(session, 'first_sign_in');
         }
 
         // Handle Enter key on the login email input
@@ -3648,6 +3793,7 @@
 
             document.getElementById('loginEmail').value = '';
             document.getElementById('loginFeedback').className = 'login-feedback hidden';
+            document.getElementById('setupNickname').value = '';
             pendingLoginEmail = '';
             document.getElementById('loginCode').value = '';
             document.getElementById('loginCodeEntry').classList.add('hidden');
@@ -3675,6 +3821,7 @@
         function showApp() {
             isGuest = false;
             document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('setupView').classList.add('hidden');
             document.getElementById('appView').classList.remove('hidden');
 
             const user = users[currentUsername];
