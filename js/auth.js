@@ -517,6 +517,7 @@
             renderMatches(); // Render the prediction inputs first
             loadPredictions(); // Then populate with saved predictions
             showSummary(); // Load summary by default (includes leaderboard)
+            maybeOfferTour();
         }
 
         // Show app as guest (view only mode)

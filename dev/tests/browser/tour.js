@@ -110,6 +110,18 @@ const mock = `
   await page.goto('file://' + path); await page.waitForTimeout(Math.min(800, 40));
   await page.fill('#loginEmail', 'ben@example.com'); await page.click('#sendLoginCodeBtn'); await page.waitForTimeout(Math.min(150, 40));
   await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(Math.min(1000, 40));
+  const promptShown = () => page.evaluate(() => !document.getElementById('tourPromptModal').classList.contains('hidden'));
+  console.log('first sign-in shows the prompt:', await promptShown(), '| stored answer:', await page.evaluate(() => localStorage.getItem('tourAnswered:ben')));
+  await page.click('#tourPromptYes'); await page.waitForTimeout(600);
+  console.log('Take the tour starts it:', await page.evaluate(() => ({ open: document.body.classList.contains('tour-open'), prompt: !document.getElementById('tourPromptModal').classList.contains('hidden'), stored: localStorage.getItem('tourAnswered:ben') })));
+  console.log('example data on screen:', await page.evaluate(() => ({ names: [...document.querySelectorAll('.competitor-name')].map(e => e.textContent.trim()), realNameVisible: /Sam|Newbie|Ben/.test([...document.querySelectorAll('.competitor-name')].map(e => e.textContent).join(' ').replace('You', '')), animations: getComputedStyle(document.querySelector('.summary-container')).animationName, matches: [...document.querySelectorAll('.match-header-cell .match-teams')].length, label: document.querySelector('.tour-demo').textContent })));
+  const writesBefore = await page.evaluate(() => __log.length);
+  await page.keyboard.press('Escape'); await page.waitForTimeout(700);
+  console.log('after the tour real data is back:', await page.evaluate(() => ({ names: [...document.querySelectorAll('.competitor-name')].map(e => e.textContent.trim()), matches: matches.map(m => m.id), usersKeys: Object.keys(users), writesDuringTour: __log.length - 0 === 0 ? 0 : 'n/a' })), '| log entries added by the tour:', await page.evaluate((b) => __log.slice(b).filter(l => l.op !== 'select').length, writesBefore));
+  await page.evaluate(() => maybeOfferTour());
+  console.log('answered once, not asked again:', !(await promptShown()));
+  await page.evaluate(() => { localStorage.removeItem('tourAnswered:ben'); maybeOfferTour(); }); await page.click('button:has-text("No thanks")'); await page.waitForTimeout(100);
+  console.log('No thanks remembered:', await page.evaluate(() => localStorage.getItem('tourAnswered:ben')), '| prompt gone:', !(await promptShown()));
   await page.evaluate(() => switchYear(2026)); await page.waitForTimeout(500);
   const st = () => page.evaluate(() => { const spot = document.getElementById('tourSpot'); const r = spot.getBoundingClientRect(); const card = document.getElementById('tourCard').getBoundingClientRect();
     return { open: document.body.classList.contains('tour-open'), count: document.getElementById('tourCount').textContent, title: document.getElementById('tourTitle').textContent,

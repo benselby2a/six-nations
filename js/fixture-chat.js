@@ -244,6 +244,7 @@ function onFixtureChatInput() {
 }
 
 async function reloadFixtureChat() {
+    if (tourDemoActive) return;
     fixtureChat = await Storage.getFixtureChat(matches.map(m => m.id));
     refreshChatIndicators();
     renderFixtureChat();

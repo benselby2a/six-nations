@@ -20,7 +20,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261025-44">
+    <link rel="stylesheet" href="styles.css?v=20261025-47">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -102,6 +102,18 @@
         </div>
 
         <!-- Shown when an email is not registered for the game -->
+        <!-- Offered once after the first sign-in -->
+        <div id="tourPromptModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="tourPromptTitle">
+            <div class="modal-content">
+                <h2 id="tourPromptTitle" style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 0.8rem; letter-spacing: 0.1em;">Welcome</h2>
+                <p style="margin-bottom: 1.2rem;">Would you like a quick tour of how it works? It takes about a minute and uses example data. You can take it any time from the ? Help button.</p>
+                <div class="fixture-modal-actions">
+                    <button type="button" id="tourPromptYes" onclick="answerTourPrompt(true)">Take the tour</button>
+                    <button type="button" class="btn-cancel" onclick="answerTourPrompt(false)">No thanks</button>
+                </div>
+            </div>
+        </div>
+
         <div id="unrecognisedEmailModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="unrecognisedEmailTitle" onclick="if (event.target === this) closeUnrecognisedEmailModal()">
             <div class="modal-content">
                 <h2 id="unrecognisedEmailTitle" style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">We don't recognise that email</h2>
@@ -770,7 +782,7 @@
         <div class="tour-scrim"></div>
         <div class="tour-spot" id="tourSpot"></div>
         <div class="tour-card" id="tourCard" role="dialog" aria-modal="true" aria-labelledby="tourTitle">
-            <div class="tour-head"><span class="tour-count" id="tourCount"></span><button type="button" class="tour-skip" onclick="endTour()" aria-label="Close the tour">&#10005;</button></div>
+            <div class="tour-head"><span class="tour-count" id="tourCount"></span><span class="tour-demo">Example data</span><button type="button" class="tour-skip" onclick="endTour()" aria-label="Close the tour">&#10005;</button></div>
             <h3 id="tourTitle"></h3>
             <div class="tour-body" id="tourBody"></div>
             <div class="tour-foot">
@@ -792,26 +804,26 @@
         <button type="button" class="install-tip-close" aria-label="Dismiss" onclick="dismissInstallTip()">&#10005;</button>
     </div>
 
-    <script src="js/constants.js?v=20261025-44"></script>
-    <script src="js/storage.js?v=20261025-44"></script>
-    <script src="js/state.js?v=20261025-44"></script>
-    <script src="js/years-admin.js?v=20261025-44"></script>
-    <script src="js/init.js?v=20261025-44"></script>
-    <script src="js/admin-fixtures.js?v=20261025-44"></script>
-    <script src="js/admin-competitors.js?v=20261025-44"></script>
-    <script src="js/profile.js?v=20261025-44"></script>
-    <script src="js/auth.js?v=20261025-44"></script>
-    <script src="js/predictions.js?v=20261025-44"></script>
-    <script src="js/scoring.js?v=20261025-44"></script>
-    <script src="js/trevs-tips.js?v=20261025-44"></script>
-    <script src="js/leaderboard.js?v=20261025-44"></script>
-    <script src="js/worm-chart.js?v=20261025-44"></script>
-    <script src="js/summary.js?v=20261025-44"></script>
-    <script src="js/fixture-chat.js?v=20261025-44"></script>
-    <script src="js/tour.js?v=20261025-44"></script>
-    <script src="js/export-pdf.js?v=20261025-44"></script>
-    <script src="js/rules-admin.js?v=20261025-44"></script>
-    <script src="js/recovery-usage.js?v=20261025-44"></script>
-    <script src="js/app-shell.js?v=20261025-44"></script>
+    <script src="js/constants.js?v=20261025-47"></script>
+    <script src="js/storage.js?v=20261025-47"></script>
+    <script src="js/state.js?v=20261025-47"></script>
+    <script src="js/years-admin.js?v=20261025-47"></script>
+    <script src="js/init.js?v=20261025-47"></script>
+    <script src="js/admin-fixtures.js?v=20261025-47"></script>
+    <script src="js/admin-competitors.js?v=20261025-47"></script>
+    <script src="js/profile.js?v=20261025-47"></script>
+    <script src="js/auth.js?v=20261025-47"></script>
+    <script src="js/predictions.js?v=20261025-47"></script>
+    <script src="js/scoring.js?v=20261025-47"></script>
+    <script src="js/trevs-tips.js?v=20261025-47"></script>
+    <script src="js/leaderboard.js?v=20261025-47"></script>
+    <script src="js/worm-chart.js?v=20261025-47"></script>
+    <script src="js/summary.js?v=20261025-47"></script>
+    <script src="js/fixture-chat.js?v=20261025-47"></script>
+    <script src="js/tour.js?v=20261025-47"></script>
+    <script src="js/export-pdf.js?v=20261025-47"></script>
+    <script src="js/rules-admin.js?v=20261025-47"></script>
+    <script src="js/recovery-usage.js?v=20261025-47"></script>
+    <script src="js/app-shell.js?v=20261025-47"></script>
 </body>
 </html>

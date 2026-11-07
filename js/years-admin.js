@@ -81,6 +81,7 @@
         }
 
         async function loadYearData() {
+            if (tourDemoActive) return;   // the guided tour is showing example data
             applySelectedYearMatches();
             const [loadedUsers, loadedSettings, loadedRules, loadedJokerSelections, loadedChat] = await Promise.all([
                 Storage.getUsers(),
