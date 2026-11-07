@@ -4514,3 +4514,9 @@ body.fixture-chat-open .fixture-chat-sheet { transform: none; }
 .chat-badge .chat-emoji { font-size: 0.7rem; letter-spacing: -0.05em; }
 .chat-badge .chat-count { font-size: 0.6rem; font-weight: 600; color: var(--bright-gold); }
 .chat-chip .chat-emoji { letter-spacing: -0.05em; }
+
+/* Scores in the match headers stay on one line, so every score box is the same height (and the chat chips line up) */
+.match-header-cell .match-result { white-space: nowrap; }
+@media (max-width: 600px) {
+    .match-header-cell .match-result { font-size: 0.95rem; padding: 0.2rem 0.4rem; }
+}
