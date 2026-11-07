@@ -3507,10 +3507,6 @@
             rememberLoginEmail(email);
             showLoginFeedback(`We've emailed a code to ${email}. Enter it below.`, 'success');
             document.getElementById('loginCodeEntry').classList.remove('hidden');
-            // Only offer the clipboard button where the browser can read the clipboard
-            if (navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
-                document.getElementById('pasteCodeBtn').classList.remove('hidden');
-            }
             document.getElementById('loginCode').focus();
             startLoginCodeCooldown(button, 30);
         }
@@ -3527,7 +3523,7 @@
                 clearInterval(loginCodeCooldownTimer);
                 const sendButton = document.getElementById('sendLoginCodeBtn');
                 sendButton.disabled = false;
-                sendButton.textContent = 'Email Me a Code';
+                sendButton.textContent = 'Email a login code';
             }
         }
 
@@ -3562,28 +3558,6 @@
             showLoginFeedback('Signing you in...', 'success');
         }
 
-        // Fallback when the phone does not suggest the code: copy it from the email, then tap this.
-        // The browser asks the person to confirm the paste, and we pick the number out of whatever was copied.
-        async function pasteLoginCode() {
-            document.getElementById('loginFeedback').className = 'login-feedback hidden';
-            let text = '';
-            try {
-                text = await navigator.clipboard.readText();
-            } catch (error) {
-                showLoginFeedback('Could not read the clipboard. Press and hold in the code box and choose Paste instead.', 'error');
-                return;
-            }
-
-            const match = String(text || '').match(/\b\d{6,10}\b/);
-            if (!match) {
-                showLoginFeedback('There is no code on the clipboard. Copy the code from the email first.', 'error');
-                return;
-            }
-
-            document.getElementById('loginCode').value = match[0];
-            verifyLoginCode();
-        }
-
         // Pasting a code (or the whole line it came in) into the box signs in straight away
         function handleCodePaste(event) {
             const text = (event.clipboardData && event.clipboardData.getData('text')) || '';
@@ -3603,7 +3577,7 @@
         function startLoginCodeCooldown(button, seconds) {
             clearInterval(loginCodeCooldownTimer);
             let remaining = seconds;
-            const label = 'Email Me a Code';
+            const label = 'Email a login code';
             button.disabled = true;
             button.textContent = `Resend in ${remaining}s`;
             loginCodeCooldownTimer = setInterval(() => {
@@ -3802,7 +3776,7 @@
             clearInterval(loginCodeCooldownTimer);
             const sendButton = document.getElementById('sendLoginCodeBtn');
             sendButton.disabled = false;
-            sendButton.textContent = 'Email Me a Code';
+            sendButton.textContent = 'Email a login code';
 
             if (!wasGuest) {
                 await supabaseClient.auth.signOut();

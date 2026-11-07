@@ -20,7 +20,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261025-23">
+    <link rel="stylesheet" href="styles.css?v=20261025-24">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -58,7 +58,7 @@
                             <datalist id="loginEmailOptions"></datalist>
                             <span class="profile-hint">We'll email you a code to sign in. Only emails registered for the game can sign in.</span>
                         </div>
-                        <button type="button" id="sendLoginCodeBtn" onclick="sendLoginCode()">Email Me a Code</button>
+                        <button type="button" id="sendLoginCodeBtn" onclick="sendLoginCode()">Email a login code</button>
                     </form>
 
                     <!-- Kept as its own form with a single code field so Safari treats it as a one-time-code
@@ -69,7 +69,6 @@
                             <input type="text" id="loginCode" name="one-time-code" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="10" enterkeyhint="go" aria-label="One-time login code" placeholder="123456" onpaste="handleCodePaste(event)" onkeypress="handleCodeKeyPress(event)">
                             <span class="profile-hint">Enter the code from the email. It can take a minute to arrive.</span>
                         </div>
-                        <button type="button" id="pasteCodeBtn" class="btn-cancel hidden" onclick="pasteLoginCode()">Paste Code From Clipboard</button>
                         <button type="button" id="verifyCodeBtn" onclick="verifyLoginCode()">Sign In With Code</button>
                     </form>
                 </div>
@@ -759,6 +758,6 @@
         <button type="button" class="install-tip-close" aria-label="Dismiss" onclick="dismissInstallTip()">&#10005;</button>
     </div>
 
-    <script src="app.js?v=20261025-23"></script>
+    <script src="app.js?v=20261025-24"></script>
 </body>
 </html>
