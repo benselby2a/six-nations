@@ -444,7 +444,7 @@ This is the main browser-to-Supabase boundary.
 
 ## Guided tour
 
-- `js/tour.js`: the "Take a tour" button in the App Help pop-up (`#globalHelpModal`) starts a six-step tour of the main features (rules, predictions, current score, PDF summary, chat, stats). Admin features are not covered. Markup is `#tourLayer` in `index.html`.
+- `js/tour.js`: the "Take a tour" button in the App Help pop-up (`#globalHelpModal`) starts a six-step tour of the main features (rules, predictions, current score, PDF summary, chat, stats), plus an "Add it to your Home Screen" step on iPhones and iPads that have not installed it. Admin features are not covered. Markup is `#tourLayer` in `index.html`.
 - Steps navigate by clicking the real tab buttons (so `showTab` gets its event), then spotlight a target by selector (`#tourSpot`, a box-shadow cut-out) with the card at the top or bottom, clear of the highlight. The rules step is built from the year's `getEffectiveScoringRules()`; the chat step is skipped until the chat tables exist; guests get a sign-in note instead of the predictions screen. Esc and the arrow keys work.
 - Test: `dev/tests/browser/tour.js`.
 - The tour runs on example data: `enterTourDemo()` swaps `users`, `matches` (in place), `allMatches`, settings, jokers and `fixtureChat` for made-up ones and stubs `supabaseClient.from/rpc` so nothing is read or written; `leaveTourDemo()` restores everything and the real summary is reloaded. `loadYearData` and `reloadFixtureChat` do nothing while `tourDemoActive`. Animations and transitions are switched off under `body.tour-open`.

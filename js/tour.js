@@ -151,6 +151,13 @@ function tourRevealChip() {
     if (chip) container.scrollLeft += chip.getBoundingClientRect().left - (edge + 8);
 }
 
+// iPhone or iPad, not already opened from the Home Screen
+function tourCanAddToHomeScreen() {
+    const ua = navigator.userAgent || '';
+    const ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    return ios && !isStandaloneApp();
+}
+
 function tourTabButton(name) {
     const btn = document.querySelector(`.tabs .tab[onclick*="'${name}'"]`);
     return btn && btn.offsetParent !== null ? btn : null;
@@ -198,6 +205,12 @@ function tourBuildSteps(rulesHtml, chatLive) {
         target: () => { const el = document.getElementById('triesStatsContainer'); return el ? el.parentElement : null; },
         html: () => '<p>Under the table you will find Tournament Stats (tries so far and the projected total), the prize money as things stand, and a chart of how everyone\'s points have moved match by match.</p>'
     });
+    if (tourCanAddToHomeScreen()) {
+        steps.push({
+            title: 'Add it to your Home Screen',
+            html: () => '<p>For one-tap access, add the Six Nations Guesser to your iPhone Home Screen.</p><p>Tap the <strong>Share</strong> button <svg class="tour-share-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> in your browser, then choose <strong>Add to Home Screen</strong>. Open it from there and sign in with a code.</p>'
+        });
+    }
     return steps;
 }
 
