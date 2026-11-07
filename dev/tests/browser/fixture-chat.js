@@ -29,7 +29,7 @@ const mock = `
     settings: [{key:'predictions_locked:2026',value:'true'}],
     scoring_rules: [{id:1,year:2026,correct_result_points:3,perfect_score_bonus:3,draw_bonus:2,max_jokers_per_user:1,entry_fee_amount:10,payout_first_pct:100,payout_second_pct:0,payout_third_pct:0,payout_closest_tries_pct:0}],
     scoring_close_tiers: [{id:1,year:2026,tier_order:1,within_points:5,bonus_points:1}],
-    usage_events: [], competitor_emails: [], fixture_comments: [{id:1,match_id:1,user_id:2,target_user_id:null,body:'Great game <b>bold</b>',created_at:new Date(Date.now()-7200000).toISOString()},{id:2,match_id:1,user_id:1,target_user_id:2,body:'Bold pick Sam',created_at:new Date(Date.now()-3600000).toISOString()}], fixture_reactions: [{id:1,match_id:1,user_id:2,target_user_id:null,emoji:'🔥'},{id:2,match_id:1,user_id:1,target_user_id:2,emoji:'👏'},{id:3,match_id:1,user_id:2,target_user_id:2,emoji:'👏'},{id:4,match_id:1,user_id:1,target_user_id:2,emoji:'😂'},{id:5,match_id:1,user_id:1,target_user_id:1,emoji:'😭'}]
+    usage_events: [], competitor_emails: [], fixture_comments: [{id:1,match_id:1,user_id:2,target_user_id:null,body:'Great game <b>bold</b>',created_at:new Date(Date.now()-7200000).toISOString()},{id:3,match_id:2,user_id:2,target_user_id:1,body:'Brave Scotland pick',created_at:new Date().toISOString()},{id:2,match_id:1,user_id:1,target_user_id:2,body:'Bold pick Sam',created_at:new Date(Date.now()-3600000).toISOString()}], fixture_reactions: [{id:1,match_id:1,user_id:2,target_user_id:null,emoji:'🔥'},{id:2,match_id:1,user_id:1,target_user_id:2,emoji:'👏'},{id:3,match_id:1,user_id:2,target_user_id:2,emoji:'👏'},{id:4,match_id:1,user_id:1,target_user_id:2,emoji:'😂'},{id:5,match_id:1,user_id:1,target_user_id:1,emoji:'😭'},{id:6,match_id:2,user_id:2,target_user_id:1,emoji:'🔥'}]
   };
   window.__db = db; window.__log = [];
   const match = (row, f) => f.type==='eq' ? row[f.col]===f.val : f.type==='in' ? f.vals.includes(row[f.col]) : f.type==='neq' ? row[f.col]!==f.val : f.type==='gte' ? row[f.col]>=f.val : true;
@@ -115,6 +115,9 @@ const mock = `
   await page.evaluate(() => switchYear(2026)); await page.waitForTimeout(500);
   await page.click('button.tab:has-text("Match Summary")'); await page.waitForTimeout(200);
   await t('1 chips and badges', () => ({ chips: [...document.querySelectorAll('[data-chat-chip]')].map(c => c.textContent.trim()), badges: [...document.querySelectorAll('td[data-chat-user] .chat-badge')].map(b => b.parentElement.dataset.chatUser + ':' + b.textContent) }));
+  await t('1b tooltip text', () => ({ withResult: document.querySelector('td[data-chat-user="sam"][data-chat-match="1"] .tooltip').textContent.replace(/\s+/g, ' ').trim(), noResultNoJoker: document.querySelector('td[data-chat-user="ben"][data-chat-match="2"] .tooltip').textContent.replace(/\s+/g, ' ').trim(), empty: document.querySelector('td[data-chat-user="ben"][data-chat-match="1"] .tooltip').className }));
+  await page.hover('td[data-chat-user="sam"][data-chat-match="1"]'); await page.waitForTimeout(400);
+  console.log('1c hover shows the tooltip:', await page.evaluate(() => getComputedStyle(document.querySelector('td[data-chat-user="sam"][data-chat-match="1"] .tooltip')).visibility), '| clicking still opens the sheet:');
   await page.click('[data-chat-chip="1"]'); await page.waitForTimeout(200);
   await t('2 match chat opens', () => ({ open: document.body.classList.contains('fixture-chat-open'), title: document.getElementById('fixtureChatTitle').textContent, comments: [...document.querySelectorAll('.fc-comment-text')].map(x => x.textContent), who: [...document.querySelectorAll('.fc-who li')].map(x => x.textContent), injected: document.querySelectorAll('.fc-comment-text b').length, tabs: document.querySelectorAll('.fc-tab').length }));
   await page.fill('#fixtureChatInput', 'My first comment'); await page.click('#fixtureChatPost'); await page.waitForTimeout(300);
@@ -133,6 +136,7 @@ const mock = `
   await page.click('td[data-chat-user="sam"][data-chat-match="1"]'); await page.waitForTimeout(200);
   await t('7 prediction chat', () => ({ title: document.getElementById('fixtureChatTitle').textContent, tabs: [...document.querySelectorAll('.fc-tab')].map(x => x.textContent), card: document.querySelector('.fc-pred-card') && document.querySelector('.fc-pred-card').textContent.replace(/\s+/g, ' '), comments: [...document.querySelectorAll('.fc-comment-text')].map(x => x.textContent), picked: document.querySelectorAll('td.chat-picked').length }));
   await page.fill('#fixtureChatInput', 'About sam'); await page.click('#fixtureChatPost'); await page.waitForTimeout(300);
+  await t('8b tooltip updated in place', () => ({ text: document.querySelector('td[data-chat-user="sam"][data-chat-match="1"] .tooltip').textContent.replace(/\s+/g, ' ').trim().slice(-60) }));
   console.log('8a closed after posting:', !(await sheetOpen()));
   await t('8 posted about a prediction', () => ({ row: __db.fixture_comments.filter(c => c.body === 'About sam').map(c => ({ user_id: c.user_id, target: c.target_user_id })), badge: document.querySelector('td[data-chat-user="sam"][data-chat-match="1"] .chat-badge').textContent, matchChatUnchanged: __db.fixture_comments.filter(c => c.match_id === 1 && c.target_user_id === null).length }));
   await page.click('td[data-chat-user="sam"][data-chat-match="1"]'); await page.waitForTimeout(200);

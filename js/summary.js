@@ -187,13 +187,15 @@
                     if (isJoker) {
                         tooltipContent += `<span class="tooltip-line joker-bonus">🃏 Joker selection: points are doubled</span>`;
                     }
+                    tooltipContent += chatTooltipHtml(user.username, match.id);
+                    const tipClass = tooltipContent.replace(/<[^>]*>/g, '').trim() ? 'tooltip' : 'tooltip tooltip-empty';
 
                     if (hasResult) {
                         html += `<td class="${jokerCellClass}"${chatCellAttrs(user.username, match.id)}>
                             <div class="tooltip-container">
                                 <div class="${jokerScoreClass}"><span class="${score1Class}">${score1}</span> - <span class="${score2Class}">${score2}</span> ${jokerIndicator}</div>
                                 <span class="points-earned ${pointsClass}">${pointsEarned} pts</span>
-                                <div class="tooltip">${tooltipContent}</div>
+                                <div class="${tipClass}">${tooltipContent}</div>
                             </div>
                                 ${chatCellBadge(user.username, match.id)}
                         </td>`;
@@ -203,7 +205,17 @@
                                 <div class="tooltip-container">
                                     <div class="${jokerScoreClass}"><span class="${score1Class}">${score1}</span> - <span class="${score2Class}">${score2}</span> ${jokerIndicator}</div>
                                     <span class="points-earned points-placeholder">&nbsp;</span>
-                                    <div class="tooltip">${tooltipContent}</div>
+                                    <div class="${tipClass}">${tooltipContent}</div>
+                                </div>
+                                ${chatCellBadge(user.username, match.id)}
+                            </td>`;
+                        } else if (fixtureChat.available) {
+                            // No result yet and no Joker: the tooltip only carries the chat (emoji and comments)
+                            html += `<td class="${jokerCellClass}"${chatCellAttrs(user.username, match.id)}>
+                                <div class="tooltip-container">
+                                    <div class="${jokerScoreClass}"><span class="${score1Class}">${score1}</span> - <span class="${score2Class}">${score2}</span> ${jokerIndicator}</div>
+                                    <span class="points-earned points-placeholder">&nbsp;</span>
+                                    <div class="${tipClass}">${tooltipContent}</div>
                                 </div>
                                 ${chatCellBadge(user.username, match.id)}
                             </td>`;

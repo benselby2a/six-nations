@@ -681,23 +681,7 @@
             overflow: hidden;
         }
 
-        button::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.3);
-            transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s;
-        }
-
-        button:hover::after {
-            width: 300px;
-            height: 300px;
-        }
+        /* (the big white hover circle on buttons was removed) */
 
         button:hover {
             background: var(--bright-gold);
@@ -4526,3 +4510,20 @@ body.fixture-chat-open .fixture-chat-sheet { transform: none; }
 .chat-badge .chat-emoji { font-size: 1rem; letter-spacing: 0; line-height: 1.2; }
 .chat-badge .chat-count { font-size: 0.75rem; }
 .chat-chip .chat-emoji { font-size: 1rem; letter-spacing: 0; }
+
+/* Chat inside the prediction hover tooltip */
+.tooltip.tooltip-empty { display: none !important; }
+.tooltip-chat { display: block; white-space: normal; max-width: 260px; min-width: 150px; text-align: left; }
+.tooltip-chat:not(:empty) { margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(255, 255, 255, 0.2); }
+.tooltip-chat:empty { display: none; }
+.tooltip-chat .tooltip-comment { font-size: 0.8rem; overflow-wrap: anywhere; }
+.tooltip-chat .tooltip-more { font-size: 0.72rem; opacity: 0.65; }
+
+/* Chat buttons: no gold glow or lift from the global button hover */
+.fc-tab:hover, .fc-emoji:hover, .fc-close:hover, .fc-delete:hover, .chat-chip:hover { transform: none; box-shadow: none; }
+.fc-tab:hover { background: rgba(255, 255, 255, 0.05); }
+.fc-tab[aria-selected="true"]:hover { background: rgba(255, 255, 255, 0.08); }
+.fc-emoji:hover:not(:disabled) { background: rgba(255, 255, 255, 0.14); }
+.fc-emoji[aria-pressed="true"]:hover:not(:disabled) { background: rgba(212, 175, 55, 0.3); }
+.fc-delete:hover { background: transparent; }
+.chat-chip:hover { background: rgba(255, 255, 255, 0.12); }

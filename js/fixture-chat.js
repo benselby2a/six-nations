@@ -69,6 +69,27 @@ function chatCellBadge(username, matchId) {
     return inner ? `<span class="chat-badge" data-chat-badge aria-hidden="true">${inner}</span>` : '';
 }
 
+// Hover tooltip on a prediction: who reacted with which emoji, then the latest comments
+function chatTooltipInner(username, matchId) {
+    const thread = chatThread(matchId, username);
+    let html = '';
+    FIXTURE_CHAT_EMOJIS.filter(e => (thread.reactions[e] || []).length).forEach(emoji => {
+        const names = thread.reactions[emoji].map(w => w.username === currentUsername ? 'You' : escapeHtml(chatDisplayName(w.username))).join(', ');
+        html += `<span class="tooltip-line tooltip-reaction">${emoji} ${names}</span>`;
+    });
+    const recent = thread.comments.slice(-3);
+    if (thread.comments.length > recent.length) html += `<span class="tooltip-line tooltip-more">+${thread.comments.length - recent.length} earlier comment${thread.comments.length - recent.length === 1 ? '' : 's'}</span>`;
+    recent.forEach(c => {
+        html += `<span class="tooltip-line tooltip-comment"><strong>${escapeHtml(c.username ? chatDisplayName(c.username) : 'Someone')}:</strong> ${escapeHtml(c.body)}</span>`;
+    });
+    return html;
+}
+
+function chatTooltipHtml(username, matchId) {
+    if (!fixtureChat.available) return '';
+    return `<span class="tooltip-chat" data-tooltip-chat>${chatTooltipInner(username, matchId)}</span>`;
+}
+
 // Update chips and badges in place (no table re-render, so the scroll position is kept)
 function refreshChatIndicators() {
     document.querySelectorAll('[data-chat-chip]').forEach(chip => {
@@ -81,6 +102,12 @@ function refreshChatIndicators() {
         if (old) old.remove();
         const inner = chatBadgeInner(chatThread(Number(cell.dataset.chatMatch), cell.dataset.chatUser), false);
         if (inner) cell.insertAdjacentHTML('beforeend', `<span class="chat-badge" data-chat-badge aria-hidden="true">${inner}</span>`);
+        const tipChat = cell.querySelector('[data-tooltip-chat]');
+        if (tipChat) {
+            tipChat.innerHTML = chatTooltipInner(cell.dataset.chatUser, Number(cell.dataset.chatMatch));
+            const tip = tipChat.closest('.tooltip');
+            if (tip) tip.classList.toggle('tooltip-empty', !tip.textContent.trim());
+        }
     });
 }
 
