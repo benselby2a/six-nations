@@ -187,6 +187,21 @@ const mock = `
   console.log('No thanks remembered:', await page.evaluate(() => localStorage.getItem('adminTourAnswered:ben')));
   await page.click('.admin-panel-help-btn'); await page.waitForTimeout(150);
   console.log('admin help has the tour button:', await page.evaluate(() => [...document.querySelectorAll('#adminHelpModal button')].map(b => b.textContent.trim())));
+  // ---- the card fits small and short screens (iPhone with its toolbars, landscape), top and bottom visible ----
+  await page.evaluate(() => { closeAdminHelpModal(); closeGlobalHelpModal(); });
+  await page.click('.header-help-btn'); await page.click('#globalHelpModal button:has-text("Take a tour")'); await page.waitForTimeout(250);
+  for (const [w, h] of [[320, 480], [375, 553], [390, 664], [844, 390]]) {
+    await page.setViewportSize({ width: w, height: h }); await page.waitForTimeout(200);
+    let bad = 0;
+    for (let i = 0; i < 6; i++) {
+      const ok = await page.evaluate(() => { const c = document.getElementById('tourCard').getBoundingClientRect(); const hd = document.querySelector('.tour-head').getBoundingClientRect(); const n = document.getElementById('tourNext').getBoundingClientRect(); return c.top >= 0 && c.bottom <= innerHeight + 1 && hd.top >= 0 && n.bottom <= innerHeight && c.left >= 0 && c.right <= innerWidth + 1; });
+      if (!ok) bad++;
+      if (i < 5) { await page.click('#tourNext'); await page.waitForTimeout(60); }
+    }
+    for (let i = 0; i < 5; i++) { await page.click('#tourBack'); await page.waitForTimeout(30); }
+    console.log(`fits at ${w}x${h}:`, bad === 0);
+  }
+  await page.keyboard.press('Escape');
   console.log('errors', errors);
   await browser.close();
 })();

@@ -111,6 +111,14 @@ function tourBuildAdminSteps() {
     ];
 }
 
+// Fit the card to the area that is really visible (iPhone Safari's toolbars change it), not to 100vh
+function tourFitScreen() {
+    const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    document.documentElement.style.setProperty('--tour-h', `${Math.round(h)}px`);
+    const top = (window.visualViewport && window.visualViewport.offsetTop) || 0;
+    document.getElementById('tourLayer').style.top = `${Math.round(top)}px`;
+}
+
 function startTour(kind) {
     if (kind !== 'admin') kind = 'app';
     if (kind === 'admin' && !isCurrentUserAdmin()) return;
@@ -118,6 +126,9 @@ function startTour(kind) {
     closeAdminHelpModal();
     const steps = kind === 'admin' ? tourBuildAdminSteps() : tourBuildSteps(tourRulesHtml(), fixtureChat.available);
     tourState = { index: 0, steps, kind };
+    tourFitScreen();
+    window.addEventListener('resize', tourFitScreen);
+    if (window.visualViewport) { window.visualViewport.addEventListener('resize', tourFitScreen); window.visualViewport.addEventListener('scroll', tourFitScreen); }
     document.body.classList.add('tour-open');
     document.getElementById('tourLayer').setAttribute('aria-hidden', 'false');
     document.addEventListener('keydown', tourKeys);
@@ -176,6 +187,8 @@ function endTour(completed) {
     }
     tourState = null;
     document.removeEventListener('keydown', tourKeys);
+    window.removeEventListener('resize', tourFitScreen);
+    if (window.visualViewport) { window.visualViewport.removeEventListener('resize', tourFitScreen); window.visualViewport.removeEventListener('scroll', tourFitScreen); }
     document.body.classList.remove('tour-open');
     document.getElementById('tourLayer').setAttribute('aria-hidden', 'true');
 }
