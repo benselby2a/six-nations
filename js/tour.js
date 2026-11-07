@@ -86,13 +86,7 @@ function tourDemoData() {
         { auth_user_id: 'demo-a5', email: 'dev.home@example.com', linked_username: 'demodev' },
         { auth_user_id: 'demo-a6', email: 'erin@example.com', linked_username: 'demoerin' }
     ];
-    const usage = [
-        { created_at: at(5), actor: 'Alex', action: 'saves prediction', payload: '{"match":9005,"score":"18-21"}' },
-        { created_at: at(40), actor: 'Bryn', action: 'logs in', payload: '' },
-        { created_at: at(95), actor: 'Cara', action: 'fixture comment', payload: '{"match":9001}' },
-        { created_at: at(300), actor: 'Dev', action: 'saves prediction', payload: '{"match":9006,"score":"12-30"}' }
-    ];
-    return { demoMatches, demoUsers, jokers, chat, emails, emails2, accounts, usage };
+    return { demoMatches, demoUsers, jokers, chat, emails, emails2, accounts };
 }
 
 function enterTourDemo() {
@@ -100,7 +94,7 @@ function enterTourDemo() {
         users, matches: matches.slice(), allMatches, appSettings, activeScoringRules, userJokerSelections, fixtureChat,
         from: supabaseClient.from, rpc: supabaseClient.rpc,
         authAccounts, authAccountsLoaded, competitorEmails, competitorEmails2, adminUsernames,
-        getSeasonCounts: Storage.getSeasonCounts, getUsageEvents: Storage.getUsageEvents
+        getSeasonCounts: Storage.getSeasonCounts
     };
     const demo = tourDemoData();
     tourDemoActive = true;
@@ -111,14 +105,13 @@ function enterTourDemo() {
     // The scoring rules (and prize split) stay the real ones: only people, matches, predictions and chat are examples
     userJokerSelections = demo.jokers;
     fixtureChat = demo.chat;
-    // Admin screens: example sign-in accounts, emails, admins, year counts and usage events (no real addresses)
+    // Admin screens: example sign-in accounts, emails, admins, year counts (no real addresses)
     authAccounts = demo.accounts;
     authAccountsLoaded = true;
     competitorEmails = demo.emails;
     competitorEmails2 = demo.emails2;
     adminUsernames = [currentUsername, 'demoalex'].filter(Boolean);
     Storage.getSeasonCounts = async () => ({ predictions: 30, tries: 5, competitors: 5, results: 4 });
-    Storage.getUsageEvents = async () => demo.usage;
     // Nothing the tour touches may reach the database
     const quiet = () => {
         const builder = { then: (resolve, reject) => Promise.resolve({ data: [], error: null }).then(resolve, reject) };
@@ -148,7 +141,6 @@ function leaveTourDemo() {
     competitorEmails2 = tourSaved.competitorEmails2;
     adminUsernames = tourSaved.adminUsernames;
     Storage.getSeasonCounts = tourSaved.getSeasonCounts;
-    Storage.getUsageEvents = tourSaved.getUsageEvents;
     tourSaved = null;
     tourDemoActive = false;
 }
@@ -195,7 +187,7 @@ function tourCanAddToHomeScreen() {
 
 const TOUR_PANELS = {
     summary: 'summaryTab', predictions: 'predictionsTab', adminHome: 'adminHomeTab', results: 'resultsTab', scoreCorrections: 'scoreCorrectionsTab',
-    competitors: 'competitorsTab', rules: 'rulesTab', prizeFund: 'prizeFundTab', years: 'yearsTab', recovery: 'recoveryTab', usageReport: 'usageReportTab'
+    competitors: 'competitorsTab', rules: 'rulesTab', prizeFund: 'prizeFundTab', years: 'yearsTab'
 };
 
 function tourTabButton(name) {
@@ -270,11 +262,7 @@ function tourBuildAdminSteps() {
         adminStep('Prize Fund', 'prizeFund', '#prizeFundTab .rules-layout',
             '<p>Set the entry fee and how the prize pot is split between 1st, 2nd, 3rd and closest tries. Everyone sees the projected prize money under the Match Summary.</p>'),
         adminStep('Years', 'years', '#yearsTab .years-form',
-            '<p>Each year has its own fixtures, predictions, rules and lock. Add a new year here, copying last year\'s rules if you like. A year that still has predictions cannot be removed until they are cleared.</p>'),
-        adminStep('Database Recovery', 'recovery', '#recoveryTab .recovery-card',
-            '<p>Generates SQL to rebuild the database, including competitors, emails, predictions and match chat. Copy it somewhere safe from time to time.</p>'),
-        adminStep('Usage Report', 'usageReport', '#usageReportContainer',
-            '<p>The latest 100 sign-ins and changes, with who did what and when. Handy if something looks wrong.</p>')
+            '<p>Each year has its own fixtures, predictions, rules and lock. Add a new year here, copying last year\'s rules if you like. A year that still has predictions cannot be removed until they are cleared.</p>')
     ];
 }
 
@@ -419,7 +407,10 @@ function prevTourStep() {
 
 function endTour(completed) {
     if (!tourState) return;
-    if (completed === true && tourState.kind !== 'admin') { rememberTourAnswer('yes'); trackUsage('tour completed'); }
+    if (completed === true) {
+        if (tourState.kind === 'admin') rememberAdminTourAnswer('yes'); else rememberTourAnswer('yes');
+        trackUsage(tourState.kind === 'admin' ? 'admin tour completed' : 'tour completed');
+    }
     const kind = tourState.kind;
     clearInterval(tourState.timer);
     tourState = null;
@@ -432,7 +423,9 @@ function endTour(completed) {
     if (kind === 'admin') {
         // Finish on the admin menu, with the buttons showing
         const adminBtn = tourTabButton('adminHome');
+        tourSuppressOffer = true;   // do not offer the tour again at the moment it ends
         if (adminBtn) adminBtn.click();
+        tourSuppressOffer = false;
         setAdminPanelCollapsed(false);
     } else {
         // Finish on the Match Summary, the usual home screen
@@ -478,4 +471,35 @@ function answerTourPrompt(takeTour) {
     if (modal) modal.classList.add('hidden');
     trackUsage(takeTour ? 'tour accepted' : 'tour declined');
     if (takeTour) startTour();
+}
+
+// ---- The first time an admin opens the admin panel: offer the admin tour (same rules as the competitor tour) ----
+let tourSuppressOffer = false;
+const ADMIN_TOUR_ANSWERED_KEY_PREFIX = 'adminTourAnswered:';
+
+function adminTourAnswerKey() {
+    return ADMIN_TOUR_ANSWERED_KEY_PREFIX + (currentUsername || '');
+}
+
+function rememberAdminTourAnswer(answer) {
+    try { localStorage.setItem(adminTourAnswerKey(), answer); } catch (error) { /* ignore */ }
+}
+
+function maybeOfferAdminTour() {
+    if (!currentUsername || isGuest || tourState || tourSuppressOffer || !isCurrentUserAdmin()) return;
+    try { if (localStorage.getItem(adminTourAnswerKey())) return; } catch (error) { return; }   // no storage: do not nag
+    const modal = document.getElementById('adminTourPromptModal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    const yes = document.getElementById('adminTourPromptYes');
+    if (yes) yes.focus();
+}
+
+function answerAdminTourPrompt(takeTour) {
+    // "No thanks" is remembered at once; "Take the tour" only once it is finished
+    if (!takeTour) rememberAdminTourAnswer('no');
+    const modal = document.getElementById('adminTourPromptModal');
+    if (modal) modal.classList.add('hidden');
+    trackUsage(takeTour ? 'admin tour accepted' : 'admin tour declined');
+    if (takeTour) startTour('admin');
 }
