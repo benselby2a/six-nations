@@ -20,7 +20,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261025-32">
+    <link rel="stylesheet" href="styles.css?v=20261025-36">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -164,6 +164,7 @@
                 </div>
                 <div class="user-info">
                     <div class="username profile-link" id="currentUser" onclick="openProfile()"></div>
+                    <button type="button" class="logout-btn refresh-btn" id="summaryRefreshBtn" onclick="manualRefreshSummary()">Refresh</button>
                     <button class="logout-btn" id="logoutBtn" onclick="logout()">Logout</button>
                 </div>
             </div>
@@ -247,7 +248,6 @@
                         <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2.5rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Match Summary</h2>
                         <div class="summary-refresh">
                             <span id="summaryUpdatedAt" class="profile-hint"></span>
-                            <button type="button" id="summaryRefreshBtn" class="btn-small" onclick="manualRefreshSummary()">Refresh</button>
                         </div>
                     </div>
 
@@ -754,6 +754,16 @@
         </div>
     </div>
 
+    <div class="fixture-chat-scrim" id="fixtureChatScrim" onclick="closeFixtureChat()"></div>
+    <aside class="fixture-chat-sheet" id="fixtureChatSheet" role="dialog" aria-modal="true" aria-labelledby="fixtureChatTitle" aria-hidden="true">
+        <div class="fc-head">
+            <div><h3 id="fixtureChatTitle"></h3><p id="fixtureChatSub"></p></div>
+            <button type="button" class="fc-close" id="fixtureChatClose" aria-label="Close chat" onclick="closeFixtureChat()">&#10005;</button>
+        </div>
+        <div id="fixtureChatTabs"></div>
+        <div class="fc-body" id="fixtureChatBody"></div>
+    </aside>
+
     <div id="appVersion" class="app-version" aria-label="App version"></div>
 
     <div id="installTip" class="install-tip hidden" role="note">
@@ -766,24 +776,25 @@
         <button type="button" class="install-tip-close" aria-label="Dismiss" onclick="dismissInstallTip()">&#10005;</button>
     </div>
 
-    <script src="js/constants.js?v=20261025-32"></script>
-    <script src="js/storage.js?v=20261025-32"></script>
-    <script src="js/state.js?v=20261025-32"></script>
-    <script src="js/years-admin.js?v=20261025-32"></script>
-    <script src="js/init.js?v=20261025-32"></script>
-    <script src="js/admin-fixtures.js?v=20261025-32"></script>
-    <script src="js/admin-competitors.js?v=20261025-32"></script>
-    <script src="js/profile.js?v=20261025-32"></script>
-    <script src="js/auth.js?v=20261025-32"></script>
-    <script src="js/predictions.js?v=20261025-32"></script>
-    <script src="js/scoring.js?v=20261025-32"></script>
-    <script src="js/trevs-tips.js?v=20261025-32"></script>
-    <script src="js/leaderboard.js?v=20261025-32"></script>
-    <script src="js/worm-chart.js?v=20261025-32"></script>
-    <script src="js/summary.js?v=20261025-32"></script>
-    <script src="js/export-pdf.js?v=20261025-32"></script>
-    <script src="js/rules-admin.js?v=20261025-32"></script>
-    <script src="js/recovery-usage.js?v=20261025-32"></script>
-    <script src="js/app-shell.js?v=20261025-32"></script>
+    <script src="js/constants.js?v=20261025-36"></script>
+    <script src="js/storage.js?v=20261025-36"></script>
+    <script src="js/state.js?v=20261025-36"></script>
+    <script src="js/years-admin.js?v=20261025-36"></script>
+    <script src="js/init.js?v=20261025-36"></script>
+    <script src="js/admin-fixtures.js?v=20261025-36"></script>
+    <script src="js/admin-competitors.js?v=20261025-36"></script>
+    <script src="js/profile.js?v=20261025-36"></script>
+    <script src="js/auth.js?v=20261025-36"></script>
+    <script src="js/predictions.js?v=20261025-36"></script>
+    <script src="js/scoring.js?v=20261025-36"></script>
+    <script src="js/trevs-tips.js?v=20261025-36"></script>
+    <script src="js/leaderboard.js?v=20261025-36"></script>
+    <script src="js/worm-chart.js?v=20261025-36"></script>
+    <script src="js/summary.js?v=20261025-36"></script>
+    <script src="js/fixture-chat.js?v=20261025-36"></script>
+    <script src="js/export-pdf.js?v=20261025-36"></script>
+    <script src="js/rules-admin.js?v=20261025-36"></script>
+    <script src="js/recovery-usage.js?v=20261025-36"></script>
+    <script src="js/app-shell.js?v=20261025-36"></script>
 </body>
 </html>

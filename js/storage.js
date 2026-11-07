@@ -34,6 +34,7 @@
                     if (!normalizedUsername) return;
 
                     usersObj[normalizedUsername] = {
+                        id: user.id,
                         nickname: (user.nickname === null || user.nickname === undefined) ? user.nickname : cleanDisplayText(user.nickname),
                         totalTries: null,  // Per-year, filled in from user_tries below
                         supportedTeams: user.supported_teams ? user.supported_teams.split(',') : [],
@@ -246,6 +247,36 @@
                 }), username);
             },
             
+            // Match Summary chat (comments and emoji reactions on fixtures and predictions)
+            getFixtureChat: async (matchIds) => {
+                if (!matchIds || matchIds.length === 0) return { available: true, comments: [], reactions: [] };
+                const [comments, reactions] = await Promise.all([
+                    supabaseClient.from('fixture_comments').select('*').in('match_id', matchIds).order('created_at'),
+                    supabaseClient.from('fixture_reactions').select('*').in('match_id', matchIds)
+                ]);
+                if (comments.error || reactions.error) {
+                    // Normally the chat tables have not been created yet (fixture_chat_migration.sql): hide the feature
+                    return { available: false, comments: [], reactions: [] };
+                }
+                return { available: true, comments: comments.data || [], reactions: reactions.data || [] };
+            },
+            addFixtureComment: async (row) => {
+                const { error } = await supabaseClient.from('fixture_comments').insert(row);
+                return error;
+            },
+            deleteFixtureComment: async (id) => {
+                const { error } = await supabaseClient.from('fixture_comments').delete().eq('id', id);
+                return error;
+            },
+            addFixtureReaction: async (row) => {
+                const { error } = await supabaseClient.from('fixture_reactions').insert(row);
+                return error;
+            },
+            deleteFixtureReaction: async (id) => {
+                const { error } = await supabaseClient.from('fixture_reactions').delete().eq('id', id);
+                return error;
+            },
+
             // Delete a user
             deleteUser: async (username) => {
                 username = (username || '').trim().toLowerCase();

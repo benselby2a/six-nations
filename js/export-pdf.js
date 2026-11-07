@@ -446,6 +446,8 @@
             // Add click/touch handlers for tooltip containers
             document.querySelectorAll('.summary-container .tooltip-container').forEach(container => {
                 container.addEventListener('click', function(e) {
+                    // With chat on, tapping a prediction opens its chat sheet (which carries the points breakdown)
+                    if (fixtureChat.available && container.closest('td[data-chat-user]')) return;
                     e.stopPropagation();
 
                     // Close any other open tooltips
