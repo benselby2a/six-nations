@@ -50,12 +50,7 @@ function tourBuildSteps(rulesHtml, chatLive) {
         'Tap <strong>Edit</strong> next to a match to enter your prediction.'
     ], isGuest
         ? '<p>Sign in to enter your own predictions.</p>'
-        : '<p>The checklist at the top shows what is still missing. Under the matches you can also guess the total tries and press Save Tournament Tries. Predictions lock when the tournament starts, so get them in early.</p>'));
-    steps.push(tourStep('predict-edit', 'Enter a score', [
-        'Enter the score you expect for each team.',
-        'On a Joker eligible match, tick <strong>Use Joker</strong> to double the points for that match.',
-        'Tap <strong>Save</strong>.'
-    ], '<p>Leave both scores blank to clear a prediction.</p>'));
+        : '<p>Enter the score for each team, tick <strong>Use Joker</strong> on a Joker eligible match, then tap <strong>Save</strong>. The checklist at the top shows what is still missing. Under the matches you can also guess the total tries. Predictions lock when the tournament starts, so get them in early.</p>'));
     steps.push(tourStep('score', 'See the current score', [
         'Tap <strong>Match Summary</strong> at the top of the screen. It is the screen you land on after signing in.',
         'Everyone\'s rank and total score are on the left, with each prediction and the points it earned for every match.'
@@ -68,11 +63,6 @@ function tourBuildSteps(rulesHtml, chatLive) {
             'Tap the <strong>💬 chip</strong> under a match to comment on the match or react with an emoji.',
             'Or tap any <strong>prediction</strong> to comment on that guess.'
         ], '<p>Emoji and comment counts show right on the table.</p>'));
-        steps.push(tourStep('sheet', 'Join the conversation', [
-            'Pick an emoji to react. Tap it again to take it back.',
-            'Type a comment (up to 140 characters) and tap <strong>Post</strong>.',
-            'Switch between the prediction and the match chat here.'
-        ], '<p>You can see who reacted with each emoji. You can delete your own comments.</p>'));
     }
     steps.push(tourStep('stats', 'Stats and insights', [
         'Scroll down on the Match Summary, under the table.',

@@ -59,14 +59,9 @@
 
   // ---- the app tour ----
   await shot('predictions', { before: () => clickTab('My Predictions'), clip: [tab('My Predictions'), '#matchesContainer .prediction-table-container'], marks: [tab('My Predictions'), '#matchesContainer .prediction-table-container button.btn-success'], maxH: 760 });
-  await shot('predict-edit', { before: async () => { await page.evaluate(() => openEditPredictionModal('self', 9003)); await page.waitForTimeout(400); }, clip: ['#editPredictionModal .modal-content'], marks: ['#editPredictionModal .fixture-edit-grid', '#edit-prediction-joker-group', '#edit-prediction-save-btn'] });
-  await page.evaluate(() => closeEditPredictionModal());
   await shot('score', { before: async () => { await clickTab('Match Summary'); await page.evaluate(() => { document.querySelector('#summaryTab > div:first-child').style.display = 'none'; }); }, clip: [tab('Match Summary'), '.summary-container'], marks: [tab('Match Summary'), '.summary-container'], maxH: 760 });
   await shot('pdf', { before: async () => { await page.evaluate(() => { document.querySelector('#summaryTab > div:first-child').style.display = ''; }); }, clip: ['#summaryTab > div:first-child'], marks: ['.export-btn'] });
   await shot('chips', { clip: ['.summary-container'], marks: [{ visible: '[data-chat-chip]' }, { visible: 'td[data-chat-user]' }], maxH: 560 });
-  await page.evaluate(() => { document.querySelector('#summaryTab > div:first-child').style.display = 'none'; });
-  await shot('sheet', { before: async () => { await page.evaluate(() => openFixtureChat(9001, 'demobryn')); await page.waitForTimeout(500); }, clip: ['#fixtureChatSheet'], marks: ['.fc-reacts', '.fc-compose', '.fc-tabs'] });
-  await page.evaluate(() => closeFixtureChat());
   await shot('stats', { scrollTo: '#triesStatsContainer', clip: ['#triesStatsContainer', '#prizeMoneyContainer'], marks: ['#triesStatsContainer', '#prizeMoneyContainer'], maxH: 760 });
 
   // ---- the admin tour ----
