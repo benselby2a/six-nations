@@ -441,3 +441,9 @@ This is the main browser-to-Supabase boundary.
 - The Match Summary table (`js/summary.js`) calls `chatChipMarkup` (a chip in each fixture column header), `chatCellAttrs` and `chatCellBadge` (prediction cells open that prediction's chat). The sheet (`#fixtureChatSheet` in `index.html`) is a bottom sheet on phones and a right drawer from 900px. It replaces the touch tooltip on cells; the desktop hover tooltip still shows. Chips and badges update in place (`refreshChatIndicators`) so the table keeps its scroll position.
 - The backup SQL drops the chat tables before `users`, and restores their rows after the migrations (restore order is listed in the generated SQL).
 - Tests: `dev/tests/sql/fixture-chat.js` (security rules), `dev/tests/browser/fixture-chat.js` (behaviour), `dev/tests/sql/restore.js` (backup round trip).
+
+## Guided tour
+
+- `js/tour.js`: the "Take a tour" button in the App Help pop-up (`#globalHelpModal`) starts a five-step tour of the main features (rules, predictions, current score, chat, stats). Admin features are not covered. Markup is `#tourLayer` in `index.html`.
+- Steps navigate by clicking the real tab buttons (so `showTab` gets its event), then spotlight a target by selector (`#tourSpot`, a box-shadow cut-out) with the card at the top or bottom, clear of the highlight. The rules step is built from the year's `getEffectiveScoringRules()`; the chat step is skipped until the chat tables exist; guests get a sign-in note instead of the predictions screen. Esc and the arrow keys work.
+- Test: `dev/tests/browser/tour.js`.
