@@ -1139,6 +1139,7 @@
         let rulesFormInitialized = false;
         let isGuest = false;
         let editingFixtureId = null;
+        let pendingNewMatch = null;   // a fixture being added: only becomes a row once Save is pressed
         let nextMatchScoreId = null;
         let editingPredictionContext = null;
         let adminPredictionUsername = null;
@@ -1655,7 +1656,7 @@
                 })
                 .filter(entry => entry.missing.length > 0)
                 .sort((x, y) => getDisplayName(x.username).localeCompare(getDisplayName(y.username)));
-            const inactiveCount = Object.keys(users).length - activeUsernames.length;
+            const inactiveCount = Object.keys(users).filter(u => users[u].nickname).length - activeUsernames.length;
             const predictionsOk = activeUsernames.length > 0 && outstanding.length === 0;
             let predictionsDetail;
             if (activeUsernames.length === 0) {
@@ -1897,7 +1898,9 @@
         }
 
         function openEditFixtureModal(matchId) {
-            const match = matches.find(m => m.id === matchId);
+            const match = (pendingNewMatch && pendingNewMatch.id === matchId)
+                ? pendingNewMatch
+                : matches.find(m => m.id === matchId);
             const modal = document.getElementById('editFixtureModal');
             if (!match || !modal) return;
 
@@ -1928,6 +1931,7 @@
 
         function closeEditFixtureModal() {
             editingFixtureId = null;
+            pendingNewMatch = null;   // Cancel discards a fixture that was being added
             const modal = document.getElementById('editFixtureModal');
             if (modal) modal.classList.add('hidden');
         }
@@ -2108,7 +2112,8 @@
 
         async function saveFixtureEdits() {
             if (editingFixtureId === null) return;
-            const match = matches.find(m => m.id === editingFixtureId);
+            const isNewFixture = !!pendingNewMatch && pendingNewMatch.id === editingFixtureId;
+            const match = isNewFixture ? pendingNewMatch : matches.find(m => m.id === editingFixtureId);
             if (!match) return;
 
             const roundVal = parseInt(document.getElementById('edit-fixture-round').value, 10);
@@ -2197,6 +2202,12 @@
             match.actualScore2 = parsedScore2;
             match.actualTries1 = parsedTries1;
             match.actualTries2 = parsedTries2;
+
+            // Saving a new fixture is what adds its row
+            if (isNewFixture) {
+                matches.push(match);
+                pendingNewMatch = null;
+            }
 
             await Storage.saveMatches(matches, { skipUsageLog: true });
             await Storage.trackUsageEvent(getUsageActor(), 'save fixture edit', formatUsagePayload({
@@ -2319,10 +2330,8 @@
                 jokerEligible: false
             };
 
-            matches.push(newMatch);
-            await Storage.saveMatches(matches);
-            renderAdminMatches();
-            renderMatches();
+            // A draft: nothing is added or saved until Save is pressed in the form
+            pendingNewMatch = newMatch;
             openEditFixtureModal(newMatch.id);
         }
 
@@ -2621,7 +2630,7 @@
         let authAccountsLoaded = false;
         let authAccountsRequested = false;
         let competitorEmails = {};   // username -> the email they are expected to sign in with (admin only)
-        let pendingInvites = [];     // emails invited but not signed in yet (admin only)
+        let competitorEmails2 = {};  // username -> an optional second sign-in email
 
         async function loadAuthAccounts() {
             const { data, error } = await supabaseClient.rpc('admin_list_accounts');
@@ -2638,48 +2647,12 @@
                 console.error('Error loading competitor emails:', emailError);
             } else {
                 competitorEmails = {};
-                (emailRows || []).forEach(row => { competitorEmails[row.username] = row.email; });
+                competitorEmails2 = {};
+                (emailRows || []).forEach(row => {
+                    if (row.email) competitorEmails[row.username] = row.email;
+                    if (row.email2) competitorEmails2[row.username] = row.email2;
+                });
             }
-
-            const { data: inviteRows, error: inviteError } = await supabaseClient.rpc('admin_list_invites');
-            if (inviteError) {
-                console.error('Error loading invitations:', inviteError);
-            } else {
-                pendingInvites = inviteRows || [];
-            }
-        }
-
-        // Admin: invite someone by email alone. They fill in their own details the first time they sign in.
-        async function inviteByEmail() {
-            if (!isCurrentUserAdmin()) return;
-            const input = document.getElementById('new-invite-email');
-            const email = ((input && input.value) || '').trim().toLowerCase();
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                alert('That email does not look right.');
-                return;
-            }
-            const { error } = await supabaseClient.rpc('admin_invite_email', { p_email: email });
-            if (error) {
-                alert(error.message || 'Could not add that email.');
-                return;
-            }
-            trackUsage('invite email', formatUsagePayload({ email }));
-            if (input) input.value = '';
-            await loadAuthAccounts();
-            renderCompetitorManagement();
-        }
-
-        async function removeInvite(email) {
-            if (!isCurrentUserAdmin() || !email) return;
-            if (!confirm(`Remove the invitation for ${email}? They will no longer be able to sign in.`)) return;
-            const { error } = await supabaseClient.rpc('admin_remove_invite', { p_email: email });
-            if (error) {
-                alert(error.message || 'Could not remove that invitation.');
-                return;
-            }
-            trackUsage('remove invitation', formatUsagePayload({ email }));
-            await loadAuthAccounts();
-            renderCompetitorManagement();
         }
 
         async function refreshCompetitorAccounts() {
@@ -2687,20 +2660,23 @@
             renderCompetitorManagement();
         }
 
+        function linkedAccountsFor(username) {
+            return authAccounts.filter(a => (a.linked_username || '').toLowerCase() === username);
+        }
+
         function renderCompetitorAccountCell(username) {
-            const linked = authAccounts.find(a => (a.linked_username || '').toLowerCase() === username);
+            const linkedAccounts = linkedAccountsFor(username);
             const safeUsername = username.replace(/'/g, "\\'");
-            if (linked) {
-                return `${escapeHtml(linked.email || 'unknown email')}
-                    <div class="competitor-actions"><button class="btn-small btn-warning" onclick="unlinkCompetitorAccount('${safeUsername}')">Unlink</button></div>`;
-            }
-            const unlinked = authAccounts.filter(a => !a.linked_username);
             if (!authAccountsLoaded) return '<span class="profile-hint">Loading accounts...</span>';
-            const waiting = competitorEmails[username]
-                ? '<div class="profile-hint" style="margin-bottom: 0.4rem;">Links automatically when they first sign in</div>'
-                : '';
-            if (unlinked.length === 0) return `${waiting}<span class="profile-hint">No unlinked accounts</span>`;
-            return `${waiting}<select id="link-account-${username}" style="font-size: 0.85rem; max-width: 220px;">
+            let html = linkedAccounts.map(a => `<div>${escapeHtml(a.email || 'unknown email')}
+                    <button type="button" class="btn-small btn-warning" onclick="unlinkCompetitorAccount('${safeUsername}', '${a.auth_user_id}')">Unlink</button></div>`).join('');
+            if (linkedAccounts.length >= 2) return html;
+            const unlinked = authAccounts.filter(a => !a.linked_username);
+            if (linkedAccounts.length === 0 && (competitorEmails[username] || competitorEmails2[username])) {
+                html += '<div class="profile-hint" style="margin-bottom: 0.4rem;">Links automatically when they first sign in</div>';
+            }
+            if (unlinked.length === 0) return `${html}<span class="profile-hint">No unlinked accounts</span>`;
+            return `${html}<select id="link-account-${username}" style="font-size: 0.85rem; max-width: 220px;">
                     <option value="">Choose account...</option>
                     ${unlinked.map(a => `<option value="${a.auth_user_id}">${escapeHtml(a.email || a.auth_user_id)}</option>`).join('')}
                 </select>
@@ -2731,15 +2707,12 @@
             await refreshCompetitorAccounts();
         }
 
-        async function unlinkCompetitorAccount(username) {
+        async function unlinkCompetitorAccount(username, accountId) {
             const displayName = toTitleCase((users[username] && users[username].nickname) || username);
             if (!confirm(`Unlink the account from ${displayName}? They will not be able to sign in as this competitor until it is linked again.`)) {
                 return;
             }
-            const { error } = await supabaseClient.rpc('admin_link_competitor', {
-                p_username: username,
-                p_auth_user_id: null
-            });
+            const { error } = await supabaseClient.rpc('admin_unlink_account', { p_auth_user_id: accountId });
             if (error) {
                 alert('Could not unlink account: ' + (error.message || 'unknown error'));
                 return;
@@ -2798,62 +2771,43 @@
 
             let html = `
                 <div class="competitor-cards">
-                    <details class="competitor-card competitor-card-new" id="invite-card">
-                        <summary>
-                            <span class="cc-title"><span class="cc-name">+ Invite someone</span></span>
-                            <span class="cc-chevron" aria-hidden="true"></span>
-                        </summary>
-                        <div class="cc-fields">
-                            <div class="cc-field cc-wide">
-                                <label for="new-invite-email">Email</label>
-                                <input type="email" id="new-invite-email" placeholder="The email they will sign in with" autocapitalize="none" autocorrect="off" spellcheck="false">
-                                <span class="profile-hint">That is all you need. Nothing is emailed: tell them to open the app and sign in with this email, and they fill in their own name and teams the first time.</span>
-                            </div>
-                            <div class="cc-actions cc-wide">
-                                <button type="button" class="btn-success" onclick="inviteByEmail()">Add Email</button>
-                            </div>
-                        </div>
-                    </details>
-                    ${pendingInvites.length > 0 ? `
-                    <div class="pending-invites">
-                        <div class="cc-label">Invited, not signed in yet</div>
-                        ${pendingInvites.map(invite => `
-                            <div class="pending-invite">
-                                <span class="pending-invite-email">${escapeHtml(invite.email)}</span>
-                                <button type="button" class="btn-small btn-danger" data-email="${escapeHtml(invite.email)}" onclick="removeInvite(this.dataset.email)">Remove</button>
-                            </div>`).join('')}
-                    </div>` : ''}
                     <details class="competitor-card competitor-card-new" id="new-competitor-card">
                         <summary>
-                            <span class="cc-title"><span class="cc-name">+ Add a competitor manually</span></span>
+                            <span class="cc-title"><span class="cc-name">+ Add a competitor</span></span>
                             <span class="cc-chevron" aria-hidden="true"></span>
                         </summary>
                         <div class="cc-fields">
-                            <div class="cc-field">
-                                <label for="new-username-admin">Username</label>
-                                <input type="text" id="new-username-admin" placeholder="letters and numbers only" autocapitalize="none" autocorrect="off" spellcheck="false">
-                            </div>
-                            <div class="cc-field">
-                                <label for="new-nickname-admin">Display name</label>
-                                <input type="text" id="new-nickname-admin" placeholder="How they appear on the leaderboard">
-                            </div>
                             <div class="cc-field cc-wide">
-                                <label for="new-email-admin">Sign-in email</label>
+                                <label for="new-email-admin">Email <span class="cc-required">required</span></label>
                                 <input type="email" id="new-email-admin" placeholder="The email they will sign in with" autocapitalize="none" autocorrect="off" spellcheck="false">
-                                <span class="profile-hint">Leave empty for someone who will not sign in. They can only sign in once an email is set.</span>
+                                <span class="profile-hint">That is all you need. Nothing is emailed: tell them to open the app and sign in with this email, and they fill in their own name and teams the first time. Their card appears below until they have.</span>
                             </div>
-                            <div class="cc-field">
-                                <label for="new-team1-admin">Supported team 1</label>
-                                <select id="new-team1-admin">${teamOptions('')}</select>
-                            </div>
-                            <div class="cc-field">
-                                <label for="new-team2-admin">Supported team 2</label>
-                                <select id="new-team2-admin">${teamOptions('')}</select>
-                            </div>
-                            <label class="cc-toggle"><input type="checkbox" id="new-active-admin" checked><span>Playing in ${selectedYear}</span></label>
-                            <label class="cc-toggle"><input type="checkbox" id="new-admin-admin"><span>Admin</span></label>
+                            <details class="cc-optional cc-wide" id="new-competitor-details">
+                                <summary>Add their details now (optional)</summary>
+                                <div class="cc-fields">
+                                    <span class="profile-hint cc-wide">Enter a display name to create them now with these details. Otherwise leave this empty and they choose their own when they first sign in.</span>
+                                    <div class="cc-field">
+                                        <label for="new-nickname-admin">Display name</label>
+                                        <input type="text" id="new-nickname-admin" placeholder="How they appear on the leaderboard">
+                                    </div>
+                                    <div class="cc-field">
+                                        <label for="new-username-admin">Username</label>
+                                        <input type="text" id="new-username-admin" placeholder="Made from the name if empty" autocapitalize="none" autocorrect="off" spellcheck="false">
+                                    </div>
+                                    <div class="cc-field">
+                                        <label for="new-team1-admin">Supported team 1</label>
+                                        <select id="new-team1-admin">${teamOptions('')}</select>
+                                    </div>
+                                    <div class="cc-field">
+                                        <label for="new-team2-admin">Supported team 2</label>
+                                        <select id="new-team2-admin">${teamOptions('')}</select>
+                                    </div>
+                                    <label class="cc-toggle"><input type="checkbox" id="new-active-admin" checked><span>Playing in ${selectedYear}</span></label>
+                                    <label class="cc-toggle"><input type="checkbox" id="new-admin-admin"><span>Admin</span></label>
+                                </div>
+                            </details>
                             <div class="cc-actions cc-wide">
-                                <button type="button" class="btn-success" onclick="addCompetitorFromAdmin()">Add Competitor</button>
+                                <button type="button" class="btn-success" onclick="addCompetitor()">Add Competitor</button>
                             </div>
                         </div>
                     </details>
@@ -2865,9 +2819,12 @@
                 const isActive = isCompetitorActive(username);
                 const safeUsername = username.replace(/'/g, "\\'");
                 const userTeams = user.supportedTeams || [];
-                const linked = authAccountsLoaded && authAccounts.some(acc => (acc.linked_username || '').toLowerCase() === username);
-                const waiting = authAccountsLoaded && !linked && !!competitorEmails[username];
-                const displayName = escapeHtml(toTitleCase(user.nickname || username));
+                const linked = authAccountsLoaded && linkedAccountsFor(username).length > 0;
+                const waiting = authAccountsLoaded && !linked && !!(competitorEmails[username] || competitorEmails2[username]);
+                const isInvite = !user.nickname;   // invited: no display name until they sign in and fill it in
+                const displayName = isInvite
+                    ? escapeHtml(competitorEmails[username] || 'Invited')
+                    : escapeHtml(toTitleCase(user.nickname || username));
                 html += `
                     <details class="competitor-card" id="user-row-${username}">
                         <summary>
@@ -2877,8 +2834,10 @@
                             </span>
                             <span class="cc-chips">
                                 ${isAdmin ? '<span class="cc-chip cc-chip-admin">Admin</span>' : ''}
-                                <span class="cc-chip ${isActive ? 'cc-chip-on' : 'cc-chip-off'}">${isActive ? `Playing ${selectedYear}` : 'Not playing'}</span>
-                                ${linked ? '<span class="cc-chip cc-chip-on">Signed up</span>' : (waiting ? '<span class="cc-chip">Awaiting sign-in</span>' : '')}
+                                ${isInvite
+                                    ? `<span class="cc-chip">${linked ? 'Setting up their profile' : 'Invited, not signed in yet'}</span>`
+                                    : `<span class="cc-chip ${isActive ? 'cc-chip-on' : 'cc-chip-off'}">${isActive ? `Playing ${selectedYear}` : 'Not playing'}</span>
+                                ${linked ? '<span class="cc-chip cc-chip-on">Signed up</span>' : (waiting ? '<span class="cc-chip">Awaiting sign-in</span>' : '')}`}
                             </span>
                             <span class="cc-chevron" aria-hidden="true"></span>
                         </summary>
@@ -2895,6 +2854,10 @@
                                 <label for="edit-email-${username}">Sign-in email</label>
                                 <input type="email" id="edit-email-${username}" value="${escapeHtml(competitorEmails[username] || '')}" placeholder="The email they will sign in with" autocapitalize="none" autocorrect="off" spellcheck="false">
                                 <span class="profile-hint">Changing or clearing this moves their login: the old email stops working.</span>
+                            </div>
+                            <div class="cc-field cc-wide">
+                                <label for="edit-email2-${username}">Second sign-in email (optional)</label>
+                                <input type="email" id="edit-email2-${username}" value="${escapeHtml(competitorEmails2[username] || '')}" placeholder="Either email can sign in as this person" autocapitalize="none" autocorrect="off" spellcheck="false">
                             </div>
                             <div class="cc-field">
                                 <label for="edit-team1-${username}">Supported team 1</label>
@@ -2924,52 +2887,105 @@
             restoreCompetitorScreenState(container, previousState);
         }
 
-        // Add a new competitor from admin management screen
-        async function addCompetitorFromAdmin() {
-            const username = (document.getElementById('new-username-admin').value || '').trim().toLowerCase();
+        // Put the add-competitor form back to how it starts (so a re-render does not bring old text back)
+        function resetAddCompetitorForm() {
+            ['new-email-admin', 'new-nickname-admin', 'new-username-admin'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            ['new-team1-admin', 'new-team2-admin'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.selectedIndex = 0;
+            });
+            const active = document.getElementById('new-active-admin');
+            if (active) active.checked = true;
+            const admin = document.getElementById('new-admin-admin');
+            if (admin) admin.checked = false;
+        }
+
+        // Add someone. Only the email is needed: they fill in their own name and teams the first time they
+        // sign in. If a display name is entered under "details", the competitor is created now with those.
+        async function addCompetitor() {
+            if (!isCurrentUserAdmin()) return;
+            const email = (document.getElementById('new-email-admin').value || '').trim().toLowerCase();
+            let username = (document.getElementById('new-username-admin').value || '').trim().toLowerCase();
             const nickname = (document.getElementById('new-nickname-admin').value || '').trim();
             const team1 = (document.getElementById('new-team1-admin').value || '').trim();
             const team2 = (document.getElementById('new-team2-admin').value || '').trim();
             const makeAdmin = !!document.getElementById('new-admin-admin').checked;
             const makeActive = !!document.getElementById('new-active-admin').checked;
-            const newEmail = (document.getElementById('new-email-admin').value || '').trim().toLowerCase();
 
-            if (newEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
-                alert('That sign-in email does not look right.');
+            if (!email) {
+                alert('An email is needed: it is how they sign in.');
+                return;
+            }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                alert('That email does not look right.');
                 return;
             }
 
-            if (!username) {
-                alert('Username is required.');
+            const detailsGiven = !!(username || nickname || team1 || team2 || makeAdmin);
+            if (detailsGiven && !nickname) {
+                alert('Add a display name to create them now, or clear the optional details and they will choose their own when they first sign in.');
                 return;
             }
 
-            if (!/^[a-z0-9]+$/.test(username)) {
-                alert('Username can only contain letters and numbers.');
+            // Refuse an email that is already registered, before anything is created
+            const { data: taken, error: checkError } = await supabaseClient.rpc('check_login_email', { p_email: email });
+            if (checkError) {
+                alert('Could not check that email. Please try again.');
+                return;
+            }
+            if (taken === true) {
+                alert(`${email} is already registered.`);
                 return;
             }
 
-            if (users[username]) {
-                alert('This username is already taken.');
+            // Email only: an invitation. They complete their own profile when they first sign in.
+            if (!detailsGiven) {
+                const { error } = await supabaseClient.rpc('admin_invite_email', { p_email: email });
+                if (error) {
+                    alert(error.message || 'Could not add that email.');
+                    return;
+                }
+                trackUsage('invite email', formatUsagePayload({ email }));
+                resetAddCompetitorForm();
+                // The invitation is a new row on the users table: load it and show its card
+                users = await Storage.getUsers();
+                await loadAuthAccounts();
+                renderCompetitorManagement();
                 return;
             }
 
-            if (!nickname) {
-                alert('Display name is required.');
-                return;
-            }
-
+            // Details given: create the competitor now
             if (hasUnsafeDisplayChars(nickname)) {
                 alert('Display name cannot contain < > or " characters.');
                 return;
             }
-
             const existingNickname = Object.keys(users).find(u =>
                 users[u].nickname && users[u].nickname.toLowerCase() === nickname.toLowerCase()
             );
             if (existingNickname) {
                 alert('This display name is already taken.');
                 return;
+            }
+
+            if (username) {
+                if (!/^[a-z0-9]+$/.test(username)) {
+                    alert('Username can only contain letters and numbers.');
+                    return;
+                }
+                if (users[username]) {
+                    alert('This username is already taken.');
+                    return;
+                }
+            } else {
+                // A tidy username from the display name, made unique
+                const base = nickname.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 26) || 'player';
+                username = base;
+                for (let n = 2; users[username] || username === 'guest' || adminUsernames.includes(username); n++) {
+                    username = base + n;
+                }
             }
 
             const supportedTeams = [team1, team2].filter(Boolean);
@@ -2994,16 +3010,15 @@
                 if (await Storage.saveActiveOverrides(overrides)) appSettings.activeOverrides = overrides;
             }
 
-            if (newEmail) {
-                const { error: emailError } = await supabaseClient.rpc('admin_set_competitor_email', { p_username: username, p_email: newEmail });
-                if (emailError) {
-                    alert('The competitor was added, but the email was not saved: ' + (emailError.message || 'unknown error'));
-                } else {
-                    competitorEmails[username] = newEmail;
-                }
+            const { error: emailError } = await supabaseClient.rpc('admin_set_competitor_email', { p_username: username, p_email: email });
+            if (emailError) {
+                alert('The competitor was added, but the email was not saved: ' + (emailError.message || 'unknown error'));
+            } else {
+                competitorEmails[username] = email;
             }
 
             alert(`Competitor ${toTitleCase(nickname)} added.`);
+            resetAddCompetitorForm();
             renderCompetitorManagement();
             updateLeaderboard();
         }
@@ -3014,7 +3029,9 @@
             const nickname = document.getElementById(`edit-nickname-${username}`).value.trim();
             const emailInput = document.getElementById(`edit-email-${username}`);
             const newEmail = emailInput ? emailInput.value.trim().toLowerCase() : null;
-            if (newEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+            const email2Input = document.getElementById(`edit-email2-${username}`);
+            const newEmail2 = email2Input ? email2Input.value.trim().toLowerCase() : null;
+            if ((newEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) || (newEmail2 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail2))) {
                 alert('That sign-in email does not look right.');
                 return;
             }
@@ -3029,7 +3046,7 @@
                 return;
             }
 
-            if (!nickname) {
+            if (!nickname && users[username] && users[username].nickname) {
                 alert('Display name is required.');
                 return;
             }
@@ -3046,7 +3063,7 @@
             }
 
             // Check if nickname is taken by another user
-            const existingUser = Object.keys(users).find(u =>
+            const existingUser = nickname && Object.keys(users).find(u =>
                 u !== username && users[u].nickname && users[u].nickname.toLowerCase() === nickname.toLowerCase()
             );
             if (existingUser) {
@@ -3086,28 +3103,31 @@
                 }
             }
 
-            users[newUsername].nickname = nickname;
+            users[newUsername].nickname = nickname || null;
             users[newUsername].supportedTeams = [team1, team2].filter(Boolean);
 
             await Storage.saveUser(newUsername, users[newUsername]);
             updateAdminTabsSubheading();
 
             // Keep the registered email in step with the (possibly renamed) competitor
-            if (newUsername !== username && competitorEmails[username] !== undefined) {
-                competitorEmails[newUsername] = competitorEmails[username];
-                delete competitorEmails[username];
+            if (newUsername !== username) {
+                if (competitorEmails[username] !== undefined) { competitorEmails[newUsername] = competitorEmails[username]; delete competitorEmails[username]; }
+                if (competitorEmails2[username] !== undefined) { competitorEmails2[newUsername] = competitorEmails2[username]; delete competitorEmails2[username]; }
             }
-            if (newEmail !== null && newEmail !== (competitorEmails[newUsername] || '')) {
-                const { error: emailError } = await supabaseClient.rpc('admin_set_competitor_email', { p_username: newUsername, p_email: newEmail });
+            const emailSlots = [[1, newEmail, competitorEmails], [2, newEmail2, competitorEmails2]];
+            let emailsChanged = false;
+            for (const [slot, value, map] of emailSlots) {
+                if (value === null || value === (map[newUsername] || '')) continue;
+                const { error: emailError } = await supabaseClient.rpc('admin_set_competitor_email', { p_username: newUsername, p_email: value, p_slot: slot });
                 if (emailError) {
-                    alert('Saved, but the sign-in email was not: ' + (emailError.message || 'unknown error'));
+                    alert(`Saved, but the ${slot === 2 ? 'second ' : ''}sign-in email was not: ` + (emailError.message || 'unknown error'));
                 } else {
-                    if (newEmail) competitorEmails[newUsername] = newEmail;
-                    else delete competitorEmails[newUsername];
-                    // Changing the email releases their old sign-in account: reload who is linked
-                    await loadAuthAccounts();
+                    if (value) map[newUsername] = value; else delete map[newUsername];
+                    emailsChanged = true;
                 }
             }
+            // Changing an email releases that old sign-in account: reload who is linked
+            if (emailsChanged) await loadAuthAccounts();
 
             alert('User updated successfully.');
 
@@ -3505,10 +3525,23 @@
 
             pendingLoginEmail = email;
             rememberLoginEmail(email);
-            showLoginFeedback(`We've emailed a code to ${email}. Enter it below.`, 'success');
+            // Step two: only the code box, Sign in and Back are shown
+            document.getElementById('loginCodeNote').textContent = `We've emailed a code to ${email}. Enter it below. It can take a minute to arrive.`;
+            document.getElementById('loginView').classList.add('awaiting-code');
             document.getElementById('loginCodeEntry').classList.remove('hidden');
             document.getElementById('loginCode').focus();
             startLoginCodeCooldown(button, 30);
+        }
+
+        // Back from the code step to the email step (the typed email is kept)
+        function backToLoginEmail() {
+            document.getElementById('loginView').classList.remove('awaiting-code');
+            document.getElementById('loginCodeEntry').classList.add('hidden');
+            document.getElementById('loginCode').value = '';
+            document.getElementById('loginFeedback').className = 'login-feedback hidden';
+            pendingLoginEmail = '';
+            const emailInput = document.getElementById('loginEmail');
+            if (emailInput) emailInput.focus();
         }
 
         // Typing a different email makes any code we were waiting for irrelevant
@@ -3644,17 +3677,16 @@
 
             const row = Array.isArray(data) ? data[0] : data;
             if (!row) {
-                // No competitor yet. An invited email fills in its own details; anything else is turned away
-                const { data: invited } = await supabaseClient.rpc('am_i_invited');
-                if (invited === true) {
-                    await showProfileSetup();
-                    return;
-                }
-
                 // Signed in, but this email is not registered for the game: back out with the same message
                 const unrecognisedEmail = currentAuthEmail;
                 await logout();
                 await showUnrecognisedEmailModal(unrecognisedEmail);
+                return;
+            }
+
+            // An invited person: the row exists but has no display name yet, so they fill in their details first
+            if (!row.nickname) {
+                await showProfileSetup();
                 return;
             }
 
@@ -3719,7 +3751,7 @@
                 return;
             }
 
-            const { error } = await supabaseClient.rpc('create_my_profile', {
+            const { error } = await supabaseClient.rpc('complete_my_profile', {
                 p_nickname: nickname,
                 p_supported_teams: supportedTeams.length > 0 ? supportedTeams.join(',') : null
             });
@@ -3771,6 +3803,7 @@
             pendingLoginEmail = '';
             document.getElementById('loginCode').value = '';
             document.getElementById('loginCodeEntry').classList.add('hidden');
+            document.getElementById('loginView').classList.remove('awaiting-code');
 
             // A fresh login form: drop any resend countdown left over from the last sign-in
             clearInterval(loginCodeCooldownTimer);
@@ -3982,7 +4015,7 @@
             const select = document.getElementById('adminPredictionUserSelect');
             if (!select) return;
 
-            const allUsers = Object.keys(users).sort((a, b) => {
+            const allUsers = Object.keys(users).filter(u => users[u].nickname).sort((a, b) => {
                 return getDisplayName(a).localeCompare(getDisplayName(b));
             });
 

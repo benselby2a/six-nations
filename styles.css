@@ -4158,7 +4158,7 @@
     border-style: dashed;
 }
 
-.competitor-card summary {
+.competitor-card > summary {
     list-style: none;
     display: flex;
     align-items: center;
@@ -4169,7 +4169,7 @@
     -webkit-tap-highlight-color: transparent;
 }
 
-.competitor-card summary::-webkit-details-marker {
+.competitor-card > summary::-webkit-details-marker {
     display: none;
 }
 
@@ -4331,7 +4331,7 @@
 }
 
 @media (max-width: 480px) {
-    .competitor-card summary {
+    .competitor-card > summary {
         flex-wrap: wrap;
     }
 
@@ -4364,34 +4364,69 @@
     font-weight: 700;
 }
 
-/* Invited, not signed in yet */
-.pending-invites {
-    padding: 0.85rem 1rem;
-    border: 2px solid rgba(212, 175, 55, 0.3);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.05);
+/* Add a competitor: the optional details panel */
+.cc-required {
+    margin-left: 0.4rem;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    background: var(--gold);
+    color: var(--deep-green);
+    font-size: 0.65rem;
+    letter-spacing: 0.04em;
+    vertical-align: 1px;
 }
 
-.pending-invite {
+.cc-optional {
+    border: 1px dashed rgba(212, 175, 55, 0.4);
+    border-radius: 8px;
+    padding: 0 1rem;
+}
+
+.cc-optional > summary {
+    list-style: none;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    padding: 0.5rem 0;
-    border-top: 1px solid rgba(212, 175, 55, 0.2);
+    min-height: 2.9rem;
+    cursor: pointer;
+    color: var(--gold);
+    font-weight: 700;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.pending-invite:first-of-type {
-    margin-top: 0.4rem;
+.cc-optional > summary::-webkit-details-marker {
+    display: none;
 }
 
-.pending-invite-email {
-    min-width: 0;
-    overflow-wrap: anywhere;
+.cc-optional > summary::before {
+    content: '+';
+    width: 1.2rem;
+    font-weight: 800;
 }
 
-.pending-invite .btn-small {
-    flex: none;
-    margin: 0;
-    padding: 0.6rem 1rem;
+.cc-optional[open] > summary::before {
+    content: '\2212';
+}
+
+.cc-optional .cc-fields {
+    border-top: none;
+    padding: 0.25rem 0 1rem;
+}
+
+/* Login: while waiting for the code, show only the code box, Sign in and Back */
+#loginView.awaiting-code .guest-login-btn,
+#loginView.awaiting-code .guest-login-divider,
+#loginView.awaiting-code #loginEmailForm {
+    display: none;
+}
+
+.login-code-note {
+    margin: 0 0 1.25rem;
+    text-align: center;
+    line-height: 1.5;
+}
+
+.login-code-entry {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
 }

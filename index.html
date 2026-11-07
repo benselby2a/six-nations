@@ -20,7 +20,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261025-24">
+    <link rel="stylesheet" href="styles.css?v=20261025-27">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -64,12 +64,13 @@
                     <!-- Kept as its own form with a single code field so Safari treats it as a one-time-code
                          entry and not as a login (which makes it offer saved passwords) -->
                     <form id="loginCodeEntry" class="login-code-entry hidden" onsubmit="return false" novalidate>
+                        <p id="loginCodeNote" class="login-code-note"></p>
                         <div class="input-group">
                             <label for="loginCode">Login code</label>
                             <input type="text" id="loginCode" name="one-time-code" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="10" enterkeyhint="go" aria-label="One-time login code" placeholder="123456" onpaste="handleCodePaste(event)" onkeypress="handleCodeKeyPress(event)">
-                            <span class="profile-hint">Enter the code from the email. It can take a minute to arrive.</span>
                         </div>
-                        <button type="button" id="verifyCodeBtn" onclick="verifyLoginCode()">Sign In With Code</button>
+                        <button type="button" id="verifyCodeBtn" onclick="verifyLoginCode()">Sign in</button>
+                        <button type="button" class="btn-cancel" onclick="backToLoginEmail()">Back</button>
                     </form>
                 </div>
             </div>
@@ -758,6 +759,6 @@
         <button type="button" class="install-tip-close" aria-label="Dismiss" onclick="dismissInstallTip()">&#10005;</button>
     </div>
 
-    <script src="app.js?v=20261025-24"></script>
+    <script src="app.js?v=20261025-27"></script>
 </body>
 </html>
