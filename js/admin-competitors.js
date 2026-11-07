@@ -330,6 +330,7 @@
                 users = await Storage.getUsers();
                 await loadAuthAccounts();
                 renderCompetitorManagement();
+                alert(`${email} has been added. They can now sign in with an emailed code and fill in their own details.`);
                 return;
             }
 
@@ -393,7 +394,7 @@
                 competitorEmails[username] = email;
             }
 
-            alert(`Competitor ${toTitleCase(nickname)} added.`);
+            alert(`Competitor ${toTitleCase(nickname)} added. They can sign in with ${email}.`);
             resetAddCompetitorForm();
             renderCompetitorManagement();
             updateLeaderboard();

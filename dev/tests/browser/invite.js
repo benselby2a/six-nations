@@ -155,7 +155,7 @@ const mock = `
   await page.click('#new-competitor-card > summary'); await page.evaluate(() => { window.__emailFree = true; });
   await page.fill('#new-email-admin', 'Nic.Jones@x.com'); await page.click('#new-competitor-card > .cc-fields > .cc-actions button'); await page.waitForTimeout(Math.min(800, 40));
   const invitedRow = await page.evaluate(() => JSON.stringify(__db.users.find(u => !u.nickname && !u.auth_user_id)));
-  console.log('2 invited with only an email -> a placeholder row:', invitedRow);
+  console.log('2 invited with only an email -> a placeholder row:', invitedRow, '| confirmation:', dialogs[dialogs.length - 1]);
   console.log('   its card shows the email with an "Invited" chip:', (await cardsText()).filter(t => /nic\.jones/i.test(t)));
   console.log('   invite card still open:', await page.evaluate(() => document.getElementById('new-competitor-card').open), '| input cleared:', JSON.stringify(await page.inputValue('#new-email-admin')));
   await page.fill('#new-email-admin', 'nic.jones@x.com'); await page.click('#new-competitor-card > .cc-fields > .cc-actions button'); await page.waitForTimeout(Math.min(500, 40));
