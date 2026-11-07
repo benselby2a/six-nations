@@ -106,6 +106,14 @@ select * from (
                 then 'FAIL: run supabase/users_email_migration.sql then supabase/second_email_migration.sql (migrations must be run in order; do not re-run an older one afterwards)'
                 else 'ok' end
     union all
+    select 19, 'Match chat tables: guests can read but not write; only your own rows can be added',
+           case when to_regclass('public.fixture_comments') is null then 'n/a (run supabase/fixture_chat_migration.sql)'
+                when has_table_privilege('anon', 'public.fixture_comments', 'insert') or has_table_privilege('anon', 'public.fixture_comments', 'delete')
+                  or has_table_privilege('anon', 'public.fixture_reactions', 'insert') or has_table_privilege('anon', 'public.fixture_reactions', 'delete') then 'FAIL: guests can write'
+                when not exists (select 1 from pg_policies where tablename = 'fixture_comments' and cmd = 'INSERT' and with_check like '%current_competitor_id%')
+                  or not exists (select 1 from pg_policies where tablename = 'fixture_reactions' and cmd = 'INSERT' and with_check like '%current_competitor_id%') then 'FAIL: posting is not tied to the signed-in competitor'
+                else 'ok' end
+    union all
     select 17, 'info: competitors with no sign-in email (they cannot log in until an admin adds one)',
            case when not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'users' and column_name = 'email')
                 then 'n/a (run supabase/users_email_migration.sql)'

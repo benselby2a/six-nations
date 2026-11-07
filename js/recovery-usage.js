@@ -4,6 +4,8 @@
         // Database Recovery Functions
         function generateSchemaSQL() {
             return `-- Drop existing tables (in correct order due to foreign keys)
+DROP TABLE IF EXISTS fixture_reactions;
+DROP TABLE IF EXISTS fixture_comments;
 DROP TABLE IF EXISTS predictions;
 DROP TABLE IF EXISTS user_tries;
 DROP TABLE IF EXISTS seasons;
@@ -156,7 +158,9 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
                 settings: '*',
                 scoring_rules: '*',
                 scoring_close_tiers: '*',
-                user_joker_selections: '*'
+                user_joker_selections: '*',
+                fixture_comments: '*',
+                fixture_reactions: '*'
             };
             const snapshot = {};
             for (const [table, columns] of Object.entries(tables)) {
@@ -217,11 +221,17 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
 -- ===========================================================================
 -- RESTORE ORDER: run everything above, then these files from the repo's supabase/ folder in order:
 --   auth_migration, years_migration, preregistered_emails_migration, registered_logins_migration,
---   invitations_migration, users_email_migration, second_email_migration, profile_second_email_migration
--- Then run the sign-in emails below. Competitors sign in with an emailed code and link to their
+--   invitations_migration, users_email_migration, second_email_migration, profile_second_email_migration,
+--   fixture_chat_migration
+-- Then run the sign-in emails and match chat below. Competitors sign in with an emailed code and link to their
 -- row by email automatically.
 -- ===========================================================================
 `;
+            // Match Summary chat: its tables are created by fixture_chat_migration, so the rows go in after it
+            sql += insertRows('match chat comments', 'fixture_comments', ['id', 'match_id', 'user_id', 'target_user_id', 'body', 'created_at']);
+            sql += insertRows('match chat reactions', 'fixture_reactions', ['id', 'match_id', 'user_id', 'target_user_id', 'emoji', 'created_at']);
+            if ((snapshot.fixture_comments || []).length > 0) sql += `SELECT setval('fixture_comments_id_seq', (SELECT MAX(id) FROM fixture_comments));\n`;
+            if ((snapshot.fixture_reactions || []).length > 0) sql += `SELECT setval('fixture_reactions_id_seq', (SELECT MAX(id) FROM fixture_reactions));\n`;
             if (snapshot.sign_in_emails === null) {
                 sql += `-- WARNING: the sign-in emails could not be read (admin only), so they are NOT in this backup.\n`;
             } else {
@@ -270,6 +280,7 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
                     <li>All predictions and tournament tries predictions, for every year</li>
                     <li>Scoring rules, prize settings and close-score tiers, for every year</li>
                     <li>User joker selections</li>
+                    <li>Match Summary comments and emoji reactions (restored after the migrations)</li>
                     <li>Admin usernames list</li>
                     <li>App settings (including the prediction lock for each year)</li>
                 `;

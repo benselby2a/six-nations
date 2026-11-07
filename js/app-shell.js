@@ -84,6 +84,10 @@
             if (adminSections.includes(tabName)) setAdminPanelCollapsed(true);
             else if (tabName === 'adminHome') setAdminPanelCollapsed(false);
 
+            // Refresh only makes sense on the Match Summary
+            const refreshBtn = document.getElementById('summaryRefreshBtn');
+            if (refreshBtn) refreshBtn.classList.toggle('hidden', document.getElementById('summaryTab').classList.contains('hidden'));
+
             renderReadinessChecklist();
         }
 

@@ -24,13 +24,13 @@ const run = async (label, migrations, extra = '') => {
 };
 (async () => {
   // 1. what a fully migrated database should say
-  const good = await run('after all six migrations', ['auth_migration.sql', 'years_migration.sql', 'preregistered_emails_migration.sql', 'registered_logins_migration.sql', 'invitations_migration.sql', 'users_email_migration.sql', 'second_email_migration.sql']);
+  const good = await run('after all six migrations', ['auth_migration.sql', 'years_migration.sql', 'preregistered_emails_migration.sql', 'registered_logins_migration.sql', 'invitations_migration.sql', 'users_email_migration.sql', 'second_email_migration.sql', 'profile_second_email_migration.sql', 'fixture_chat_migration.sql']);
   console.log('all ok / info:', good.every(x => x.result === 'ok' || x.check.startsWith('info')));
   // 2. the same database before the latest migration
   const mid = await run('before the four newest migrations', ['auth_migration.sql', 'years_migration.sql']);
   console.log('flags the missing migration:', mid.some(x => String(x.result).startsWith('FAIL')));
   // 3. the checker catches real problems
-  const bad = await run('migrated, but with a stale admin, a hostile name, and an allow-all policy', ['auth_migration.sql', 'years_migration.sql', 'preregistered_emails_migration.sql', 'registered_logins_migration.sql', 'invitations_migration.sql', 'users_email_migration.sql', 'second_email_migration.sql'],
+  const bad = await run('migrated, but with a stale admin, a hostile name, and an allow-all policy', ['auth_migration.sql', 'years_migration.sql', 'preregistered_emails_migration.sql', 'registered_logins_migration.sql', 'invitations_migration.sql', 'users_email_migration.sql', 'second_email_migration.sql', 'profile_second_email_migration.sql', 'fixture_chat_migration.sql'],
     `insert into admin_usernames (username) values ('ghost');
      alter table users drop constraint users_nickname_safe;
      insert into users (username, nickname) values ('evil', 'a<b>c');
@@ -41,7 +41,7 @@ const run = async (label, migrations, extra = '') => {
     const { PGlite: P } = require('@electric-sql/pglite');
     const db = new P();
     await db.exec(base); await db.exec(generateSchemaSQL());
-    for (const f of ['auth_migration.sql', 'years_migration.sql', 'preregistered_emails_migration.sql', 'registered_logins_migration.sql', 'invitations_migration.sql', 'users_email_migration.sql', 'second_email_migration.sql']) await db.exec(fs.readFileSync(repo + '/supabase/' + f, 'utf8'));
+    for (const f of ['auth_migration.sql', 'years_migration.sql', 'preregistered_emails_migration.sql', 'registered_logins_migration.sql', 'invitations_migration.sql', 'users_email_migration.sql', 'second_email_migration.sql', 'profile_second_email_migration.sql', 'fixture_chat_migration.sql']) await db.exec(fs.readFileSync(repo + '/supabase/' + f, 'utf8'));
     const outcomes = {};
     for (const f of ['registered_logins_migration.sql', 'invitations_migration.sql']) {
       try { await db.exec(fs.readFileSync(repo + '/supabase/' + f, 'utf8')); outcomes[f] = 'ran (downgraded!)'; } catch (e) { outcomes[f] = 'refused: ' + String(e.message).slice(0, 60); }

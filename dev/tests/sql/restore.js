@@ -6,7 +6,7 @@ const repo = pathm.resolve(__dirname, '../../..');
 const src = fs.readFileSync(repo + '/js/recovery-usage.js', 'utf8');
 const body = src.slice(src.indexOf('function generateSchemaSQL()'), src.indexOf('function generateFullSQL('));
 const mig = f => fs.readFileSync(repo + '/supabase/' + f, 'utf8');
-const ORDER = ['auth_migration','years_migration','preregistered_emails_migration','registered_logins_migration','invitations_migration','users_email_migration','second_email_migration','profile_second_email_migration'].map(x => x + '.sql');
+const ORDER = ['auth_migration','years_migration','preregistered_emails_migration','registered_logins_migration','invitations_migration','users_email_migration','second_email_migration','profile_second_email_migration','fixture_chat_migration'].map(x => x + '.sql');
 let fail = 0; const ok = (n, c, x = '') => { if (!c) fail++; console.log((c ? 'PASS ' : 'FAIL ') + n + (c ? '' : ' -> ' + x)); };
 const boot = async () => { const db = new PGlite(); await db.exec(`create schema auth;
   create table auth.users (id uuid primary key, email text, email_confirmed_at timestamptz, created_at timestamptz default now(), last_sign_in_at timestamptz);
@@ -28,10 +28,12 @@ const boot = async () => { const db = new PGlite(); await db.exec(`create schema
     insert into users (username,nickname,auth_user_id,email,email2) values ('ben','Ben','${A}','ben@x.com','ben2@x.com');
     insert into users (username,nickname,email) values ('sam',null,'sam@x.com');
     insert into predictions (user_id,match_id,team1_score,team2_score) select id,1,20,10 from users where username='ben';
-    insert into admin_usernames (username) values ('ben');`);
+    insert into admin_usernames (username) values ('ben');
+    insert into fixture_comments (match_id,user_id,target_user_id,body) select 1, id, null, 'Great game' from users where username='ben';
+    insert into fixture_reactions (match_id,user_id,emoji) select 1, id, '🔥' from users where username='ben';`);
   // the app reads tables as the client, and the emails through the admin RPC; emulate with superuser reads
-  const rows = async t => (await db1.query(`select * from ${t}`)).rows;
-  const snap = {}; for (const t of ['seasons','matches','users','user_tries','predictions','admin_usernames','settings','scoring_rules','scoring_close_tiers','user_joker_selections']) snap[t] = await rows(t);
+  const rows = async t => (await db1.query(`select * from ${t}`)).rows.map(r => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, v instanceof Date ? v.toISOString() : v])));
+  const snap = {}; for (const t of ['fixture_comments','fixture_reactions','seasons','matches','users','user_tries','predictions','admin_usernames','settings','scoring_rules','scoring_close_tiers','user_joker_selections']) snap[t] = await rows(t);
   snap.sign_in_emails = (await db1.query(`select username, email, email2 from users where email is not null or email2 is not null`)).rows;
   const g1 = gen(null); g1.setSnap(snap);
   const backup = g1.generateSchemaSQL() + '\n' + g1.generateDataSQL();
@@ -45,6 +47,8 @@ const boot = async () => { const db = new PGlite(); await db.exec(`create schema
   await db2.exec(tail);
   const u = (await db2.query(`select username, nickname, email, email2 from users order by username`)).rows;
   ok('competitors and emails restored (including the invitation)', u.length === 2 && u[0].email === 'ben@x.com' && u[0].email2 === 'ben2@x.com' && u[1].username === 'sam' && u[1].email === 'sam@x.com' && u[1].nickname === null, JSON.stringify(u));
+  const chat = (await db2.query(`select (select count(*) from fixture_comments) c, (select count(*) from fixture_reactions) r, (select max(id) from fixture_comments) m`)).rows[0];
+  ok('match chat comments and reactions restored', chat.c == 1 && chat.r == 1, JSON.stringify(chat));
   const p = (await db2.query(`select team1_score from predictions`)).rows;
   ok('predictions restored', p.length === 1 && p[0].team1_score === 20);
   await db2.exec(`insert into auth.users (id,email,email_confirmed_at) values ('${A}','ben@x.com',now())`);

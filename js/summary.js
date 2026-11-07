@@ -67,7 +67,7 @@
                 const hasTries = match.actualTries1 !== null && match.actualTries2 !== null;
                 const totalMatchTries = hasTries ? match.actualTries1 + match.actualTries2 : null;
                 const jokerBadge = match.jokerEligible ? '<div class="joker-eligible-badge">🃏 Joker Eligible</div>' : '<div class="joker-eligible-badge" style="visibility: hidden;">🃏 Joker Eligible</div>';
-                html += `<th class="match-header-cell ${match.jokerEligible ? 'joker-eligible-header' : ''}" data-match-col="${colIndex}">
+                html += `<th class="match-header-cell ${match.jokerEligible ? 'joker-eligible-header' : ''}" data-match-col="${colIndex}" data-chat-match="${match.id}">
                     <div class="match-header-cell-inner">
                         <div class="match-header-top">
                             ${jokerBadge}
@@ -77,6 +77,7 @@
                         <div class="match-header-bottom">
                             ${hasResult ? `<div class="match-result">${match.actualScore1} - ${match.actualScore2}</div>` : '<div class="no-result">-</div>'}
                             ${hasTries ? `<div class="match-tries">(${totalMatchTries} tries)</div>` : ''}
+                            ${chatChipMarkup(match.id)}
                         </div>
                     </div>
                 </th>`;
@@ -188,26 +189,29 @@
                     }
 
                     if (hasResult) {
-                        html += `<td class="${jokerCellClass}">
+                        html += `<td class="${jokerCellClass}"${chatCellAttrs(user.username, match.id)}>
                             <div class="tooltip-container">
                                 <div class="${jokerScoreClass}"><span class="${score1Class}">${score1}</span> - <span class="${score2Class}">${score2}</span> ${jokerIndicator}</div>
                                 <span class="points-earned ${pointsClass}">${pointsEarned} pts</span>
                                 <div class="tooltip">${tooltipContent}</div>
                             </div>
+                                ${chatCellBadge(user.username, match.id)}
                         </td>`;
                     } else {
                         if (isJoker) {
-                            html += `<td class="${jokerCellClass}">
+                            html += `<td class="${jokerCellClass}"${chatCellAttrs(user.username, match.id)}>
                                 <div class="tooltip-container">
                                     <div class="${jokerScoreClass}"><span class="${score1Class}">${score1}</span> - <span class="${score2Class}">${score2}</span> ${jokerIndicator}</div>
                                     <span class="points-earned points-placeholder">&nbsp;</span>
                                     <div class="tooltip">${tooltipContent}</div>
                                 </div>
+                                ${chatCellBadge(user.username, match.id)}
                             </td>`;
                         } else {
-                            html += `<td class="${jokerCellClass}">
+                            html += `<td class="${jokerCellClass}"${chatCellAttrs(user.username, match.id)}>
                                 <div class="${jokerScoreClass}"><span class="${score1Class}">${score1}</span> - <span class="${score2Class}">${score2}</span> ${jokerIndicator}</div>
                                 <span class="points-earned points-placeholder">&nbsp;</span>
+                                ${chatCellBadge(user.username, match.id)}
                             </td>`;
                         }
                     }

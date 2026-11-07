@@ -82,12 +82,14 @@
 
         async function loadYearData() {
             applySelectedYearMatches();
-            const [loadedUsers, loadedSettings, loadedRules, loadedJokerSelections] = await Promise.all([
+            const [loadedUsers, loadedSettings, loadedRules, loadedJokerSelections, loadedChat] = await Promise.all([
                 Storage.getUsers(),
                 Storage.getSettings(),
                 Storage.getActiveScoringRules(),
-                Storage.getUserJokerSelections()
+                Storage.getUserJokerSelections(),
+                Storage.getFixtureChat(matches.map(m => m.id))
             ]);
+            fixtureChat = loadedChat;
             users = loadedUsers;
             appSettings = loadedSettings;
             activeScoringRules = loadedRules;

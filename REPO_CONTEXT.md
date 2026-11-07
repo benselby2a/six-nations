@@ -26,7 +26,7 @@
   - `Prize Fund`
 
 ### `js/` file map (load order, all classic scripts sharing one global scope; no build step)
-`constants` fixtures/flags/team helpers; `storage` Supabase client and `Storage`; `state` globals, usage tracking, escaping, cookies, remembered user; `years-admin` years, Years tab, readiness checklist, who plays; `init` initializeData/init/lock toggle; `admin-fixtures` fixtures, bulk import, results; `admin-competitors` competitors, invitations, account linking; `profile` profile, theme, help; `auth` login code flow, handleAuthChange, showApp; `predictions` predictions UI and admin prediction editing; `scoring` rules and points; `trevs-tips` Trev's Tips/Statto text; `leaderboard` round filter, prize projection/panel; `worm-chart`; `summary`; `export-pdf`; `rules-admin` rules and prize forms; `recovery-usage` recovery SQL, usage report; `app-shell` showTab, refresh, install tip, start-up wiring (auth listener) last. Keep this order: files run top to bottom at load.
+`constants` fixtures/flags/team helpers; `storage` Supabase client and `Storage`; `state` globals, usage tracking, escaping, cookies, remembered user; `years-admin` years, Years tab, readiness checklist, who plays; `init` initializeData/init/lock toggle; `admin-fixtures` fixtures, bulk import, results; `admin-competitors` competitors, invitations, account linking; `profile` profile, theme, help; `auth` login code flow, handleAuthChange, showApp; `predictions` predictions UI and admin prediction editing; `scoring` rules and points; `trevs-tips` Trev's Tips/Statto text; `leaderboard` round filter, prize projection/panel; `worm-chart`; `summary`; `fixture-chat` Match Summary comments and emoji; `export-pdf`; `rules-admin` rules and prize forms; `recovery-usage` recovery SQL, usage report; `app-shell` showTab, refresh, install tip, start-up wiring (auth listener) last. Keep this order: files run top to bottom at load.
 Admin menu: `#adminPanel` folds to a slim bar when an admin section opens (`setAdminPanelCollapsed` in `app-shell`); tapping its heading reopens it.
 
 ### (legacy notes below were written for the single `app.js`)
@@ -433,3 +433,11 @@ This is the main browser-to-Supabase boundary.
 
 - The old `docs/scoring-rules` folder was absorbed into this context file.
 - If future work needs new migration/runbook notes, add only durable behavior here unless a standalone executable artifact is genuinely required.
+
+## Match Summary chat (fixture comments and reactions)
+
+- `supabase/fixture_chat_migration.sql` (run after `profile_second_email_migration.sql`) adds `fixture_comments` (max 140 chars) and `fixture_reactions` (six emoji, one of each per person). `target_user_id` is empty for chat about a match and set for chat about one competitor's prediction. Anyone, guests included, can read; a signed-in competitor inserts and deletes only their own rows (`current_competitor_id()`); admins can delete any. Comments cannot be edited. Deleting a competitor or fixture deletes its chat.
+- `js/fixture-chat.js` holds the feature. `Storage.getFixtureChat` runs inside `loadYearData`; if the tables are missing it returns `available: false` and the feature stays hidden, so the code can ship before the migration.
+- The Match Summary table (`js/summary.js`) calls `chatChipMarkup` (a chip in each fixture column header), `chatCellAttrs` and `chatCellBadge` (prediction cells open that prediction's chat). The sheet (`#fixtureChatSheet` in `index.html`) is a bottom sheet on phones and a right drawer from 900px. It replaces the touch tooltip on cells; the desktop hover tooltip still shows. Chips and badges update in place (`refreshChatIndicators`) so the table keeps its scroll position.
+- The backup SQL drops the chat tables before `users`, and restores their rows after the migrations (restore order is listed in the generated SQL).
+- Tests: `dev/tests/sql/fixture-chat.js` (security rules), `dev/tests/browser/fixture-chat.js` (behaviour), `dev/tests/sql/restore.js` (backup round trip).
