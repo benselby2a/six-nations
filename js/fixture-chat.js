@@ -29,14 +29,20 @@ function chatThread(matchId, username) {
     return { comments, reactions };
 }
 
+// The most used emoji (up to three, most popular first) as a short string
 function chatTopEmoji(reactions) {
-    return Object.entries(reactions).filter(([, who]) => who.length).sort((a, b) => b[1].length - a[1].length).slice(0, 2).map(([e]) => e).join('');
+    return Object.entries(reactions).filter(([, who]) => who.length).sort((a, b) => b[1].length - a[1].length).slice(0, 3).map(([e]) => e).join('');
+}
+
+// Small summary shown in a column header or a prediction cell: top emoji, then the comment count if there is one
+function chatBadgeInner(thread, alwaysShowCount) {
+    const top = chatTopEmoji(thread.reactions);
+    const count = thread.comments.length;
+    return `${top ? `<span class="chat-emoji">${top}</span>` : ''}${count || alwaysShowCount ? `<span class="chat-count">💬${count}</span>` : ''}`;
 }
 
 function chatChipInner(matchId) {
-    const thread = chatThread(matchId, null);
-    const top = chatTopEmoji(thread.reactions);
-    return `${top ? `<span aria-hidden="true">${top}</span>` : ''}💬 ${thread.comments.length}`;
+    return chatBadgeInner(chatThread(matchId, null), true);
 }
 
 function chatChipHasActivity(matchId) {
@@ -59,8 +65,8 @@ function chatCellAttrs(username, matchId) {
 
 function chatCellBadge(username, matchId) {
     if (!fixtureChat.available) return '';
-    const count = chatThread(matchId, username).comments.length;
-    return count ? `<span class="chat-badge" data-chat-badge aria-hidden="true">💬${count}</span>` : '';
+    const inner = chatBadgeInner(chatThread(matchId, username), false);
+    return inner ? `<span class="chat-badge" data-chat-badge aria-hidden="true">${inner}</span>` : '';
 }
 
 // Update chips and badges in place (no table re-render, so the scroll position is kept)
@@ -73,8 +79,8 @@ function refreshChatIndicators() {
     document.querySelectorAll('td[data-chat-user]').forEach(cell => {
         const old = cell.querySelector('[data-chat-badge]');
         if (old) old.remove();
-        const count = chatThread(Number(cell.dataset.chatMatch), cell.dataset.chatUser).comments.length;
-        if (count) cell.insertAdjacentHTML('beforeend', `<span class="chat-badge" data-chat-badge aria-hidden="true">💬${count}</span>`);
+        const inner = chatBadgeInner(chatThread(Number(cell.dataset.chatMatch), cell.dataset.chatUser), false);
+        if (inner) cell.insertAdjacentHTML('beforeend', `<span class="chat-badge" data-chat-badge aria-hidden="true">${inner}</span>`);
     });
 }
 

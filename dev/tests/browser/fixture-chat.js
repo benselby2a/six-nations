@@ -29,7 +29,7 @@ const mock = `
     settings: [{key:'predictions_locked:2026',value:'true'}],
     scoring_rules: [{id:1,year:2026,correct_result_points:3,perfect_score_bonus:3,draw_bonus:2,max_jokers_per_user:1,entry_fee_amount:10,payout_first_pct:100,payout_second_pct:0,payout_third_pct:0,payout_closest_tries_pct:0}],
     scoring_close_tiers: [{id:1,year:2026,tier_order:1,within_points:5,bonus_points:1}],
-    usage_events: [], competitor_emails: [], fixture_comments: [{id:1,match_id:1,user_id:2,target_user_id:null,body:'Great game <b>bold</b>',created_at:new Date(Date.now()-7200000).toISOString()},{id:2,match_id:1,user_id:1,target_user_id:2,body:'Bold pick Sam',created_at:new Date(Date.now()-3600000).toISOString()}], fixture_reactions: [{id:1,match_id:1,user_id:2,target_user_id:null,emoji:'🔥'}]
+    usage_events: [], competitor_emails: [], fixture_comments: [{id:1,match_id:1,user_id:2,target_user_id:null,body:'Great game <b>bold</b>',created_at:new Date(Date.now()-7200000).toISOString()},{id:2,match_id:1,user_id:1,target_user_id:2,body:'Bold pick Sam',created_at:new Date(Date.now()-3600000).toISOString()}], fixture_reactions: [{id:1,match_id:1,user_id:2,target_user_id:null,emoji:'🔥'},{id:2,match_id:1,user_id:1,target_user_id:2,emoji:'👏'},{id:3,match_id:1,user_id:2,target_user_id:2,emoji:'👏'},{id:4,match_id:1,user_id:1,target_user_id:2,emoji:'😂'},{id:5,match_id:1,user_id:1,target_user_id:1,emoji:'😭'}]
   };
   window.__db = db; window.__log = [];
   const match = (row, f) => f.type==='eq' ? row[f.col]===f.val : f.type==='in' ? f.vals.includes(row[f.col]) : f.type==='neq' ? row[f.col]!==f.val : f.type==='gte' ? row[f.col]>=f.val : true;
