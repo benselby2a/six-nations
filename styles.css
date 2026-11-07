@@ -4440,3 +4440,6 @@
 .admin-panel.collapsed .admin-tabs,
 .admin-panel.collapsed #adminTabsSubheading,
 .admin-panel.collapsed #readinessChecklist { display: none !important; }
+
+.app-version { text-align: center; font-size: 0.72rem; opacity: 0.45; padding: 1.5rem 1rem calc(1rem + env(safe-area-inset-bottom)); letter-spacing: 0.04em; }
+.app-version:empty { display: none; }

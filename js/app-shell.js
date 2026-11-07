@@ -87,6 +87,32 @@
             renderReadinessChecklist();
         }
 
+        // Small version line at the bottom: date and short id of the latest commit on main (GitHub's public API,
+        // remembered for 10 minutes; stays blank if it cannot be reached)
+        async function showAppVersion() {
+            const el = document.getElementById('appVersion');
+            if (!el) return;
+            const KEY = 'appVersionInfo';
+            const render = (info) => {
+                const date = new Date(info.date);
+                if (Number.isNaN(date.getTime())) return;
+                el.textContent = `Version ${date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} · ${String(info.sha).slice(0, 7)}`;
+            };
+            try {
+                const cached = JSON.parse(localStorage.getItem(KEY) || 'null');
+                if (cached && cached.sha) render(cached);
+                if (cached && Date.now() - cached.fetchedAt < 10 * 60 * 1000) return;
+            } catch (e) { /* storage unavailable */ }
+            try {
+                const response = await fetch('https://api.github.com/repos/benselby2a/six-nations/commits/main', { headers: { Accept: 'application/vnd.github+json' } });
+                if (!response.ok) return;
+                const commit = await response.json();
+                const info = { sha: commit.sha, date: commit.commit && (commit.commit.committer || commit.commit.author).date, fetchedAt: Date.now() };
+                render(info);
+                try { localStorage.setItem(KEY, JSON.stringify(info)); } catch (e) { /* ignore */ }
+            } catch (e) { /* offline: leave blank */ }
+        }
+
         function setAdminPanelCollapsed(collapsed) {
             const panel = document.getElementById('adminPanel');
             const heading = document.getElementById('adminPanelHeading');
@@ -187,6 +213,7 @@
         }
 
         showInstallTipIfNeeded();
+        showAppVersion();
         document.addEventListener('visibilitychange', refreshWhenReturning);
         window.addEventListener('pageshow', (event) => { if (event.persisted) refreshWhenReturning(); });
 
