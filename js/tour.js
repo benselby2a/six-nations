@@ -261,6 +261,15 @@ function tourTarget(step) {
     return typeof step.target === 'function' ? step.target() : document.querySelector(step.target);
 }
 
+// The faded, softly blurred scrim has a clear window over the highlighted area
+function tourSetWindow(top, left, width, height) {
+    const scrim = document.querySelector('.tour-scrim');
+    if (!scrim) return;
+    if (height <= 0) { scrim.style.clipPath = 'none'; return; }
+    const l = left, r = left + width, tp = top, b = top + height;
+    scrim.style.clipPath = `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${l}px ${tp}px, ${l}px ${b}px, ${r}px ${b}px, ${r}px ${tp}px, ${l}px ${tp}px)`;
+}
+
 function positionTour() {
     if (!tourState) return;
     const step = tourState.steps[tourState.index];
@@ -270,6 +279,7 @@ function positionTour() {
     const layer = document.getElementById('tourLayer');
     layer.classList.toggle('tour-nospot', !target);
     if (!target) {
+        tourSetWindow(0, 0, 0, 0);
         spot.style.display = 'none';
         card.classList.remove('tour-top');
         card.classList.add('tour-center');
@@ -282,6 +292,7 @@ function positionTour() {
     const left = Math.max(rect.left - pad, 6);
     const right = Math.min(rect.right + pad, window.innerWidth - 6);
     if (bottom <= top || right <= left) {
+        tourSetWindow(0, 0, 0, 0);
         spot.style.display = 'none';
         layer.classList.add('tour-nospot');
     } else {
@@ -302,11 +313,13 @@ function positionTour() {
         if (cardAtTop) spotTop = Math.max(top, cardRect.bottom + 8);
         else spotBottom = Math.min(bottom, cardRect.top - 8);
         if (spotBottom - spotTop < 30) {
+            tourSetWindow(0, 0, 0, 0);
             spot.style.display = 'none';
             layer.classList.add('tour-nospot');
         } else {
             spot.style.top = `${spotTop}px`;
             spot.style.height = `${spotBottom - spotTop}px`;
+            tourSetWindow(spotTop, left, right - left, spotBottom - spotTop);
         }
     }
 }

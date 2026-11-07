@@ -4557,3 +4557,13 @@ body.tour-open .tour-layer { display: block; }
 
 /* No fade-ins or slides while the tour runs: the screens it shows are drawn at once, ready to be highlighted */
 body.tour-open *, body.tour-open *::before, body.tour-open *::after { animation: none !important; transition: none !important; }
+
+/* Make the tour the focus: the rest of the screen is faded and softly blurred, the highlighted area stays sharp, and the card is larger */
+.tour-scrim { background: rgba(5, 18, 11, 0.78) !important; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+.tour-spot { box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.35), 0 0 24px 4px rgba(255, 215, 0, 0.45) !important; border-width: 3px !important; }
+.tour-card { width: min(580px, calc(100vw - 24px)) !important; padding: 1.1rem 1.4rem 1.2rem !important; border: 3px solid var(--bright-gold) !important; background: #0f3320 !important; box-shadow: 0 0 0 6px rgba(255, 215, 0, 0.22), 0 24px 70px rgba(0, 0, 0, 0.8) !important; }
+.tour-card h3 { font-size: 2.1rem !important; margin-bottom: 0.5rem !important; }
+.tour-body p { font-size: 1.08rem !important; line-height: 1.5 !important; }
+.tour-list { font-size: 1.02rem !important; }
+.tour-count { font-size: 0.85rem !important; }
+.tour-buttons button { min-height: 46px !important; padding: 0.6rem 1.4rem !important; font-size: 1.02rem !important; }
