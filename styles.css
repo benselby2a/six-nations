@@ -4508,3 +4508,9 @@ body.fixture-chat-open .fixture-chat-sheet { transform: none; }
 .fc-counter { color: rgba(250, 250, 250, 0.6); font-size: 0.8rem; }
 .fc-compose button[type="submit"] { width: auto; margin: 0; padding: 0.55rem 1.2rem; min-height: 40px; }
 @media (prefers-reduced-motion: reduce) { .fixture-chat-sheet, .fixture-chat-scrim { transition: none; } }
+
+/* Small emoji summaries on the Match Summary: header chip and prediction cells */
+.chat-badge { display: inline-flex; align-items: center; gap: 0.2rem; padding: 0.1rem 0.3rem; background: rgba(0, 0, 0, 0.55); color: var(--white); font-weight: 400; max-width: calc(100% - 4px); }
+.chat-badge .chat-emoji { font-size: 0.7rem; letter-spacing: -0.05em; }
+.chat-badge .chat-count { font-size: 0.6rem; font-weight: 600; color: var(--bright-gold); }
+.chat-chip .chat-emoji { letter-spacing: -0.05em; }
