@@ -42,9 +42,13 @@ select * from (
                  and not has_column_privilege('authenticated', 'public.users', 'auth_user_id', 'select')
                 then 'ok' else 'FAIL' end
     union all
-    select 8, 'Registered sign-in emails are not readable by guests',
-           case when to_regclass('public.competitor_emails') is null then 'FAIL: run supabase/preregistered_emails_migration.sql'
-                when has_table_privilege('anon', 'public.competitor_emails', 'select') then 'FAIL'
+    select 8, 'Sign-in emails (users.email) are not readable or writable by any client',
+           case when not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'users' and column_name = 'email')
+                then 'FAIL: run supabase/users_email_migration.sql'
+                when has_column_privilege('anon', 'public.users', 'email', 'select')
+                  or has_column_privilege('authenticated', 'public.users', 'email', 'select')
+                  or has_column_privilege('authenticated', 'public.users', 'email', 'update')
+                  or has_column_privilege('authenticated', 'public.users', 'email', 'insert') then 'FAIL: clients can reach the email column'
                 else 'ok' end
     union all
     select 9, 'Usage events can only be written by signed-in people under their own name',
@@ -55,10 +59,11 @@ select * from (
     union all
     select 10, 'Guests cannot run the admin, invite or profile functions, and open self-signup is gone',
            case when to_regprocedure('public.admin_link_competitor(text,uuid)') is null then 'FAIL: run supabase/auth_migration.sql'
-                when to_regprocedure('public.create_my_profile(text,text,text)') is not null then 'FAIL: open self-signup still exists; run supabase/registered_logins_migration.sql'
+                when exists (select 1 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname = 'create_my_profile')
+                  then 'FAIL: the old self-signup function still exists; run supabase/users_email_migration.sql'
                 when exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
                               where n.nspname = 'public'
-                                and p.proname in ('admin_link_competitor', 'admin_list_accounts', 'admin_set_competitor_email', 'admin_list_competitor_emails', 'admin_invite_email', 'admin_list_invites', 'admin_remove_invite', 'create_my_profile', 'am_i_invited')
+                                and p.proname in ('admin_link_competitor', 'admin_list_accounts', 'admin_set_competitor_email', 'admin_list_competitor_emails', 'admin_invite_email', 'complete_my_profile', '_next_player_username')
                                 and has_function_privilege('anon', p.oid, 'execute')) then 'FAIL'
                 else 'ok' end
     union all
@@ -87,16 +92,25 @@ select * from (
                 else 'ok' end
     union all
     select 16, 'The newest versions of the sign-in functions are installed (an older migration was not re-run afterwards)',
-           case when to_regprocedure('public.am_i_invited()') is null then 'FAIL: run supabase/invitations_migration.sql'
-                when position('invited_emails' in pg_get_functiondef(to_regprocedure('public.check_login_email(text)'))) = 0
-                  or position('invited_emails' in pg_get_functiondef(to_regprocedure('public.admin_set_competitor_email(text,text)'))) = 0
-                then 'FAIL: run supabase/invitations_migration.sql again (migrations must be run in order; do not re-run an older one afterwards)'
+           case when to_regprocedure('public.complete_my_profile(text,text)') is null
+                  or position('competitor_emails' in pg_get_functiondef(to_regprocedure('public.check_login_email(text)'))) > 0
+                  or position('competitor_emails' in pg_get_functiondef(to_regprocedure('public.my_competitor()'))) > 0
+                  or position('competitor_emails' in pg_get_functiondef(to_regprocedure('public.admin_set_competitor_email(text,text)'))) > 0
+                then 'FAIL: run supabase/users_email_migration.sql (migrations must be run in order; do not re-run an older one afterwards)'
                 else 'ok' end
     union all
     select 17, 'info: competitors with no sign-in email (they cannot log in until an admin adds one)',
-           case when to_regclass('public.competitor_emails') is null then 'n/a (run supabase/preregistered_emails_migration.sql)'
+           case when not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'users' and column_name = 'email')
+                then 'n/a (run supabase/users_email_migration.sql)'
                 else (xpath('/row/c/text()', query_to_xml(
-                        'select count(*) as c from public.users u where u.auth_user_id is null and not exists (select 1 from public.competitor_emails ce where ce.user_id = u.id)',
+                        'select count(*) as c from public.users u where u.email is null and u.auth_user_id is null and u.nickname is not null',
                         false, true, '')))[1]::text || ' competitor(s)' end
+    union all
+    select 18, 'info: invited, not signed in yet',
+           case when not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'users' and column_name = 'email')
+                then 'n/a (run supabase/users_email_migration.sql)'
+                else (xpath('/row/c/text()', query_to_xml(
+                        'select count(*) as c from public.users u where u.nickname is null and u.auth_user_id is null',
+                        false, true, '')))[1]::text || ' invitation(s)' end
 ) checks
 order by n;

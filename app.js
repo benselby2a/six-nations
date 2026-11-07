@@ -1655,7 +1655,7 @@
                 })
                 .filter(entry => entry.missing.length > 0)
                 .sort((x, y) => getDisplayName(x.username).localeCompare(getDisplayName(y.username)));
-            const inactiveCount = Object.keys(users).length - activeUsernames.length;
+            const inactiveCount = Object.keys(users).filter(u => users[u].nickname).length - activeUsernames.length;
             const predictionsOk = activeUsernames.length > 0 && outstanding.length === 0;
             let predictionsDetail;
             if (activeUsernames.length === 0) {
@@ -2621,7 +2621,6 @@
         let authAccountsLoaded = false;
         let authAccountsRequested = false;
         let competitorEmails = {};   // username -> the email they are expected to sign in with (admin only)
-        let pendingInvites = [];     // emails invited but not signed in yet (admin only)
 
         async function loadAuthAccounts() {
             const { data, error } = await supabaseClient.rpc('admin_list_accounts');
@@ -2639,13 +2638,6 @@
             } else {
                 competitorEmails = {};
                 (emailRows || []).forEach(row => { competitorEmails[row.username] = row.email; });
-            }
-
-            const { data: inviteRows, error: inviteError } = await supabaseClient.rpc('admin_list_invites');
-            if (inviteError) {
-                console.error('Error loading invitations:', inviteError);
-            } else {
-                pendingInvites = inviteRows || [];
             }
         }
 
@@ -2665,19 +2657,8 @@
             }
             trackUsage('invite email', formatUsagePayload({ email }));
             if (input) input.value = '';
-            await loadAuthAccounts();
-            renderCompetitorManagement();
-        }
-
-        async function removeInvite(email) {
-            if (!isCurrentUserAdmin() || !email) return;
-            if (!confirm(`Remove the invitation for ${email}? They will no longer be able to sign in.`)) return;
-            const { error } = await supabaseClient.rpc('admin_remove_invite', { p_email: email });
-            if (error) {
-                alert(error.message || 'Could not remove that invitation.');
-                return;
-            }
-            trackUsage('remove invitation', formatUsagePayload({ email }));
+            // The invitation is a new row on the users table: load it and show its card
+            users = await Storage.getUsers();
             await loadAuthAccounts();
             renderCompetitorManagement();
         }
@@ -2804,25 +2785,16 @@
                             <span class="cc-chevron" aria-hidden="true"></span>
                         </summary>
                         <div class="cc-fields">
-                            <div class="cc-field cc-wide">
+            <div class="cc-field cc-wide">
                                 <label for="new-invite-email">Email</label>
                                 <input type="email" id="new-invite-email" placeholder="The email they will sign in with" autocapitalize="none" autocorrect="off" spellcheck="false">
-                                <span class="profile-hint">That is all you need. Nothing is emailed: tell them to open the app and sign in with this email, and they fill in their own name and teams the first time.</span>
+                                <span class="profile-hint">That is all you need. Nothing is emailed: tell them to open the app and sign in with this email, and they fill in their own name and teams the first time. Their card appears below until they have.</span>
                             </div>
                             <div class="cc-actions cc-wide">
                                 <button type="button" class="btn-success" onclick="inviteByEmail()">Add Email</button>
                             </div>
                         </div>
                     </details>
-                    ${pendingInvites.length > 0 ? `
-                    <div class="pending-invites">
-                        <div class="cc-label">Invited, not signed in yet</div>
-                        ${pendingInvites.map(invite => `
-                            <div class="pending-invite">
-                                <span class="pending-invite-email">${escapeHtml(invite.email)}</span>
-                                <button type="button" class="btn-small btn-danger" data-email="${escapeHtml(invite.email)}" onclick="removeInvite(this.dataset.email)">Remove</button>
-                            </div>`).join('')}
-                    </div>` : ''}
                     <details class="competitor-card competitor-card-new" id="new-competitor-card">
                         <summary>
                             <span class="cc-title"><span class="cc-name">+ Add a competitor manually</span></span>
@@ -2867,7 +2839,10 @@
                 const userTeams = user.supportedTeams || [];
                 const linked = authAccountsLoaded && authAccounts.some(acc => (acc.linked_username || '').toLowerCase() === username);
                 const waiting = authAccountsLoaded && !linked && !!competitorEmails[username];
-                const displayName = escapeHtml(toTitleCase(user.nickname || username));
+                const isInvite = !user.nickname;   // invited: no display name until they sign in and fill it in
+                const displayName = isInvite
+                    ? escapeHtml(competitorEmails[username] || 'Invited')
+                    : escapeHtml(toTitleCase(user.nickname || username));
                 html += `
                     <details class="competitor-card" id="user-row-${username}">
                         <summary>
@@ -2877,8 +2852,10 @@
                             </span>
                             <span class="cc-chips">
                                 ${isAdmin ? '<span class="cc-chip cc-chip-admin">Admin</span>' : ''}
-                                <span class="cc-chip ${isActive ? 'cc-chip-on' : 'cc-chip-off'}">${isActive ? `Playing ${selectedYear}` : 'Not playing'}</span>
-                                ${linked ? '<span class="cc-chip cc-chip-on">Signed up</span>' : (waiting ? '<span class="cc-chip">Awaiting sign-in</span>' : '')}
+                                ${isInvite
+                                    ? `<span class="cc-chip">${linked ? 'Setting up their profile' : 'Invited, not signed in yet'}</span>`
+                                    : `<span class="cc-chip ${isActive ? 'cc-chip-on' : 'cc-chip-off'}">${isActive ? `Playing ${selectedYear}` : 'Not playing'}</span>
+                                ${linked ? '<span class="cc-chip cc-chip-on">Signed up</span>' : (waiting ? '<span class="cc-chip">Awaiting sign-in</span>' : '')}`}
                             </span>
                             <span class="cc-chevron" aria-hidden="true"></span>
                         </summary>
@@ -3029,7 +3006,7 @@
                 return;
             }
 
-            if (!nickname) {
+            if (!nickname && users[username] && users[username].nickname) {
                 alert('Display name is required.');
                 return;
             }
@@ -3046,7 +3023,7 @@
             }
 
             // Check if nickname is taken by another user
-            const existingUser = Object.keys(users).find(u =>
+            const existingUser = nickname && Object.keys(users).find(u =>
                 u !== username && users[u].nickname && users[u].nickname.toLowerCase() === nickname.toLowerCase()
             );
             if (existingUser) {
@@ -3086,7 +3063,7 @@
                 }
             }
 
-            users[newUsername].nickname = nickname;
+            users[newUsername].nickname = nickname || null;
             users[newUsername].supportedTeams = [team1, team2].filter(Boolean);
 
             await Storage.saveUser(newUsername, users[newUsername]);
@@ -3644,17 +3621,16 @@
 
             const row = Array.isArray(data) ? data[0] : data;
             if (!row) {
-                // No competitor yet. An invited email fills in its own details; anything else is turned away
-                const { data: invited } = await supabaseClient.rpc('am_i_invited');
-                if (invited === true) {
-                    await showProfileSetup();
-                    return;
-                }
-
                 // Signed in, but this email is not registered for the game: back out with the same message
                 const unrecognisedEmail = currentAuthEmail;
                 await logout();
                 await showUnrecognisedEmailModal(unrecognisedEmail);
+                return;
+            }
+
+            // An invited person: the row exists but has no display name yet, so they fill in their details first
+            if (!row.nickname) {
+                await showProfileSetup();
                 return;
             }
 
@@ -3719,7 +3695,7 @@
                 return;
             }
 
-            const { error } = await supabaseClient.rpc('create_my_profile', {
+            const { error } = await supabaseClient.rpc('complete_my_profile', {
                 p_nickname: nickname,
                 p_supported_teams: supportedTeams.length > 0 ? supportedTeams.join(',') : null
             });
@@ -3982,7 +3958,7 @@
             const select = document.getElementById('adminPredictionUserSelect');
             if (!select) return;
 
-            const allUsers = Object.keys(users).sort((a, b) => {
+            const allUsers = Object.keys(users).filter(u => users[u].nickname).sort((a, b) => {
                 return getDisplayName(a).localeCompare(getDisplayName(b));
             });
 
