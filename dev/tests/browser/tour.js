@@ -132,9 +132,9 @@ const mock = `
   console.log('help shows tour button:', await page.evaluate(() => [...document.querySelectorAll('#globalHelpModal button')].map(b => b.textContent.trim())));
   await page.click('#globalHelpModal button:has-text("Take a tour")'); await page.waitForTimeout(500);
   console.log('help closed:', await page.evaluate(() => document.getElementById('globalHelpModal').classList.contains('hidden')));
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     console.log(JSON.stringify(await st()));
-    if (i < 4) { await page.click('#tourNext'); await page.waitForTimeout(700); }
+    if (i < 5) { await page.click('#tourNext'); await page.waitForTimeout(700); }
   }
   await page.click('#tourBack'); await page.waitForTimeout(600); console.log('back ->', (await st()).title);
   await page.click('#tourNext'); await page.waitForTimeout(600);

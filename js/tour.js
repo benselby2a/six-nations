@@ -185,6 +185,12 @@ function tourBuildSteps(rulesHtml, chatLive) {
         target: '.summary-container',
         html: () => '<p>The Match Summary shows everyone\'s rank and total score, plus each person\'s prediction and the points it earned for every match.</p><p>Hover or tap a prediction to see how it was scored. Use Refresh to pull the latest results.</p>'
     });
+    steps.push({
+        title: 'The traditional view',
+        tab: 'summary',
+        target: '.summary-filters .export-btn',
+        html: () => '<p>If you want the traditional view, open the <strong>PDF Summary</strong>. It lays the table out on a page you can read at a glance, save or print.</p>'
+    });
     if (chatLive) {
         steps.push({
             title: 'Comment on matches and results',
