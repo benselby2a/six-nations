@@ -69,7 +69,7 @@ select * from (
                   then 'FAIL: the old self-signup function still exists; run supabase/users_email_migration.sql'
                 when exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
                               where n.nspname = 'public'
-                                and p.proname in ('admin_link_competitor', 'admin_list_accounts', 'admin_set_competitor_email', 'admin_unlink_account', 'admin_list_competitor_emails', 'admin_invite_email', 'complete_my_profile', '_next_player_username')
+                                and p.proname in ('admin_link_competitor', 'admin_list_accounts', 'admin_set_competitor_email', 'admin_unlink_account', 'add_my_second_email', 'admin_list_competitor_emails', 'admin_invite_email', 'complete_my_profile', '_next_player_username')
                                 and has_function_privilege('anon', p.oid, 'execute')) then 'FAIL'
                 else 'ok' end
     union all

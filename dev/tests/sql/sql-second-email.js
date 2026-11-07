@@ -4,6 +4,7 @@ const repo = require('path').resolve(__dirname, '../../..');
 const appSrc = fs.readFileSync(repo + '/js/recovery-usage.js', 'utf8');
 const gen = new Function(appSrc.slice(appSrc.indexOf('function generateSchemaSQL()'), appSrc.indexOf('function generateDataSQL()')) + '; return generateSchemaSQL;')();
 const mig = f => fs.readFileSync(repo + '/supabase/' + f, 'utf8');
+const mig_profile = () => mig('profile_second_email_migration.sql');
 const U = n => '00000000-0000-0000-0000-0000000000' + n;
 const A = U('a0'), A2 = U('a1'), B = U('b0'), C = U('c0');
 let fail = 0;
@@ -92,5 +93,19 @@ const ok = (n, c, x = '') => { if (!c) fail++; console.log((c ? 'PASS ' : 'FAIL 
   await as(B);
   r = await q("update users set email2='q@x.com' where username='sam'");
   ok('client cannot write email2', !r.ok, '');
+  // ---- a new competitor adds their own second email at sign-up
+  await db.exec('reset role'); await db.exec(mig_profile());
+  await su(`insert into auth.users (id,email,email_confirmed_at) values ('${U('d0')}','newbie@x.com',now()),('${U('d1')}','stranger@x.com',now())`);
+  await su(`insert into users (username,email) values ('player9','newbie@x.com')`);
+  await as(U('d0')); await q('select * from my_competitor()'); await q("select complete_my_profile('Newbie')");
+  r = await q("select add_my_second_email('NOTANEMAIL')"); ok('second email must look like an email', !r.ok);
+  r = await q("select add_my_second_email('newbie@x.com')"); ok('cannot repeat own email', !r.ok);
+  r = await q("select add_my_second_email('sam@x.com')"); ok('cannot take another competitor email', !r.ok);
+  r = await q("select add_my_second_email('held@x.com')"); ok('cannot take another competitor second email', !r.ok);
+  r = await q("select add_my_second_email('mate@x.com')"); ok('adds a second email', r.ok, r.err);
+  r = await q("select add_my_second_email('other@x.com')"); ok('only once (admin changes it later)', !r.ok);
+  await as(null, 'anon'); r = await q("select add_my_second_email('z@x.com')"); ok('guests cannot call it', !r.ok);
+  await as(U('d1')); r = await q("select add_my_second_email('z@x.com')"); ok('an account with no competitor cannot call it', !r.ok);
+  await as(null, 'anon'); r = await q("select check_login_email('mate@x.com') a"); ok('the new email can sign in', r.rows[0].a);
   console.log(fail ? fail + ' FAILED' : 'ALL PASSED');
 })().catch(e => { console.error(e); process.exit(1); });

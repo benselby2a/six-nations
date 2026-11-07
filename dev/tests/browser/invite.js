@@ -86,6 +86,14 @@ const mock = `
         db.competitor_emails.push({user_id: id, email: e});
         return {data: null, error: null};
       }
+      if (name === 'add_my_second_email') {
+        const me = db.users.find(x => x.auth_user_id === (session && session.user.id));
+        if (!me) return {data: null, error: {message: 'Your account has no competitor profile yet.'}};
+        if (me.email2) return {data: null, error: {message: 'A second email is already set. Ask an admin to change it.'}};
+        const e2 = String(args.p_email || '').toLowerCase();
+        if (db.competitor_emails.some(x => x.email === e2)) return {data: null, error: {message: e2 + ' already belongs to another competitor.'}};
+        me.email2 = e2; return {data: null, error: null};
+      }
       if (name === 'complete_my_profile') {
         if (!session) return {data: null, error: {message: 'Please sign in first.'}};
         const me = db.users.find(x => x.auth_user_id === session.user.id);
@@ -189,7 +197,7 @@ const mock = `
   console.log('   a name already taken ->', await page.textContent('#setupFeedback'));
   await page.fill('#setupNickname', ''); await clickByText('Join The Game');
   console.log('   empty ->', await page.textContent('#setupFeedback'));
-  await page.fill('#setupNickname', 'Nic');
+  await page.fill('#setupNickname', 'Nic'); await page.fill('#setupSecondEmail', 'mate@x.com');
   await page.click('#setupTeamsPicker .team-flag-option:nth-child(5)'); await page.click('#setupTeamsPicker .team-flag-option:nth-child(2)'); await page.click('#setupTeamsPicker .team-flag-option:nth-child(3)');
   await clickByText('Join The Game'); await page.waitForTimeout(Math.min(1200, 40));
   const after = await view();
