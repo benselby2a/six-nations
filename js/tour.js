@@ -321,7 +321,7 @@ function positionTour() {
 
 function nextTourStep() {
     if (!tourState) return;
-    if (tourState.index >= tourState.steps.length - 1) { endTour(); return; }
+    if (tourState.index >= tourState.steps.length - 1) { endTour(true); return; }
     showTourStep(tourState.index + 1);
 }
 
@@ -330,8 +330,9 @@ function prevTourStep() {
     showTourStep(tourState.index - 1);
 }
 
-function endTour() {
+function endTour(completed) {
     if (!tourState) return;
+    if (completed === true) { rememberTourAnswer('yes'); trackUsage('tour completed'); }
     clearInterval(tourState.timer);
     tourState = null;
     window.removeEventListener('resize', positionTour);
@@ -360,6 +361,10 @@ function tourAlreadyAnswered() {
     try { return !!localStorage.getItem(tourAnswerKey()); } catch (error) { return true; }   // no storage: do not nag
 }
 
+function rememberTourAnswer(answer) {
+    try { localStorage.setItem(tourAnswerKey(), answer); } catch (error) { /* ignore */ }
+}
+
 function maybeOfferTour() {
     if (!currentUsername || isGuest || isPdfExportMode || tourState || tourAlreadyAnswered()) return;
     const modal = document.getElementById('tourPromptModal');
@@ -371,7 +376,9 @@ function maybeOfferTour() {
 }
 
 function answerTourPrompt(takeTour) {
-    try { localStorage.setItem(tourAnswerKey(), takeTour ? 'yes' : 'no'); } catch (error) { /* ignore */ }
+    // "No thanks" is remembered at once. "Take the tour" is only remembered when the tour is finished, so someone
+    // who leaves it half way is asked again next time.
+    if (!takeTour) rememberTourAnswer('no');
     const modal = document.getElementById('tourPromptModal');
     if (modal) modal.classList.add('hidden');
     trackUsage(takeTour ? 'tour accepted' : 'tour declined');
