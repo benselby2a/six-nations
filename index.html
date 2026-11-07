@@ -20,7 +20,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261025-21">
+    <link rel="stylesheet" href="styles.css?v=20261025-24">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -56,9 +56,9 @@
                             <label for="loginEmail">Email</label>
                             <input type="email" id="loginEmail" name="email" placeholder="you@example.com" autocomplete="email" list="loginEmailOptions" inputmode="email" enterkeyhint="send" autocapitalize="none" autocorrect="off" spellcheck="false" oninput="onLoginEmailInput()" onkeypress="handleLoginKeyPress(event)">
                             <datalist id="loginEmailOptions"></datalist>
-                            <span class="profile-hint">We'll email you a code to sign in. New here? The same code creates your account.</span>
+                            <span class="profile-hint">We'll email you a code to sign in. Only emails registered for the game can sign in.</span>
                         </div>
-                        <button type="button" id="sendLoginCodeBtn" onclick="sendLoginCode()">Email Me a Code</button>
+                        <button type="button" id="sendLoginCodeBtn" onclick="sendLoginCode()">Email a login code</button>
                     </form>
 
                     <!-- Kept as its own form with a single code field so Safari treats it as a one-time-code
@@ -69,43 +69,38 @@
                             <input type="text" id="loginCode" name="one-time-code" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="10" enterkeyhint="go" aria-label="One-time login code" placeholder="123456" onpaste="handleCodePaste(event)" onkeypress="handleCodeKeyPress(event)">
                             <span class="profile-hint">Enter the code from the email. It can take a minute to arrive.</span>
                         </div>
-                        <button type="button" id="pasteCodeBtn" class="btn-cancel hidden" onclick="pasteLoginCode()">Paste Code From Clipboard</button>
                         <button type="button" id="verifyCodeBtn" onclick="verifyLoginCode()">Sign In With Code</button>
                     </form>
                 </div>
             </div>
         </div>
 
-        <!-- Profile Setup View (signed in, no competitor linked yet) -->
+        <!-- First sign-in: an invited person fills in their own details -->
         <div id="setupView" class="hidden">
             <div class="login-section">
-                <h2>Set Up Your Profile</h2>
+                <h2>Welcome</h2>
                 <div id="setupFeedback" class="login-feedback hidden"></div>
                 <p class="profile-hint" id="setupIntro" style="margin-bottom: 1.5rem;"></p>
 
-                <div id="setupForm" class="hidden">
-                    <div class="input-group">
-                        <label for="setupNickname">Display Name</label>
-                        <input type="text" id="setupNickname" placeholder="How you'll appear on the leaderboard" autocomplete="off">
-                    </div>
-                    <div class="input-group">
-                        <label>Supported Teams (up to 2)</label>
-                        <div class="team-flags-picker" id="setupTeamsPicker"></div>
-                    </div>
-                    <button onclick="createMyProfile()">Create My Profile</button>
-
-                    <div class="guest-login-divider" style="margin-top: 1.5rem;">
-                        <span>played before?</span>
-                    </div>
-                    <p class="profile-hint" style="margin-bottom: 1rem;">Ask an admin to link your email to your existing competitor, then refresh this page.</p>
+                <div class="input-group">
+                    <label for="setupNickname">Display Name</label>
+                    <input type="text" id="setupNickname" placeholder="How you'll appear on the leaderboard" autocomplete="off">
                 </div>
-
-                <div id="setupClosed" class="hidden">
-                    <p style="margin-bottom: 1rem;">This email isn't registered for the game yet.</p>
-                    <p class="profile-hint" style="margin-bottom: 1.5rem;">Ask an admin to add it to your competitor, then sign in again. If you play under a different email, sign out and use that one.</p>
+                <div class="input-group">
+                    <label>Supported Teams (up to 2)</label>
+                    <div class="team-flags-picker" id="setupTeamsPicker"></div>
                 </div>
+                <button type="button" onclick="createMyProfile()">Join The Game</button>
+                <button type="button" class="btn-cancel" onclick="logout()">Sign Out</button>
+            </div>
+        </div>
 
-                <button class="btn-cancel" onclick="logout()">Sign Out</button>
+        <!-- Shown when an email is not registered for the game -->
+        <div id="unrecognisedEmailModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="unrecognisedEmailTitle" onclick="if (event.target === this) closeUnrecognisedEmailModal()">
+            <div class="modal-content">
+                <h2 id="unrecognisedEmailTitle" style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">We don't recognise that email</h2>
+                <div id="unrecognisedEmailBody"></div>
+                <button type="button" id="unrecognisedEmailClose" onclick="closeUnrecognisedEmailModal()">Try Again</button>
             </div>
         </div>
 
@@ -297,14 +292,6 @@
                 <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Competitors</h2>
                     <p style="margin-bottom: 1rem;">Manage competitor accounts - edit details or remove users.</p>
-                </div>
-
-                <div class="signup-control">
-                    <label class="signup-control-label">
-                        <input type="checkbox" id="allowSelfSignupToggle" onchange="toggleAllowSelfSignup(this.checked)">
-                        <span><strong>Allow new people to create their own profile</strong><br>
-                        <span class="profile-hint">Off: only competitors whose sign-in email you have registered below (or linked by hand) can play. Anyone else who signs in is told to ask an admin.</span></span>
-                    </label>
                 </div>
 
                 <div id="competitorManagementContainer"></div>
@@ -771,6 +758,6 @@
         <button type="button" class="install-tip-close" aria-label="Dismiss" onclick="dismissInstallTip()">&#10005;</button>
     </div>
 
-    <script src="app.js?v=20261025-21"></script>
+    <script src="app.js?v=20261025-24"></script>
 </body>
 </html>

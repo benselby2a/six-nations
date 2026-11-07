@@ -4136,98 +4136,6 @@
     text-align: center;
 }
 
-.login-code-entry .btn-cancel {
-    margin-bottom: 0.75rem;
-}
-
-/* Competitors screen: sign-up control */
-.signup-control {
-    margin-bottom: 1.5rem;
-    padding: 1rem 1.25rem;
-    border: 2px solid rgba(212, 175, 55, 0.3);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.04);
-}
-
-.signup-control-label {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    cursor: pointer;
-    text-transform: none;
-    letter-spacing: 0;
-}
-
-.signup-control-label input[type="checkbox"] {
-    width: auto;
-    margin-top: 0.25rem;
-}
-
-/* Refresh control on the Match Summary heading */
-.summary-heading-row {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
-
-.summary-refresh {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 0.4rem;
-}
-
-.summary-refresh .profile-hint {
-    margin: 0;
-}
-
-.summary-refresh .btn-small {
-    margin: 0;
-}
-
-/* Install tip (iPhone Safari, until dismissed) */
-.install-tip {
-    position: fixed;
-    left: 0.75rem;
-    right: 0.75rem;
-    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
-    max-width: 520px;
-    margin: 0 auto;
-    z-index: 3000;
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: 0.85rem 1rem;
-    background: #0d2818;
-    border: 2px solid var(--gold);
-    border-radius: 10px;
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
-    font-size: 0.9rem;
-    line-height: 1.4;
-}
-
-.install-tip.hidden {
-    display: none;
-}
-
-.install-tip-share {
-    vertical-align: -3px;
-    color: var(--bright-gold);
-}
-
-.install-tip-close {
-    flex: none;
-    width: auto;
-    padding: 0.25rem 0.5rem;
-    margin: 0;
-    background: transparent;
-    color: var(--gold);
-    font-size: 1rem;
-    letter-spacing: 0;
-    border: none;
-}
 
 /* Competitors screen: one expandable card per competitor, fields stacked */
 .competitor-cards {
@@ -4433,4 +4341,57 @@
         max-width: none;
         justify-content: flex-start;
     }
+}
+
+/* "We don't recognise that email" pop-up */
+#unrecognisedEmailBody p {
+    margin-bottom: 0.75rem;
+    overflow-wrap: anywhere;
+}
+
+.unrecognised-admins {
+    list-style: none;
+    margin: 0 0 1.25rem;
+    padding: 0;
+}
+
+.unrecognised-admins li {
+    padding: 0.55rem 0.9rem;
+    margin-bottom: 0.4rem;
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    font-weight: 700;
+}
+
+/* Invited, not signed in yet */
+.pending-invites {
+    padding: 0.85rem 1rem;
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.pending-invite {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.pending-invite:first-of-type {
+    margin-top: 0.4rem;
+}
+
+.pending-invite-email {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.pending-invite .btn-small {
+    flex: none;
+    margin: 0;
+    padding: 0.6rem 1rem;
 }

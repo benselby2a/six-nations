@@ -807,32 +807,6 @@
                 }
             },
 
-            // Whether people without a registered email may create their own profile (default: closed)
-            getAllowSelfSignup: async () => {
-                const { data, error } = await supabaseClient
-                    .from('settings')
-                    .select('value')
-                    .eq('key', 'allow_self_signup')
-                    .maybeSingle();
-                if (error) {
-                    console.error('Error reading the sign-up setting:', error);
-                    return false;
-                }
-                return !!data && (data.value === 'true' || data.value === true);
-            },
-
-            setAllowSelfSignup: async (allowed) => {
-                const { error } = await supabaseClient
-                    .from('settings')
-                    .upsert({ key: 'allow_self_signup', value: allowed ? 'true' : 'false' }, { onConflict: 'key' });
-                if (error) {
-                    console.error('Error saving the sign-up setting:', error);
-                    return false;
-                }
-                trackUsage('update self sign-up setting', formatUsagePayload({ allowed: !!allowed }));
-                return true;
-            },
-
             saveSettings: async (settings) => {
                 const { error } = await supabaseClient
                     .from('settings')
@@ -2647,7 +2621,7 @@
         let authAccountsLoaded = false;
         let authAccountsRequested = false;
         let competitorEmails = {};   // username -> the email they are expected to sign in with (admin only)
-        let allowSelfSignup = false;
+        let pendingInvites = [];     // emails invited but not signed in yet (admin only)
 
         async function loadAuthAccounts() {
             const { data, error } = await supabaseClient.rpc('admin_list_accounts');
@@ -2667,24 +2641,45 @@
                 (emailRows || []).forEach(row => { competitorEmails[row.username] = row.email; });
             }
 
-            allowSelfSignup = await Storage.getAllowSelfSignup();
-            const toggle = document.getElementById('allowSelfSignupToggle');
-            if (toggle) toggle.checked = allowSelfSignup;
+            const { data: inviteRows, error: inviteError } = await supabaseClient.rpc('admin_list_invites');
+            if (inviteError) {
+                console.error('Error loading invitations:', inviteError);
+            } else {
+                pendingInvites = inviteRows || [];
+            }
         }
 
-        async function toggleAllowSelfSignup(allowed) {
+        // Admin: invite someone by email alone. They fill in their own details the first time they sign in.
+        async function inviteByEmail() {
             if (!isCurrentUserAdmin()) return;
-            if (allowed && !confirm('Anyone who signs in with an email you have not registered will be able to create their own competitor profile. Turn this on?')) {
-                document.getElementById('allowSelfSignupToggle').checked = false;
+            const input = document.getElementById('new-invite-email');
+            const email = ((input && input.value) || '').trim().toLowerCase();
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                alert('That email does not look right.');
                 return;
             }
-            const ok = await Storage.setAllowSelfSignup(allowed);
-            if (!ok) {
-                alert('Could not save that setting. Please try again.');
-                document.getElementById('allowSelfSignupToggle').checked = allowSelfSignup;
+            const { error } = await supabaseClient.rpc('admin_invite_email', { p_email: email });
+            if (error) {
+                alert(error.message || 'Could not add that email.');
                 return;
             }
-            allowSelfSignup = !!allowed;
+            trackUsage('invite email', formatUsagePayload({ email }));
+            if (input) input.value = '';
+            await loadAuthAccounts();
+            renderCompetitorManagement();
+        }
+
+        async function removeInvite(email) {
+            if (!isCurrentUserAdmin() || !email) return;
+            if (!confirm(`Remove the invitation for ${email}? They will no longer be able to sign in.`)) return;
+            const { error } = await supabaseClient.rpc('admin_remove_invite', { p_email: email });
+            if (error) {
+                alert(error.message || 'Could not remove that invitation.');
+                return;
+            }
+            trackUsage('remove invitation', formatUsagePayload({ email }));
+            await loadAuthAccounts();
+            renderCompetitorManagement();
         }
 
         async function refreshCompetitorAccounts() {
@@ -2803,9 +2798,34 @@
 
             let html = `
                 <div class="competitor-cards">
+                    <details class="competitor-card competitor-card-new" id="invite-card">
+                        <summary>
+                            <span class="cc-title"><span class="cc-name">+ Invite someone</span></span>
+                            <span class="cc-chevron" aria-hidden="true"></span>
+                        </summary>
+                        <div class="cc-fields">
+                            <div class="cc-field cc-wide">
+                                <label for="new-invite-email">Email</label>
+                                <input type="email" id="new-invite-email" placeholder="The email they will sign in with" autocapitalize="none" autocorrect="off" spellcheck="false">
+                                <span class="profile-hint">That is all you need. Nothing is emailed: tell them to open the app and sign in with this email, and they fill in their own name and teams the first time.</span>
+                            </div>
+                            <div class="cc-actions cc-wide">
+                                <button type="button" class="btn-success" onclick="inviteByEmail()">Add Email</button>
+                            </div>
+                        </div>
+                    </details>
+                    ${pendingInvites.length > 0 ? `
+                    <div class="pending-invites">
+                        <div class="cc-label">Invited, not signed in yet</div>
+                        ${pendingInvites.map(invite => `
+                            <div class="pending-invite">
+                                <span class="pending-invite-email">${escapeHtml(invite.email)}</span>
+                                <button type="button" class="btn-small btn-danger" data-email="${escapeHtml(invite.email)}" onclick="removeInvite(this.dataset.email)">Remove</button>
+                            </div>`).join('')}
+                    </div>` : ''}
                     <details class="competitor-card competitor-card-new" id="new-competitor-card">
                         <summary>
-                            <span class="cc-title"><span class="cc-name">+ Add a competitor</span></span>
+                            <span class="cc-title"><span class="cc-name">+ Add a competitor manually</span></span>
                             <span class="cc-chevron" aria-hidden="true"></span>
                         </summary>
                         <div class="cc-fields">
@@ -2820,6 +2840,7 @@
                             <div class="cc-field cc-wide">
                                 <label for="new-email-admin">Sign-in email</label>
                                 <input type="email" id="new-email-admin" placeholder="The email they will sign in with" autocapitalize="none" autocorrect="off" spellcheck="false">
+                                <span class="profile-hint">Leave empty for someone who will not sign in. They can only sign in once an email is set.</span>
                             </div>
                             <div class="cc-field">
                                 <label for="new-team1-admin">Supported team 1</label>
@@ -2873,6 +2894,7 @@
                             <div class="cc-field cc-wide">
                                 <label for="edit-email-${username}">Sign-in email</label>
                                 <input type="email" id="edit-email-${username}" value="${escapeHtml(competitorEmails[username] || '')}" placeholder="The email they will sign in with" autocapitalize="none" autocorrect="off" spellcheck="false">
+                                <span class="profile-hint">Changing or clearing this moves their login: the old email stops working.</span>
                             </div>
                             <div class="cc-field">
                                 <label for="edit-team1-${username}">Supported team 1</label>
@@ -3079,10 +3101,11 @@
                 const { error: emailError } = await supabaseClient.rpc('admin_set_competitor_email', { p_username: newUsername, p_email: newEmail });
                 if (emailError) {
                     alert('Saved, but the sign-in email was not: ' + (emailError.message || 'unknown error'));
-                } else if (newEmail) {
-                    competitorEmails[newUsername] = newEmail;
                 } else {
-                    delete competitorEmails[newUsername];
+                    if (newEmail) competitorEmails[newUsername] = newEmail;
+                    else delete competitorEmails[newUsername];
+                    // Changing the email releases their old sign-in account: reload who is linked
+                    await loadAuthAccounts();
                 }
             }
 
@@ -3397,6 +3420,40 @@
             feedbackEl.classList.add(type);
         }
 
+        // Shown when an email is not registered for the game: tells them who to ask
+        async function showUnrecognisedEmailModal(email) {
+            const modal = document.getElementById('unrecognisedEmailModal');
+            const body = document.getElementById('unrecognisedEmailBody');
+            if (!modal || !body) return;
+
+            const { data } = await supabaseClient.rpc('login_admin_names');
+            const names = (Array.isArray(data) ? data : [])
+                .map(name => toTitleCase(String(name || '').trim()))
+                .filter(Boolean);
+            const adminsHtml = names.length > 0
+                ? `<ul class="unrecognised-admins">${names.map(name => `<li>${escapeHtml(name)}</li>`).join('')}</ul>`
+                : '<p class="profile-hint">Ask whoever runs the game.</p>';
+
+            body.innerHTML = `
+                <p><strong>${escapeHtml(email)}</strong> isn't registered for this game.</p>
+                <p>Please check you've typed the email you registered with, or contact an admin to get access:</p>
+                ${adminsHtml}`;
+            modal.classList.remove('hidden');
+            const closeButton = document.getElementById('unrecognisedEmailClose');
+            if (closeButton) closeButton.focus();
+        }
+
+        function closeUnrecognisedEmailModal() {
+            const modal = document.getElementById('unrecognisedEmailModal');
+            if (modal) modal.classList.add('hidden');
+            const emailInput = document.getElementById('loginEmail');
+            if (emailInput && !document.getElementById('loginView').classList.contains('hidden')) emailInput.focus();
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') closeUnrecognisedEmailModal();
+        });
+
         // Login as guest (view only)
         function loginAsGuest() {
             isGuest = true;
@@ -3421,6 +3478,20 @@
             }
 
             button.disabled = true;
+
+            // Only emails an admin has registered can sign in: check before sending anything
+            const { data: registered, error: checkError } = await supabaseClient.rpc('check_login_email', { p_email: email });
+            if (checkError) {
+                showLoginFeedback('Could not check your email. Please try again.', 'error');
+                button.disabled = false;
+                return;
+            }
+            if (registered !== true) {
+                button.disabled = false;
+                await showUnrecognisedEmailModal(email);
+                return;
+            }
+
             const { error } = await supabaseClient.auth.signInWithOtp({
                 email,
                 options: { shouldCreateUser: true }
@@ -3436,10 +3507,6 @@
             rememberLoginEmail(email);
             showLoginFeedback(`We've emailed a code to ${email}. Enter it below.`, 'success');
             document.getElementById('loginCodeEntry').classList.remove('hidden');
-            // Only offer the clipboard button where the browser can read the clipboard
-            if (navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
-                document.getElementById('pasteCodeBtn').classList.remove('hidden');
-            }
             document.getElementById('loginCode').focus();
             startLoginCodeCooldown(button, 30);
         }
@@ -3456,7 +3523,7 @@
                 clearInterval(loginCodeCooldownTimer);
                 const sendButton = document.getElementById('sendLoginCodeBtn');
                 sendButton.disabled = false;
-                sendButton.textContent = 'Email Me a Code';
+                sendButton.textContent = 'Email a login code';
             }
         }
 
@@ -3491,28 +3558,6 @@
             showLoginFeedback('Signing you in...', 'success');
         }
 
-        // Fallback when the phone does not suggest the code: copy it from the email, then tap this.
-        // The browser asks the person to confirm the paste, and we pick the number out of whatever was copied.
-        async function pasteLoginCode() {
-            document.getElementById('loginFeedback').className = 'login-feedback hidden';
-            let text = '';
-            try {
-                text = await navigator.clipboard.readText();
-            } catch (error) {
-                showLoginFeedback('Could not read the clipboard. Press and hold in the code box and choose Paste instead.', 'error');
-                return;
-            }
-
-            const match = String(text || '').match(/\b\d{6,10}\b/);
-            if (!match) {
-                showLoginFeedback('There is no code on the clipboard. Copy the code from the email first.', 'error');
-                return;
-            }
-
-            document.getElementById('loginCode').value = match[0];
-            verifyLoginCode();
-        }
-
         // Pasting a code (or the whole line it came in) into the box signs in straight away
         function handleCodePaste(event) {
             const text = (event.clipboardData && event.clipboardData.getData('text')) || '';
@@ -3532,7 +3577,7 @@
         function startLoginCodeCooldown(button, seconds) {
             clearInterval(loginCodeCooldownTimer);
             let remaining = seconds;
-            const label = 'Email Me a Code';
+            const label = 'Email a login code';
             button.disabled = true;
             button.textContent = `Resend in ${remaining}s`;
             loginCodeCooldownTimer = setInterval(() => {
@@ -3599,7 +3644,17 @@
 
             const row = Array.isArray(data) ? data[0] : data;
             if (!row) {
-                showProfileSetup();
+                // No competitor yet. An invited email fills in its own details; anything else is turned away
+                const { data: invited } = await supabaseClient.rpc('am_i_invited');
+                if (invited === true) {
+                    await showProfileSetup();
+                    return;
+                }
+
+                // Signed in, but this email is not registered for the game: back out with the same message
+                const unrecognisedEmail = currentAuthEmail;
+                await logout();
+                await showUnrecognisedEmailModal(unrecognisedEmail);
                 return;
             }
 
@@ -3621,25 +3676,14 @@
             showApp();
         }
 
-        // Signed in but no competitor linked: let them create one (or wait for an admin to link them)
+        // First sign-in by an invited person: they choose how they appear on the leaderboard
         async function showProfileSetup() {
             document.getElementById('loginView').classList.add('hidden');
             document.getElementById('appView').classList.add('hidden');
             document.getElementById('setupView').classList.remove('hidden');
             document.getElementById('setupFeedback').className = 'login-feedback hidden';
-
-            // Hide both panels until we know whether new sign-ups are allowed
-            document.getElementById('setupForm').classList.add('hidden');
-            document.getElementById('setupClosed').classList.add('hidden');
-            document.getElementById('setupIntro').textContent = `Signed in as ${currentAuthEmail}.`;
-
-            const open = await Storage.getAllowSelfSignup();
-            document.getElementById('setupForm').classList.toggle('hidden', !open);
-            document.getElementById('setupClosed').classList.toggle('hidden', open);
-            if (!open) return;
-
             document.getElementById('setupIntro').textContent =
-                `Signed in as ${currentAuthEmail}. Create your competitor profile to start predicting.`;
+                `Signed in as ${currentAuthEmail}. Choose how you'll appear on the leaderboard.`;
             renderTeamFlagsPicker('setupTeamsPicker', []);
 
             const nicknameInput = document.getElementById('setupNickname');
@@ -3653,17 +3697,6 @@
             const prefix = String(email || '').split('@')[0].toLowerCase();
             const firstName = prefix.split(/[^a-z]+/).find(Boolean) || '';
             return toTitleCase(firstName);
-        }
-
-        // Default username: the email prefix reduced to letters/numbers, made unique if already taken
-        function suggestUsernameFromEmail(email) {
-            const prefix = String(email || '').split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-            const base = (prefix || 'player').slice(0, 26);
-            let candidate = base;
-            for (let suffix = 2; candidate === 'guest' || users[candidate]; suffix++) {
-                candidate = `${base}${suffix}`;
-            }
-            return candidate;
         }
 
         async function createMyProfile() {
@@ -3686,29 +3719,16 @@
                 return;
             }
 
-            // The username is an internal handle derived from the email. If someone else
-            // grabbed it since we last loaded users, refresh and pick the next free one.
-            let error = null;
-            for (let attempt = 0; attempt < 3; attempt++) {
-                ({ error } = await supabaseClient.rpc('create_my_profile', {
-                    p_username: suggestUsernameFromEmail(currentAuthEmail),
-                    p_nickname: nickname,
-                    p_supported_teams: supportedTeams.length > 0 ? supportedTeams.join(',') : null
-                }));
-                if (!error || !/username is already taken/i.test(error.message || '')) break;
-                users = await Storage.getUsers();
-            }
+            const { error } = await supabaseClient.rpc('create_my_profile', {
+                p_nickname: nickname,
+                p_supported_teams: supportedTeams.length > 0 ? supportedTeams.join(',') : null
+            });
             if (error) {
                 showSetupFeedback(error.message || 'Could not create your profile. Please try again.', 'error');
                 return;
             }
 
-            users = await Storage.getUsers();
-            await recheckProfileLink();
-        }
-
-        // Re-run the account -> competitor lookup (e.g. after an admin links the account)
-        async function recheckProfileLink() {
+            // The competitor exists now: load it and carry on into the app
             const { data } = await supabaseClient.auth.getSession();
             const session = data && data.session;
             if (!session) {
@@ -3717,10 +3737,7 @@
             }
             users = await Storage.getUsers();
             authHandledUserId = session.user.id;
-            await resolveSignedInUser(session, 'profile_check');
-            if (!currentUsername) {
-                showSetupFeedback('No competitor is linked to this account yet.', 'info');
-            }
+            await resolveSignedInUser(session, 'first_sign_in');
         }
 
         // Handle Enter key on the login email input
@@ -3759,7 +3776,7 @@
             clearInterval(loginCodeCooldownTimer);
             const sendButton = document.getElementById('sendLoginCodeBtn');
             sendButton.disabled = false;
-            sendButton.textContent = 'Email Me a Code';
+            sendButton.textContent = 'Email a login code';
 
             if (!wasGuest) {
                 await supabaseClient.auth.signOut();
