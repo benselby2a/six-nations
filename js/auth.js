@@ -369,6 +369,12 @@
                 return;
             }
 
+            const secondEmail = (document.getElementById('setupSecondEmail').value || '').trim().toLowerCase();
+            if (secondEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(secondEmail)) {
+                showSetupFeedback('That second email does not look right. Fix it or leave it empty.', 'error');
+                return;
+            }
+
             const { error } = await supabaseClient.rpc('complete_my_profile', {
                 p_nickname: nickname,
                 p_supported_teams: supportedTeams.length > 0 ? supportedTeams.join(',') : null
@@ -376,6 +382,12 @@
             if (error) {
                 showSetupFeedback(error.message || 'Could not create your profile. Please try again.', 'error');
                 return;
+            }
+
+            let secondEmailError = null;
+            if (secondEmail) {
+                const { error: secondError } = await supabaseClient.rpc('add_my_second_email', { p_email: secondEmail });
+                secondEmailError = secondError;
             }
 
             // The competitor exists now: load it and carry on into the app
@@ -388,6 +400,9 @@
             users = await Storage.getUsers();
             authHandledUserId = session.user.id;
             await resolveSignedInUser(session, 'first_sign_in');
+            if (secondEmailError) {
+                alert('You are in, but the second email was not saved: ' + (secondEmailError.message || 'unknown error') + '\nAn admin can add it for you.');
+            }
         }
 
         // Handle Enter key on the login email input
