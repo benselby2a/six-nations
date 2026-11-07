@@ -74,13 +74,33 @@ function tourDemoData() {
             { id: 7, match_id: 9003, user_id: 9105, target_user_id: 9104, emoji: '👏' }
         ]
     };
-    return { demoMatches, demoUsers, jokers, chat };
+    // An invited person who has not signed in yet, and example sign-in accounts for the Competitors screen
+    demoUsers.demoinvite = { id: 9106, nickname: null, totalTries: null, supportedTeams: [], predictions: {} };
+    const emails = { demoalex: 'alex@example.com', demobryn: 'bryn@example.com', democara: 'cara@example.com', demodev: 'dev@example.com', demoerin: 'erin@example.com', demoinvite: 'newplayer@example.com' };
+    const emails2 = { demodev: 'dev.home@example.com' };
+    const accounts = [
+        { auth_user_id: 'demo-a1', email: 'alex@example.com', linked_username: 'demoalex' },
+        { auth_user_id: 'demo-a2', email: 'bryn@example.com', linked_username: 'demobryn' },
+        { auth_user_id: 'demo-a3', email: 'cara@example.com', linked_username: 'democara' },
+        { auth_user_id: 'demo-a4', email: 'dev@example.com', linked_username: 'demodev' },
+        { auth_user_id: 'demo-a5', email: 'dev.home@example.com', linked_username: 'demodev' },
+        { auth_user_id: 'demo-a6', email: 'erin@example.com', linked_username: 'demoerin' }
+    ];
+    const usage = [
+        { created_at: at(5), actor: 'Alex', action: 'saves prediction', payload: '{"match":9005,"score":"18-21"}' },
+        { created_at: at(40), actor: 'Bryn', action: 'logs in', payload: '' },
+        { created_at: at(95), actor: 'Cara', action: 'fixture comment', payload: '{"match":9001}' },
+        { created_at: at(300), actor: 'Dev', action: 'saves prediction', payload: '{"match":9006,"score":"12-30"}' }
+    ];
+    return { demoMatches, demoUsers, jokers, chat, emails, emails2, accounts, usage };
 }
 
 function enterTourDemo() {
     tourSaved = {
         users, matches: matches.slice(), allMatches, appSettings, activeScoringRules, userJokerSelections, fixtureChat,
-        from: supabaseClient.from, rpc: supabaseClient.rpc
+        from: supabaseClient.from, rpc: supabaseClient.rpc,
+        authAccounts, authAccountsLoaded, competitorEmails, competitorEmails2, adminUsernames,
+        getSeasonCounts: Storage.getSeasonCounts, getUsageEvents: Storage.getUsageEvents
     };
     const demo = tourDemoData();
     tourDemoActive = true;
@@ -91,6 +111,14 @@ function enterTourDemo() {
     // The scoring rules (and prize split) stay the real ones: only people, matches, predictions and chat are examples
     userJokerSelections = demo.jokers;
     fixtureChat = demo.chat;
+    // Admin screens: example sign-in accounts, emails, admins, year counts and usage events (no real addresses)
+    authAccounts = demo.accounts;
+    authAccountsLoaded = true;
+    competitorEmails = demo.emails;
+    competitorEmails2 = demo.emails2;
+    adminUsernames = [currentUsername, 'demoalex'].filter(Boolean);
+    Storage.getSeasonCounts = async () => ({ predictions: 30, tries: 5, competitors: 5, results: 4 });
+    Storage.getUsageEvents = async () => demo.usage;
     // Nothing the tour touches may reach the database
     const quiet = () => {
         const builder = { then: (resolve, reject) => Promise.resolve({ data: [], error: null }).then(resolve, reject) };
@@ -114,6 +142,13 @@ function leaveTourDemo() {
     activeScoringRules = tourSaved.activeScoringRules;
     userJokerSelections = tourSaved.userJokerSelections;
     fixtureChat = tourSaved.fixtureChat;
+    authAccounts = tourSaved.authAccounts;
+    authAccountsLoaded = tourSaved.authAccountsLoaded;
+    competitorEmails = tourSaved.competitorEmails;
+    competitorEmails2 = tourSaved.competitorEmails2;
+    adminUsernames = tourSaved.adminUsernames;
+    Storage.getSeasonCounts = tourSaved.getSeasonCounts;
+    Storage.getUsageEvents = tourSaved.getUsageEvents;
     tourSaved = null;
     tourDemoActive = false;
 }
@@ -157,6 +192,11 @@ function tourCanAddToHomeScreen() {
     const ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     return ios && !isStandaloneApp();
 }
+
+const TOUR_PANELS = {
+    summary: 'summaryTab', predictions: 'predictionsTab', adminHome: 'adminHomeTab', results: 'resultsTab', scoreCorrections: 'scoreCorrectionsTab',
+    competitors: 'competitorsTab', rules: 'rulesTab', prizeFund: 'prizeFundTab', years: 'yearsTab', recovery: 'recoveryTab', usageReport: 'usageReportTab'
+};
 
 function tourTabButton(name) {
     const btn = document.querySelector(`.tabs .tab[onclick*="'${name}'"]`);
@@ -214,13 +254,39 @@ function tourBuildSteps(rulesHtml, chatLive) {
     return steps;
 }
 
-function startTour() {
+function tourBuildAdminSteps() {
+    const adminStep = (title, tab, target, html) => ({ title, tab, target, expandAdminMenu: !!tab, html: () => html });
+    return [
+        adminStep('Your admin menu', 'adminHome', '#adminPanel',
+            '<p>Everything an admin does starts here. Each button opens a section, and the menu tucks itself away to leave room. Tap <strong>Admin Functions</strong> to bring it back.</p><p>A readiness checklist appears under the buttons while a new year still has things to set up.</p>'),
+        adminStep('Fixtures and Scores', 'results', '#resultsTab .results-table-container',
+            '<p>Add or edit fixtures, set which matches are Joker eligible, and enter results and tries after each match. Tap a row to edit it.</p><p>Under the table, <strong>Add New Fixture</strong> adds one match and <strong>Bulk Import</strong> pastes in a whole round. <strong>Add Next Score</strong> at the top of the page is the quick way to enter a result.</p>'),
+        adminStep('Predictions and the lock', 'scoreCorrections', '#scoreCorrectionsTab .lock-toggle',
+            '<p>Switch on <strong>Lock Predictions</strong> when the tournament starts, so nobody can change their picks. Each year has its own lock.</p><p>Below it you can pick any competitor to review or correct their predictions, Jokers and tries guess.</p>'),
+        adminStep('Competitors', 'competitors', '#new-competitor-card',
+            '<p>To add someone, enter their email in <strong>+ Add a competitor</strong>. That is all that is needed: they sign in with an emailed code and fill in their own name and teams.</p><p>Each card below lets you change a name, email (two per person are allowed), teams, whether they are playing this year, and admin access.</p>'),
+        adminStep('Guesser Rules', 'rules', '#rulesTab .rules-layout',
+            '<p>Set the points for a correct result, an exact score, draws, close scores and Jokers for the year. Check the preview, then save. Competitors see these rules in their tour.</p>'),
+        adminStep('Prize Fund', 'prizeFund', '#prizeFundTab .rules-layout',
+            '<p>Set the entry fee and how the prize pot is split between 1st, 2nd, 3rd and closest tries. Everyone sees the projected prize money under the Match Summary.</p>'),
+        adminStep('Years', 'years', '#yearsTab .years-form',
+            '<p>Each year has its own fixtures, predictions, rules and lock. Add a new year here, copying last year\'s rules if you like. A year that still has predictions cannot be removed until they are cleared.</p>'),
+        adminStep('Database Recovery', 'recovery', '#recoveryTab .recovery-card',
+            '<p>Generates SQL to rebuild the database, including competitors, emails, predictions and match chat. Copy it somewhere safe from time to time.</p>'),
+        adminStep('Usage Report', 'usageReport', '#usageReportContainer',
+            '<p>The latest 100 sign-ins and changes, with who did what and when. Handy if something looks wrong.</p>')
+    ];
+}
+
+function startTour(kind) {
+    if (kind !== 'admin') kind = 'app';
+    if (kind === 'admin' && !isCurrentUserAdmin()) return;
     closeGlobalHelpModal();
+    closeAdminHelpModal();
     // Work out what the real app offers first, then switch every screen to example data
-    const rulesHtml = tourRulesHtml();
-    const steps = tourBuildSteps(rulesHtml, fixtureChat.available);
+    const steps = kind === 'admin' ? tourBuildAdminSteps() : tourBuildSteps(tourRulesHtml(), fixtureChat.available);
     enterTourDemo();
-    tourState = { index: 0, steps, timer: null };
+    tourState = { index: 0, steps, timer: null, kind };
     document.body.classList.add('tour-open');
     document.getElementById('tourLayer').setAttribute('aria-hidden', 'false');
     tourState.timer = setInterval(positionTour, 300);
@@ -244,8 +310,9 @@ async function showTourStep(index) {
     const total = tourState.steps.length;
     // Go to the screen this step is about by tapping its tab, as a person would
     if (step.tab) {
+        if (step.expandAdminMenu) setAdminPanelCollapsed(false);
         const btn = tourTabButton(step.tab);
-        const panelId = step.tab === 'summary' ? 'summaryTab' : 'predictionsTab';
+        const panelId = TOUR_PANELS[step.tab] || 'summaryTab';
         const panel = document.getElementById(panelId);
         if (btn && panel && panel.classList.contains('hidden')) {
             btn.click();
@@ -262,8 +329,10 @@ async function showTourStep(index) {
     if (step.prepare) step.prepare();
     const target = tourTarget(step);
     if (target) {
-        const tall = target.getBoundingClientRect().height > window.innerHeight * 0.55;
-        target.scrollIntoView({ block: tall ? 'start' : 'center', behavior: 'auto' });
+        // Bring the target near the top of the screen, leaving the lower part free for the card
+        target.style.scrollMarginTop = '90px';
+        target.scrollIntoView({ block: 'start', behavior: 'auto' });
+        target.style.scrollMarginTop = '';
     }
     positionTour();
     document.getElementById('tourNext').focus();
@@ -350,7 +419,8 @@ function prevTourStep() {
 
 function endTour(completed) {
     if (!tourState) return;
-    if (completed === true) { rememberTourAnswer('yes'); trackUsage('tour completed'); }
+    if (completed === true && tourState.kind !== 'admin') { rememberTourAnswer('yes'); trackUsage('tour completed'); }
+    const kind = tourState.kind;
     clearInterval(tourState.timer);
     tourState = null;
     window.removeEventListener('resize', positionTour);
@@ -359,10 +429,17 @@ function endTour(completed) {
     document.body.classList.remove('tour-open');
     document.getElementById('tourLayer').setAttribute('aria-hidden', 'true');
     leaveTourDemo();
-    // Finish on the Match Summary, the usual home screen
-    const summaryBtn = tourTabButton('summary');
-    const summaryPanel = document.getElementById('summaryTab');
-    if (summaryBtn && summaryPanel && summaryPanel.classList.contains('hidden')) summaryBtn.click();
+    if (kind === 'admin') {
+        // Finish on the admin menu, with the buttons showing
+        const adminBtn = tourTabButton('adminHome');
+        if (adminBtn) adminBtn.click();
+        setAdminPanelCollapsed(false);
+    } else {
+        // Finish on the Match Summary, the usual home screen
+        const summaryBtn = tourTabButton('summary');
+        const summaryPanel = document.getElementById('summaryTab');
+        if (summaryBtn && summaryPanel && summaryPanel.classList.contains('hidden')) summaryBtn.click();
+    }
     window.scrollTo({ top: 0, behavior: 'auto' });
     // Put the real data back on screen
     refreshSummaryData();

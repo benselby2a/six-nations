@@ -451,6 +451,7 @@ This is the main browser-to-Supabase boundary.
 - First sign-in: `maybeOfferTour()` (called from `showApp`) asks once whether to take the tour and remembers the answer in `localStorage` (`tourAnswered:<username>`), so it is per person per device.
 - The summary table scrolls under its sticky columns, so the chat step first scrolls a chip clear of them (`tourRevealChip`) and highlights that visible chip.
 
-## Backlog
+## Admin tour
 
-- **Admin tour (next session):** add a guided tour for admins, in the same style as the competitor tour in `js/tour.js` (spotlight steps, example data, started from the Admin Help pop-up and offered once the first time someone opens Admin Functions). Cover Fixtures and Scores, Predictions (and the lock), Competitors and invitations, Guesser Rules, Prize Fund, Years, Database Recovery and the Usage Report. Reuse `enterTourDemo` and the demo data, and make sure nothing reaches the database while it runs.
+- `startTour('admin')` (button "Take the admin tour" in `#adminHelpModal`, opened with the ? on the admin panel) runs a nine-step tour of the admin screens: menu, Fixtures and Scores, Predictions and the lock, Competitors, Guesser Rules, Prize Fund, Years, Database Recovery, Usage Report. It reuses the competitor tour's machinery in `js/tour.js` (spotlight, example data, no database access). Admin-only demo state also swaps `authAccounts`, `competitorEmails(2)`, `adminUsernames` and the `Storage.getSeasonCounts` / `getUsageEvents` reads. Steps expand the admin menu, tap the section button, then highlight that section; the tour ends on the admin menu. Only an admin can start it. Not offered automatically; completing it is not remembered.
+- Test: `dev/tests/browser/admin-tour.js`.
