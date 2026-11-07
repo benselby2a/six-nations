@@ -78,7 +78,6 @@ function tourDemoData() {
 }
 
 function enterTourDemo() {
-    const real = getEffectiveScoringRules();
     tourSaved = {
         users, matches: matches.slice(), allMatches, appSettings, activeScoringRules, userJokerSelections, fixtureChat,
         from: supabaseClient.from, rpc: supabaseClient.rpc
@@ -89,14 +88,7 @@ function enterTourDemo() {
     matches.splice(0, matches.length, ...demo.demoMatches);
     allMatches = demo.demoMatches.slice();
     appSettings = { ...appSettings, predictionsLocked: false, activeOverrides: {} };
-    activeScoringRules = {
-        ...real,
-        entryFeeAmount: real.entryFeeAmount || 10,
-        payoutFirstPct: (real.payoutFirstPct + real.payoutSecondPct + real.payoutThirdPct + real.payoutClosestTriesPct) ? real.payoutFirstPct : 60,
-        payoutSecondPct: (real.payoutFirstPct + real.payoutSecondPct + real.payoutThirdPct + real.payoutClosestTriesPct) ? real.payoutSecondPct : 30,
-        payoutThirdPct: (real.payoutFirstPct + real.payoutSecondPct + real.payoutThirdPct + real.payoutClosestTriesPct) ? real.payoutThirdPct : 10,
-        payoutClosestTriesPct: (real.payoutFirstPct + real.payoutSecondPct + real.payoutThirdPct + real.payoutClosestTriesPct) ? real.payoutClosestTriesPct : 0
-    };
+    // The scoring rules (and prize split) stay the real ones: only people, matches, predictions and chat are examples
     userJokerSelections = demo.jokers;
     fixtureChat = demo.chat;
     // Nothing the tour touches may reach the database
