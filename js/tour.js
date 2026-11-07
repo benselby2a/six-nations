@@ -27,16 +27,148 @@ function tourRulesHtml() {
     return `<ul class="tour-list">${items.map(i => `<li>${i}</li>`).join('')}</ul>`;
 }
 
+
+// ---- Example data: the tour never shows real results or people ----
+let tourDemoActive = false;
+let tourSaved = null;
+
+function tourDemoData() {
+    const year = selectedYear;
+    const m = (id, round, date, time, t1, t2, s1, s2, tr1, tr2, joker) => ({ id, year, round, date, time, team1: t1, team2: t2, actualScore1: s1, actualScore2: s2, actualTries1: tr1, actualTries2: tr2, jokerEligible: joker });
+    const demoMatches = [
+        m(9001, 1, 'Thu, Feb 5', '20:10', 'France', 'Ireland', 36, 14, 5, 2, false),
+        m(9002, 1, 'Sat, Feb 7', '14:10', 'Italy', 'Scotland', 18, 15, 2, 1, false),
+        m(9003, 1, 'Sat, Feb 7', '16:40', 'England', 'Wales', 24, 19, 3, 2, true),
+        m(9004, 2, 'Sat, Feb 14', '14:10', 'Ireland', 'Italy', 30, 12, 4, 1, false),
+        m(9005, 2, 'Sat, Feb 14', '16:40', 'Scotland', 'England', null, null, null, null, true),
+        m(9006, 2, 'Sun, Feb 15', '15:10', 'Wales', 'France', null, null, null, null, false)
+    ];
+    const preds = (list) => { const o = {}; list.forEach((p, i) => { if (p) o[9001 + i] = { team1: p[0], team2: p[1] }; }); return o; };
+    const person = (id, nickname, teams, tries, list) => ({ id, nickname, totalTries: tries, supportedTeams: teams, predictions: preds(list) });
+    const demoUsers = {
+        demoalex: person(9101, 'Alex', ['France'], 24, [[30, 12], [20, 16], [22, 17], [28, 10], [18, 21], [14, 29]]),
+        demobryn: person(9102, 'Bryn', ['Wales'], 31, [[25, 20], [15, 18], [20, 24], [32, 14], [19, 22], [16, 24]]),
+        democara: person(9103, 'Cara', ['Scotland'], 27, [[34, 14], [12, 21], [26, 18], [24, 12], [21, 17], [10, 33]]),
+        demodev: person(9104, 'Dev', ['Italy', 'England'], 29, [[22, 18], [18, 15], [18, 21], [27, 13], [20, 20], [12, 30]]),
+        demoerin: person(9105, 'Erin', ['Ireland'], 22, [[28, 24], [24, 10], [23, 19], [20, 15], [16, 25], [9, 28]])
+    };
+    // The signed-in person appears as "You" with a half-finished card, so the predictions screen has something to show
+    if (currentUsername && !isGuest) {
+        demoUsers[currentUsername] = person(9100, 'You', [], 26, [[31, 13], [17, 14], [24, 19], [29, 11], null, null]);
+    }
+    const jokers = { demoalex: [9003], demobryn: [9005], democara: [9003], demodev: [9003], demoerin: [9005] };
+    if (demoUsers[currentUsername]) jokers[currentUsername] = [9003];
+    const at = (mins) => new Date(Date.now() - mins * 60000).toISOString();
+    const chat = {
+        available: true,
+        comments: [
+            { id: 1, match_id: 9001, user_id: 9102, target_user_id: null, body: 'What a start for France. Nobody saw that coming!', created_at: at(180) },
+            { id: 2, match_id: 9001, user_id: 9104, target_user_id: null, body: 'Joker well spent. Thank you France.', created_at: at(95) },
+            { id: 3, match_id: 9001, user_id: 9103, target_user_id: 9102, body: 'Bold pick, Bryn. Ireland by 5?', created_at: at(60) },
+            { id: 4, match_id: 9002, user_id: 9105, target_user_id: null, body: 'Italy edge it. Table is wide open now.', created_at: at(1500) }
+        ],
+        reactions: [
+            { id: 1, match_id: 9001, user_id: 9102, target_user_id: null, emoji: '🔥' }, { id: 2, match_id: 9001, user_id: 9103, target_user_id: null, emoji: '🔥' },
+            { id: 3, match_id: 9001, user_id: 9104, target_user_id: null, emoji: '😱' }, { id: 4, match_id: 9002, user_id: 9101, target_user_id: null, emoji: '😱' },
+            { id: 5, match_id: 9002, user_id: 9103, target_user_id: null, emoji: '😭' }, { id: 6, match_id: 9001, user_id: 9101, target_user_id: 9102, emoji: '😂' },
+            { id: 7, match_id: 9003, user_id: 9105, target_user_id: 9104, emoji: '👏' }
+        ]
+    };
+    return { demoMatches, demoUsers, jokers, chat };
+}
+
+function enterTourDemo() {
+    const real = getEffectiveScoringRules();
+    tourSaved = {
+        users, matches: matches.slice(), allMatches, appSettings, activeScoringRules, userJokerSelections, fixtureChat,
+        from: supabaseClient.from, rpc: supabaseClient.rpc
+    };
+    const demo = tourDemoData();
+    tourDemoActive = true;
+    users = demo.demoUsers;
+    matches.splice(0, matches.length, ...demo.demoMatches);
+    allMatches = demo.demoMatches.slice();
+    appSettings = { ...appSettings, predictionsLocked: false, activeOverrides: {} };
+    activeScoringRules = {
+        ...real,
+        entryFeeAmount: real.entryFeeAmount || 10,
+        payoutFirstPct: (real.payoutFirstPct + real.payoutSecondPct + real.payoutThirdPct + real.payoutClosestTriesPct) ? real.payoutFirstPct : 60,
+        payoutSecondPct: (real.payoutFirstPct + real.payoutSecondPct + real.payoutThirdPct + real.payoutClosestTriesPct) ? real.payoutSecondPct : 30,
+        payoutThirdPct: (real.payoutFirstPct + real.payoutSecondPct + real.payoutThirdPct + real.payoutClosestTriesPct) ? real.payoutThirdPct : 10,
+        payoutClosestTriesPct: (real.payoutFirstPct + real.payoutSecondPct + real.payoutThirdPct + real.payoutClosestTriesPct) ? real.payoutClosestTriesPct : 0
+    };
+    userJokerSelections = demo.jokers;
+    fixtureChat = demo.chat;
+    // Nothing the tour touches may reach the database
+    const quiet = () => {
+        const builder = { then: (resolve, reject) => Promise.resolve({ data: [], error: null }).then(resolve, reject) };
+        ['select', 'insert', 'update', 'upsert', 'delete', 'eq', 'neq', 'in', 'is', 'gte', 'lte', 'order', 'limit', 'single', 'maybeSingle'].forEach(name => { builder[name] = () => builder; });
+        return builder;
+    };
+    supabaseClient.from = quiet;
+    supabaseClient.rpc = async () => ({ data: null, error: null });
+    tourRerenderCurrentScreen();
+}
+
+function leaveTourDemo() {
+    if (!tourDemoActive || !tourSaved) return;
+    closeFixtureChat();
+    supabaseClient.from = tourSaved.from;
+    supabaseClient.rpc = tourSaved.rpc;
+    users = tourSaved.users;
+    matches.splice(0, matches.length, ...tourSaved.matches);
+    allMatches = tourSaved.allMatches;
+    appSettings = tourSaved.appSettings;
+    activeScoringRules = tourSaved.activeScoringRules;
+    userJokerSelections = tourSaved.userJokerSelections;
+    fixtureChat = tourSaved.fixtureChat;
+    tourSaved = null;
+    tourDemoActive = false;
+}
+
+function tourRerenderCurrentScreen() {
+    const summary = document.getElementById('summaryTab');
+    const predictions = document.getElementById('predictionsTab');
+    if (summary && !summary.classList.contains('hidden')) showSummary();
+    if (predictions && !predictions.classList.contains('hidden')) { renderMatches(); loadPredictions(); }
+}
+
+// The summary table scrolls sideways under its sticky rank, name and score columns. Pick a chat chip that is
+// really on screen (not hidden under those columns) so the highlight lands on a speech bubble.
+function tourStickyEdge(container) {
+    const sticky = container.querySelector('th.pts-col');
+    return sticky ? sticky.getBoundingClientRect().right : container.getBoundingClientRect().left;
+}
+
+function tourVisibleChip() {
+    const chips = [...document.querySelectorAll('[data-chat-chip]')];
+    const container = document.querySelector('.summary-container');
+    if (!container || chips.length === 0) return chips[0] || null;
+    const edge = tourStickyEdge(container);
+    const right = container.getBoundingClientRect().right;
+    return chips.find(chip => { const r = chip.getBoundingClientRect(); return r.left >= edge + 2 && r.right <= right + 1; }) || chips[0];
+}
+
+// Scroll the table sideways so a chip sits just clear of the sticky columns
+function tourRevealChip() {
+    const container = document.querySelector('.summary-container');
+    const chips = [...document.querySelectorAll('[data-chat-chip]')];
+    if (!container || chips.length === 0) return;
+    const edge = tourStickyEdge(container);
+    const chip = chips[0].getBoundingClientRect().left < edge ? chips[0] : null;
+    if (chip) container.scrollLeft += chip.getBoundingClientRect().left - (edge + 8);
+}
+
 function tourTabButton(name) {
     const btn = document.querySelector(`.tabs .tab[onclick*="'${name}'"]`);
     return btn && btn.offsetParent !== null ? btn : null;
 }
 
-function tourBuildSteps() {
+function tourBuildSteps(rulesHtml, chatLive) {
     const steps = [];
     steps.push({
         title: 'Review the rules',
-        html: () => `<p>Here is how points are won in ${selectedYear}.</p>${tourRulesHtml()}`
+        html: () => `<p>Here is how points are won in ${selectedYear}.</p>${rulesHtml}`
     });
     const hasPredictions = !!tourTabButton('predictions');
     steps.push({
@@ -53,11 +185,18 @@ function tourBuildSteps() {
         target: '.summary-container',
         html: () => '<p>The Match Summary shows everyone\'s rank and total score, plus each person\'s prediction and the points it earned for every match.</p><p>Hover or tap a prediction to see how it was scored. Use Refresh to pull the latest results.</p>'
     });
-    if (fixtureChat.available) {
+    steps.push({
+        title: 'The traditional view',
+        tab: 'summary',
+        target: '.summary-filters .export-btn',
+        html: () => '<p>If you want the traditional view, open the <strong>PDF Summary</strong>. It lays the table out on a page you can read at a glance, save or print.</p>'
+    });
+    if (chatLive) {
         steps.push({
             title: 'Comment on matches and results',
             tab: 'summary',
-            target: '[data-chat-chip]',
+            prepare: tourRevealChip,
+            target: tourVisibleChip,
             html: () => '<p>Tap the 💬 chip under a match to comment on it or react with an emoji.</p><p>Tap any prediction in the table to comment on that guess. Emoji and comment counts show right on the table, and everyone can see who reacted.</p>'
         });
     }
@@ -72,7 +211,10 @@ function tourBuildSteps() {
 
 function startTour() {
     closeGlobalHelpModal();
-    const steps = tourBuildSteps();
+    // Work out what the real app offers first, then switch every screen to example data
+    const rulesHtml = tourRulesHtml();
+    const steps = tourBuildSteps(rulesHtml, fixtureChat.available);
+    enterTourDemo();
     tourState = { index: 0, steps, timer: null };
     document.body.classList.add('tour-open');
     document.getElementById('tourLayer').setAttribute('aria-hidden', 'false');
@@ -112,6 +254,7 @@ async function showTourStep(index) {
     document.getElementById('tourBack').disabled = index === 0;
     document.getElementById('tourNext').textContent = index === total - 1 ? 'Done' : 'Next';
     document.getElementById('tourDots').innerHTML = tourState.steps.map((_, i) => `<span class="tour-dot ${i === index ? 'on' : ''}"></span>`).join('');
+    if (step.prepare) step.prepare();
     const target = tourTarget(step);
     if (target) {
         const tall = target.getBoundingClientRect().height > window.innerHeight * 0.55;
@@ -196,9 +339,40 @@ function endTour() {
     document.removeEventListener('keydown', tourKeys);
     document.body.classList.remove('tour-open');
     document.getElementById('tourLayer').setAttribute('aria-hidden', 'true');
+    leaveTourDemo();
     // Finish on the Match Summary, the usual home screen
     const summaryBtn = tourTabButton('summary');
     const summaryPanel = document.getElementById('summaryTab');
     if (summaryBtn && summaryPanel && summaryPanel.classList.contains('hidden')) summaryBtn.click();
     window.scrollTo({ top: 0, behavior: 'auto' });
+    // Put the real data back on screen
+    refreshSummaryData();
+}
+
+// ---- First sign-in: offer the tour once and remember the answer (on this device, per person) ----
+const TOUR_ANSWERED_KEY_PREFIX = 'tourAnswered:';
+
+function tourAnswerKey() {
+    return TOUR_ANSWERED_KEY_PREFIX + (currentUsername || '');
+}
+
+function tourAlreadyAnswered() {
+    try { return !!localStorage.getItem(tourAnswerKey()); } catch (error) { return true; }   // no storage: do not nag
+}
+
+function maybeOfferTour() {
+    if (!currentUsername || isGuest || isPdfExportMode || tourState || tourAlreadyAnswered()) return;
+    const modal = document.getElementById('tourPromptModal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    const yes = document.getElementById('tourPromptYes');
+    if (yes) yes.focus();
+}
+
+function answerTourPrompt(takeTour) {
+    try { localStorage.setItem(tourAnswerKey(), takeTour ? 'yes' : 'no'); } catch (error) { /* ignore */ }
+    const modal = document.getElementById('tourPromptModal');
+    if (modal) modal.classList.add('hidden');
+    trackUsage(takeTour ? 'tour accepted' : 'tour declined');
+    if (takeTour) startTour();
 }

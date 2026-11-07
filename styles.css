@@ -4554,3 +4554,7 @@ body.tour-open .tour-layer { display: block; }
 .tour-buttons button:disabled { opacity: 0.4; cursor: default; }
 .tour-skip:hover, .tour-buttons button:hover { transform: none; box-shadow: none; }
 @media (prefers-reduced-motion: reduce) { .tour-spot { transition: none; } }
+
+.tour-demo { margin-left: auto; margin-right: 0.5rem; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bright-gold); border: 1px solid var(--gold); border-radius: 999px; padding: 0.05rem 0.5rem; }
+/* No fade-ins or slides while the tour runs: the screens it shows are drawn at once, ready to be highlighted */
+body.tour-open *, body.tour-open *::before, body.tour-open *::after { animation: none !important; transition: none !important; }
