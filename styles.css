@@ -4430,3 +4430,13 @@
     padding-top: 0;
     border-top: none;
 }
+
+/* Admin menu folds away when a section is open */
+.admin-panel-heading { cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: center; gap: 0.6rem; }
+.admin-panel-heading::after { content: ''; width: 0.55rem; height: 0.55rem; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-135deg) translateY(-2px); transition: transform 0.2s; }
+.admin-panel.collapsed .admin-panel-heading::after { transform: rotate(45deg) translateY(-2px); }
+.admin-panel.collapsed { padding: 0.7rem 1.2rem !important; }
+.admin-panel.collapsed .admin-panel-heading { margin-bottom: 0 !important; font-size: 1.5rem !important; }
+.admin-panel.collapsed .admin-tabs,
+.admin-panel.collapsed #adminTabsSubheading,
+.admin-panel.collapsed #readinessChecklist { display: none !important; }

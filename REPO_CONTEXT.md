@@ -3,7 +3,7 @@
 ## Snapshot
 
 - App type: single-page static web app.
-- Main files: `index.html`, `app.js`, `styles.css`.
+- Main files: `index.html`, `styles.css`, and `js/*.js` (the former single `app.js`, split with no code changes; see the file map below).
 - Backend: Supabase accessed directly from the browser through `@supabase/supabase-js`.
 - Rendering style: vanilla JavaScript building large HTML strings and writing `innerHTML`.
 - Export: PDF generation via `jsPDF` and `jspdf-autotable`.
@@ -17,7 +17,7 @@
 
 - Loads Google Fonts, Supabase client, jsPDF, and `styles.css`.
 - Contains login view, profile modal, summary tab, predictions tab, and admin-only tabs.
-- Most actions are wired with inline `onclick` handlers that call globals from `app.js`.
+- Most actions are wired with inline `onclick` handlers that call globals from `js/*.js`.
 - Admin sub-tab labels are user-facing copy and currently read:
   - `Fixtures and Scores`
   - `Predictions`
@@ -25,7 +25,11 @@
   - `Guesser Rules`
   - `Prize Fund`
 
-### `app.js`
+### `js/` file map (load order, all classic scripts sharing one global scope; no build step)
+`constants` fixtures/flags/team helpers; `storage` Supabase client and `Storage`; `state` globals, usage tracking, escaping, cookies, remembered user; `years-admin` years, Years tab, readiness checklist, who plays; `init` initializeData/init/lock toggle; `admin-fixtures` fixtures, bulk import, results; `admin-competitors` competitors, invitations, account linking; `profile` profile, theme, help; `auth` login code flow, handleAuthChange, showApp; `predictions` predictions UI and admin prediction editing; `scoring` rules and points; `trevs-tips` Trev's Tips/Statto text; `leaderboard` round filter, prize projection/panel; `worm-chart`; `summary`; `export-pdf`; `rules-admin` rules and prize forms; `recovery-usage` recovery SQL, usage report; `app-shell` showTab, refresh, install tip, start-up wiring (auth listener) last. Keep this order: files run top to bottom at load.
+Admin menu: `#adminPanel` folds to a slim bar when an admin section opens (`setAdminPanelCollapsed` in `app-shell`); tapping its heading reopens it.
+
+### (legacy notes below were written for the single `app.js`)
 
 - Holds nearly all application logic and in-memory state.
 - Declares fixture list, flag helpers, auth helpers, storage abstraction, scoring logic, UI rendering, admin tools, prize logic, recovery SQL, and usage reporting.
@@ -124,7 +128,7 @@ Array of fixtures/results:
 3. Auth restores the session; `showApp()`, `showAppAsGuest()` or the profile setup view selects the visible mode.
 4. Most user actions save via `Storage.*`, mutate in-memory globals, then re-render affected sections.
 
-## Important Function Clusters In `app.js`
+## Important Function Clusters (in `js/*.js`)
 
 ### Storage / persistence
 
@@ -181,7 +185,7 @@ This is the main browser-to-Supabase boundary.
 
 ## High-Risk Areas
 
-### `app.js` is monolithic
+### Shared global scope
 
 - Many features are tightly coupled through globals and shared render paths.
 - A change in one place often requires checking summary, admin edit, and export behavior too.
@@ -284,11 +288,11 @@ This is the main browser-to-Supabase boundary.
 ## Cache busting
 
 - The site is served as static files with a browser cache of roughly 10 minutes. `index.html` loads `styles.css?v=...` and `app.js?v=...`, so a browser with a fresh page never pairs it with stale scripts or styles (that mismatch showed up as an empty dropdown and a tab that never hid).
-- **Bump the `v=` value in both tags of `index.html` whenever `app.js` or `styles.css` changes.** Use `YYYYMMDD-n`.
+- **Bump the `v=` value in both tags of `index.html` whenever `js/*.js` or `styles.css` changes (run `dev/bump.sh`; `dev/check.sh` verifies).** Use `YYYYMMDD-n`. Every script tag shares the same tag.
 
 ## Practical Guidance For Future Turns
 
-- Read only the relevant sections of `app.js` first; avoid loading the whole file unless required.
+- Grep `js/*.js` for the function, then read only that file; avoid loading the whole file unless required.
 - Prefer `rg` around the function cluster you need, then inspect a narrow line range.
 - Re-render assumptions should be explicit: many saves require `renderMatches`, `showSummary`, or `updateLeaderboard`.
 - If a change touches admin and player views, verify both.
