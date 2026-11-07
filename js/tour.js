@@ -111,6 +111,68 @@ function tourBuildAdminSteps() {
     ];
 }
 
+// Fit the card to the area that is really visible (iPhone Safari's toolbars change it), not to 100vh
+function tourFitScreen() {
+    const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    document.documentElement.style.setProperty('--tour-h', `${Math.round(h)}px`);
+    const top = (window.visualViewport && window.visualViewport.offsetTop) || 0;
+    document.getElementById('tourLayer').style.top = `${Math.round(top)}px`;
+    tourFitSoon();
+}
+
+// Make everything fit without scrolling: the picture shrinks to the space left after the text; on very small screens
+// the text tightens up, and as a last resort the picture is left out so the instructions are always fully visible
+// Fit now, then once more after the browser has laid out (resizes and iPhone toolbars settle a moment later)
+function tourFitSoon() {
+    // The picture stays invisible until it has been sized (no flash of a wrong size)
+    const fig = document.querySelector('#tourBody .tour-figure');
+    if (fig) fig.style.visibility = 'hidden';
+    requestAnimationFrame(() => {
+        tourFitContent(true);
+        const f = document.querySelector('#tourBody .tour-figure');
+        if (f) f.style.visibility = '';
+        setTimeout(() => tourFitContent(true), 120);
+    });
+}
+
+function tourFitContent(allowHide) {
+    const body = document.getElementById('tourBody');
+    const card = document.getElementById('tourCard');
+    if (!body || !card || !tourState) return;
+    const fig = body.querySelector('.tour-figure');
+    const img = fig && fig.querySelector('img');
+    const room = () => {
+        if (!img) return null;
+        img.style.maxHeight = 'none';
+        const figStyle = getComputedStyle(fig);
+        const figOuter = fig.offsetHeight + parseFloat(figStyle.marginBottom || 0);
+        const chrome = fig.offsetHeight - img.offsetHeight;
+        const textHeight = body.scrollHeight - figOuter;
+        return body.clientHeight - textHeight - parseFloat(figStyle.marginBottom || 0) - chrome;
+    };
+    card.classList.remove('tour-compact');
+    if (fig) fig.style.display = '';
+    let space = room();
+    if (img && space < 110) { card.classList.add('tour-compact'); space = room(); }
+    if (img && space < 70 && allowHide) { fig.style.display = 'none'; img.style.maxHeight = ''; card.classList.remove('tour-compact'); return tourFitText(card, body); }
+    if (img) {
+        let max = Math.max(Math.floor(space) - 4, 40);
+        img.style.maxHeight = `${max}px`;
+        // Correct any rounding left over: shrink the picture by whatever still overflows
+        for (let i = 0; i < 4 && body.scrollHeight > body.clientHeight + 2; i++) {
+            max -= (body.scrollHeight - body.clientHeight) + 2;
+            img.style.maxHeight = `${Math.max(max, 40)}px`;
+        }
+        if (allowHide && body.scrollHeight > body.clientHeight + 2) { fig.style.display = 'none'; img.style.maxHeight = ''; }
+    }
+    tourFitText(card, body);
+}
+
+// Text-only steps (and the picture-less fallback) tighten up if they would still need to scroll
+function tourFitText(card, body) {
+    if (body.scrollHeight > body.clientHeight + 2) card.classList.add('tour-compact');
+}
+
 function startTour(kind) {
     if (kind !== 'admin') kind = 'app';
     if (kind === 'admin' && !isCurrentUserAdmin()) return;
@@ -118,6 +180,9 @@ function startTour(kind) {
     closeAdminHelpModal();
     const steps = kind === 'admin' ? tourBuildAdminSteps() : tourBuildSteps(tourRulesHtml(), fixtureChat.available);
     tourState = { index: 0, steps, kind };
+    tourFitScreen();
+    window.addEventListener('resize', tourFitScreen);
+    if (window.visualViewport) { window.visualViewport.addEventListener('resize', tourFitScreen); window.visualViewport.addEventListener('scroll', tourFitScreen); }
     document.body.classList.add('tour-open');
     document.getElementById('tourLayer').setAttribute('aria-hidden', 'false');
     document.addEventListener('keydown', tourKeys);
@@ -136,7 +201,7 @@ function tourFigureHtml(id) {
     if (!image) return '';
     const marks = (image.marks || []).map(m =>
         `<span class="tour-mark" style="left:${m.x}%;top:${m.y}%;width:${m.w}%;height:${m.h}%"><b>${m.n}</b></span>`).join('');
-    return `<div class="tour-figure"><div class="tour-figure-inner"><img src="${image.src}?v=${image.v}" alt="" width="${image.w}" height="${image.h}">${marks}</div></div>`;
+    return `<div class="tour-figure"><div class="tour-figure-inner"><img src="${image.src}?v=${image.v}" alt="" width="${image.w}" height="${image.h}" style="aspect-ratio:${image.w}/${image.h}">${marks}</div></div>`;
 }
 
 function showTourStep(index) {
@@ -154,6 +219,7 @@ function showTourStep(index) {
     document.getElementById('tourBack').disabled = index === 0;
     document.getElementById('tourNext').textContent = index === total - 1 ? 'Done' : 'Next';
     document.getElementById('tourDots').innerHTML = tourState.steps.map((_, i) => `<span class="tour-dot ${i === index ? 'on' : ''}"></span>`).join('');
+    tourFitSoon();
     document.getElementById('tourNext').focus();
 }
 
@@ -176,6 +242,8 @@ function endTour(completed) {
     }
     tourState = null;
     document.removeEventListener('keydown', tourKeys);
+    window.removeEventListener('resize', tourFitScreen);
+    if (window.visualViewport) { window.visualViewport.removeEventListener('resize', tourFitScreen); window.visualViewport.removeEventListener('scroll', tourFitScreen); }
     document.body.classList.remove('tour-open');
     document.getElementById('tourLayer').setAttribute('aria-hidden', 'true');
 }
