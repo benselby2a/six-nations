@@ -89,6 +89,7 @@
             if (refreshBtn) refreshBtn.classList.toggle('hidden', document.getElementById('summaryTab').classList.contains('hidden'));
 
             renderReadinessChecklist();
+            if (tabName === 'adminHome') maybeOfferAdminTour();
         }
 
         // Small version line at the bottom: date and short id of the latest commit on main (GitHub's public API,

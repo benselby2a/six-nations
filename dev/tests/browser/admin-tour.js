@@ -111,7 +111,26 @@ const mock = `
   await page.fill('#loginEmail', 'ben@example.com'); await page.click('#sendLoginCodeBtn'); await page.waitForTimeout(Math.min(150, 40));
   await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(Math.min(1000, 40));
   await page.click('button:has-text("No thanks")'); await page.waitForTimeout(150);
+  const adminPrompt = () => page.evaluate(() => !document.getElementById('adminTourPromptModal').classList.contains('hidden'));
   await page.click('button.tab:has-text("Admin Functions")'); await page.waitForTimeout(300);
+  console.log('first time in the admin panel offers the tour:', await adminPrompt(), '| stored:', await page.evaluate(() => localStorage.getItem('adminTourAnswered:ben')));
+  await page.click('#adminTourPromptYes'); await page.waitForTimeout(700);
+  console.log('Take the tour starts the admin tour:', await page.evaluate(() => tourState && tourState.kind), '| steps:', await page.evaluate(() => tourState.steps.map(s => s.title).join(' > ')));
+  await page.keyboard.press('Escape'); await page.waitForTimeout(600);
+  console.log('left half way, not remembered:', await page.evaluate(() => localStorage.getItem('adminTourAnswered:ben')), '| not re-offered on leaving the tour:', !(await adminPrompt()));
+  await page.click('button.tab:has-text("Match Summary")'); await page.waitForTimeout(300);
+  await page.click('button.tab:has-text("Admin Functions")'); await page.waitForTimeout(300);
+  console.log('offered again next time:', await adminPrompt());
+  await page.click('#adminTourPromptYes'); await page.waitForTimeout(700);
+  const n0 = await page.evaluate(() => tourState.steps.length);
+  for (let i = 0; i < n0; i++) { await page.click('#tourNext'); await page.waitForTimeout(400); }
+  console.log('finished, remembered:', await page.evaluate(() => localStorage.getItem('adminTourAnswered:ben')));
+  await page.click('button.tab:has-text("Match Summary")'); await page.click('button.tab:has-text("Admin Functions")'); await page.waitForTimeout(300);
+  console.log('not offered again:', !(await adminPrompt()));
+  await page.evaluate(() => { localStorage.removeItem('adminTourAnswered:ben'); });
+  await page.click('button.tab:has-text("Match Summary")'); await page.click('button.tab:has-text("Admin Functions")'); await page.waitForTimeout(300);
+  await page.click('#adminTourPromptModal button:has-text("No thanks")'); await page.waitForTimeout(150);
+  console.log('No thanks remembered:', await page.evaluate(() => localStorage.getItem('adminTourAnswered:ben')));
   await page.click('.admin-panel-help-btn'); await page.waitForTimeout(200);
   console.log('admin help buttons:', await page.evaluate(() => [...document.querySelectorAll('#adminHelpModal button')].map(b => b.textContent.trim())));
   await page.click('#adminHelpModal button:has-text("Take the admin tour")'); await page.waitForTimeout(600);
