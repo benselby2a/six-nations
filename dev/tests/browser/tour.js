@@ -111,49 +111,82 @@ const mock = `
   await page.fill('#loginEmail', 'ben@example.com'); await page.click('#sendLoginCodeBtn'); await page.waitForTimeout(Math.min(150, 40));
   await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(Math.min(1000, 40));
   const promptShown = () => page.evaluate(() => !document.getElementById('tourPromptModal').classList.contains('hidden'));
-  console.log('first sign-in shows the prompt:', await promptShown(), JSON.stringify(await page.textContent('#tourPromptText')), '| stored answer:', await page.evaluate(() => localStorage.getItem('tourAnswered:ben')));
-  await page.click('#tourPromptYes'); await page.waitForTimeout(600);
-  console.log('Take the tour starts it (not remembered yet):', await page.evaluate(() => ({ open: document.body.classList.contains('tour-open'), prompt: !document.getElementById('tourPromptModal').classList.contains('hidden'), stored: localStorage.getItem('tourAnswered:ben') })));
-  console.log('example data on screen:', await page.evaluate(() => ({ names: [...document.querySelectorAll('.competitor-name')].map(e => e.textContent.trim()), realNameVisible: /Sam|Newbie|Ben/.test([...document.querySelectorAll('.competitor-name')].map(e => e.textContent).join(' ').replace('You', '')), animations: getComputedStyle(document.querySelector('.summary-container')).animationName, matches: [...document.querySelectorAll('.match-header-cell .match-teams')].length })));
-  console.log('rules during the tour are the real ones:', await page.evaluate(() => JSON.stringify({ fee: getEffectiveScoringRules().entryFeeAmount, first: getEffectiveScoringRules().payoutFirstPct, realFee: tourSaved.activeScoringRules === activeScoringRules })));
-  const writesBefore = await page.evaluate(() => __log.length);
-  await page.keyboard.press('Escape'); await page.waitForTimeout(700);
-  console.log('after the tour real data is back:', await page.evaluate(() => ({ names: [...document.querySelectorAll('.competitor-name')].map(e => e.textContent.trim()), matches: matches.map(m => m.id), usersKeys: Object.keys(users), writesDuringTour: __log.length - 0 === 0 ? 0 : 'n/a' })), '| log entries added by the tour:', await page.evaluate((b) => __log.slice(b).filter(l => l.op !== 'select').length, writesBefore));
+  const adminPromptShown = () => page.evaluate(() => !document.getElementById('adminTourPromptModal').classList.contains('hidden'));
+  const state = () => page.evaluate(() => {
+    const card = document.getElementById('tourCard').getBoundingClientRect(); const img = document.querySelector('#tourBody img');
+    return { open: document.body.classList.contains('tour-open'), count: document.getElementById('tourCount').textContent, title: document.getElementById('tourTitle').textContent,
+      card: [Math.round(card.left), Math.round(card.top), Math.round(card.width)], inViewport: card.top >= 0 && card.bottom <= innerHeight + 1, image: img ? (img.complete && img.naturalWidth > 0) : null,
+      marks: document.querySelectorAll('#tourBody .tour-mark').length, items: document.querySelectorAll('#tourBody .tour-items li').length,
+      activeTab: (document.querySelector('.tabs .tab.active') || {}).textContent, scrollY: Math.round(scrollY), summaryVisible: !document.getElementById('summaryTab').classList.contains('hidden') };
+  });
+
+  // ---- first sign-in prompt ----
+  console.log('first sign-in shows the prompt:', await promptShown(), JSON.stringify(await page.textContent('#tourPromptText')), '| stored:', await page.evaluate(() => localStorage.getItem('tourAnswered:ben')));
+  await page.click('#tourPromptYes'); await page.waitForTimeout(500);
+  console.log('Take the tour opens it (not remembered yet):', JSON.stringify(await page.evaluate(() => ({ open: document.body.classList.contains('tour-open'), prompt: !document.getElementById('tourPromptModal').classList.contains('hidden'), stored: localStorage.getItem('tourAnswered:ben') }))));
+  await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   await page.evaluate(() => maybeOfferTour());
-  console.log('left the tour half way, asked again:', await promptShown(), '| stored:', await page.evaluate(() => localStorage.getItem('tourAnswered:ben')));
+  console.log('left the tour half way, asked again:', await promptShown());
   await page.click('button:has-text("No thanks")'); await page.waitForTimeout(100);
   await page.evaluate(() => maybeOfferTour());
-  console.log('after No thanks it does not come back:', !(await promptShown()));
-  console.log('No thanks remembered:', await page.evaluate(() => localStorage.getItem('tourAnswered:ben')), '| prompt gone:', !(await promptShown()));
+  console.log('after No thanks it does not come back:', !(await promptShown()), '| stored:', await page.evaluate(() => localStorage.getItem('tourAnswered:ben')));
+
+  // ---- the tour itself: a fixed card, a picture with marks, numbered instructions, the live app untouched ----
   await page.evaluate(() => switchYear(2026)); await page.waitForTimeout(500);
-  const st = () => page.evaluate(() => { const spot = document.getElementById('tourSpot'); const r = spot.getBoundingClientRect(); const card = document.getElementById('tourCard').getBoundingClientRect();
-    return { open: document.body.classList.contains('tour-open'), count: document.getElementById('tourCount').textContent, title: document.getElementById('tourTitle').textContent,
-      spot: spot.style.display === 'none' ? 'none' : { top: Math.round(r.top), h: Math.round(r.height), w: Math.round(r.width) }, cardInViewport: card.top >= 0 && card.bottom <= innerHeight + 1,
-      predictionsVisible: !document.getElementById('predictionsTab').classList.contains('hidden'), summaryVisible: !document.getElementById('summaryTab').classList.contains('hidden'),
-      cardOverlapsSpot: spot.style.display !== 'none' && !(card.bottom < r.top || card.top > r.bottom), body: document.getElementById('tourBody').textContent.replace(/\s+/g, ' ').slice(0, 150) }; });
   await page.click('.header-help-btn'); await page.waitForTimeout(150);
   console.log('help shows tour button:', await page.evaluate(() => [...document.querySelectorAll('#globalHelpModal button')].map(b => b.textContent.trim())));
-  await page.click('#globalHelpModal button:has-text("Take a tour")'); await page.waitForTimeout(500);
-  console.log('help closed:', await page.evaluate(() => document.getElementById('globalHelpModal').classList.contains('hidden')));
-  for (let i = 0; i < 6; i++) {
-    console.log(JSON.stringify(await st()));
-    if (i < 5) { await page.click('#tourNext'); await page.waitForTimeout(700); }
+  await page.click('#globalHelpModal button:has-text("Take a tour")'); await page.waitForTimeout(400);
+  const total = await page.evaluate(() => tourState.steps.length);
+  const before = await state();
+  const cards = new Set();
+  for (let i = 0; i < total; i++) {
+    const s = await state(); cards.add(JSON.stringify(s.card));
+    console.log(JSON.stringify({ n: s.count, title: s.title, image: s.image, marks: s.marks, items: s.items, inViewport: s.inViewport }));
+    if (i < total - 1) { await page.click('#tourNext'); await page.waitForTimeout(250); }
   }
-  await page.click('#tourBack'); await page.waitForTimeout(600); console.log('back ->', (await st()).title);
-  await page.click('#tourNext'); await page.waitForTimeout(600);
-  await page.click('#tourNext'); await page.waitForTimeout(500);
-  console.log('after Done:', JSON.stringify(await st()).slice(0, 60), '| remembered:', await page.evaluate(() => localStorage.getItem('tourAnswered:ben')));
-  await page.click('.header-help-btn'); await page.click('#globalHelpModal button:has-text("Take a tour")'); await page.waitForTimeout(400);
+  const after = await state();
+  console.log('card never moved (different positions):', cards.size, '| live app untouched (tab, scroll, screen):', after.activeTab === before.activeTab && after.scrollY === before.scrollY && after.summaryVisible);
+  await page.click('#tourBack'); await page.waitForTimeout(150); console.log('back ->', (await state()).title);
+  await page.click('#tourNext'); await page.waitForTimeout(150);
+  await page.click('#tourNext'); await page.waitForTimeout(300);
+  console.log('after Done:', JSON.stringify({ open: (await state()).open, remembered: await page.evaluate(() => localStorage.getItem('tourAnswered:ben')) }));
+  await page.click('.header-help-btn'); await page.click('#globalHelpModal button:has-text("Take a tour")'); await page.waitForTimeout(300);
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
-  console.log('Escape closes:', !(await st()).open);
+  console.log('Escape closes:', !(await state()).open);
+
+  // ---- on an iPhone the tour ends with Add to Home Screen ----
   await page.evaluate(() => { Object.defineProperty(navigator, 'userAgent', { get: () => 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1', configurable: true }); startTour(); });
-  await page.waitForTimeout(400);
-  const stepsOnIphone = await page.evaluate(() => tourState.steps.map(x => x.title));
-  console.log('on an iPhone the tour has', stepsOnIphone.length, 'steps, last:', stepsOnIphone[stepsOnIphone.length - 1]);
-  for (let i = 0; i < stepsOnIphone.length - 1; i++) { await page.click('#tourNext'); await page.waitForTimeout(250); }
-  await page.waitForTimeout(400);
-  console.log('last step card:', await page.evaluate(() => ({ title: document.getElementById('tourTitle').textContent, text: document.getElementById('tourBody').textContent.replace(/\s+/g, ' ').slice(0, 120), spotHidden: document.getElementById('tourSpot').style.display })));
+  await page.waitForTimeout(300);
+  const titles = await page.evaluate(() => tourState.steps.map(x => x.title));
+  console.log('on an iPhone the tour has', titles.length, 'steps, last:', titles[titles.length - 1]);
   await page.keyboard.press('Escape');
+
+  // ---- the admin tour ----
+  await page.click('button.tab:has-text("Admin Functions")'); await page.waitForTimeout(300);
+  console.log('first time in the admin panel offers the tour:', await adminPromptShown());
+  await page.click('#adminTourPromptYes'); await page.waitForTimeout(400);
+  const adminSteps = await page.evaluate(() => tourState.steps.map(s => s.title));
+  console.log('admin tour:', await page.evaluate(() => tourState.kind), adminSteps.length, 'steps:', adminSteps.join(' > '));
+  for (let i = 0; i < adminSteps.length; i++) {
+    const s = await state();
+    console.log(JSON.stringify({ n: s.count, title: s.title, image: s.image, marks: s.marks, items: s.items }));
+    if (i < adminSteps.length - 1) { await page.click('#tourNext'); await page.waitForTimeout(200); }
+  }
+  await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+  console.log('left half way, not remembered:', await page.evaluate(() => localStorage.getItem('adminTourAnswered:ben')), '| not re-offered on leaving:', !(await adminPromptShown()));
+  await page.click('button.tab:has-text("Match Summary")'); await page.click('button.tab:has-text("Admin Functions")'); await page.waitForTimeout(300);
+  console.log('offered again next time:', await adminPromptShown());
+  await page.click('#adminTourPromptYes'); await page.waitForTimeout(300);
+  for (let i = 0; i < adminSteps.length; i++) { await page.click('#tourNext'); await page.waitForTimeout(120); }
+  console.log('finished, remembered:', await page.evaluate(() => localStorage.getItem('adminTourAnswered:ben')));
+  await page.click('button.tab:has-text("Match Summary")'); await page.click('button.tab:has-text("Admin Functions")'); await page.waitForTimeout(300);
+  console.log('not offered again:', !(await adminPromptShown()));
+  await page.evaluate(() => { localStorage.removeItem('adminTourAnswered:ben'); });
+  await page.click('button.tab:has-text("Match Summary")'); await page.click('button.tab:has-text("Admin Functions")'); await page.waitForTimeout(300);
+  await page.click('#adminTourPromptModal button:has-text("No thanks")'); await page.waitForTimeout(150);
+  console.log('No thanks remembered:', await page.evaluate(() => localStorage.getItem('adminTourAnswered:ben')));
+  await page.click('.admin-panel-help-btn'); await page.waitForTimeout(150);
+  console.log('admin help has the tour button:', await page.evaluate(() => [...document.querySelectorAll('#adminHelpModal button')].map(b => b.textContent.trim())));
   console.log('errors', errors);
   await browser.close();
 })();

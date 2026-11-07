@@ -1,7 +1,9 @@
-// Guided tour of the main features, started from the App Help pop-up (admin features are not covered)
+// Guided tour of the main features, started from the App Help pop-up (admin features have their own tour)
 // Classic script (shared global scope); load order is set in index.html.
 
-let tourState = null;   // { index, steps, timer }
+let tourState = null;           // { index, steps, kind }
+let tourDemoActive = false;     // set by dev/tour-demo.js while the tour screenshots are taken; stops reloads from replacing example data
+let tourSuppressOffer = false;
 
 function tourRulesHtml() {
     const r = getEffectiveScoringRules();
@@ -28,241 +30,94 @@ function tourRulesHtml() {
 }
 
 
-// ---- Example data: the tour never shows real results or people ----
-let tourDemoActive = false;
-let tourSaved = null;
-
-function tourDemoData() {
-    const year = selectedYear;
-    const m = (id, round, date, time, t1, t2, s1, s2, tr1, tr2, joker) => ({ id, year, round, date, time, team1: t1, team2: t2, actualScore1: s1, actualScore2: s2, actualTries1: tr1, actualTries2: tr2, jokerEligible: joker });
-    const demoMatches = [
-        m(9001, 1, 'Thu, Feb 5', '20:10', 'France', 'Ireland', 36, 14, 5, 2, false),
-        m(9002, 1, 'Sat, Feb 7', '14:10', 'Italy', 'Scotland', 18, 15, 2, 1, false),
-        m(9003, 1, 'Sat, Feb 7', '16:40', 'England', 'Wales', 24, 19, 3, 2, true),
-        m(9004, 2, 'Sat, Feb 14', '14:10', 'Ireland', 'Italy', 30, 12, 4, 1, false),
-        m(9005, 2, 'Sat, Feb 14', '16:40', 'Scotland', 'England', null, null, null, null, true),
-        m(9006, 2, 'Sun, Feb 15', '15:10', 'Wales', 'France', null, null, null, null, false)
-    ];
-    const preds = (list) => { const o = {}; list.forEach((p, i) => { if (p) o[9001 + i] = { team1: p[0], team2: p[1] }; }); return o; };
-    const person = (id, nickname, teams, tries, list) => ({ id, nickname, totalTries: tries, supportedTeams: teams, predictions: preds(list) });
-    const demoUsers = {
-        demoalex: person(9101, 'Alex', ['France'], 24, [[30, 12], [20, 16], [22, 17], [28, 10], [18, 21], [14, 29]]),
-        demobryn: person(9102, 'Bryn', ['Wales'], 31, [[25, 20], [15, 18], [20, 24], [32, 14], [19, 22], [16, 24]]),
-        democara: person(9103, 'Cara', ['Scotland'], 27, [[34, 14], [12, 21], [26, 18], [24, 12], [21, 17], [10, 33]]),
-        demodev: person(9104, 'Dev', ['Italy', 'England'], 29, [[22, 18], [18, 15], [18, 21], [27, 13], [20, 20], [12, 30]]),
-        demoerin: person(9105, 'Erin', ['Ireland'], 22, [[28, 24], [24, 10], [23, 19], [20, 15], [16, 25], [9, 28]])
-    };
-    // The signed-in person appears as "You" with a half-finished card, so the predictions screen has something to show
-    if (currentUsername && !isGuest) {
-        demoUsers[currentUsername] = person(9100, 'You', [], 26, [[31, 13], [17, 14], [24, 19], [29, 11], null, null]);
-    }
-    const jokers = { demoalex: [9003], demobryn: [9005], democara: [9003], demodev: [9003], demoerin: [9005] };
-    if (demoUsers[currentUsername]) jokers[currentUsername] = [9003];
-    const at = (mins) => new Date(Date.now() - mins * 60000).toISOString();
-    const chat = {
-        available: true,
-        comments: [
-            { id: 1, match_id: 9001, user_id: 9102, target_user_id: null, body: 'What a start for France. Nobody saw that coming!', created_at: at(180) },
-            { id: 2, match_id: 9001, user_id: 9104, target_user_id: null, body: 'Joker well spent. Thank you France.', created_at: at(95) },
-            { id: 3, match_id: 9001, user_id: 9103, target_user_id: 9102, body: 'Bold pick, Bryn. Ireland by 5?', created_at: at(60) },
-            { id: 4, match_id: 9002, user_id: 9105, target_user_id: null, body: 'Italy edge it. Table is wide open now.', created_at: at(1500) }
-        ],
-        reactions: [
-            { id: 1, match_id: 9001, user_id: 9102, target_user_id: null, emoji: '🔥' }, { id: 2, match_id: 9001, user_id: 9103, target_user_id: null, emoji: '🔥' },
-            { id: 3, match_id: 9001, user_id: 9104, target_user_id: null, emoji: '😱' }, { id: 4, match_id: 9002, user_id: 9101, target_user_id: null, emoji: '😱' },
-            { id: 5, match_id: 9002, user_id: 9103, target_user_id: null, emoji: '😭' }, { id: 6, match_id: 9001, user_id: 9101, target_user_id: 9102, emoji: '😂' },
-            { id: 7, match_id: 9003, user_id: 9105, target_user_id: 9104, emoji: '👏' }
-        ]
-    };
-    // An invited person who has not signed in yet, and example sign-in accounts for the Competitors screen
-    demoUsers.demoinvite = { id: 9106, nickname: null, totalTries: null, supportedTeams: [], predictions: {} };
-    const emails = { demoalex: 'alex@example.com', demobryn: 'bryn@example.com', democara: 'cara@example.com', demodev: 'dev@example.com', demoerin: 'erin@example.com', demoinvite: 'newplayer@example.com' };
-    const emails2 = { demodev: 'dev.home@example.com' };
-    const accounts = [
-        { auth_user_id: 'demo-a1', email: 'alex@example.com', linked_username: 'demoalex' },
-        { auth_user_id: 'demo-a2', email: 'bryn@example.com', linked_username: 'demobryn' },
-        { auth_user_id: 'demo-a3', email: 'cara@example.com', linked_username: 'democara' },
-        { auth_user_id: 'demo-a4', email: 'dev@example.com', linked_username: 'demodev' },
-        { auth_user_id: 'demo-a5', email: 'dev.home@example.com', linked_username: 'demodev' },
-        { auth_user_id: 'demo-a6', email: 'erin@example.com', linked_username: 'demoerin' }
-    ];
-    return { demoMatches, demoUsers, jokers, chat, emails, emails2, accounts };
-}
-
-function enterTourDemo() {
-    tourSaved = {
-        users, matches: matches.slice(), allMatches, appSettings, activeScoringRules, userJokerSelections, fixtureChat,
-        from: supabaseClient.from, rpc: supabaseClient.rpc,
-        authAccounts, authAccountsLoaded, competitorEmails, competitorEmails2, adminUsernames,
-        getSeasonCounts: Storage.getSeasonCounts
-    };
-    const demo = tourDemoData();
-    tourDemoActive = true;
-    users = demo.demoUsers;
-    matches.splice(0, matches.length, ...demo.demoMatches);
-    allMatches = demo.demoMatches.slice();
-    appSettings = { ...appSettings, predictionsLocked: false, activeOverrides: {} };
-    // The scoring rules (and prize split) stay the real ones: only people, matches, predictions and chat are examples
-    userJokerSelections = demo.jokers;
-    fixtureChat = demo.chat;
-    // Admin screens: example sign-in accounts, emails, admins, year counts (no real addresses)
-    authAccounts = demo.accounts;
-    authAccountsLoaded = true;
-    competitorEmails = demo.emails;
-    competitorEmails2 = demo.emails2;
-    adminUsernames = [currentUsername, 'demoalex'].filter(Boolean);
-    Storage.getSeasonCounts = async () => ({ predictions: 30, tries: 5, competitors: 5, results: 4 });
-    // Nothing the tour touches may reach the database
-    const quiet = () => {
-        const builder = { then: (resolve, reject) => Promise.resolve({ data: [], error: null }).then(resolve, reject) };
-        ['select', 'insert', 'update', 'upsert', 'delete', 'eq', 'neq', 'in', 'is', 'gte', 'lte', 'order', 'limit', 'single', 'maybeSingle'].forEach(name => { builder[name] = () => builder; });
-        return builder;
-    };
-    supabaseClient.from = quiet;
-    supabaseClient.rpc = async () => ({ data: null, error: null });
-    tourRerenderCurrentScreen();
-}
-
-function leaveTourDemo() {
-    if (!tourDemoActive || !tourSaved) return;
-    closeFixtureChat();
-    supabaseClient.from = tourSaved.from;
-    supabaseClient.rpc = tourSaved.rpc;
-    users = tourSaved.users;
-    matches.splice(0, matches.length, ...tourSaved.matches);
-    allMatches = tourSaved.allMatches;
-    appSettings = tourSaved.appSettings;
-    activeScoringRules = tourSaved.activeScoringRules;
-    userJokerSelections = tourSaved.userJokerSelections;
-    fixtureChat = tourSaved.fixtureChat;
-    authAccounts = tourSaved.authAccounts;
-    authAccountsLoaded = tourSaved.authAccountsLoaded;
-    competitorEmails = tourSaved.competitorEmails;
-    competitorEmails2 = tourSaved.competitorEmails2;
-    adminUsernames = tourSaved.adminUsernames;
-    Storage.getSeasonCounts = tourSaved.getSeasonCounts;
-    tourSaved = null;
-    tourDemoActive = false;
-}
-
-function tourRerenderCurrentScreen() {
-    const summary = document.getElementById('summaryTab');
-    const predictions = document.getElementById('predictionsTab');
-    if (summary && !summary.classList.contains('hidden')) showSummary();
-    if (predictions && !predictions.classList.contains('hidden')) { renderMatches(); loadPredictions(); }
-}
-
-// The summary table scrolls sideways under its sticky rank, name and score columns. Pick a chat chip that is
-// really on screen (not hidden under those columns) so the highlight lands on a speech bubble.
-function tourStickyEdge(container) {
-    const sticky = container.querySelector('th.pts-col');
-    return sticky ? sticky.getBoundingClientRect().right : container.getBoundingClientRect().left;
-}
-
-function tourVisibleChip() {
-    const chips = [...document.querySelectorAll('[data-chat-chip]')];
-    const container = document.querySelector('.summary-container');
-    if (!container || chips.length === 0) return chips[0] || null;
-    const edge = tourStickyEdge(container);
-    const right = container.getBoundingClientRect().right;
-    return chips.find(chip => { const r = chip.getBoundingClientRect(); return r.left >= edge + 2 && r.right <= right + 1; }) || chips[0];
-}
-
-// Scroll the table sideways so a chip sits just clear of the sticky columns
-function tourRevealChip() {
-    const container = document.querySelector('.summary-container');
-    const chips = [...document.querySelectorAll('[data-chat-chip]')];
-    if (!container || chips.length === 0) return;
-    const edge = tourStickyEdge(container);
-    const chip = chips[0].getBoundingClientRect().left < edge ? chips[0] : null;
-    if (chip) container.scrollLeft += chip.getBoundingClientRect().left - (edge + 8);
-}
-
-// iPhone or iPad, not already opened from the Home Screen
 function tourCanAddToHomeScreen() {
     const ua = navigator.userAgent || '';
     const ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     return ios && !isStandaloneApp();
 }
 
-const TOUR_PANELS = {
-    summary: 'summaryTab', predictions: 'predictionsTab', adminHome: 'adminHomeTab', results: 'resultsTab', scoreCorrections: 'scoreCorrectionsTab',
-    competitors: 'competitorsTab', rules: 'rulesTab', prizeFund: 'prizeFundTab', years: 'yearsTab'
-};
-
-function tourTabButton(name) {
-    const btn = document.querySelector(`.tabs .tab[onclick*="'${name}'"]`);
-    return btn && btn.offsetParent !== null ? btn : null;
+// ---- Steps: a fixed card with a static picture of the feature (taken from the app on example data),
+// numbered marks on the picture, and numbered instructions that match them. Pictures: tour-images/, js/tour-images.js ----
+function tourStep(id, title, items, extra) {
+    return { id, title, items, extra: extra || '' };
 }
 
 function tourBuildSteps(rulesHtml, chatLive) {
     const steps = [];
-    steps.push({
-        title: 'Review the rules',
-        html: () => `<p>Here is how points are won in ${selectedYear}.</p>${rulesHtml}`
-    });
-    const hasPredictions = !!tourTabButton('predictions');
-    steps.push({
-        title: 'Add your predictions',
-        tab: hasPredictions ? 'predictions' : null,
-        target: hasPredictions ? '#matchesContainer .match-card, #matchesContainer' : null,
-        html: () => hasPredictions
-            ? '<p>Enter a score for each team in every match. Your predictions save as you type.</p><p>On Joker eligible matches you can tick a Joker to double the points. Add your guess for the total tries under the matches and press Save Tournament Tries.</p><p>Predictions lock when the tournament starts, so get them in early.</p>'
-            : '<p>Sign in to enter your own predictions: a score for each team in every match, your Joker, and a guess at the total tries.</p>'
-    });
-    steps.push({
-        title: 'See the current score',
-        tab: 'summary',
-        target: '.summary-container',
-        html: () => '<p>The Match Summary shows everyone\'s rank and total score, plus each person\'s prediction and the points it earned for every match.</p><p>Hover or tap a prediction to see how it was scored. Use Refresh to pull the latest results.</p>'
-    });
-    steps.push({
-        title: 'The traditional view',
-        tab: 'summary',
-        target: '.summary-filters .export-btn',
-        html: () => '<p>If you want the traditional view, open the <strong>PDF Summary</strong>. It lays the table out on a page you can read at a glance, save or print.</p>'
-    });
+    steps.push({ id: null, title: 'Review the rules', raw: () => `<p>Here is how points are won in ${selectedYear}.</p>${rulesHtml}` });
+    steps.push(tourStep('predictions', 'Add your predictions', [
+        'Tap <strong>My Predictions</strong> at the top of the screen.',
+        'Tap <strong>Edit</strong> next to a match to enter your prediction.'
+    ], isGuest
+        ? '<p>Sign in to enter your own predictions.</p>'
+        : '<p>The checklist at the top shows what is still missing. Under the matches you can also guess the total tries and press Save Tournament Tries. Predictions lock when the tournament starts, so get them in early.</p>'));
+    steps.push(tourStep('predict-edit', 'Enter a score', [
+        'Enter the score you expect for each team.',
+        'On a Joker eligible match, tick <strong>Use Joker</strong> to double the points for that match.',
+        'Tap <strong>Save</strong>.'
+    ], '<p>Leave both scores blank to clear a prediction.</p>'));
+    steps.push(tourStep('score', 'See the current score', [
+        'Tap <strong>Match Summary</strong> at the top of the screen. It is the screen you land on after signing in.',
+        'Everyone\'s rank and total score are on the left, with each prediction and the points it earned for every match.'
+    ], '<p>Hover or tap a prediction to see how it was scored. Use Refresh to pull the latest results.</p>'));
+    steps.push(tourStep('pdf', 'The traditional view', [
+        'On the Match Summary, tap <strong>Export PDF Summary</strong>.'
+    ], '<p>If you want the traditional view, open the PDF Summary. It lays the table out on a page you can read at a glance, save or print.</p>'));
     if (chatLive) {
-        steps.push({
-            title: 'Comment on matches and results',
-            tab: 'summary',
-            prepare: tourRevealChip,
-            target: tourVisibleChip,
-            html: () => '<p>Tap the 💬 chip under a match to comment on it or react with an emoji.</p><p>Tap any prediction in the table to comment on that guess. Emoji and comment counts show right on the table, and everyone can see who reacted.</p>'
-        });
+        steps.push(tourStep('chips', 'Comment on matches and results', [
+            'Tap the <strong>💬 chip</strong> under a match to comment on the match or react with an emoji.',
+            'Or tap any <strong>prediction</strong> to comment on that guess.'
+        ], '<p>Emoji and comment counts show right on the table.</p>'));
+        steps.push(tourStep('sheet', 'Join the conversation', [
+            'Pick an emoji to react. Tap it again to take it back.',
+            'Type a comment (up to 140 characters) and tap <strong>Post</strong>.',
+            'Switch between the prediction and the match chat here.'
+        ], '<p>You can see who reacted with each emoji. You can delete your own comments.</p>'));
     }
-    steps.push({
-        title: 'Stats and insights',
-        tab: 'summary',
-        target: () => { const el = document.getElementById('triesStatsContainer'); return el ? el.parentElement : null; },
-        html: () => '<p>Under the table you will find Tournament Stats (tries so far and the projected total), the prize money as things stand, and a chart of how everyone\'s points have moved match by match.</p>'
-    });
+    steps.push(tourStep('stats', 'Stats and insights', [
+        'Scroll down on the Match Summary, under the table.',
+        'Tournament Stats show tries so far and the projected total.',
+        'Prize Money shows what each place wins as things stand.'
+    ], '<p>Below that, a chart shows how everyone\'s points have moved match by match.</p>'));
     if (tourCanAddToHomeScreen()) {
-        steps.push({
-            title: 'Add it to your Home Screen',
-            html: () => '<p>For one-tap access, add the Six Nations Guesser to your iPhone Home Screen.</p><p>Tap the <strong>Share</strong> button <svg class="tour-share-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> in your browser, then choose <strong>Add to Home Screen</strong>. Open it from there and sign in with a code.</p>'
-        });
+        steps.push({ id: null, title: 'Add it to your Home Screen', raw: () => '<p>For one-tap access, add the Six Nations Guesser to your iPhone Home Screen.</p><p>Tap the <strong>Share</strong> button <svg class="tour-share-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> in your browser, then choose <strong>Add to Home Screen</strong>. Open it from there and sign in with a code.</p>' });
     }
     return steps;
 }
 
 function tourBuildAdminSteps() {
-    const adminStep = (title, tab, target, html) => ({ title, tab, target, expandAdminMenu: !!tab, html: () => html });
     return [
-        adminStep('Your admin menu', 'adminHome', '#adminPanel',
-            '<p>Everything an admin does starts here. Each button opens a section, and the menu tucks itself away to leave room. Tap <strong>Admin Functions</strong> to bring it back.</p><p>A readiness checklist appears under the buttons while a new year still has things to set up.</p>'),
-        adminStep('Fixtures and Scores', 'results', '#resultsTab .results-table-container',
-            '<p>Add or edit fixtures, set which matches are Joker eligible, and enter results and tries after each match. Tap a row to edit it.</p><p>Under the table, <strong>Add New Fixture</strong> adds one match and <strong>Bulk Import</strong> pastes in a whole round. <strong>Add Next Score</strong> at the top of the page is the quick way to enter a result.</p>'),
-        adminStep('Predictions and the lock', 'scoreCorrections', '#scoreCorrectionsTab .lock-toggle',
-            '<p>Switch on <strong>Lock Predictions</strong> when the tournament starts, so nobody can change their picks. Each year has its own lock.</p><p>Below it you can pick any competitor to review or correct their predictions, Jokers and tries guess.</p>'),
-        adminStep('Competitors', 'competitors', '#new-competitor-card',
-            '<p>To add someone, enter their email in <strong>+ Add a competitor</strong>. That is all that is needed: they sign in with an emailed code and fill in their own name and teams.</p><p>Each card below lets you change a name, email (two per person are allowed), teams, whether they are playing this year, and admin access.</p>'),
-        adminStep('Guesser Rules', 'rules', '#rulesTab .rules-layout',
-            '<p>Set the points for a correct result, an exact score, draws, close scores and Jokers for the year. Check the preview, then save. Competitors see these rules in their tour.</p>'),
-        adminStep('Prize Fund', 'prizeFund', '#prizeFundTab .rules-layout',
-            '<p>Set the entry fee and how the prize pot is split between 1st, 2nd, 3rd and closest tries. Everyone sees the projected prize money under the Match Summary.</p>'),
-        adminStep('Years', 'years', '#yearsTab .years-form',
-            '<p>Each year has its own fixtures, predictions, rules and lock. Add a new year here, copying last year\'s rules if you like. A year that still has predictions cannot be removed until they are cleared.</p>')
+        tourStep('admin-menu', 'Your admin menu', [
+            'Tap <strong>Admin Functions</strong> at the top of the screen.',
+            'Each button opens a section. The menu tucks itself away to leave room: tap Admin Functions again to bring it back.'
+        ], '<p>A readiness checklist appears under the buttons while a new year still has things to set up.</p>'),
+        tourStep('admin-fixtures', 'Fixtures and Scores', [
+            'Admin Functions, then <strong>Fixtures and Scores</strong>.',
+            'Tap a row to edit a fixture, set it Joker eligible, or enter the result and tries.'
+        ], '<p>Add New Fixture adds one match and Bulk Import pastes in a whole round. <strong>Add Next Score</strong> at the top of the page is the quick way to enter a result.</p>'),
+        tourStep('admin-lock', 'Predictions and the lock', [
+            'Admin Functions, then <strong>Predictions</strong>.',
+            'Switch on <strong>Lock Predictions</strong> when the tournament starts. Each year has its own lock.',
+            'Pick a competitor to review or correct their predictions, Jokers and tries guess.'
+        ]),
+        tourStep('admin-competitors', 'Competitors', [
+            'Admin Functions, then <strong>Competitors</strong>.',
+            'To add someone, enter their email in <strong>+ Add a competitor</strong>. They sign in with an emailed code and fill in their own name and teams.',
+            'Each card lets you change a name, email (two per person are allowed), teams, whether they are playing this year, and admin access.'
+        ]),
+        tourStep('admin-rules', 'Guesser Rules', [
+            'Admin Functions, then <strong>Guesser Rules</strong>.',
+            'Set the points for a correct result, an exact score, draws, close scores and Jokers. Check the preview, then save.'
+        ], '<p>Competitors see these rules at the start of their tour.</p>'),
+        tourStep('admin-prize', 'Prize Fund', [
+            'Admin Functions, then <strong>Prize Fund</strong>.',
+            'Set the entry fee and how the pot is split between 1st, 2nd, 3rd and closest tries.'
+        ], '<p>Everyone sees the projected prize money under the Match Summary.</p>'),
+        tourStep('admin-years', 'Years', [
+            'Admin Functions, then <strong>Years</strong>.',
+            'Add a new year here, copying last year\'s rules if you like.',
+            'Each year lists its fixtures, results and predictions.'
+        ], '<p>A year that still has predictions cannot be removed until they are cleared.</p>')
     ];
 }
 
@@ -271,15 +126,10 @@ function startTour(kind) {
     if (kind === 'admin' && !isCurrentUserAdmin()) return;
     closeGlobalHelpModal();
     closeAdminHelpModal();
-    // Work out what the real app offers first, then switch every screen to example data
     const steps = kind === 'admin' ? tourBuildAdminSteps() : tourBuildSteps(tourRulesHtml(), fixtureChat.available);
-    enterTourDemo();
-    tourState = { index: 0, steps, timer: null, kind };
+    tourState = { index: 0, steps, kind };
     document.body.classList.add('tour-open');
     document.getElementById('tourLayer').setAttribute('aria-hidden', 'false');
-    tourState.timer = setInterval(positionTour, 300);
-    window.addEventListener('resize', positionTour);
-    window.addEventListener('scroll', positionTour, true);
     document.addEventListener('keydown', tourKeys);
     showTourStep(0);
 }
@@ -291,107 +141,30 @@ function tourKeys(event) {
     else if (event.key === 'ArrowLeft') prevTourStep();
 }
 
-async function showTourStep(index) {
+function tourFigureHtml(id) {
+    const image = (typeof TOUR_IMAGES !== 'undefined') ? TOUR_IMAGES[id] : null;
+    if (!image) return '';
+    const marks = (image.marks || []).map(m =>
+        `<span class="tour-mark" style="left:${m.x}%;top:${m.y}%;width:${m.w}%;height:${m.h}%"><b>${m.n}</b></span>`).join('');
+    return `<div class="tour-figure"><div class="tour-figure-inner"><img src="${image.src}?v=${image.v}" alt="" width="${image.w}" height="${image.h}">${marks}</div></div>`;
+}
+
+function showTourStep(index) {
     if (!tourState) return;
     const step = tourState.steps[index];
     tourState.index = index;
     const total = tourState.steps.length;
-    // Go to the screen this step is about by tapping its tab, as a person would
-    if (step.tab) {
-        if (step.expandAdminMenu) setAdminPanelCollapsed(false);
-        const btn = tourTabButton(step.tab);
-        const panelId = TOUR_PANELS[step.tab] || 'summaryTab';
-        const panel = document.getElementById(panelId);
-        if (btn && panel && panel.classList.contains('hidden')) {
-            btn.click();
-            await new Promise(r => setTimeout(r, 450));
-            if (!tourState) return;
-        }
-    }
     document.getElementById('tourCount').textContent = `${index + 1} of ${total}`;
     document.getElementById('tourTitle').textContent = step.title;
-    document.getElementById('tourBody').innerHTML = step.html();
+    const text = step.raw
+        ? step.raw()
+        : `<ol class="tour-items">${step.items.map(i => `<li>${i}</li>`).join('')}</ol>${step.extra}`;
+    document.getElementById('tourBody').innerHTML = (step.id ? tourFigureHtml(step.id) : '') + text;
+    document.getElementById('tourBody').scrollTop = 0;
     document.getElementById('tourBack').disabled = index === 0;
     document.getElementById('tourNext').textContent = index === total - 1 ? 'Done' : 'Next';
     document.getElementById('tourDots').innerHTML = tourState.steps.map((_, i) => `<span class="tour-dot ${i === index ? 'on' : ''}"></span>`).join('');
-    if (step.prepare) step.prepare();
-    const target = tourTarget(step);
-    if (target) {
-        // Bring the target near the top of the screen, leaving the lower part free for the card
-        target.style.scrollMarginTop = '90px';
-        target.scrollIntoView({ block: 'start', behavior: 'auto' });
-        target.style.scrollMarginTop = '';
-    }
-    positionTour();
     document.getElementById('tourNext').focus();
-}
-
-function tourTarget(step) {
-    if (!step.target) return null;
-    return typeof step.target === 'function' ? step.target() : document.querySelector(step.target);
-}
-
-// The faded, softly blurred scrim has a clear window over the highlighted area
-function tourSetWindow(top, left, width, height) {
-    const scrim = document.querySelector('.tour-scrim');
-    if (!scrim) return;
-    if (height <= 0) { scrim.style.clipPath = 'none'; return; }
-    const l = left, r = left + width, tp = top, b = top + height;
-    scrim.style.clipPath = `polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0, ${l}px ${tp}px, ${l}px ${b}px, ${r}px ${b}px, ${r}px ${tp}px, ${l}px ${tp}px)`;
-}
-
-function positionTour() {
-    if (!tourState) return;
-    const step = tourState.steps[tourState.index];
-    const spot = document.getElementById('tourSpot');
-    const card = document.getElementById('tourCard');
-    const target = tourTarget(step);
-    const layer = document.getElementById('tourLayer');
-    layer.classList.toggle('tour-nospot', !target);
-    if (!target) {
-        tourSetWindow(0, 0, 0, 0);
-        spot.style.display = 'none';
-        card.classList.remove('tour-top');
-        card.classList.add('tour-center');
-        return;
-    }
-    const rect = target.getBoundingClientRect();
-    const pad = 6;
-    const top = Math.max(rect.top - pad, 6);
-    const bottom = Math.min(rect.bottom + pad, window.innerHeight - 6);
-    const left = Math.max(rect.left - pad, 6);
-    const right = Math.min(rect.right + pad, window.innerWidth - 6);
-    if (bottom <= top || right <= left) {
-        tourSetWindow(0, 0, 0, 0);
-        spot.style.display = 'none';
-        layer.classList.add('tour-nospot');
-    } else {
-        spot.style.display = 'block';
-        spot.style.top = `${top}px`;
-        spot.style.left = `${left}px`;
-        spot.style.width = `${right - left}px`;
-        spot.style.height = `${bottom - top}px`;
-    }
-    card.classList.remove('tour-center');
-    // Keep the card clear of the highlighted area: lower half of the target means card at the top
-    const cardAtTop = (top + bottom) / 2 > window.innerHeight * 0.55;
-    card.classList.toggle('tour-top', cardAtTop);
-    // A tall target is highlighted only where the card is not covering it
-    const cardRect = card.getBoundingClientRect();
-    if (spot.style.display === 'block') {
-        let spotTop = top, spotBottom = bottom;
-        if (cardAtTop) spotTop = Math.max(top, cardRect.bottom + 8);
-        else spotBottom = Math.min(bottom, cardRect.top - 8);
-        if (spotBottom - spotTop < 30) {
-            tourSetWindow(0, 0, 0, 0);
-            spot.style.display = 'none';
-            layer.classList.add('tour-nospot');
-        } else {
-            spot.style.top = `${spotTop}px`;
-            spot.style.height = `${spotBottom - spotTop}px`;
-            tourSetWindow(spotTop, left, right - left, spotBottom - spotTop);
-        }
-    }
 }
 
 function nextTourStep() {
@@ -411,31 +184,10 @@ function endTour(completed) {
         if (tourState.kind === 'admin') rememberAdminTourAnswer('yes'); else rememberTourAnswer('yes');
         trackUsage(tourState.kind === 'admin' ? 'admin tour completed' : 'tour completed');
     }
-    const kind = tourState.kind;
-    clearInterval(tourState.timer);
     tourState = null;
-    window.removeEventListener('resize', positionTour);
-    window.removeEventListener('scroll', positionTour, true);
     document.removeEventListener('keydown', tourKeys);
     document.body.classList.remove('tour-open');
     document.getElementById('tourLayer').setAttribute('aria-hidden', 'true');
-    leaveTourDemo();
-    if (kind === 'admin') {
-        // Finish on the admin menu, with the buttons showing
-        const adminBtn = tourTabButton('adminHome');
-        tourSuppressOffer = true;   // do not offer the tour again at the moment it ends
-        if (adminBtn) adminBtn.click();
-        tourSuppressOffer = false;
-        setAdminPanelCollapsed(false);
-    } else {
-        // Finish on the Match Summary, the usual home screen
-        const summaryBtn = tourTabButton('summary');
-        const summaryPanel = document.getElementById('summaryTab');
-        if (summaryBtn && summaryPanel && summaryPanel.classList.contains('hidden')) summaryBtn.click();
-    }
-    window.scrollTo({ top: 0, behavior: 'auto' });
-    // Put the real data back on screen
-    refreshSummaryData();
 }
 
 // ---- First sign-in: offer the tour once and remember the answer (on this device, per person) ----
@@ -474,7 +226,6 @@ function answerTourPrompt(takeTour) {
 }
 
 // ---- The first time an admin opens the admin panel: offer the admin tour (same rules as the competitor tour) ----
-let tourSuppressOffer = false;
 const ADMIN_TOUR_ANSWERED_KEY_PREFIX = 'adminTourAnswered:';
 
 function adminTourAnswerKey() {
