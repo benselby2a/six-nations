@@ -146,6 +146,14 @@ const mock = `
   await page.click('.header-help-btn'); await page.click('#globalHelpModal button:has-text("Take a tour")'); await page.waitForTimeout(400);
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   console.log('Escape closes:', !(await st()).open);
+  await page.evaluate(() => { Object.defineProperty(navigator, 'userAgent', { get: () => 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1', configurable: true }); startTour(); });
+  await page.waitForTimeout(400);
+  const stepsOnIphone = await page.evaluate(() => tourState.steps.map(x => x.title));
+  console.log('on an iPhone the tour has', stepsOnIphone.length, 'steps, last:', stepsOnIphone[stepsOnIphone.length - 1]);
+  for (let i = 0; i < stepsOnIphone.length - 1; i++) { await page.click('#tourNext'); await page.waitForTimeout(250); }
+  await page.waitForTimeout(400);
+  console.log('last step card:', await page.evaluate(() => ({ title: document.getElementById('tourTitle').textContent, text: document.getElementById('tourBody').textContent.replace(/\s+/g, ' ').slice(0, 120), spotHidden: document.getElementById('tourSpot').style.display })));
+  await page.keyboard.press('Escape');
   console.log('errors', errors);
   await browser.close();
 })();
