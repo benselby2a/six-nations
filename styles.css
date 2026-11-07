@@ -4569,3 +4569,23 @@ body.tour-open *, body.tour-open *::before, body.tour-open *::after { animation:
 .tour-buttons button { min-height: 46px !important; padding: 0.6rem 1.4rem !important; font-size: 1.02rem !important; }
 
 .tour-share-icon { vertical-align: -3px; }
+
+/* Tour, stronger: the app behind it is heavily faded (the highlighted window a little too), and the card is a bright, high-contrast panel that cannot be missed */
+.tour-scrim { background: rgba(3, 12, 7, 0.9) !important; -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+.tour-spot { background: rgba(6, 24, 14, 0.3) !important; border: 3px solid var(--bright-gold) !important; box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.3), 0 0 30px 6px rgba(255, 215, 0, 0.5) !important; }
+.tour-card { width: min(620px, calc(100vw - 20px)) !important; max-height: 64vh !important; padding: 1.2rem 1.5rem 1.4rem !important; background: #fffdf4 !important; color: #10281a !important; border: 4px solid var(--bright-gold) !important; box-shadow: 0 0 0 8px rgba(255, 215, 0, 0.35), 0 30px 90px rgba(0, 0, 0, 0.9) !important; }
+.tour-card h3 { color: #0d2818 !important; font-size: 2.4rem !important; line-height: 1.05 !important; margin: 0.15rem 0 0.6rem !important; }
+.tour-body p { color: #1d3a29 !important; font-size: 1.18rem !important; line-height: 1.5 !important; }
+.tour-body strong { color: #0d2818 !important; }
+.tour-list { color: #1d3a29 !important; font-size: 1.1rem !important; }
+.tour-list li::marker { color: #b8860b !important; }
+.tour-count { color: #5b6b61 !important; font-size: 0.9rem !important; font-weight: 600; }
+.tour-skip { color: #5b6b61 !important; }
+.tour-skip:hover { background: rgba(13, 40, 24, 0.1) !important; }
+.tour-dot { background: rgba(13, 40, 24, 0.2) !important; }
+.tour-dot.on { background: #0d2818 !important; }
+.tour-card .tour-buttons button { min-height: 50px !important; padding: 0.6rem 1.5rem !important; font-size: 1.08rem !important; border-radius: 8px !important; }
+.tour-card .tour-buttons .btn-cancel { background: transparent !important; color: #0d2818 !important; border: 2px solid #0d2818 !important; }
+.tour-card .tour-buttons button:not(.btn-cancel) { background: #0d2818 !important; color: var(--bright-gold) !important; border: 2px solid #0d2818 !important; }
+.tour-card .tour-buttons button:disabled { opacity: 0.35 !important; }
+.tour-share-icon { color: #0d2818; }
