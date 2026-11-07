@@ -13,7 +13,7 @@ Before making changes in this app, read [REPO_CONTEXT.md](REPO_CONTEXT.md) for t
 ## Fast workflow
 
 - Make the change, run `dev/bump.sh` if `js/`/`styles.css` changed, then `dev/check.sh` (seconds).
-- Test only what the change touches (one focused Playwright or SQL test), not the whole suite; run everything once just before merge.
+- Test only what the change touches: `dev/test.sh <name>` (tests live in `dev/tests/`; first time `(cd dev/tests && npm install)`). Run `dev/test.sh all` (about 25s, parallel) once just before merge.
 - DB changes: add a new idempotent migration file, update `supabase/verify_security.sql`, and hold the merge until the migration has been run.
 - Keep PR descriptions to a few lines; screenshots only when layout is the point.
 - To find code fast: `grep -n "functionName" js/*.js`, then edit only that file. Files are classic scripts sharing one global scope, loaded in the order listed in `index.html`; there is no build step.
