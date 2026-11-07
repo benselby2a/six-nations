@@ -168,6 +168,14 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
                     snapshot[table] = data || [];
                 }
             }
+            // Sign-in emails are hidden from normal reads: an admin-only function returns them
+            const { data: emailRows, error: emailError } = await supabaseClient.rpc('admin_list_competitor_emails');
+            if (emailError) {
+                console.error('Error fetching sign-in emails for recovery:', emailError);
+                snapshot.sign_in_emails = null;
+            } else {
+                snapshot.sign_in_emails = emailRows || [];
+            }
             return snapshot;
         }
 
@@ -204,6 +212,25 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
             sql += insertRows('scoring rules (one row per year)', 'scoring_rules', ['id', 'year', 'correct_result_points', 'perfect_score_bonus', 'draw_bonus', 'max_jokers_per_user', 'entry_fee_amount', 'payout_first_pct', 'payout_second_pct', 'payout_third_pct', 'payout_closest_tries_pct']);
             sql += insertRows('scoring close tiers', 'scoring_close_tiers', ['year', 'tier_order', 'within_points', 'bonus_points']);
 
+            // Restore order matters: the migrations create the email columns, so the emails go in last.
+            sql += `
+-- ===========================================================================
+-- RESTORE ORDER: run everything above, then these files from the repo's supabase/ folder in order:
+--   auth_migration, years_migration, preregistered_emails_migration, registered_logins_migration,
+--   invitations_migration, users_email_migration, second_email_migration, profile_second_email_migration
+-- Then run the sign-in emails below. Competitors sign in with an emailed code and link to their
+-- row by email automatically.
+-- ===========================================================================
+`;
+            if (snapshot.sign_in_emails === null) {
+                sql += `-- WARNING: the sign-in emails could not be read (admin only), so they are NOT in this backup.\n`;
+            } else {
+                (snapshot.sign_in_emails || []).forEach(row => {
+                    if (!row.email && !row.email2) return;
+                    sql += `UPDATE users SET email = ${sqlValue(row.email)}, email2 = ${sqlValue(row.email2)} WHERE username = ${sqlValue(row.username)};\n`;
+                });
+            }
+
             // Reset sequences so new rows get fresh ids.
             if ((snapshot.users || []).length > 0) {
                 sql += '\n-- Reset sequences\n';
@@ -239,7 +266,7 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
                 description.textContent = 'This SQL will recreate all tables and restore:';
                 list.innerHTML = `
                     <li>The list of years, with fixtures and results for every year</li>
-                    <li>All competitors (usernames, display names; sign-in account links are re-created by an admin)</li>
+                    <li>All competitors (usernames, display names) and their sign-in emails, including invitations. Run the listed migrations before the email lines; accounts re-link on sign-in</li>
                     <li>All predictions and tournament tries predictions, for every year</li>
                     <li>Scoring rules, prize settings and close-score tiers, for every year</li>
                     <li>User joker selections</li>
