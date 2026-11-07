@@ -364,6 +364,7 @@ function maybeOfferTour() {
     if (!currentUsername || isGuest || isPdfExportMode || tourState || tourAlreadyAnswered()) return;
     const modal = document.getElementById('tourPromptModal');
     if (!modal) return;
+    document.getElementById('tourPromptText').textContent = `Welcome to the ${selectedYear} Six Nations Guesser, would you like to take a quick tour of the app before you start logging your predictions?`;
     modal.classList.remove('hidden');
     const yes = document.getElementById('tourPromptYes');
     if (yes) yes.focus();

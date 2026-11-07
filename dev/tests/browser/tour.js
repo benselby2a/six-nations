@@ -111,7 +111,7 @@ const mock = `
   await page.fill('#loginEmail', 'ben@example.com'); await page.click('#sendLoginCodeBtn'); await page.waitForTimeout(Math.min(150, 40));
   await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(Math.min(1000, 40));
   const promptShown = () => page.evaluate(() => !document.getElementById('tourPromptModal').classList.contains('hidden'));
-  console.log('first sign-in shows the prompt:', await promptShown(), '| stored answer:', await page.evaluate(() => localStorage.getItem('tourAnswered:ben')));
+  console.log('first sign-in shows the prompt:', await promptShown(), JSON.stringify(await page.textContent('#tourPromptText')), '| stored answer:', await page.evaluate(() => localStorage.getItem('tourAnswered:ben')));
   await page.click('#tourPromptYes'); await page.waitForTimeout(600);
   console.log('Take the tour starts it:', await page.evaluate(() => ({ open: document.body.classList.contains('tour-open'), prompt: !document.getElementById('tourPromptModal').classList.contains('hidden'), stored: localStorage.getItem('tourAnswered:ben') })));
   console.log('example data on screen:', await page.evaluate(() => ({ names: [...document.querySelectorAll('.competitor-name')].map(e => e.textContent.trim()), realNameVisible: /Sam|Newbie|Ben/.test([...document.querySelectorAll('.competitor-name')].map(e => e.textContent).join(' ').replace('You', '')), animations: getComputedStyle(document.querySelector('.summary-container')).animationName, matches: [...document.querySelectorAll('.match-header-cell .match-teams')].length, label: document.querySelector('.tour-demo').textContent })));
