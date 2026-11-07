@@ -4572,3 +4572,12 @@ body.tour-open .tour-layer { display: flex; align-items: center; justify-content
     .tour-figure { padding: 12px; margin-bottom: 0.5rem; }
     .tour-buttons button { min-height: 44px; padding: 0.4rem 1.1rem; }
 }
+
+.tour-card.tour-compact { padding: 0.55rem 0.9rem 0.65rem; }
+.tour-card.tour-compact h3 { font-size: 1.5rem; margin-bottom: 0.3rem; }
+.tour-card.tour-compact .tour-body p, .tour-card.tour-compact .tour-items li { font-size: 0.9rem; line-height: 1.3; }
+.tour-card.tour-compact .tour-items { gap: 0.3rem; }
+.tour-card.tour-compact .tour-items li { padding-left: 1.9rem; }
+.tour-card.tour-compact .tour-items li::before { width: 1.4rem; height: 1.4rem; font-size: 0.8rem; line-height: 1.4rem; }
+.tour-card.tour-compact .tour-figure { padding: 10px; margin-bottom: 0.4rem; }
+.tour-card.tour-compact .tour-buttons button { min-height: 40px; padding: 0.3rem 1rem; font-size: 0.95rem; }
