@@ -4520,3 +4520,9 @@ body.fixture-chat-open .fixture-chat-sheet { transform: none; }
 @media (max-width: 600px) {
     .match-header-cell .match-result { font-size: 0.95rem; padding: 0.2rem 0.4rem; }
 }
+
+/* Emoji summaries: on their own line in the cell (not a tiny corner badge), larger and easy to see */
+.chat-badge { position: static !important; display: flex; justify-content: center; align-items: center; gap: 0.3rem; width: fit-content; margin: 0.2rem auto 0; padding: 0.1rem 0.45rem; border-radius: 999px; background: rgba(0, 0, 0, 0.45); }
+.chat-badge .chat-emoji { font-size: 1rem; letter-spacing: 0; line-height: 1.2; }
+.chat-badge .chat-count { font-size: 0.75rem; }
+.chat-chip .chat-emoji { font-size: 1rem; letter-spacing: 0; }
