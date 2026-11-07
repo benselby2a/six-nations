@@ -197,7 +197,7 @@ function renderFixtureChat() {
     const compose = canPost ? `
         <form class="fc-compose" onsubmit="postFixtureComment(event)">
             <textarea id="fixtureChatInput" maxlength="${FIXTURE_CHAT_MAX}" placeholder="${isPred ? `Say something about ${escapeHtml(chatDisplayName(sel.username))}'s pick…` : 'Say something about this match…'}" aria-label="Comment" oninput="onFixtureChatInput()"></textarea>
-            <div class="fc-compose-row"><span class="fc-counter" id="fixtureChatCounter">0 / ${FIXTURE_CHAT_MAX}</span><button type="submit" id="fixtureChatPost" disabled>Post</button></div>
+            <div class="fc-compose-row"><span class="fc-counter" id="fixtureChatCounter">0 / ${FIXTURE_CHAT_MAX}</span><button type="submit" id="fixtureChatPost">Post</button></div>
         </form>` : '<p class="fc-guest-note">Sign in to react or comment. Guests can read the thread.</p>';
 
     const draft = (document.getElementById('fixtureChatInput') || {}).value || '';
@@ -214,7 +214,6 @@ function onFixtureChatInput() {
     const input = document.getElementById('fixtureChatInput');
     if (!input) return;
     document.getElementById('fixtureChatCounter').textContent = `${input.value.length} / ${FIXTURE_CHAT_MAX}`;
-    document.getElementById('fixtureChatPost').disabled = !input.value.trim();
 }
 
 async function reloadFixtureChat() {
@@ -228,7 +227,11 @@ async function postFixtureComment(event) {
     if (fixtureChatBusy || !fixtureChatSelection || !chatCanPost()) return;
     const input = document.getElementById('fixtureChatInput');
     const body = input.value.trim();
-    if (!body) return;
+    // Post is also the way to finish: with nothing typed it simply closes the chat
+    if (!body) {
+        closeFixtureChat();
+        return;
+    }
     const sel = fixtureChatSelection;
     const isPred = sel.tab === 'pred' && sel.username;
     fixtureChatBusy = true;
@@ -246,6 +249,7 @@ async function postFixtureComment(event) {
         input.value = '';
         trackUsage('fixture comment', formatUsagePayload({ match: sel.matchId, about: isPred ? sel.username : null }));
         await reloadFixtureChat();
+        closeFixtureChat();
     } finally {
         fixtureChatBusy = false;
     }
