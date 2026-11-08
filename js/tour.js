@@ -71,7 +71,7 @@ function tourBuildSteps(rulesHtml, chatLive) {
         'Prize Money shows what each place wins as things stand.'
     ], '<p>Below that, a chart shows how everyone\'s points have moved match by match.</p>'));
     if (tourCanAddToHomeScreen()) {
-        steps.push({ id: null, title: 'Add it to your Home Screen', raw: () => '<p>For one-tap access, add the Six Nations Guesser to your iPhone Home Screen.</p><p>Tap the <strong>Share</strong> button <svg class="tour-share-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> in your browser, then choose <strong>Add to Home Screen</strong>. Open it from there and sign in with a code.</p>' });
+        steps.push({ id: null, title: 'Add it to your Home Screen', raw: () => '<p>For one-tap access, add the Six Nations Guesser to your iPhone Home Screen.</p><p>Tap the <strong>Share</strong> button <svg class="tour-share-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> in your browser, then choose <strong>Add to Home Screen</strong>. Open it from there and sign in with a code.</p><p><strong>Can\'t see the Share button?</strong> Press and hold (long press) the browser address at the bottom of the screen, then choose <strong>Share</strong>.</p>' });
     }
     return steps;
 }

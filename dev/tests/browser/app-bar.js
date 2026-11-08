@@ -136,6 +136,27 @@ const mock = `
     await page.setViewportSize({ width: w, height: 800 }); await page.waitForTimeout(200);
     console.log(`tabs at ${w}px:`, JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('#appView .app-bar > .tabs .tab')].filter(t => t.offsetParent).map(t => !(t.scrollWidth > t.clientWidth + 1)))), '| bar fits:', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
   }
+  // the two filter buttons line up: same height, no stray bottom border, text on the same line
+  for (const w of [390, 1280]) {
+    await page.setViewportSize({ width: w, height: 800 }); await page.waitForTimeout(200);
+    console.log(`filter buttons aligned at ${w}px:`, JSON.stringify(await page.evaluate(() => { const bs = [...document.querySelectorAll('.summary-toolbar .filter-toggle-btn')]; const rects = bs.map(b => b.getBoundingClientRect()); const text = bs.map(b => { const r = document.createRange(); r.selectNodeContents(b); const t = r.getBoundingClientRect(); return Math.round((t.top + t.bottom) / 2 * 10) / 10; });
+      return { sameHeight: rects[0].height === rects[1].height, sameTop: rects[0].top === rects[1].top, borderBottoms: bs.map(b => getComputedStyle(b).borderBottomWidth), textCentres: text, textAligned: Math.abs(text[0] - text[1]) < 0.6 }; })));
+  }
+  await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(200);
+  // the PDF and refresh buttons are as tall as the filter buttons, and have tooltips
+  for (const w of [390, 1280]) {
+    await page.setViewportSize({ width: w, height: 800 }); await page.waitForTimeout(200);
+    console.log(`toolbar heights at ${w}px:`, JSON.stringify(await page.evaluate(() => ({ filter: Math.round(document.querySelector('.summary-toolbar .filter-toggle').getBoundingClientRect().height), pdf: Math.round(document.getElementById('exportPdfBtn').getBoundingClientRect().height), refresh: Math.round(document.getElementById('summaryRefreshBtn').getBoundingClientRect().height) }))));
+  }
+  const tip = (id) => page.evaluate((i) => { const e = document.getElementById(i), a = getComputedStyle(e, '::after'); return { text: JSON.parse(a.content.replace(/^"(.*)"$/, '"$1"')), opacity: a.opacity }; }, id);
+  console.log('tooltips hidden at rest:', JSON.stringify(await tip('exportPdfBtn')), JSON.stringify(await tip('summaryRefreshBtn')));
+  await page.hover('#exportPdfBtn'); await page.waitForTimeout(300);
+  console.log('PDF tooltip on hover:', JSON.stringify(await tip('exportPdfBtn')));
+  await page.hover('#summaryRefreshBtn'); await page.waitForTimeout(300);
+  console.log('refresh tooltip on hover:', JSON.stringify(await tip('summaryRefreshBtn')), '| PDF tooltip gone:', (await tip('exportPdfBtn')).opacity);
+  await page.mouse.move(2, 2);
+  await page.evaluate(() => document.getElementById('exportPdfBtn').dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'touch', bubbles: true }))); await page.waitForTimeout(300);
+  console.log('a tap on a touch screen flashes it:', (await tip('exportPdfBtn')).opacity);
   // wide screens: tabs sit in the bar beside the title; the toolbar is one row
   await page.setViewportSize({ width: 1280, height: 800 }); await page.waitForTimeout(300);
   console.log('wide screen layout:', JSON.stringify(await page.evaluate(() => { const top = (sel) => Math.round(document.querySelector(sel).getBoundingClientRect().top); const left = (sel) => Math.round(document.querySelector(sel).getBoundingClientRect().left);

@@ -35,6 +35,15 @@ function updateAvatar() {
     if (dot) dot.classList.toggle('hidden', !(typeof isCurrentUserAdmin === 'function' && isCurrentUserAdmin()));
 }
 
+// Touch screens have no hover: show a tooltip's label for a moment when its button is tapped
+document.addEventListener('pointerdown', (event) => {
+    if (event.pointerType !== 'touch') return;
+    const el = event.target.closest && event.target.closest('[data-tip]');
+    if (!el) return;
+    el.classList.add('tip-show');
+    setTimeout(() => el.classList.remove('tip-show'), 1600);
+});
+
 (function bindAppBar() {
     document.addEventListener('click', (event) => {
         const menu = document.getElementById('accountMenu');

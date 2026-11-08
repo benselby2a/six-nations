@@ -4722,3 +4722,15 @@ body.in-app .container { padding-top: 0.8rem; }
    (A no-op in a normal browser, where the top safe area is 0.) */
 html { background-color: var(--deep-green); }
 body::after { content: ''; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 0px); background: var(--deep-green); z-index: 99999; pointer-events: none; }
+/* The two filter buttons sit side by side: no leftover bottom border from the old stacked phone layout */
+.summary-toolbar .filter-toggle .filter-toggle-btn { border-top: 0; border-bottom: 0; display: flex; align-items: center; justify-content: center; }
+.summary-toolbar .filter-toggle .filter-toggle-btn:first-child { border-right: 2px solid rgba(212, 175, 55, 0.3); }
+
+/* Toolbar buttons: the icon buttons are as tall as the filter buttons, and have a tooltip (hover, keyboard focus, or a brief flash on touch) */
+.summary-toolbar { align-items: stretch; }
+.summary-toolbar .summary-updated-row { align-self: center; }
+.toolbar-icon-btn { height: auto; min-height: 34px; width: 38px; position: relative; }
+.toolbar-icon-btn:hover, .toolbar-icon-btn.tip-show { z-index: 40; }
+[data-tip]::after { content: attr(data-tip); position: absolute; right: 0; top: calc(100% + 8px); background: var(--deep-green); color: var(--white); border: 1px solid var(--gold); border-radius: 6px; padding: 0.3rem 0.65rem; font-family: var(--body-font); font-size: 0.78rem; font-weight: 600; letter-spacing: 0; text-transform: none; white-space: nowrap; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45); opacity: 0; transform: translateY(-4px); pointer-events: none; transition: opacity 0.15s ease, transform 0.15s ease; z-index: 41; }
+[data-tip]:hover::after, [data-tip]:focus-visible::after, [data-tip].tip-show::after { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { [data-tip]::after { transition: none; } }
