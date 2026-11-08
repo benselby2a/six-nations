@@ -227,6 +227,7 @@ function tourFigureHtml(id) {
 function showTourStep(index) {
     if (!tourState) return;
     const step = tourState.steps[index];
+    const direction = index > tourState.index ? 'next' : (index < tourState.index ? 'prev' : 'none');
     tourState.index = index;
     const total = tourState.steps.length;
     document.getElementById('tourCount').textContent = `${index + 1} of ${total}`;
@@ -240,8 +241,18 @@ function showTourStep(index) {
     document.getElementById('tourNext').textContent = index === total - 1 ? 'Done' : 'Next';
     document.getElementById('tourDots').innerHTML = tourState.steps.map((_, i) => `<span class="tour-dot ${i === index ? 'on' : ''}"></span>`).join('');
     document.getElementById('tourCard').classList.toggle('tour-short', !step.id);
+    tourAnimateStep(direction);
     tourFitSoon();
     document.getElementById('tourNext').focus();
+}
+
+// Slide the new step's title and content in from the side you are heading towards (the card itself stays put)
+function tourAnimateStep(direction) {
+    const card = document.getElementById('tourCard');
+    card.classList.remove('tour-go-next', 'tour-go-prev');
+    if (direction === 'none') return;
+    void card.offsetWidth;   // restart the animation
+    card.classList.add(direction === 'next' ? 'tour-go-next' : 'tour-go-prev');
 }
 
 function nextTourStep() {

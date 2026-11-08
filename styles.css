@@ -4594,3 +4594,25 @@ body.tour-open .tour-layer { display: flex; align-items: center; justify-content
 /* Competitors: exempt from the prize fund */
 .cc-chip-nofund { background: rgba(243, 156, 18, 0.22); border-color: #f39c12; color: #ffe7b8; }
 .cc-toggle-prize small { opacity: 0.75; font-weight: 400; }
+
+/* ---- Tour animations: the card eases in; each step slides in from the direction you are heading; marks pop in one by one ---- */
+.tour-card { overflow: hidden; }
+body.tour-open .tour-card { animation: tourCardIn 0.28s ease-out; }
+body.tour-open .tour-scrim { animation: tourScrimIn 0.28s ease-out; }
+@keyframes tourCardIn { from { opacity: 0; transform: scale(0.94) translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes tourScrimIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tourSlideFromRight { from { opacity: 0; transform: translateX(34px); } to { opacity: 1; transform: none; } }
+@keyframes tourSlideFromLeft { from { opacity: 0; transform: translateX(-34px); } to { opacity: 1; transform: none; } }
+.tour-card.tour-go-next #tourTitle, .tour-card.tour-go-next .tour-body { animation: tourSlideFromRight 0.3s ease-out both; }
+.tour-card.tour-go-prev #tourTitle, .tour-card.tour-go-prev .tour-body { animation: tourSlideFromLeft 0.3s ease-out both; }
+@keyframes tourMarkPop { 0% { opacity: 0; transform: scale(1.18); } 60% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+.tour-card.tour-go-next .tour-mark, .tour-card.tour-go-prev .tour-mark { animation: tourMarkPop 0.4s ease-out both; }
+.tour-card.tour-go-next .tour-mark:nth-of-type(1), .tour-card.tour-go-prev .tour-mark:nth-of-type(1) { animation-delay: 0.25s; }
+.tour-card.tour-go-next .tour-mark:nth-of-type(2), .tour-card.tour-go-prev .tour-mark:nth-of-type(2) { animation-delay: 0.4s; }
+.tour-card.tour-go-next .tour-mark:nth-of-type(3), .tour-card.tour-go-prev .tour-mark:nth-of-type(3) { animation-delay: 0.55s; }
+.tour-dot { transition: background 0.2s, width 0.2s; }
+.tour-dot.on { width: 20px; border-radius: 4px; }
+@media (prefers-reduced-motion: reduce) {
+    body.tour-open .tour-card, body.tour-open .tour-scrim, .tour-card #tourTitle, .tour-card .tour-body, .tour-card .tour-mark { animation: none !important; }
+    .tour-dot { transition: none; }
+}

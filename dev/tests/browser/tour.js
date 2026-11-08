@@ -140,12 +140,12 @@ const mock = `
   const before = await state();
   const cards = new Set();
   for (let i = 0; i < total; i++) {
-    const s = await state(); cards.add(JSON.stringify(s.card));
+    const s = await state(); if (s.image !== null) cards.add(JSON.stringify(s.card));   // the text-only rules card is smaller by design
     console.log(JSON.stringify({ n: s.count, title: s.title, image: s.image, marks: s.marks, items: s.items, inViewport: s.inViewport }));
     if (i < total - 1) { await page.click('#tourNext'); await page.waitForTimeout(250); }
   }
   const after = await state();
-  console.log('card never moved (different positions):', cards.size, '| live app untouched (tab, scroll, screen):', after.activeTab === before.activeTab && after.scrollY === before.scrollY && after.summaryVisible);
+  console.log('card never moved between picture steps (different positions):', cards.size, '| live app untouched (tab, scroll, screen):', after.activeTab === before.activeTab && after.scrollY === before.scrollY && after.summaryVisible);
   await page.click('#tourBack'); await page.waitForTimeout(150); console.log('back ->', (await state()).title);
   await page.click('#tourNext'); await page.waitForTimeout(150);
   await page.click('#tourNext'); await page.waitForTimeout(300);
