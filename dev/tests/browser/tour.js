@@ -159,6 +159,9 @@ const mock = `
   await page.waitForTimeout(300);
   const titles = await page.evaluate(() => tourState.steps.map(x => x.title));
   console.log('on an iPhone the tour has', titles.length, 'steps, last:', titles[titles.length - 1]);
+  for (let i = 0; i < titles.length - 1; i++) { await page.click('#tourNext'); await page.waitForTimeout(i === 0 ? 450 : 80); }
+  await page.waitForTimeout(450);
+  console.log('Home Screen step explains the long press:', await page.evaluate(() => { const b = document.getElementById('tourBody'); return { text: /long press/i.test(b.textContent) && /Share/.test(b.textContent), noScroll: b.scrollHeight <= b.clientHeight + 2, title: document.getElementById('tourTitle').textContent }; }).then(JSON.stringify));
   await page.keyboard.press('Escape');
 
   // ---- the admin tour ----
