@@ -136,6 +136,13 @@ const mock = `
     await page.setViewportSize({ width: w, height: 800 }); await page.waitForTimeout(200);
     console.log(`tabs at ${w}px:`, JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('#appView .app-bar > .tabs .tab')].filter(t => t.offsetParent).map(t => !(t.scrollWidth > t.clientWidth + 1)))), '| bar fits:', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
   }
+  // the two filter buttons line up: same height, no stray bottom border, text on the same line
+  for (const w of [390, 1280]) {
+    await page.setViewportSize({ width: w, height: 800 }); await page.waitForTimeout(200);
+    console.log(`filter buttons aligned at ${w}px:`, JSON.stringify(await page.evaluate(() => { const bs = [...document.querySelectorAll('.summary-toolbar .filter-toggle-btn')]; const rects = bs.map(b => b.getBoundingClientRect()); const text = bs.map(b => { const r = document.createRange(); r.selectNodeContents(b); const t = r.getBoundingClientRect(); return Math.round((t.top + t.bottom) / 2 * 10) / 10; });
+      return { sameHeight: rects[0].height === rects[1].height, sameTop: rects[0].top === rects[1].top, borderBottoms: bs.map(b => getComputedStyle(b).borderBottomWidth), textCentres: text, textAligned: Math.abs(text[0] - text[1]) < 0.6 }; })));
+  }
+  await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(200);
   // wide screens: tabs sit in the bar beside the title; the toolbar is one row
   await page.setViewportSize({ width: 1280, height: 800 }); await page.waitForTimeout(300);
   console.log('wide screen layout:', JSON.stringify(await page.evaluate(() => { const top = (sel) => Math.round(document.querySelector(sel).getBoundingClientRect().top); const left = (sel) => Math.round(document.querySelector(sel).getBoundingClientRect().left);

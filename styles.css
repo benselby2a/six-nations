@@ -4722,3 +4722,6 @@ body.in-app .container { padding-top: 0.8rem; }
    (A no-op in a normal browser, where the top safe area is 0.) */
 html { background-color: var(--deep-green); }
 body::after { content: ''; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 0px); background: var(--deep-green); z-index: 99999; pointer-events: none; }
+/* The two filter buttons sit side by side: no leftover bottom border from the old stacked phone layout */
+.summary-toolbar .filter-toggle .filter-toggle-btn { border-top: 0; border-bottom: 0; display: flex; align-items: center; justify-content: center; }
+.summary-toolbar .filter-toggle .filter-toggle-btn:first-child { border-right: 2px solid rgba(212, 175, 55, 0.3); }
