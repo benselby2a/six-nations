@@ -2,9 +2,9 @@
 const TOUR_IMAGES = {
  "predictions": {
   "src": "tour-images/predictions.jpg",
-  "v": "b7e6aaec",
+  "v": "3a808d39",
   "w": 756,
-  "h": 1290,
+  "h": 1296,
   "marks": [
    {
     "n": 1,
@@ -16,7 +16,7 @@ const TOUR_IMAGES = {
    {
     "n": 2,
     "x": 80.8,
-    "y": 63.4,
+    "y": 63.6,
     "w": 14.1,
     "h": 3.7
    }
@@ -24,7 +24,7 @@ const TOUR_IMAGES = {
  },
  "score": {
   "src": "tour-images/score.jpg",
-  "v": "d260bbd0",
+  "v": "ccb72cfe",
   "w": 756,
   "h": 1520,
   "marks": [
@@ -38,14 +38,14 @@ const TOUR_IMAGES = {
    {
     "n": 2,
     "x": 2.6,
-    "y": 25.6,
+    "y": 25.8,
     "w": 94.7,
     "h": 73.2
    },
    {
     "n": 3,
     "x": 87.3,
-    "y": 7.5,
+    "y": 7.9,
     "w": 10.1,
     "h": 5
    }
@@ -53,36 +53,36 @@ const TOUR_IMAGES = {
  },
  "pdf": {
   "src": "tour-images/pdf.jpg",
-  "v": "b64d2a81",
+  "v": "8efdfab7",
   "w": 756,
-  "h": 188,
+  "h": 184,
   "marks": [
    {
     "n": 1,
     "x": 75.3,
-    "y": 10.4,
+    "y": 10.8,
     "w": 10.1,
-    "h": 40.4
+    "h": 41.3
    }
   ]
  },
  "chips": {
   "src": "tour-images/chips.jpg",
-  "v": "7725e786",
+  "v": "3dd3cb2b",
   "w": 756,
   "h": 1120,
   "marks": [
    {
     "n": 1,
     "x": 42.6,
-    "y": 34.7,
+    "y": 34.8,
     "w": 11.4,
     "h": 5
    },
    {
     "n": 2,
     "x": 57.9,
-    "y": 40.3,
+    "y": 40.4,
     "w": 19.2,
     "h": 8.6
    }
@@ -90,7 +90,7 @@ const TOUR_IMAGES = {
  },
  "stats": {
   "src": "tour-images/stats.jpg",
-  "v": "2ecfe07e",
+  "v": "5b462c70",
   "w": 756,
   "h": 1520,
   "marks": [
@@ -104,15 +104,15 @@ const TOUR_IMAGES = {
    {
     "n": 2,
     "x": 2.6,
-    "y": 53.3,
+    "y": 53.2,
     "w": 94.7,
-    "h": 46.7
+    "h": 46.8
    }
   ]
  },
  "admin-menu": {
   "src": "tour-images/admin-menu.jpg",
-  "v": "01b4425e",
+  "v": "7c19ea63",
   "w": 756,
   "h": 940,
   "marks": [
@@ -126,7 +126,7 @@ const TOUR_IMAGES = {
    {
     "n": 2,
     "x": 11.6,
-    "y": 47.2,
+    "y": 47.9,
     "w": 76.7,
     "h": 48.7
    }
@@ -134,21 +134,21 @@ const TOUR_IMAGES = {
  },
  "admin-fixtures": {
   "src": "tour-images/admin-fixtures.jpg",
-  "v": "d5396877",
+  "v": "b596e9e2",
   "w": 756,
   "h": 1244,
   "marks": [
    {
     "n": 1,
     "x": 2.6,
-    "y": 1.7,
+    "y": 1.5,
     "w": 94.7,
     "h": 88.6
    },
    {
     "n": 2,
     "x": 12.9,
-    "y": 94.6,
+    "y": 94.5,
     "w": 39.4,
     "h": 3.8
    }
@@ -156,21 +156,21 @@ const TOUR_IMAGES = {
  },
  "admin-lock": {
   "src": "tour-images/admin-lock.jpg",
-  "v": "66b59ce8",
+  "v": "86ab8ca7",
   "w": 756,
   "h": 612,
   "marks": [
    {
     "n": 1,
     "x": 2.6,
-    "y": 3.4,
+    "y": 3.1,
     "w": 94.7,
     "h": 44.7
    },
    {
     "n": 2,
     "x": 2.6,
-    "y": 58.5,
+    "y": 58.3,
     "w": 94.7,
     "h": 16.9
    }
@@ -178,21 +178,21 @@ const TOUR_IMAGES = {
  },
  "admin-competitors": {
   "src": "tour-images/admin-competitors.jpg",
-  "v": "2490ff37",
+  "v": "fe0a4874",
   "w": 756,
   "h": 372,
   "marks": [
    {
     "n": 1,
     "x": 2.6,
-    "y": 5.6,
+    "y": 5.1,
     "w": 94.7,
     "h": 32.3
    },
    {
     "n": 2,
     "x": 2.6,
-    "y": 44.3,
+    "y": 43.8,
     "w": 94.7,
     "h": 50.4
    }
@@ -200,51 +200,51 @@ const TOUR_IMAGES = {
  },
  "admin-rules": {
   "src": "tour-images/admin-rules.jpg",
-  "v": "c4201e67",
+  "v": "ee8757ce",
   "w": 756,
   "h": 1280,
   "marks": [
    {
     "n": 1,
     "x": 2.6,
-    "y": 27.1,
+    "y": 27,
     "w": 94.7,
-    "h": 72.9
+    "h": 73
    }
   ]
  },
  "admin-prize": {
   "src": "tour-images/admin-prize.jpg",
-  "v": "6150ac12",
+  "v": "cefc49d1",
   "w": 756,
   "h": 1280,
   "marks": [
    {
     "n": 1,
     "x": 2.6,
-    "y": 42.4,
+    "y": 42.3,
     "w": 94.7,
-    "h": 57.6
+    "h": 57.7
    }
   ]
  },
  "admin-years": {
   "src": "tour-images/admin-years.jpg",
-  "v": "9f7d22e0",
+  "v": "00e67ac5",
   "w": 756,
   "h": 1184,
   "marks": [
    {
     "n": 1,
     "x": 2.6,
-    "y": 1.7,
+    "y": 1.6,
     "w": 94.7,
     "h": 36.2
    },
    {
     "n": 2,
     "x": 2.6,
-    "y": 46.2,
+    "y": 46.1,
     "w": 94.7,
     "h": 52.2
    }

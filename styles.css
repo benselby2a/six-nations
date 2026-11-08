@@ -4638,7 +4638,7 @@ body.in-app .container { padding-top: 0.8rem; }
 .year-chip { display: inline-flex; }
 .year-chip select { width: auto; margin: 0; min-width: 0; appearance: none; -webkit-appearance: none; padding: 0.25rem 1.7rem 0.25rem 0.8rem; border-radius: 999px; border: 1px solid rgba(212, 175, 55, 0.7); background: rgba(212, 175, 55, 0.14) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffd700' d='M2 4l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 0.6rem center; color: var(--bright-gold); font-size: 0.9rem; font-weight: 700; cursor: pointer; }
 .avatar-btn { all: unset; box-sizing: border-box; position: relative; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--gold); background: rgba(212, 175, 55, 0.2); color: var(--bright-gold); font-weight: 700; font-size: 1rem; cursor: pointer; }
-.avatar-btn:focus-visible, .toolbar-icon-btn:focus-visible, .account-item:focus-visible, .year-chip select:focus-visible, #appView > .tabs .tab:focus-visible { outline: 2px solid var(--bright-gold); outline-offset: 2px; }
+.avatar-btn:focus-visible, .toolbar-icon-btn:focus-visible, .account-item:focus-visible, .year-chip select:focus-visible, #appView .app-bar > .tabs .tab:focus-visible { outline: 2px solid var(--bright-gold); outline-offset: 2px; }
 .avatar-dot { position: absolute; right: -3px; top: -3px; width: 11px; height: 11px; border-radius: 50%; background: var(--red); border: 2px solid var(--deep-green); }
 .avatar-dot.hidden { display: none; }
 .account-menu { position: absolute; right: 0; top: 48px; width: min(270px, 100%); z-index: 60; background: var(--deep-green); color: var(--white); border: 2px solid var(--gold); border-radius: 12px; padding: 0.5rem; box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55); }
@@ -4654,15 +4654,15 @@ body.in-app .container { padding-top: 0.8rem; }
 .account-item.hidden { display: none; }
 
 /* one slim row of tabs */
-#appView > .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; margin: 0 0 0.7rem; padding: 3px; background: rgba(0, 0, 0, 0.25); border-radius: 10px; animation: none; justify-content: stretch; }
-#appView > .tabs.hidden { display: none; }
-#appView > .tabs .tab { all: unset; box-sizing: border-box; text-align: center; padding: 0.6rem 0.25rem; border-radius: 8px; cursor: pointer; font-family: var(--body-font); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted, rgba(250, 250, 250, 0.65)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#appView > .tabs .tab.hidden { display: none; }
-#appView > .tabs .tab::before, #appView > .tabs .tab::after { display: none; }
-#appView > .tabs .tab:hover { background: rgba(255, 255, 255, 0.08); color: var(--white); transform: none; box-shadow: none; }
-#appView > .tabs .tab.active { background: var(--gold); color: var(--deep-green); }
-#appView > .tabs .tab.admin-top-tab.active { background: var(--red); color: #fff; }
-@media (min-width: 700px) { #appView > .tabs .tab { font-size: 0.85rem; padding: 0.7rem 0.5rem; } }
+#appView .app-bar > .tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; margin: 0 0 0.7rem; padding: 3px; background: rgba(0, 0, 0, 0.25); border-radius: 10px; animation: none; justify-content: stretch; }
+#appView .app-bar > .tabs.hidden { display: none; }
+#appView .app-bar > .tabs .tab { all: unset; box-sizing: border-box; text-align: center; padding: 0.6rem 0.25rem; border-radius: 8px; cursor: pointer; font-family: var(--body-font); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted, rgba(250, 250, 250, 0.65)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#appView .app-bar > .tabs .tab.hidden { display: none; }
+#appView .app-bar > .tabs .tab::before, #appView .app-bar > .tabs .tab::after { display: none; }
+#appView .app-bar > .tabs .tab:hover { background: rgba(255, 255, 255, 0.08); color: var(--white); transform: none; box-shadow: none; }
+#appView .app-bar > .tabs .tab.active { background: var(--gold); color: var(--deep-green); }
+#appView .app-bar > .tabs .tab.admin-top-tab.active { background: var(--red); color: #fff; }
+@media (min-width: 700px) { #appView .app-bar > .tabs .tab { font-size: 0.85rem; padding: 0.7rem 0.5rem; } }
 
 /* one toolbar above the table */
 .summary-toolbar { display: flex; align-items: center; gap: 0.45rem; margin: 0 0 0.5rem; }
@@ -4684,7 +4684,24 @@ body.in-app .container { padding-top: 0.8rem; }
 .toolbar-icon-btn:hover, .pill-add:hover { transform: none; box-shadow: none; }
 .account-row select { background-color: rgba(255, 255, 255, 0.1); border: 2px solid rgba(212, 175, 55, 0.4); color: var(--white); border-radius: 6px; }
 .account-row select option { background: var(--deep-green); color: var(--white); }
-#appView > .tabs .tab { font-size: 0.66rem; letter-spacing: 0; padding: 0.6rem 0.15rem; }
-@media (min-width: 420px) { #appView > .tabs .tab { font-size: 0.72rem; } }
-@media (min-width: 700px) { #appView > .tabs .tab { font-size: 0.85rem; letter-spacing: 0.03em; } }
-@media (max-width: 350px) { #appView > .tabs .tab { white-space: normal; font-size: 0.6rem; line-height: 1.15; padding: 0.45rem 0.1rem; display: flex; align-items: center; justify-content: center; text-overflow: clip; } }
+#appView .app-bar > .tabs .tab { font-size: 0.66rem; letter-spacing: 0; padding: 0.6rem 0.15rem; }
+@media (min-width: 420px) { #appView .app-bar > .tabs .tab { font-size: 0.72rem; } }
+@media (min-width: 700px) { #appView .app-bar > .tabs .tab { font-size: 0.85rem; letter-spacing: 0.03em; } }
+@media (max-width: 350px) { #appView .app-bar > .tabs .tab { white-space: normal; font-size: 0.6rem; line-height: 1.15; padding: 0.45rem 0.1rem; display: flex; align-items: center; justify-content: center; text-overflow: clip; } }
+
+/* Tabs live in the bar: their own full-width row on a phone, inline in the bar on a wide screen */
+.app-bar { flex-wrap: wrap; row-gap: 0.5rem; }
+#appView .app-bar > .tabs { order: 5; flex: 0 0 100%; margin: 0 0 0.2rem; }
+.summary-toolbar { flex-wrap: wrap; row-gap: 0.4rem; }
+.summary-toolbar .summary-updated-row { order: 5; flex: 0 0 100%; margin: 0; }
+@media (min-width: 900px) {
+    .app-bar { flex-wrap: nowrap; gap: 0.8rem; margin-bottom: 0.8rem; }
+    #appView .app-bar > .tabs { order: 1; flex: 0 1 auto; margin: 0 0 0 1.4rem; }
+    .app-bar-space { order: 2; }
+    .avatar-btn { order: 3; }
+    #appView .app-bar > .tabs .tab { padding: 0.6rem 1.4rem; }
+    .summary-toolbar { flex-wrap: nowrap; }
+    .summary-toolbar .filter-toggle { flex: 0 0 340px; }
+    .summary-toolbar .summary-updated-row { order: 0; flex: 1; justify-content: flex-end; gap: 1rem; }
+    .summary-toolbar .summary-updated-row .profile-hint { margin: 0; }
+}
