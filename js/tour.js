@@ -54,7 +54,7 @@ function tourBuildSteps(rulesHtml, chatLive) {
     steps.push(tourStep('score', 'See the current score', [
         'Tap <strong>Match Summary</strong> at the top of the screen. It is the screen you land on after signing in.',
         'Everyone\'s rank and total score are on the left, with each prediction and the points it earned for every match.'
-    ], '<p>Hover or tap a prediction to see how it was scored. Use Refresh to pull the latest results.</p>'));
+    ], '<p>Hover or tap a prediction to see how it was scored. Use the refresh button next to Logout to pull the latest results.</p>'));
     steps.push(tourStep('pdf', 'The traditional view', [
         'On the Match Summary, tap <strong>Export PDF Summary</strong> if you want the traditional view.'
     ], '<p>It lays the table out on a page you can read at a glance, save or print.</p>'));

@@ -121,5 +121,9 @@ const mock = `
   const before = await page.evaluate(() => document.getElementById('summaryUpdatedAt').textContent);
   await page.click('#summaryRefreshBtn'); await page.waitForTimeout(300);
   console.log('summary again', JSON.stringify(await info()), '| updated label present:', !!before);
+  const ic = await page.evaluate(() => { const b = document.getElementById('summaryRefreshBtn'); return { text: b.textContent.trim(), icon: !!b.querySelector('svg.refresh-icon'), label: b.getAttribute('aria-label'), sameHeightAsLogout: Math.round(b.getBoundingClientRect().height) === Math.round(document.getElementById('logoutBtn').getBoundingClientRect().height) }; });
+  console.log('icon button (no text), same height as Logout:', JSON.stringify(ic));
+  await page.evaluate(() => { document.getElementById('summaryRefreshBtn').classList.add('refreshing'); });
+  console.log('spins while refreshing:', await page.evaluate(() => getComputedStyle(document.querySelector('#summaryRefreshBtn .refresh-icon')).animationName));
   await browser.close();
 })();
