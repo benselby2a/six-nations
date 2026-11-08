@@ -455,3 +455,9 @@ This is the main browser-to-Supabase boundary.
 ## Past-year warning banner
 
 - `pastYearWarning(year, now)` in `js/years-admin.js`: a banner (`[data-past-year-banner]`) warns admins who are changing a year that is over. Red when the year is before the current calendar year ("past year"), amber when it is this year and the month is April or later ("normally finishes in March"). Shown in the Fixtures and Scores, Predictions, Guesser Rules and Prize Fund sections and in the next-score, edit-fixture and bulk-import pop-ups; refreshed by `updatePastYearBanners()` (from `showTab`, `switchYear` and the pop-up openers). `appNow()` is a hook so tests can pretend it is another date. Test: `dev/tests/browser/past-year.js`.
+
+## Prize fund exemptions
+
+- Who has not paid is a per-year setting, stored in the `settings` table as `prize_exempt:<year>` = `{ "<username>": true }` (no migration needed). `appSettings.prizeExempt`, `isPrizeExempt(username)` and `toggleCompetitorPrizeExempt()` are in `js/years-admin.js`; `Storage.savePrizeExempt` saves it, and it is renamed/removed with a competitor (`updateActiveOverrideUsername`) and removed with a year.
+- On the Competitors screen each card has an "Exempt from the prize fund in <year> (has not paid)" checkbox (also in the Add a competitor details), and a "Not in prize fund" chip in the card header. `calculatePrizeProjection` (`js/leaderboard.js`) leaves exempt people out of the entrant count, pot, payouts and the closest-tries prize; they stay on the leaderboard. There is no hard-coded rule for the "AI" player any more: tick the box for them like anyone else. (`isAiPlayer` still only drives the robot icon and the playful asides.)
+- Test: `dev/tests/browser/prize-exempt.js`.

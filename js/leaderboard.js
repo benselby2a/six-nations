@@ -174,7 +174,7 @@
         }
 
         function calculatePrizeProjection(sortedUsers, rules) {
-            const prizeEligibleUsers = sortedUsers.filter(user => !isAiPlayer(user.username));
+            const prizeEligibleUsers = sortedUsers.filter(user => !isPrizeExempt(user.username));
             const entrantCount = prizeEligibleUsers.length;
             const entryFeeAmount = Math.max(0, Number(rules.entryFeeAmount) || 0);
             const payoutFirstPct = Math.max(0, Number(rules.payoutFirstPct) || 0);
@@ -206,7 +206,7 @@
             const triesTarget = isTournamentTriesFinalized() ? getTotalActualTries() : getProjectedTournamentTriesTotal();
             let closestTriesWinners = [];
             let triesCandidatesSorted = [];
-            const excludedAiPrizeUsers = new Set();
+            const excludedPrizeUsers = new Set();
 
             buildRankingGroups(sortedUsers).forEach(group => {
                 const overlapsPrizeRanks = [1, 2, 3].some(rank => {
@@ -215,8 +215,8 @@
                 });
                 if (!overlapsPrizeRanks) return;
                 group.users
-                    .filter(user => isAiPlayer(user.username))
-                    .forEach(user => excludedAiPrizeUsers.add(user.username));
+                    .filter(user => isPrizeExempt(user.username))
+                    .forEach(user => excludedPrizeUsers.add(user.username));
             });
 
             if (triesTarget !== null) {
@@ -224,7 +224,7 @@
                 sortedUsers.forEach((user, index) => {
                     const predicted = users[user.username] ? users[user.username].totalTries : null;
                     if (predicted === null || predicted === undefined || !Number.isFinite(Number(predicted))) return;
-                    if (isAiPlayer(user.username)) {
+                    if (isPrizeExempt(user.username)) {
                         candidates.push({
                             username: user.username,
                             predicted: Number(predicted),
@@ -248,13 +248,13 @@
                     return a.username.localeCompare(b.username);
                 });
 
-                const aiClosestCandidate = triesCandidatesSorted.find(entry => entry.excludedFromPrize);
+                const exemptClosestCandidate = triesCandidatesSorted.find(entry => entry.excludedFromPrize);
                 const prizeEligibleCandidates = triesCandidatesSorted.filter(entry => !entry.excludedFromPrize);
                 const bestDiff = prizeEligibleCandidates.length > 0 ? prizeEligibleCandidates[0].diff : Number.POSITIVE_INFINITY;
                 closestTriesWinners = prizeEligibleCandidates.filter(entry => entry.diff === bestDiff);
 
-                if ((pots.closestTries || 0) > 0 && aiClosestCandidate && aiClosestCandidate.diff <= bestDiff) {
-                    excludedAiPrizeUsers.add(aiClosestCandidate.username);
+                if ((pots.closestTries || 0) > 0 && exemptClosestCandidate && exemptClosestCandidate.diff <= bestDiff) {
+                    excludedPrizeUsers.add(exemptClosestCandidate.username);
                 }
                 triesCandidatesSorted = prizeEligibleCandidates;
             }
@@ -279,8 +279,8 @@
                 closestTriesShare,
                 provisionalSecondClosest,
                 provisionalThirdClosest,
-                aiPrizeFootnote: excludedAiPrizeUsers.size > 0
-                    ? `${formatPrizeNoteNames(Array.from(excludedAiPrizeUsers))} ${excludedAiPrizeUsers.size === 1 ? 'is' : 'are'} excluded from prize payouts, so the prize winners shown above skip AI entrants.`
+                exemptPrizeFootnote: excludedPrizeUsers.size > 0
+                    ? `${formatPrizeNoteNames(Array.from(excludedPrizeUsers))} ${excludedPrizeUsers.size === 1 ? 'is' : 'are'} not in the prize fund, so the prize winners shown above skip ${excludedPrizeUsers.size === 1 ? 'them' : 'them'}.`
                     : ''
             };
         }
@@ -367,7 +367,7 @@
             const triesStatus = projection.triesFinalized
                 ? `Final total tries: ${projection.triesTarget ?? '-'}`
                 : `Provisional tries target: ${projection.triesTarget ?? '-'} (based on current completed matches)`;
-            const footnotes = [triesStatus, projection.aiPrizeFootnote].filter(Boolean);
+            const footnotes = [triesStatus, projection.exemptPrizeFootnote].filter(Boolean);
             const closestSuffix = projection.closestTriesWinners.length > 1 ? ' each' : '';
             const secondClosestText = projection.provisionalSecondClosest
                 ? `${toTitleCase(users[projection.provisionalSecondClosest.username].nickname || projection.provisionalSecondClosest.username)} (${projection.provisionalSecondClosest.predicted} tries, off by ${projection.provisionalSecondClosest.diff})`

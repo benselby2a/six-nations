@@ -93,7 +93,7 @@ function tourBuildAdminSteps() {
         tourStep('admin-competitors', 'Competitors', [
             'Admin Functions, then <strong>Competitors</strong>.',
             'To add someone, enter their email in <strong>+ Add a competitor</strong>. They sign in with an emailed code and fill in their own name and teams.',
-            'Each card lets you change a name, email (two per person are allowed), teams, whether they are playing this year, and admin access.'
+            'Each card lets you change a name, email (two per person are allowed), teams, whether they are playing this year, whether they are <strong>exempt from the prize fund</strong> (has not paid), and admin access.'
         ]),
         tourStep('admin-rules', 'Guesser Rules', [
             'Admin Functions, then <strong>Guesser Rules</strong>.',

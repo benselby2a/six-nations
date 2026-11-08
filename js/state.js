@@ -5,7 +5,7 @@
         let users = {};
         let currentUsername = null;
         let adminUsernames = [];
-        let appSettings = { predictionsLocked: false, rulesSavedAt: null, prizeSavedAt: null, activeOverrides: {} };
+        let appSettings = { predictionsLocked: false, rulesSavedAt: null, prizeSavedAt: null, activeOverrides: {}, prizeExempt: {} };
         let selectedYear = null;
         let availableYears = [];
         let allMatches = [];  // Fixtures for every year; `matches` holds the selected year only
