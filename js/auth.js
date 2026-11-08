@@ -484,6 +484,7 @@
             document.getElementById('logoutBtn').classList.remove('hidden');
             updateAdminTabsSubheading();
             updateNextMatchScoreButtonState();
+            if (typeof updateAvatar === 'function') updateAvatar();
             renderReadinessChecklist();
 
             // Load user's saved theme

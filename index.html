@@ -20,7 +20,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261025-81">
+    <link rel="stylesheet" href="styles.css?v=20261025-83">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -176,22 +176,23 @@
 
         <!-- Main App View -->
         <div id="appView" class="hidden">
-            <div class="app-header">
-                <div class="theme-selector">
-                    <label for="themeSelect">Theme:</label>
-                    <select id="themeSelect" onchange="changeTheme(this.value)">
-                        <option value="classic">Classic</option>
-                        <option value="retro">Teletext</option>
-                        <option value="dark">Dark Mode</option>
-                    </select>
-                    <label for="yearSelect">Year:</label>
-                    <select id="yearSelect" onchange="switchYear(this.value)"></select>
-                    <button class="header-help-btn" onclick="toggleGlobalHelp()" title="Open help" aria-label="Open help">?</button>
-                </div>
-                <div class="user-info">
-                    <div class="username profile-link" id="currentUser" onclick="openProfile()"></div>
-                    <button type="button" class="logout-btn refresh-btn" id="summaryRefreshBtn" onclick="manualRefreshSummary()" title="Refresh" aria-label="Refresh"><svg class="refresh-icon" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-                    <button class="logout-btn" id="logoutBtn" onclick="logout()">Logout</button>
+            <div class="app-bar">
+                <span class="app-bar-title">Six Nations</span>
+                <span class="year-chip"><select id="yearSelect" onchange="switchYear(this.value)" aria-label="Year"></select></span>
+                <span class="app-bar-space"></span>
+                <button type="button" id="avatarBtn" class="avatar-btn" aria-haspopup="true" aria-expanded="false" aria-controls="accountMenu" aria-label="Account menu" onclick="toggleAccountMenu(event)"><span id="avatarInitial">?</span><i class="avatar-dot hidden" id="avatarDot"></i></button>
+                <div id="accountMenu" class="account-menu hidden" role="menu" aria-label="Account">
+                    <div class="account-who"><div class="username profile-link" id="currentUser" onclick="closeAccountMenu(); openProfile()"></div></div>
+                    <div class="account-row">
+                        <label for="themeSelect">Theme</label>
+                        <select id="themeSelect" onchange="changeTheme(this.value)">
+                            <option value="classic">Classic</option>
+                            <option value="retro">Teletext</option>
+                            <option value="dark">Dark Mode</option>
+                        </select>
+                    </div>
+                    <button type="button" class="account-item" id="menuHelpBtn" role="menuitem" onclick="closeAccountMenu(); toggleGlobalHelp()">Help</button>
+                    <button type="button" class="account-item account-logout" id="logoutBtn" role="menuitem" onclick="logout()">Logout</button>
                 </div>
             </div>
 
@@ -199,9 +200,6 @@
                 <button class="tab" onclick="showTab('predictions')">My Predictions</button>
                 <button class="tab active" onclick="showTab('summary')">Match Summary</button>
                 <button class="tab admin-only hidden admin-top-tab" onclick="showTab('adminHome')">Admin Functions</button>
-            </div>
-            <div class="admin-top-action-row admin-only hidden">
-                <button id="nextMatchScoreMainBtn" class="tab admin-top-tab admin-top-action-btn" onclick="openNextMatchScoreModal()">Add Next Score</button>
             </div>
 
             <!-- Admin Home Tab (Admin Only) -->
@@ -269,31 +267,24 @@
             </div>
 
             <!-- Summary Tab -->
-            <div id="summaryTab" style="margin-top: 2rem;">
-                <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 1.5rem;">
-                    <div class="summary-heading-row">
-                        <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2.5rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Match Summary</h2>
-                        <div class="summary-refresh">
-                            <span id="summaryUpdatedAt" class="profile-hint"></span>
-                        </div>
-                    </div>
-
-                    <!-- Filters -->
+            <div id="summaryTab" style="margin-top: 0.8rem;">
+                <h2 class="sr-only">Match Summary</h2>
+                <div class="summary-toolbar">
                     <div class="filter-toggle">
-                        <button class="filter-toggle-btn active" onclick="filterMatches('default')">View All Matches</button>
-                        <button class="filter-toggle-btn" onclick="filterMatches('round')">View the current round of matches</button>
+                        <button class="filter-toggle-btn active" onclick="filterMatches('default')">All matches</button>
+                        <button class="filter-toggle-btn" onclick="filterMatches('round')">Current round</button>
                     </div>
-                    <div class="round-select-row">
-                        <label for="roundSelect" id="roundSelectLabel" class="hidden" style="margin: 0; font-weight: 600; color: var(--bright-gold); white-space: nowrap;">Select Round of Matches to View</label>
-                        <select id="roundSelect" class="round-select hidden" onchange="onRoundSelectChange()">
-                        </select>
-                    </div>
-                    <div class="summary-filters">
-                        <button class="export-btn" onclick="exportToPDF()" title="Export PDF Summary">
-                            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM6 20V4h6v6h6v10H6z"/></svg>
-                            Export PDF Summary
-                        </button>
-                    </div>
+                    <button type="button" class="toolbar-icon-btn export-pdf-btn" id="exportPdfBtn" onclick="exportToPDF()" title="Export PDF Summary" aria-label="Export PDF Summary"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15h6M9 18h4"/></svg></button>
+                    <button type="button" class="toolbar-icon-btn" id="summaryRefreshBtn" onclick="manualRefreshSummary()" title="Refresh" aria-label="Refresh"><svg class="refresh-icon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                </div>
+                <div class="round-select-row">
+                    <label for="roundSelect" id="roundSelectLabel" class="hidden" style="margin: 0; font-weight: 600; color: var(--bright-gold); white-space: nowrap;">Round</label>
+                    <select id="roundSelect" class="round-select hidden" onchange="onRoundSelectChange()">
+                    </select>
+                </div>
+                <div class="summary-updated-row">
+                    <span id="summaryUpdatedAt" class="profile-hint"></span>
+                    <button id="nextMatchScoreMainBtn" class="pill-add admin-only hidden" onclick="openNextMatchScoreModal()">Add next score</button>
                 </div>
 
                 <div id="summaryContainer"></div>
@@ -826,27 +817,28 @@
         <button type="button" class="install-tip-close" aria-label="Dismiss" onclick="dismissInstallTip()">&#10005;</button>
     </div>
 
-    <script src="js/constants.js?v=20261025-81"></script>
-    <script src="js/storage.js?v=20261025-81"></script>
-    <script src="js/state.js?v=20261025-81"></script>
-    <script src="js/years-admin.js?v=20261025-81"></script>
-    <script src="js/init.js?v=20261025-81"></script>
-    <script src="js/admin-fixtures.js?v=20261025-81"></script>
-    <script src="js/admin-competitors.js?v=20261025-81"></script>
-    <script src="js/profile.js?v=20261025-81"></script>
-    <script src="js/auth.js?v=20261025-81"></script>
-    <script src="js/predictions.js?v=20261025-81"></script>
-    <script src="js/scoring.js?v=20261025-81"></script>
-    <script src="js/trevs-tips.js?v=20261025-81"></script>
-    <script src="js/leaderboard.js?v=20261025-81"></script>
-    <script src="js/worm-chart.js?v=20261025-81"></script>
-    <script src="js/summary.js?v=20261025-81"></script>
-    <script src="js/fixture-chat.js?v=20261025-81"></script>
-    <script src="js/tour-images.js?v=20261025-81"></script>
-    <script src="js/tour.js?v=20261025-81"></script>
-    <script src="js/export-pdf.js?v=20261025-81"></script>
-    <script src="js/rules-admin.js?v=20261025-81"></script>
-    <script src="js/recovery-usage.js?v=20261025-81"></script>
-    <script src="js/app-shell.js?v=20261025-81"></script>
+    <script src="js/constants.js?v=20261025-83"></script>
+    <script src="js/storage.js?v=20261025-83"></script>
+    <script src="js/state.js?v=20261025-83"></script>
+    <script src="js/years-admin.js?v=20261025-83"></script>
+    <script src="js/init.js?v=20261025-83"></script>
+    <script src="js/admin-fixtures.js?v=20261025-83"></script>
+    <script src="js/admin-competitors.js?v=20261025-83"></script>
+    <script src="js/profile.js?v=20261025-83"></script>
+    <script src="js/auth.js?v=20261025-83"></script>
+    <script src="js/predictions.js?v=20261025-83"></script>
+    <script src="js/scoring.js?v=20261025-83"></script>
+    <script src="js/trevs-tips.js?v=20261025-83"></script>
+    <script src="js/leaderboard.js?v=20261025-83"></script>
+    <script src="js/worm-chart.js?v=20261025-83"></script>
+    <script src="js/summary.js?v=20261025-83"></script>
+    <script src="js/fixture-chat.js?v=20261025-83"></script>
+    <script src="js/tour-images.js?v=20261025-83"></script>
+    <script src="js/tour.js?v=20261025-83"></script>
+    <script src="js/app-bar.js?v=20261025-83"></script>
+    <script src="js/export-pdf.js?v=20261025-83"></script>
+    <script src="js/rules-admin.js?v=20261025-83"></script>
+    <script src="js/recovery-usage.js?v=20261025-83"></script>
+    <script src="js/app-shell.js?v=20261025-83"></script>
 </body>
 </html>
