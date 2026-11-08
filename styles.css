@@ -4590,3 +4590,7 @@ body.tour-open .tour-layer { display: flex; align-items: center; justify-content
 .past-year-finished { background: rgba(243, 156, 18, 0.2); border: 2px solid #f39c12; color: #ffe7b8; }
 
 .tour-card.tour-short { height: auto; }
+
+/* Competitors: exempt from the prize fund */
+.cc-chip-nofund { background: rgba(243, 156, 18, 0.22); border-color: #f39c12; color: #ffe7b8; }
+.cc-toggle-prize small { opacity: 0.75; font-weight: 400; }

@@ -179,6 +179,7 @@
                                         <select id="new-team2-admin">${teamOptions('')}</select>
                                     </div>
                                     <label class="cc-toggle"><input type="checkbox" id="new-active-admin" checked><span>Playing in ${selectedYear}</span></label>
+                                    <label class="cc-toggle cc-toggle-prize"><input type="checkbox" id="new-prizeexempt-admin"><span>Exempt from the prize fund in ${selectedYear} <small>(has not paid)</small></span></label>
                                     <label class="cc-toggle"><input type="checkbox" id="new-admin-admin"><span>Admin</span></label>
                                 </div>
                             </details>
@@ -197,6 +198,7 @@
                 const userTeams = user.supportedTeams || [];
                 const linked = authAccountsLoaded && linkedAccountsFor(username).length > 0;
                 const waiting = authAccountsLoaded && !linked && !!(competitorEmails[username] || competitorEmails2[username]);
+                const exempt = isPrizeExempt(username);
                 const isInvite = !user.nickname;   // invited: no display name until they sign in and fill it in
                 const displayName = isInvite
                     ? escapeHtml(competitorEmails[username] || 'Invited')
@@ -210,6 +212,7 @@
                             </span>
                             <span class="cc-chips">
                                 ${isAdmin ? '<span class="cc-chip cc-chip-admin">Admin</span>' : ''}
+                                ${exempt ? '<span class="cc-chip cc-chip-nofund">Not in prize fund</span>' : ''}
                                 ${isInvite
                                     ? `<span class="cc-chip">${linked ? 'Setting up their profile' : 'Invited, not signed in yet'}</span>`
                                     : `<span class="cc-chip ${isActive ? 'cc-chip-on' : 'cc-chip-off'}">${isActive ? `Playing ${selectedYear}` : 'Not playing'}</span>
@@ -244,6 +247,7 @@
                                 <select id="edit-team2-${username}">${teamOptions(userTeams[1])}</select>
                             </div>
                             <label class="cc-toggle"><input type="checkbox" id="edit-active-${username}" ${isActive ? 'checked' : ''} onchange="toggleCompetitorActive('${safeUsername}', this.checked)"><span>Playing in ${selectedYear}</span></label>
+                            <label class="cc-toggle cc-toggle-prize"><input type="checkbox" id="edit-prizeexempt-${username}" ${exempt ? 'checked' : ''} onchange="toggleCompetitorPrizeExempt('${safeUsername}', this.checked)"><span>Exempt from the prize fund in ${selectedYear} <small>(has not paid, so cannot win a prize)</small></span></label>
                             <label class="cc-toggle"><input type="checkbox" id="edit-admin-${username}" ${isAdmin ? 'checked' : ''} onchange="toggleUserAdmin('${safeUsername}')"><span>Admin</span></label>
                             <div class="cc-field cc-wide">
                                 <span class="cc-label">Sign-in account</span>
@@ -277,6 +281,8 @@
             if (active) active.checked = true;
             const admin = document.getElementById('new-admin-admin');
             if (admin) admin.checked = false;
+            const exempt = document.getElementById('new-prizeexempt-admin');
+            if (exempt) exempt.checked = false;
         }
 
         // Add someone. Only the email is needed: they fill in their own name and teams the first time they
@@ -290,6 +296,7 @@
             const team2 = (document.getElementById('new-team2-admin').value || '').trim();
             const makeAdmin = !!document.getElementById('new-admin-admin').checked;
             const makeActive = !!document.getElementById('new-active-admin').checked;
+            const makeExempt = !!document.getElementById('new-prizeexempt-admin').checked;
 
             if (!email) {
                 alert('An email is needed: it is how they sign in.');
@@ -387,6 +394,11 @@
                 if (await Storage.saveActiveOverrides(overrides)) appSettings.activeOverrides = overrides;
             }
 
+            if (makeExempt) {
+                const exemptNext = { ...(appSettings.prizeExempt || {}), [username]: true };
+                if (await Storage.savePrizeExempt(exemptNext)) appSettings.prizeExempt = exemptNext;
+            }
+
             const { error: emailError } = await supabaseClient.rpc('admin_set_competitor_email', { p_username: username, p_email: email });
             if (emailError) {
                 alert('The competitor was added, but the email was not saved: ' + (emailError.message || 'unknown error'));
@@ -472,6 +484,10 @@
                 if (appSettings.activeOverrides && Object.prototype.hasOwnProperty.call(appSettings.activeOverrides, username)) {
                     appSettings.activeOverrides[newUsername] = appSettings.activeOverrides[username];
                     delete appSettings.activeOverrides[username];
+                }
+                if (appSettings.prizeExempt && Object.prototype.hasOwnProperty.call(appSettings.prizeExempt, username)) {
+                    appSettings.prizeExempt[newUsername] = appSettings.prizeExempt[username];
+                    delete appSettings.prizeExempt[username];
                 }
 
                 // Update current session if editing self
@@ -560,6 +576,7 @@
 
             delete users[username];
             if (appSettings.activeOverrides) delete appSettings.activeOverrides[username];
+            if (appSettings.prizeExempt) delete appSettings.prizeExempt[username];
             await Storage.deleteUser(username);
             renderCompetitorManagement();
             updateLeaderboard();

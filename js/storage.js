@@ -478,7 +478,8 @@
                     `predictions_locked:${year}`,
                     `rules_saved:${year}`,
                     `prize_saved:${year}`,
-                    `active_overrides:${year}`
+                    `active_overrides:${year}`,
+                    `prize_exempt:${year}`
                 ])]);
                 steps.push(['seasons', () => supabaseClient.from('seasons').delete().eq('year', year)]);
 
@@ -625,7 +626,7 @@
                     return { predictionsLocked: false };
                 }
                 
-                const settings = { predictionsLocked: false, rulesSavedAt: null, prizeSavedAt: null, activeOverrides: {} };
+                const settings = { predictionsLocked: false, rulesSavedAt: null, prizeSavedAt: null, activeOverrides: {}, prizeExempt: {} };
                 const lockKey = `predictions_locked:${selectedYear}`;
                 data.forEach(row => {
                     if (row.key === lockKey) {
@@ -634,6 +635,13 @@
                         settings.rulesSavedAt = row.value || null;
                     } else if (row.key === `prize_saved:${selectedYear}`) {
                         settings.prizeSavedAt = row.value || null;
+                    } else if (row.key === `prize_exempt:${selectedYear}`) {
+                        try {
+                            const parsed = JSON.parse(row.value || '{}');
+                            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) settings.prizeExempt = parsed;
+                        } catch (error) {
+                            console.error('Could not read prize fund exemptions:', error);
+                        }
                     } else if (row.key === `active_overrides:${selectedYear}`) {
                         try {
                             const parsed = JSON.parse(row.value || '{}');
@@ -675,12 +683,24 @@
                 return true;
             },
 
+            // Who is exempt from the prize fund in the selected year (has not paid): { username: true }
+            savePrizeExempt: async (exempt) => {
+                const { error } = await supabaseClient
+                    .from('settings')
+                    .upsert({ key: `prize_exempt:${selectedYear}`, value: JSON.stringify(exempt || {}) }, { onConflict: 'key' });
+                if (error) {
+                    console.error('Error saving prize fund exemptions:', error);
+                    return false;
+                }
+                return true;
+            },
+
             // Rewrite (or drop, when newUsername is null) a competitor's entry in every year's overrides
             updateActiveOverrideUsername: async (oldUsername, newUsername) => {
                 const { data, error } = await supabaseClient
                     .from('settings')
                     .select('key, value')
-                    .like('key', 'active_overrides:%');
+                    .or('key.like.active_overrides:%,key.like.prize_exempt:%');
                 if (error) {
                     console.error('Error reading active competitor overrides:', error);
                     return;

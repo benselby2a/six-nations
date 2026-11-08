@@ -500,6 +500,25 @@
             renderReadinessChecklist();
         }
 
+        // Is this competitor outside the prize fund this year (they have not paid)? Set on the Competitors screen.
+        function isPrizeExempt(username) {
+            return !!(appSettings.prizeExempt && appSettings.prizeExempt[username]);
+        }
+
+        async function toggleCompetitorPrizeExempt(username, exempt) {
+            if (!isCurrentUserAdmin() || !users[username]) return;
+            const previous = { ...(appSettings.prizeExempt || {}) };
+            const next = { ...previous };
+            if (exempt) next[username] = true; else delete next[username];
+            appSettings.prizeExempt = next;
+            const ok = await Storage.savePrizeExempt(next);
+            if (!ok) {
+                appSettings.prizeExempt = previous;
+                alert('Could not save that change. Please try again.');
+            }
+            renderCompetitorManagement();
+        }
+
         // Competitors who have made predictions in the selected year (predictions are loaded per year)
         function getParticipantUsernames() {
             return Object.keys(users).filter(username => Object.keys(users[username].predictions || {}).length > 0);
