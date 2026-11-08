@@ -111,18 +111,14 @@ const mock = `
   await page.goto('file://' + path); await page.waitForTimeout(Math.min(800, 40));
   await page.fill('#loginEmail', 'ben@example.com'); await page.click('#sendLoginCodeBtn'); await page.waitForTimeout(Math.min(150, 40));
   await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(Math.min(1000, 40));
-  const info = () => page.evaluate(() => { const r = document.getElementById('summaryRefreshBtn').getBoundingClientRect(), l = document.getElementById('logoutBtn').getBoundingClientRect();
-    return { visible: !!document.getElementById('summaryRefreshBtn').offsetParent, refreshH: Math.round(r.height), logoutH: Math.round(l.height), sameRow: Math.abs(r.top - l.top) < 3, leftOfLogout: r.right <= l.left + 1, gap: Math.round(l.left - r.right),
-      fontSame: getComputedStyle(document.getElementById('summaryRefreshBtn')).fontSize === getComputedStyle(document.getElementById('logoutBtn')).fontSize }; });
-  console.log('summary tab', JSON.stringify(await info()));
+  const info = () => page.evaluate(() => { const r = document.getElementById('summaryRefreshBtn'), p = document.getElementById('exportPdfBtn'), rb = r.getBoundingClientRect(), pb = p.getBoundingClientRect();
+    return { visible: !!r.offsetParent, text: r.textContent.trim(), icon: !!r.querySelector('svg.refresh-icon'), label: r.getAttribute('aria-label'), sameHeightAsPdfIcon: Math.round(rb.height) === Math.round(pb.height), sameRow: Math.abs(rb.top - pb.top) < 3, inToolbar: !!r.closest('.summary-toolbar') }; });
+  console.log('summary tab:', JSON.stringify(await info()));
   await page.click('button.tab:has-text("My Predictions")'); await page.waitForTimeout(100);
-  console.log('predictions tab visible:', await page.evaluate(() => !!document.getElementById('summaryRefreshBtn').offsetParent));
+  console.log('predictions tab (toolbar is part of the summary, so hidden):', await page.evaluate(() => !document.getElementById('summaryRefreshBtn').offsetParent));
   await page.click('button.tab:has-text("Match Summary")'); await page.waitForTimeout(100);
-  const before = await page.evaluate(() => document.getElementById('summaryUpdatedAt').textContent);
   await page.click('#summaryRefreshBtn'); await page.waitForTimeout(300);
-  console.log('summary again', JSON.stringify(await info()), '| updated label present:', !!before);
-  const ic = await page.evaluate(() => { const b = document.getElementById('summaryRefreshBtn'); return { text: b.textContent.trim(), icon: !!b.querySelector('svg.refresh-icon'), label: b.getAttribute('aria-label'), sameHeightAsLogout: Math.round(b.getBoundingClientRect().height) === Math.round(document.getElementById('logoutBtn').getBoundingClientRect().height) }; });
-  console.log('icon button (no text), same height as Logout:', JSON.stringify(ic));
+  console.log('after a refresh:', JSON.stringify(await info()));
   await page.evaluate(() => { document.getElementById('summaryRefreshBtn').classList.add('refreshing'); });
   console.log('spins while refreshing:', await page.evaluate(() => getComputedStyle(document.querySelector('#summaryRefreshBtn .refresh-icon')).animationName));
   await browser.close();

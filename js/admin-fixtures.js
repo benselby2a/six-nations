@@ -135,26 +135,17 @@
         function updateNextMatchScoreButtonState() {
             const btn = document.getElementById('nextMatchScoreMainBtn');
             if (!btn) return;
-            const actionRow = btn.closest('.admin-top-action-row');
             const nextMatch = getQuickScoreEntryMatch();
-            const shouldShowQuickAdd = !!nextMatch;
-
-            if (actionRow) {
-                if (isCurrentUserAdmin() && shouldShowQuickAdd) {
-                    actionRow.classList.remove('hidden');
-                } else {
-                    actionRow.classList.add('hidden');
-                }
-            }
-
-            if (!nextMatch || !shouldShowQuickAdd) {
+            const show = isCurrentUserAdmin() && !!nextMatch;
+            btn.classList.toggle('hidden', !show);
+            if (!show) {
                 btn.disabled = true;
                 return;
             }
 
             btn.disabled = false;
-            const actionLabel = hasMatchScore(nextMatch) ? 'Game In Play - Update' : 'Add';
-            btn.textContent = `${actionLabel} ${getFlag(nextMatch.team1)} ${getTeamAbbr(nextMatch.team1)} v ${getFlag(nextMatch.team2)} ${getTeamAbbr(nextMatch.team2)} Score`;
+            const inPlay = hasMatchScore(nextMatch);
+            btn.textContent = `${inPlay ? 'Update' : '+'} ${getFlag(nextMatch.team1)} ${getTeamAbbr(nextMatch.team1)} v ${getFlag(nextMatch.team2)} ${getTeamAbbr(nextMatch.team2)} score`;
         }
 
         function openNextMatchScoreModal() {

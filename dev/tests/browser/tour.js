@@ -133,7 +133,7 @@ const mock = `
 
   // ---- the tour itself: a fixed card, a picture with marks, numbered instructions, the live app untouched ----
   await page.evaluate(() => switchYear(2026)); await page.waitForTimeout(500);
-  await page.click('.header-help-btn'); await page.waitForTimeout(150);
+  await page.click('#avatarBtn'); await page.click('#menuHelpBtn'); await page.waitForTimeout(150);
   console.log('help shows tour button:', await page.evaluate(() => [...document.querySelectorAll('#globalHelpModal button')].map(b => b.textContent.trim())));
   await page.click('#globalHelpModal button:has-text("Take a tour")'); await page.waitForTimeout(400);
   const total = await page.evaluate(() => tourState.steps.length);
@@ -150,7 +150,7 @@ const mock = `
   await page.click('#tourNext'); await page.waitForTimeout(150);
   await page.click('#tourNext'); await page.waitForTimeout(300);
   console.log('after Done:', JSON.stringify({ open: (await state()).open, remembered: await page.evaluate(() => localStorage.getItem('tourAnswered:ben')) }));
-  await page.click('.header-help-btn'); await page.click('#globalHelpModal button:has-text("Take a tour")'); await page.waitForTimeout(300);
+  await page.click('#avatarBtn'); await page.click('#menuHelpBtn'); await page.click('#globalHelpModal button:has-text("Take a tour")'); await page.waitForTimeout(300);
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   console.log('Escape closes:', !(await state()).open);
 
@@ -196,7 +196,7 @@ const mock = `
   await page.keyboard.press('Escape');
   // ---- the card fits small and short screens (iPhone with its toolbars, landscape), top and bottom visible ----
   await page.evaluate(() => { closeAdminHelpModal(); closeGlobalHelpModal(); });
-  await page.click('.header-help-btn'); await page.click('#globalHelpModal button:has-text("Take a tour")'); await page.waitForTimeout(250);
+  await page.click('#avatarBtn'); await page.click('#menuHelpBtn'); await page.click('#globalHelpModal button:has-text("Take a tour")'); await page.waitForTimeout(250);
   for (const [w, h] of [[320, 480], [375, 553], [390, 664], [430, 760], [844, 390], [1280, 800]]) {
     await page.setViewportSize({ width: w, height: h }); await page.waitForTimeout(450);
     let bad = 0; const pics = [];
@@ -208,7 +208,7 @@ const mock = `
       if (i < 5) { await page.click('#tourNext'); await page.waitForTimeout(i === 0 ? 450 : 80); }
     }
     for (let i = 0; i < 5; i++) { await page.click('#tourBack'); await page.waitForTimeout(i === 4 ? 450 : 30); }
-    console.log(`fits with no scrolling at ${w}x${h}:`, bad === 0, '| picture heights (first/last step):', pics.join(','), '| pictures all shown:', !pics.includes('hidden'));
+    console.log(`fits with no scrolling at ${w}x${h}:`, bad === 0 && !pics.includes('hidden'), '| picture heights (first/last step):', pics.join(','), '| pictures all shown:', !pics.includes('hidden'));
   }
   // the admin tour too (picture hidden only where the screen is too short for picture and text together)
   await page.evaluate(() => { closeGlobalHelpModal(); startTour('admin'); });
