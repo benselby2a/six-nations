@@ -208,7 +208,7 @@ const mock = `
       if (i < 5) { await page.click('#tourNext'); await page.waitForTimeout(i === 0 ? 450 : 80); }
     }
     for (let i = 0; i < 5; i++) { await page.click('#tourBack'); await page.waitForTimeout(i === 4 ? 450 : 30); }
-    console.log(`fits with no scrolling at ${w}x${h}:`, bad === 0, '| picture heights (first/last step):', pics.join(','), '| pictures all shown:', !pics.includes('hidden'));
+    console.log(`fits with no scrolling at ${w}x${h}:`, bad === 0 && !pics.includes('hidden'), '| picture heights (first/last step):', pics.join(','), '| pictures all shown:', !pics.includes('hidden'));
   }
   // the admin tour too (picture hidden only where the screen is too short for picture and text together)
   await page.evaluate(() => { closeGlobalHelpModal(); startTour('admin'); });

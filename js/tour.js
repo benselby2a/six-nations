@@ -172,9 +172,11 @@ function tourFitContent(allowHide) {
     if (!body || !card || !tourState) return;
     const fig = body.querySelector('.tour-figure');
     const img = fig && fig.querySelector('img');
+    let naturalHeight = 0;   // how tall the picture would like to be
     const room = () => {
         if (!img) return null;
         img.style.maxHeight = 'none';
+        naturalHeight = img.offsetHeight;
         const figStyle = getComputedStyle(fig);
         const figOuter = fig.offsetHeight + parseFloat(figStyle.marginBottom || 0);
         const chrome = fig.offsetHeight - img.offsetHeight;
@@ -186,9 +188,9 @@ function tourFitContent(allowHide) {
     if (extra) extra.style.display = '';
     if (fig) fig.style.display = '';
     let space = room();
-    if (img && space < 150) { card.classList.add('tour-compact'); space = room(); }
-    if (img && space < 110 && extra) { extra.style.display = 'none'; space = room(); }
-    if (img && space < 70 && allowHide) { fig.style.display = 'none'; img.style.maxHeight = ''; if (extra) extra.style.display = ''; card.classList.remove('tour-compact'); return tourFitText(card, body); }
+    if (img && space < Math.min(150, naturalHeight)) { card.classList.add('tour-compact'); space = room(); }
+    if (img && space < Math.min(110, naturalHeight) && extra) { extra.style.display = 'none'; space = room(); }
+    if (img && space < Math.min(55, naturalHeight) && allowHide) { fig.style.display = 'none'; img.style.maxHeight = ''; if (extra) extra.style.display = ''; card.classList.remove('tour-compact'); return tourFitText(card, body); }
     if (img) {
         let max = Math.max(Math.floor(space) - 4, 40);
         img.style.maxHeight = `${max}px`;
