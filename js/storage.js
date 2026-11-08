@@ -697,15 +697,20 @@
 
             // Rewrite (or drop, when newUsername is null) a competitor's entry in every year's overrides
             updateActiveOverrideUsername: async (oldUsername, newUsername) => {
-                const { data, error } = await supabaseClient
-                    .from('settings')
-                    .select('key, value')
-                    .or('key.like.active_overrides:%,key.like.prize_exempt:%');
-                if (error) {
-                    console.error('Error reading active competitor overrides:', error);
-                    return;
+                // The per-year lists that name competitors: who is playing, and who is exempt from the prize fund
+                const rows = [];
+                for (const prefix of ['active_overrides:%', 'prize_exempt:%']) {
+                    const { data, error } = await supabaseClient
+                        .from('settings')
+                        .select('key, value')
+                        .like('key', prefix);
+                    if (error) {
+                        console.error('Error reading competitor settings:', error);
+                        return;
+                    }
+                    rows.push(...(data || []));
                 }
-                for (const row of data || []) {
+                for (const row of rows) {
                     let parsed;
                     try { parsed = JSON.parse(row.value || '{}'); } catch (e) { continue; }
                     if (!parsed || !Object.prototype.hasOwnProperty.call(parsed, oldUsername)) continue;
