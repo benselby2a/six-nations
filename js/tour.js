@@ -312,6 +312,7 @@ function rememberTourAnswer(answer) {
 }
 
 function maybeOfferTour() {
+    if (window.__noTourPrompts) return;   // test hook
     if (!currentUsername || isGuest || isPdfExportMode || tourState || tourAlreadyAnswered()) return;
     const modal = document.getElementById('tourPromptModal');
     if (!modal) return;
@@ -344,6 +345,7 @@ function rememberAdminTourAnswer(answer) {
 }
 
 function maybeOfferAdminTour() {
+    if (window.__noTourPrompts) return;   // test hook
     if (!currentUsername || isGuest || tourState || tourSuppressOffer || !isCurrentUserAdmin()) return;
     try { if (localStorage.getItem(adminTourAnswerKey())) return; } catch (error) { return; }   // no storage: do not nag
     const modal = document.getElementById('adminTourPromptModal');

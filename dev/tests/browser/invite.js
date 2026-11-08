@@ -142,6 +142,7 @@ const mock = `
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await page.addInitScript(() => { window.__noTourPrompts = true; });
   const errors = [], dialogs = [];
   page.on('pageerror', e => errors.push(e.message));
   page.on('dialog', async d => { dialogs.push(d.type() + ': ' + d.message().slice(0, 90)); await d.accept(); });

@@ -103,6 +103,7 @@ const mock = `
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  await page.addInitScript(() => { window.__noTourPrompts = true; });
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.route('**/@supabase/supabase-js**', r => r.fulfill({contentType:'application/javascript', body: mock}));

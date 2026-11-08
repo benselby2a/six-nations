@@ -109,6 +109,7 @@ const IPHONE_CHROME = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) Ap
     const ctx = await browser.newContext(opts);
     if (init) await ctx.addInitScript(init);
     const page = await ctx.newPage();
+    await page.addInitScript(() => { window.__noTourPrompts = true; });
     page.on('pageerror', e => errors.push(e.message));
     await page.route('**/@supabase/supabase-js**', r => r.fulfill({contentType:'application/javascript', body: mock}));
     await page.route('**/cdn.jsdelivr.net/**', r => r.request().url().includes('supabase') ? r.fallback() : r.fulfill({contentType:'application/javascript', body:''}));
