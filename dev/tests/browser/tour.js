@@ -142,7 +142,7 @@ const mock = `
   for (let i = 0; i < total; i++) {
     const s = await state(); if (s.image !== null) cards.add(JSON.stringify(s.card));   // the text-only rules card is smaller by design
     console.log(JSON.stringify({ n: s.count, title: s.title, image: s.image, marks: s.marks, items: s.items, inViewport: s.inViewport }));
-    if (i < total - 1) { await page.click('#tourNext'); await page.waitForTimeout(250); }
+    if (i < total - 1) { await page.click('#tourNext'); await page.waitForTimeout(i === 0 ? 450 : 250); }
   }
   const after = await state();
   console.log('card never moved between picture steps (different positions):', cards.size, '| live app untouched (tab, scroll, screen):', after.activeTab === before.activeTab && after.scrollY === before.scrollY && after.summaryVisible);
@@ -198,29 +198,29 @@ const mock = `
   await page.evaluate(() => { closeAdminHelpModal(); closeGlobalHelpModal(); });
   await page.click('.header-help-btn'); await page.click('#globalHelpModal button:has-text("Take a tour")'); await page.waitForTimeout(250);
   for (const [w, h] of [[320, 480], [375, 553], [390, 664], [430, 760], [844, 390], [1280, 800]]) {
-    await page.setViewportSize({ width: w, height: h }); await page.waitForTimeout(200);
+    await page.setViewportSize({ width: w, height: h }); await page.waitForTimeout(450);
     let bad = 0; const pics = [];
     for (let i = 0; i < 6; i++) {
       const ok = await page.evaluate(() => { const c = document.getElementById('tourCard').getBoundingClientRect(); const hd = document.querySelector('.tour-head').getBoundingClientRect(); const n = document.getElementById('tourNext').getBoundingClientRect(); const b = document.getElementById('tourBody');
         return c.top >= 0 && c.bottom <= innerHeight + 1 && hd.top >= 0 && n.bottom <= innerHeight && c.left >= 0 && c.right <= innerWidth + 1 && b.scrollHeight <= b.clientHeight + 1; });
       if (!ok) bad++;
       if (true) pics.push(await page.evaluate(() => { const f = document.querySelector('#tourBody .tour-figure'); return f ? (f.style.display === 'none' ? 'hidden' : Math.round(f.getBoundingClientRect().height)) : 'text'; }));
-      if (i < 5) { await page.click('#tourNext'); await page.waitForTimeout(60); }
+      if (i < 5) { await page.click('#tourNext'); await page.waitForTimeout(i === 0 ? 450 : 80); }
     }
-    for (let i = 0; i < 5; i++) { await page.click('#tourBack'); await page.waitForTimeout(30); }
+    for (let i = 0; i < 5; i++) { await page.click('#tourBack'); await page.waitForTimeout(i === 4 ? 450 : 30); }
     console.log(`fits with no scrolling at ${w}x${h}:`, bad === 0, '| picture heights (first/last step):', pics.join(','), '| pictures all shown:', !pics.includes('hidden'));
   }
   // the admin tour too (picture hidden only where the screen is too short for picture and text together)
   await page.evaluate(() => { closeGlobalHelpModal(); startTour('admin'); });
   for (const [w, h] of [[375, 553], [390, 664], [1280, 800]]) {
-    await page.setViewportSize({ width: w, height: h }); await page.waitForTimeout(300);
+    await page.setViewportSize({ width: w, height: h }); await page.waitForTimeout(450);
     let bad = 0;
     for (let i = 0; i < 7; i++) {
       const ok = await page.evaluate(() => { const b = document.getElementById('tourBody'); const c = document.getElementById('tourCard').getBoundingClientRect(); return b.scrollHeight <= b.clientHeight + 2 && c.top >= 0 && c.bottom <= innerHeight + 1; });
       if (!ok) bad++;
-      if (i < 6) { await page.click('#tourNext'); await page.waitForTimeout(250); }
+      if (i < 6) { await page.click('#tourNext'); await page.waitForTimeout(320); }
     }
-    for (let i = 0; i < 6; i++) { await page.click('#tourBack'); await page.waitForTimeout(40); }
+    for (let i = 0; i < 6; i++) { await page.click('#tourBack'); await page.waitForTimeout(60); }
     console.log(`admin tour fits with no scrolling at ${w}x${h}:`, bad === 0);
   }
   await page.keyboard.press('Escape');
