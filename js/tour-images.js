@@ -24,9 +24,9 @@ const TOUR_IMAGES = {
  },
  "score": {
   "src": "tour-images/score.jpg",
-  "v": "ccb72cfe",
+  "v": "729d3d93",
   "w": 756,
-  "h": 1520,
+  "h": 1518,
   "marks": [
    {
     "n": 1,
@@ -38,37 +38,37 @@ const TOUR_IMAGES = {
    {
     "n": 2,
     "x": 2.6,
-    "y": 25.8,
+    "y": 25.3,
     "w": 94.7,
-    "h": 73.2
+    "h": 73.3
    },
    {
     "n": 3,
     "x": 87.3,
     "y": 7.9,
     "w": 10.1,
-    "h": 5
+    "h": 4.5
    }
   ]
  },
  "pdf": {
   "src": "tour-images/pdf.jpg",
-  "v": "8efdfab7",
+  "v": "8710a453",
   "w": 756,
-  "h": 184,
+  "h": 176,
   "marks": [
    {
     "n": 1,
     "x": 75.3,
-    "y": 10.8,
+    "y": 11.3,
     "w": 10.1,
-    "h": 41.3
+    "h": 38.6
    }
   ]
  },
  "chips": {
   "src": "tour-images/chips.jpg",
-  "v": "3dd3cb2b",
+  "v": "69a8ef9f",
   "w": 756,
   "h": 1120,
   "marks": [
@@ -90,7 +90,7 @@ const TOUR_IMAGES = {
  },
  "stats": {
   "src": "tour-images/stats.jpg",
-  "v": "5b462c70",
+  "v": "b6f58907",
   "w": 756,
   "h": 1520,
   "marks": [
@@ -112,7 +112,7 @@ const TOUR_IMAGES = {
  },
  "admin-menu": {
   "src": "tour-images/admin-menu.jpg",
-  "v": "7c19ea63",
+  "v": "2612e9df",
   "w": 756,
   "h": 940,
   "marks": [
@@ -156,23 +156,23 @@ const TOUR_IMAGES = {
  },
  "admin-lock": {
   "src": "tour-images/admin-lock.jpg",
-  "v": "86ab8ca7",
+  "v": "d9d922b0",
   "w": 756,
-  "h": 612,
+  "h": 666,
   "marks": [
    {
     "n": 1,
     "x": 2.6,
-    "y": 3.1,
+    "y": 2.9,
     "w": 94.7,
-    "h": 44.7
+    "h": 41.1
    },
    {
     "n": 2,
     "x": 2.6,
-    "y": 58.3,
+    "y": 53.6,
     "w": 94.7,
-    "h": 16.9
+    "h": 23.7
    }
   ]
  },
@@ -230,23 +230,23 @@ const TOUR_IMAGES = {
  },
  "admin-years": {
   "src": "tour-images/admin-years.jpg",
-  "v": "00e67ac5",
+  "v": "e6b8f507",
   "w": 756,
-  "h": 1184,
+  "h": 1280,
   "marks": [
    {
     "n": 1,
     "x": 2.6,
-    "y": 1.6,
+    "y": 1.5,
     "w": 94.7,
-    "h": 36.2
+    "h": 33.5
    },
    {
     "n": 2,
     "x": 2.6,
-    "y": 46.1,
+    "y": 42.6,
     "w": 94.7,
-    "h": 52.2
+    "h": 57.4
    }
   ]
  }
