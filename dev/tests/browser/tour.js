@@ -187,6 +187,13 @@ const mock = `
   console.log('No thanks remembered:', await page.evaluate(() => localStorage.getItem('adminTourAnswered:ben')));
   await page.click('.admin-panel-help-btn'); await page.waitForTimeout(150);
   console.log('admin help has the tour button:', await page.evaluate(() => [...document.querySelectorAll('#adminHelpModal button')].map(b => b.textContent.trim())));
+  // ---- pictures are preloaded: each one is already loaded the moment its step opens ----
+  await page.evaluate(() => { closeGlobalHelpModal(); closeAdminHelpModal(); startTour(); });
+  await page.waitForTimeout(500);
+  const loadedAtOnce = [];
+  for (let i = 0; i < 5; i++) { await page.click('#tourNext'); loadedAtOnce.push(await page.evaluate(() => { const im = document.querySelector('#tourBody img'); return im ? im.complete && im.naturalWidth > 0 : null; })); }
+  console.log('each picture is loaded as its step opens:', loadedAtOnce.join(','), '| preloaded images:', await page.evaluate(() => tourPreloaded.length));
+  await page.keyboard.press('Escape');
   // ---- the card fits small and short screens (iPhone with its toolbars, landscape), top and bottom visible ----
   await page.evaluate(() => { closeAdminHelpModal(); closeGlobalHelpModal(); });
   await page.click('.header-help-btn'); await page.click('#globalHelpModal button:has-text("Take a tour")'); await page.waitForTimeout(250);
@@ -197,11 +204,11 @@ const mock = `
       const ok = await page.evaluate(() => { const c = document.getElementById('tourCard').getBoundingClientRect(); const hd = document.querySelector('.tour-head').getBoundingClientRect(); const n = document.getElementById('tourNext').getBoundingClientRect(); const b = document.getElementById('tourBody');
         return c.top >= 0 && c.bottom <= innerHeight + 1 && hd.top >= 0 && n.bottom <= innerHeight && c.left >= 0 && c.right <= innerWidth + 1 && b.scrollHeight <= b.clientHeight + 1; });
       if (!ok) bad++;
-      if (i === 0 || i === 5) pics.push(await page.evaluate(() => { const f = document.querySelector('#tourBody .tour-figure'); return f ? (f.style.display === 'none' ? 'hidden' : Math.round(f.getBoundingClientRect().height)) : 'text'; }));
+      if (true) pics.push(await page.evaluate(() => { const f = document.querySelector('#tourBody .tour-figure'); return f ? (f.style.display === 'none' ? 'hidden' : Math.round(f.getBoundingClientRect().height)) : 'text'; }));
       if (i < 5) { await page.click('#tourNext'); await page.waitForTimeout(60); }
     }
     for (let i = 0; i < 5; i++) { await page.click('#tourBack'); await page.waitForTimeout(30); }
-    console.log(`fits with no scrolling at ${w}x${h}:`, bad === 0, '| picture heights (first/last step):', pics.join(','));
+    console.log(`fits with no scrolling at ${w}x${h}:`, bad === 0, '| picture heights (first/last step):', pics.join(','), '| pictures all shown:', !pics.includes('hidden'));
   }
   // the admin tour too (picture hidden only where the screen is too short for picture and text together)
   await page.evaluate(() => { closeGlobalHelpModal(); startTour('admin'); });

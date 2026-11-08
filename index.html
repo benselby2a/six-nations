@@ -20,7 +20,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261025-71">
+    <link rel="stylesheet" href="styles.css?v=20261025-72">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -241,6 +241,7 @@
                 <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Predictions</h2>
                     <p style="margin-bottom: 0;">Review and update any competitor's match predictions, joker selection, and tournament tries entry from one place.</p>
+                    <div class="past-year-banner hidden" data-past-year-banner role="alert"></div>
                 </div>
 
                 <!-- Lock Predictions Toggle -->
@@ -334,6 +335,7 @@
                 <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Fixtures and Scores</h2>
                     <p style="margin-bottom: 1rem;">Manage fixtures and results. Click a row or Edit to update all fixture fields.</p>
+                    <div class="past-year-banner hidden" data-past-year-banner role="alert"></div>
                 </div>
 
                 <div class="results-table-container">
@@ -361,6 +363,7 @@
                 <div id="bulkImportModal" class="modal hidden">
                     <div class="modal-content" style="max-width: 600px;">
                         <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Bulk Import Fixtures</h2>
+            <div class="past-year-banner hidden" data-past-year-banner role="alert"></div>
                         <p style="margin-bottom: 1rem;">Enter one fixture per line in the format:</p>
                         <p style="margin-bottom: 1rem; font-family: monospace; background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 5px;">Round, DD/MM/YYYY, HH:MM, Home Team, Away Team</p>
                         <p style="margin-bottom: 1rem; font-size: 0.9rem; opacity: 0.8;">Example:<br>
@@ -379,6 +382,7 @@
                 <div id="editFixtureModal" class="modal hidden">
                     <div class="modal-content" style="max-width: 760px;">
                         <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Edit Fixture</h2>
+            <div class="past-year-banner hidden" data-past-year-banner role="alert"></div>
                         <div class="fixture-edit-grid">
                             <div class="input-group">
                                 <label for="edit-fixture-round">Round</label>
@@ -435,6 +439,7 @@
                 <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 1rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Scoring Rules</h2>
                     <p style="margin-bottom: 0;">Edit draft scoring values, preview points output, then publish when valid.</p>
+                    <div class="past-year-banner hidden" data-past-year-banner role="alert"></div>
                 </div>
 
                 <div id="rulesFeedback" class="login-feedback hidden"></div>
@@ -546,6 +551,7 @@
                 <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 1rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Prize Fund</h2>
                     <p style="margin-bottom: 0;">Configure entry fee and payout allocation. Currency is fixed to GBP.</p>
+                    <div class="past-year-banner hidden" data-past-year-banner role="alert"></div>
                 </div>
 
                 <div id="prizeRulesFeedback" class="login-feedback hidden"></div>
@@ -757,6 +763,7 @@
     <div id="nextMatchScoreModal" class="modal hidden">
         <div class="modal-content" style="max-width: 560px;">
             <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 0.7rem; letter-spacing: 0.1em;">Add Next Match Score</h2>
+            <div class="past-year-banner hidden" data-past-year-banner role="alert"></div>
             <p id="nextMatchScoreFixture" style="margin-bottom: 0.9rem; opacity: 0.9;">No remaining match found.</p>
             <div class="fixture-edit-grid rules-grid-two">
                 <div class="input-group">
@@ -818,27 +825,27 @@
         <button type="button" class="install-tip-close" aria-label="Dismiss" onclick="dismissInstallTip()">&#10005;</button>
     </div>
 
-    <script src="js/constants.js?v=20261025-71"></script>
-    <script src="js/storage.js?v=20261025-71"></script>
-    <script src="js/state.js?v=20261025-71"></script>
-    <script src="js/years-admin.js?v=20261025-71"></script>
-    <script src="js/init.js?v=20261025-71"></script>
-    <script src="js/admin-fixtures.js?v=20261025-71"></script>
-    <script src="js/admin-competitors.js?v=20261025-71"></script>
-    <script src="js/profile.js?v=20261025-71"></script>
-    <script src="js/auth.js?v=20261025-71"></script>
-    <script src="js/predictions.js?v=20261025-71"></script>
-    <script src="js/scoring.js?v=20261025-71"></script>
-    <script src="js/trevs-tips.js?v=20261025-71"></script>
-    <script src="js/leaderboard.js?v=20261025-71"></script>
-    <script src="js/worm-chart.js?v=20261025-71"></script>
-    <script src="js/summary.js?v=20261025-71"></script>
-    <script src="js/fixture-chat.js?v=20261025-71"></script>
-    <script src="js/tour-images.js?v=20261025-71"></script>
-    <script src="js/tour.js?v=20261025-71"></script>
-    <script src="js/export-pdf.js?v=20261025-71"></script>
-    <script src="js/rules-admin.js?v=20261025-71"></script>
-    <script src="js/recovery-usage.js?v=20261025-71"></script>
-    <script src="js/app-shell.js?v=20261025-71"></script>
+    <script src="js/constants.js?v=20261025-72"></script>
+    <script src="js/storage.js?v=20261025-72"></script>
+    <script src="js/state.js?v=20261025-72"></script>
+    <script src="js/years-admin.js?v=20261025-72"></script>
+    <script src="js/init.js?v=20261025-72"></script>
+    <script src="js/admin-fixtures.js?v=20261025-72"></script>
+    <script src="js/admin-competitors.js?v=20261025-72"></script>
+    <script src="js/profile.js?v=20261025-72"></script>
+    <script src="js/auth.js?v=20261025-72"></script>
+    <script src="js/predictions.js?v=20261025-72"></script>
+    <script src="js/scoring.js?v=20261025-72"></script>
+    <script src="js/trevs-tips.js?v=20261025-72"></script>
+    <script src="js/leaderboard.js?v=20261025-72"></script>
+    <script src="js/worm-chart.js?v=20261025-72"></script>
+    <script src="js/summary.js?v=20261025-72"></script>
+    <script src="js/fixture-chat.js?v=20261025-72"></script>
+    <script src="js/tour-images.js?v=20261025-72"></script>
+    <script src="js/tour.js?v=20261025-72"></script>
+    <script src="js/export-pdf.js?v=20261025-72"></script>
+    <script src="js/rules-admin.js?v=20261025-72"></script>
+    <script src="js/recovery-usage.js?v=20261025-72"></script>
+    <script src="js/app-shell.js?v=20261025-72"></script>
 </body>
 </html>

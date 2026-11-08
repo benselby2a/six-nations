@@ -136,12 +136,43 @@
                 hideLoadingScreen();
             }
 
+            updatePastYearBanners();
             init();
             if (currentUsername && users[currentUsername]) {
                 showApp();
             } else {
                 showAppAsGuest();
             }
+        }
+
+        // ---- Warning for admins changing a year that is over ----
+        // (a hook so tests can pretend it is another date)
+        function appNow() { return new Date(); }
+
+        // The Six Nations is over by April. Changing a past year, or this year from April on, alters final results.
+        function pastYearWarning(year = selectedYear, now = appNow()) {
+            const thisYear = now.getFullYear();
+            if (year < thisYear) {
+                return { level: 'past', text: `You are changing ${year}, a past year. The ${year} Six Nations is over, so changes here alter its final results and leaderboard.` };
+            }
+            if (year === thisYear && now.getMonth() >= 3) {
+                return { level: 'finished', text: `The ${year} Six Nations normally finishes in March. Changes now alter its final results and leaderboard.` };
+            }
+            return null;
+        }
+
+        function updatePastYearBanners() {
+            const warning = pastYearWarning();
+            document.querySelectorAll('[data-past-year-banner]').forEach(el => {
+                if (!warning) {
+                    el.className = 'past-year-banner hidden';
+                    el.textContent = '';
+                    return;
+                }
+                el.className = `past-year-banner past-year-${warning.level}`;
+                el.innerHTML = '<span class="past-year-icon" aria-hidden="true">&#9888;</span><span class="past-year-text"></span>';
+                el.querySelector('.past-year-text').textContent = warning.text;
+            });
         }
 
         // ---- Admin: Years tab ----

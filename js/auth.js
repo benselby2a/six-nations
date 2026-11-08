@@ -518,6 +518,7 @@
             loadPredictions(); // Then populate with saved predictions
             showSummary(); // Load summary by default (includes leaderboard)
             maybeOfferTour();
+            setTimeout(() => tourPreload('app'), 2500);   // quietly, so the tour pictures are ready
         }
 
         // Show app as guest (view only mode)
