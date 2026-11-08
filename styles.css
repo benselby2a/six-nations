@@ -4581,3 +4581,12 @@ body.tour-open .tour-layer { display: flex; align-items: center; justify-content
 .tour-card.tour-compact .tour-items li::before { width: 1.4rem; height: 1.4rem; font-size: 0.8rem; line-height: 1.4rem; }
 .tour-card.tour-compact .tour-figure { padding: 10px; margin-bottom: 0.4rem; }
 .tour-card.tour-compact .tour-buttons button { min-height: 40px; padding: 0.3rem 1rem; font-size: 0.95rem; }
+
+/* Warning banner for admins changing a year that is over */
+.past-year-banner { display: flex; gap: 0.7rem; align-items: flex-start; margin: 0.9rem 0 0; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.95rem; line-height: 1.4; font-weight: 600; text-align: left; }
+.past-year-banner.hidden { display: none; }
+.past-year-icon { font-size: 1.3rem; line-height: 1.1; }
+.past-year-past { background: rgba(231, 76, 60, 0.22); border: 2px solid #e74c3c; color: #ffd9d4; }
+.past-year-finished { background: rgba(243, 156, 18, 0.2); border: 2px solid #f39c12; color: #ffe7b8; }
+
+.tour-card.tour-short { height: auto; }

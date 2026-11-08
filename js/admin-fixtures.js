@@ -41,6 +41,7 @@
         }
 
         function openEditFixtureModal(matchId) {
+            updatePastYearBanners();
             const match = (pendingNewMatch && pendingNewMatch.id === matchId)
                 ? pendingNewMatch
                 : matches.find(m => m.id === matchId);
@@ -158,6 +159,7 @@
 
         function openNextMatchScoreModal() {
             if (!isCurrentUserAdmin()) return;
+            updatePastYearBanners();
             const nextMatch = getQuickScoreEntryMatch();
             if (!nextMatch) {
                 updateNextMatchScoreButtonState();
@@ -517,6 +519,7 @@
 
         // Show bulk import modal
         function showBulkImport() {
+            updatePastYearBanners();
             document.getElementById('bulkImportModal').classList.remove('hidden');
             document.getElementById('bulkImportData').value = '';
             document.getElementById('bulkImportData').focus();

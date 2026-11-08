@@ -47,17 +47,17 @@ function tourBuildSteps(rulesHtml, chatLive) {
     steps.push({ id: null, title: 'Review the rules', raw: () => `<p>Here is how points are won in ${selectedYear}.</p>${rulesHtml}` });
     steps.push(tourStep('predictions', 'Add your predictions', [
         'Tap <strong>My Predictions</strong> at the top of the screen.',
-        'Tap <strong>Edit</strong> next to a match to enter your prediction.'
+        'Tap <strong>Edit</strong> next to a match, enter your scores, tick <strong>Use Joker</strong> on a Joker match, then tap <strong>Save</strong>.'
     ], isGuest
         ? '<p>Sign in to enter your own predictions.</p>'
-        : '<p>Enter the score for each team, tick <strong>Use Joker</strong> on a Joker eligible match, then tap <strong>Save</strong>. The checklist at the top shows what is still missing. Under the matches you can also guess the total tries. Predictions lock when the tournament starts, so get them in early.</p>'));
+        : '<p>Predictions lock when the tournament starts, so get them in early.</p>'));
     steps.push(tourStep('score', 'See the current score', [
         'Tap <strong>Match Summary</strong> at the top of the screen. It is the screen you land on after signing in.',
         'Everyone\'s rank and total score are on the left, with each prediction and the points it earned for every match.'
     ], '<p>Hover or tap a prediction to see how it was scored. Use Refresh to pull the latest results.</p>'));
     steps.push(tourStep('pdf', 'The traditional view', [
-        'On the Match Summary, tap <strong>Export PDF Summary</strong>.'
-    ], '<p>If you want the traditional view, open the PDF Summary. It lays the table out on a page you can read at a glance, save or print.</p>'));
+        'On the Match Summary, tap <strong>Export PDF Summary</strong> if you want the traditional view.'
+    ], '<p>It lays the table out on a page you can read at a glance, save or print.</p>'));
     if (chatLive) {
         steps.push(tourStep('chips', 'Comment on matches and results', [
             'Tap the <strong>💬 chip</strong> under a match to comment on the match or react with an emoji.',
@@ -111,6 +111,22 @@ function tourBuildAdminSteps() {
     ];
 }
 
+// Load the tour pictures ahead of time so each one is already there when its step opens
+const tourPreloaded = [];
+function tourPreload(kind) {
+    if (typeof TOUR_IMAGES === 'undefined') return;
+    Object.keys(TOUR_IMAGES).filter(id => (kind === 'admin') === id.startsWith('admin-')).forEach(id => {
+        const info = TOUR_IMAGES[id];
+        const src = `${info.src}?v=${info.v}`;
+        if (tourPreloaded.some(img => img.dataset.src === src)) return;
+        const img = new Image();
+        img.dataset.src = src;
+        img.decoding = 'sync';
+        img.src = src;
+        tourPreloaded.push(img);   // keep a reference so the download is not dropped
+    });
+}
+
 // Fit the card to the area that is really visible (iPhone Safari's toolbars change it), not to 100vh
 function tourFitScreen() {
     const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
@@ -151,10 +167,13 @@ function tourFitContent(allowHide) {
         return body.clientHeight - textHeight - parseFloat(figStyle.marginBottom || 0) - chrome;
     };
     card.classList.remove('tour-compact');
+    const extra = body.querySelector('.tour-extra');
+    if (extra) extra.style.display = '';
     if (fig) fig.style.display = '';
     let space = room();
-    if (img && space < 110) { card.classList.add('tour-compact'); space = room(); }
-    if (img && space < 70 && allowHide) { fig.style.display = 'none'; img.style.maxHeight = ''; card.classList.remove('tour-compact'); return tourFitText(card, body); }
+    if (img && space < 150) { card.classList.add('tour-compact'); space = room(); }
+    if (img && space < 110 && extra) { extra.style.display = 'none'; space = room(); }
+    if (img && space < 70 && allowHide) { fig.style.display = 'none'; img.style.maxHeight = ''; if (extra) extra.style.display = ''; card.classList.remove('tour-compact'); return tourFitText(card, body); }
     if (img) {
         let max = Math.max(Math.floor(space) - 4, 40);
         img.style.maxHeight = `${max}px`;
@@ -178,6 +197,7 @@ function startTour(kind) {
     if (kind === 'admin' && !isCurrentUserAdmin()) return;
     closeGlobalHelpModal();
     closeAdminHelpModal();
+    tourPreload(kind);
     const steps = kind === 'admin' ? tourBuildAdminSteps() : tourBuildSteps(tourRulesHtml(), fixtureChat.available);
     tourState = { index: 0, steps, kind };
     tourFitScreen();
@@ -213,12 +233,13 @@ function showTourStep(index) {
     document.getElementById('tourTitle').textContent = step.title;
     const text = step.raw
         ? step.raw()
-        : `<ol class="tour-items">${step.items.map(i => `<li>${i}</li>`).join('')}</ol>${step.extra}`;
+        : `<ol class="tour-items">${step.items.map(i => `<li>${i}</li>`).join('')}</ol>${step.extra ? `<div class="tour-extra">${step.extra}</div>` : ''}`;
     document.getElementById('tourBody').innerHTML = (step.id ? tourFigureHtml(step.id) : '') + text;
     document.getElementById('tourBody').scrollTop = 0;
     document.getElementById('tourBack').disabled = index === 0;
     document.getElementById('tourNext').textContent = index === total - 1 ? 'Done' : 'Next';
     document.getElementById('tourDots').innerHTML = tourState.steps.map((_, i) => `<span class="tour-dot ${i === index ? 'on' : ''}"></span>`).join('');
+    document.getElementById('tourCard').classList.toggle('tour-short', !step.id);
     tourFitSoon();
     document.getElementById('tourNext').focus();
 }
@@ -267,6 +288,7 @@ function maybeOfferTour() {
     if (!currentUsername || isGuest || isPdfExportMode || tourState || tourAlreadyAnswered()) return;
     const modal = document.getElementById('tourPromptModal');
     if (!modal) return;
+    tourPreload('app');
     document.getElementById('tourPromptText').textContent = `Welcome to the ${selectedYear} Six Nations Guesser, would you like to take a quick tour of the app before you start logging your predictions?`;
     modal.classList.remove('hidden');
     const yes = document.getElementById('tourPromptYes');
@@ -299,6 +321,7 @@ function maybeOfferAdminTour() {
     try { if (localStorage.getItem(adminTourAnswerKey())) return; } catch (error) { return; }   // no storage: do not nag
     const modal = document.getElementById('adminTourPromptModal');
     if (!modal) return;
+    tourPreload('admin');
     modal.classList.remove('hidden');
     const yes = document.getElementById('adminTourPromptYes');
     if (yes) yes.focus();

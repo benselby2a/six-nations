@@ -451,3 +451,7 @@ This is the main browser-to-Supabase boundary.
 - **No scrolling:** `tourFitContent()` sizes the card contents to the visible area (`--tour-h`, set from `visualViewport` so iPhone Safari's toolbars are handled): the picture shrinks to the room left under the text, the text tightens (`.tour-compact`) on small screens, and on very short screens the picture is dropped so the instructions are always fully visible. The picture stays invisible until it has been sized.
 - **Offers:** `maybeOfferTour()` (from `showApp`) asks once after sign-in; `maybeOfferAdminTour()` (from `showTab`) asks the first time an admin opens Admin Functions. "No thanks" or finishing is remembered in `localStorage` (`tourAnswered:<user>`, `adminTourAnswered:<user>`, per person per device); leaving half way means they are offered again.
 - Test: `dev/tests/browser/tour.js`.
+
+## Past-year warning banner
+
+- `pastYearWarning(year, now)` in `js/years-admin.js`: a banner (`[data-past-year-banner]`) warns admins who are changing a year that is over. Red when the year is before the current calendar year ("past year"), amber when it is this year and the month is April or later ("normally finishes in March"). Shown in the Fixtures and Scores, Predictions, Guesser Rules and Prize Fund sections and in the next-score, edit-fixture and bulk-import pop-ups; refreshed by `updatePastYearBanners()` (from `showTab`, `switchYear` and the pop-up openers). `appNow()` is a hook so tests can pretend it is another date. Test: `dev/tests/browser/past-year.js`.

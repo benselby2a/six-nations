@@ -165,6 +165,7 @@
         function toggleGlobalHelp() {
             const modal = document.getElementById('globalHelpModal');
             if (!modal) return;
+            tourPreload('app');
             modal.classList.remove('hidden');
         }
 
@@ -177,6 +178,7 @@
         function toggleAdminHelp() {
             const modal = document.getElementById('adminHelpModal');
             if (!modal) return;
+            tourPreload('admin');
             modal.classList.remove('hidden');
         }
 
