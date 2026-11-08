@@ -4687,3 +4687,4 @@ body.in-app .container { padding-top: 0.8rem; }
 #appView > .tabs .tab { font-size: 0.66rem; letter-spacing: 0; padding: 0.6rem 0.15rem; }
 @media (min-width: 420px) { #appView > .tabs .tab { font-size: 0.72rem; } }
 @media (min-width: 700px) { #appView > .tabs .tab { font-size: 0.85rem; letter-spacing: 0.03em; } }
+@media (max-width: 350px) { #appView > .tabs .tab { white-space: normal; font-size: 0.6rem; line-height: 1.15; padding: 0.45rem 0.1rem; display: flex; align-items: center; justify-content: center; text-overflow: clip; } }

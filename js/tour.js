@@ -53,8 +53,9 @@ function tourBuildSteps(rulesHtml, chatLive) {
         : '<p>Predictions lock when the tournament starts, so get them in early.</p>'));
     steps.push(tourStep('score', 'See the current score', [
         'Tap <strong>Match Summary</strong> at the top of the screen. It is the screen you land on after signing in.',
-        'Everyone\'s rank and total score are on the left, with each prediction and the points it earned for every match.'
-    ], '<p>Hover or tap a prediction to see how it was scored. Use the refresh icon above the table to pull the latest results.</p>'));
+        'Everyone\'s rank and total score are on the left, with each prediction and the points it earned for every match.',
+        'Tap the <strong>refresh icon</strong> to pull the latest results.'
+    ], '<p>Hover or tap a prediction to see how it was scored.</p>'));
     steps.push(tourStep('pdf', 'The traditional view', [
         'On the Match Summary, tap the <strong>PDF icon</strong> above the table if you want the traditional view.'
     ], '<p>It lays the table out on a page you can read at a glance, save or print.</p>'));
@@ -84,7 +85,7 @@ function tourBuildAdminSteps() {
         tourStep('admin-fixtures', 'Fixtures and Scores', [
             'Admin Functions, then <strong>Fixtures and Scores</strong>.',
             'Tap a row to edit a fixture, set it Joker eligible, or enter the result and tries.'
-        ], '<p>Add New Fixture adds one match and Bulk Import pastes in a whole round. <strong>Add Next Score</strong> at the top of the page is the quick way to enter a result.</p>'),
+        ], '<p>Add New Fixture adds one match and Bulk Import pastes in a whole round. the red <strong>+ score</strong> button above the table on the Match Summary is the quick way to enter a result.</p>'),
         tourStep('admin-lock', 'Predictions and the lock', [
             'Admin Functions, then <strong>Predictions</strong>.',
             'Switch on <strong>Lock Predictions</strong> when the tournament starts. Each year has its own lock.',

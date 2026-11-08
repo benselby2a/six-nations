@@ -29,7 +29,8 @@
   const shot = async (id, { before, scrollTo, clip, marks, maxH }) => {
     if (before) await before();
     await page.evaluate((sel) => { window.scrollTo(0, 0); if (sel) { const el = window.__find(sel); if (el) el.scrollIntoView({ block: 'start' }); } }, scrollTo || null);
-    await page.waitForTimeout(250);
+    await page.mouse.move(2, 2);   // no hover tooltips in the pictures
+    await page.waitForTimeout(400);
     const clipRects = (await page.evaluate((specs) => window.__rects(specs), clip)).filter(Boolean);
     if (!clipRects.length) { console.log('NO CLIP for', id); return; }
     const pad = 10;
@@ -59,14 +60,14 @@
 
   // ---- the app tour ----
   await shot('predictions', { before: () => clickTab('My Predictions'), clip: [tab('My Predictions'), '#matchesContainer .prediction-table-container'], marks: [tab('My Predictions'), '#matchesContainer .prediction-table-container button.btn-success'], maxH: 760 });
-  await shot('score', { before: async () => { await clickTab('Match Summary'); await page.evaluate(() => { document.querySelector('#summaryTab > div:first-child').style.display = 'none'; }); }, clip: [tab('Match Summary'), '.summary-container'], marks: [tab('Match Summary'), '.summary-container'], maxH: 760 });
-  await shot('pdf', { before: async () => { await page.evaluate(() => { document.querySelector('#summaryTab > div:first-child').style.display = ''; }); }, clip: ['#summaryTab > div:first-child'], marks: ['.export-btn'] });
+  await shot('score', { before: () => clickTab('Match Summary'), clip: [tab('Match Summary'), '.summary-container'], marks: [tab('Match Summary'), '.summary-container', '#summaryRefreshBtn'], maxH: 760 });
+  await shot('pdf', { clip: ['.summary-toolbar', '.summary-updated-row'], marks: ['#exportPdfBtn'] });
   await shot('chips', { clip: ['.summary-container'], marks: [{ visible: '[data-chat-chip]' }, { visible: 'td[data-chat-user]' }], maxH: 560 });
   await shot('stats', { scrollTo: '#triesStatsContainer', clip: ['#triesStatsContainer', '#prizeMoneyContainer'], marks: ['#triesStatsContainer', '#prizeMoneyContainer'], maxH: 760 });
 
   // ---- the admin tour ----
   await clickTab('Admin Functions');
-  await shot('admin-menu', { before: () => page.evaluate(() => setAdminPanelCollapsed(false)), clip: [tab('Admin Functions'), '.admin-tabs'], marks: [tab('Admin Functions'), '.admin-tabs'] });
+  await shot('admin-menu', { before: () => page.evaluate(() => setAdminPanelCollapsed(false)), clip: [tab('Admin Functions'), '.admin-tabs', '#adminPanel'], marks: [tab('Admin Functions'), '.admin-tabs'], maxH: 470 });
   await shot('admin-fixtures', { before: () => clickAdmin('Fixtures and Scores'), scrollTo: '#resultsTab', clip: ['#resultsTab .results-table-container', { sel: '#resultsTab button', text: '+ Add New Fixture' }], marks: ['#resultsTab .results-table-container', { sel: '#resultsTab button', text: '+ Add New Fixture' }], maxH: 640 });
   await shot('admin-lock', { before: () => clickAdmin('Predictions'), scrollTo: '#scoreCorrectionsTab', clip: ['#scoreCorrectionsTab .lock-toggle', '.admin-score-corrections-toolbar', '#adminUserMatchesContainer'], marks: ['#scoreCorrectionsTab .lock-toggle', '.admin-score-corrections-toolbar'], maxH: 560 });
   await shot('admin-competitors', { before: () => clickAdmin('Competitors'), scrollTo: '#competitorsTab', clip: ['#new-competitor-card', '.competitor-card:not(.competitor-card-new)'], marks: ['#new-competitor-card', '.competitor-card:not(.competitor-card-new)'], maxH: 520 });
