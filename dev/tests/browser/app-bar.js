@@ -134,8 +134,12 @@ const mock = `
   console.log('leaderboard starts on the first screen (phone):', await (async () => { await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(250); return page.evaluate(() => { const r = document.querySelector('.summary-table tbody tr').getBoundingClientRect(); return { rowTop: Math.round(r.top), screen: innerHeight }; }); })());
   for (const w of [390, 360, 320]) {
     await page.setViewportSize({ width: w, height: 800 }); await page.waitForTimeout(200);
-    console.log(`tabs at ${w}px:`, JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('#appView > .tabs .tab')].filter(t => t.offsetParent).map(t => !(t.scrollWidth > t.clientWidth + 1)))), '| bar fits:', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+    console.log(`tabs at ${w}px:`, JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('#appView .app-bar > .tabs .tab')].filter(t => t.offsetParent).map(t => !(t.scrollWidth > t.clientWidth + 1)))), '| bar fits:', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
   }
+  // wide screens: tabs sit in the bar beside the title; the toolbar is one row
+  await page.setViewportSize({ width: 1280, height: 800 }); await page.waitForTimeout(300);
+  console.log('wide screen layout:', JSON.stringify(await page.evaluate(() => { const top = (sel) => Math.round(document.querySelector(sel).getBoundingClientRect().top); const left = (sel) => Math.round(document.querySelector(sel).getBoundingClientRect().left);
+    return { tabsInBarRow: Math.abs(top('#appView .app-bar > .tabs') - top('.app-bar-title')) < 20, avatarFarRight: left('#avatarBtn') > 1100, tabsNextToTitle: left('#appView .app-bar > .tabs') < 400, toolbarOneRow: Math.abs(top('.summary-toolbar .filter-toggle') - top('#nextMatchScoreMainBtn')) < 20, filterWidth: Math.round(document.querySelector('.summary-toolbar .filter-toggle').getBoundingClientRect().width) }; })));
   await page.click('#avatarBtn'); await page.click('#logoutBtn'); await page.waitForTimeout(500);
   console.log('log out from the menu: big title back on the login screen:', await page.evaluate(() => ({ title: getComputedStyle(document.querySelector('.container > header')).display !== 'none', inApp: document.body.classList.contains('in-app') })));
   console.log('errors', errors);

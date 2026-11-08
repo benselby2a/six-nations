@@ -210,11 +210,11 @@
                     : 'None';
                 return `
                     <tr>
-                        <td><strong>${year}</strong>${isCurrent ? ' <span class="admin-badge">Viewing</span>' : ''}</td>
-                        <td>${yearMatches.length}</td>
-                        <td>${results}</td>
-                        <td>${predictionsLabel}</td>
-                        <td>
+                        <td data-label="Year"><strong>${year}</strong>${isCurrent ? ' <span class="admin-badge">Viewing</span>' : ''}</td>
+                        <td data-label="Fixtures">${yearMatches.length}</td>
+                        <td data-label="Results entered">${results}</td>
+                        <td data-label="Predictions">${predictionsLabel}</td>
+                        <td data-label="Actions">
                             <div class="competitor-actions">
                                 ${isCurrent ? '' : `<button class="btn-small btn-success" onclick="switchYear(${year})">View</button>`}
                                 ${hasResults ? '<span class="profile-hint">Results entered: locked</span>' : ''}
@@ -226,7 +226,7 @@
             }).join('');
 
             container.innerHTML = `
-                <table class="admin-table">
+                <table class="admin-table admin-table-stack">
                     <thead>
                         <tr><th>Year</th><th>Fixtures</th><th>Results entered</th><th>Predictions</th><th>Actions</th></tr>
                     </thead>
