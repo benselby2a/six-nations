@@ -106,6 +106,7 @@ const mock = `
   const open = async (viewport) => {
     const ctx = await browser.newContext({ viewport, deviceScaleFactor: 2 });
     const page = await ctx.newPage();
+    await page.addInitScript(() => { window.__noTourPrompts = true; });
     page.on('pageerror', e => errors.push(e.message));
     page.on('dialog', async d => { await d.accept(); });
     await page.route('**/@supabase/supabase-js**', r => r.fulfill({contentType:'application/javascript', body: mock}));

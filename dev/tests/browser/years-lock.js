@@ -69,6 +69,7 @@ const mock = `
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage();
+  await page.addInitScript(() => { window.__noTourPrompts = true; });
   const errors = [], dialogs = [];
   let promptAnswer = null;
   page.on('pageerror', e => errors.push(e.message));

@@ -103,6 +103,7 @@ const mock = `
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage();
+  await page.addInitScript(() => { window.__noTourPrompts = true; });
   const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('dialog', d => d.accept());
   await page.route('**/@supabase/supabase-js**', r => r.fulfill({contentType:'application/javascript', body: mock}));
   await page.route('**/cdn.jsdelivr.net/**', r => r.request().url().includes('supabase') ? r.fallback() : r.fulfill({contentType:'application/javascript', body:''}));

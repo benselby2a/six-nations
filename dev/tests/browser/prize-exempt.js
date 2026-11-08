@@ -32,7 +32,7 @@ const mock = `
     usage_events: [], competitor_emails: []
   };
   window.__db = db; window.__log = [];
-  const match = (row, f) => f.type==='eq' ? row[f.col]===f.val : f.type==='in' ? f.vals.includes(row[f.col]) : f.type==='neq' ? row[f.col]!==f.val : f.type==='gte' ? row[f.col]>=f.val : true;
+  const match = (row, f) => f.type==='eq' ? row[f.col]===f.val : f.type==='in' ? f.vals.includes(row[f.col]) : f.type==='neq' ? row[f.col]!==f.val : f.type==='gte' ? row[f.col]>=f.val : f.type==='like' ? new RegExp('^' + String(f.val).replace(/%/g, '.*') + '$').test(row[f.col]) : true;
   const builder = (table) => {
     const st = { op:'select', filters:[], payload:null, single:false, opts:null };
     const run = () => {
@@ -50,6 +50,7 @@ const mock = `
       eq(col,val){ st.filters.push({type:'eq',col,val}); return o; },
       neq(col,val){ st.filters.push({type:'neq',col,val}); return o; },
       gte(col,val){ st.filters.push({type:'gte',col,val}); return o; },
+      like(col,val){ st.filters.push({type:'like',col,val}); return o; },
       in(col,vals){ st.filters.push({type:'in',col,vals}); return o; },
       single(){ st.single=1; return o; }, maybeSingle(){ st.single=2; return o; },
       insert(p){ st.op='insert'; st.payload=p; return o; }, update(p){ st.op='update'; st.payload=p; return o; },
@@ -133,6 +134,11 @@ const mock = `
   await page.uncheck('#edit-prizeexempt-sam'); await page.waitForTimeout(400);
   await page.evaluate(() => showSummary());
   console.log('after unticking:', JSON.stringify(await panel()), '| stored:', await page.evaluate(() => JSON.stringify(__db.settings.filter(s => s.key.startsWith('prize_exempt')).map(s => s.value))));
+  // renaming a competitor keeps their exemption (and deleting removes it)
+  await page.check('#edit-prizeexempt-sam'); await page.waitForTimeout(300);
+  await page.evaluate(() => { document.getElementById('edit-username-sam').value = 'samuel'; return saveUserChanges('sam'); }); await page.waitForTimeout(600);
+  console.log('after renaming Sam to Samuel:', await page.evaluate(() => JSON.stringify({ local: appSettings.prizeExempt, stored: __db.settings.filter(s => s.key.startsWith('prize_exempt')).map(s => s.value) })));
+  await page.evaluate(() => { document.getElementById('user-row-samuel') && 0; });
   // the AI player is no longer special for prizes
   await page.evaluate(() => { users.ai = { id: 99, nickname: 'AI', totalTries: 20, supportedTeams: [], predictions: { 1: { team1: 25, team2: 20 }, 2: { team1: 10, team2: 30 } } }; showSummary(); });
   console.log('an entrant called AI counts like anyone else until ticked:', JSON.stringify(await panel()));

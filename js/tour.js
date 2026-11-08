@@ -139,10 +139,24 @@ function tourFitScreen() {
 // Make everything fit without scrolling: the picture shrinks to the space left after the text; on very small screens
 // the text tightens up, and as a last resort the picture is left out so the instructions are always fully visible
 // Fit now, then once more after the browser has laid out (resizes and iPhone toolbars settle a moment later)
+let tourSizeAnimating = false;
+
+// The small text-only card and the full picture card are different sizes: ease from one to the other
+function tourAnimateSize(before) {
+    const card = document.getElementById('tourCard');
+    const after = card.getBoundingClientRect().height;
+    if (before < 20 || Math.abs(after - before) < 6 || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || !card.animate) return;
+    tourSizeAnimating = true;
+    const move = card.animate([{ height: `${before}px` }, { height: `${after}px` }], { duration: 300, easing: 'ease-out' });
+    const done = () => { tourSizeAnimating = false; if (tourState) tourFitSoon(); };
+    move.finished.then(done, done);
+}
+
 function tourFitSoon() {
     // The picture stays invisible until it has been sized (no flash of a wrong size)
     const fig = document.querySelector('#tourBody .tour-figure');
     if (fig) fig.style.visibility = 'hidden';
+    if (tourSizeAnimating) return;   // sizes are measured once the card has finished changing size (then this runs again)
     requestAnimationFrame(() => {
         tourFitContent(true);
         const f = document.querySelector('#tourBody .tour-figure');
@@ -227,6 +241,7 @@ function tourFigureHtml(id) {
 function showTourStep(index) {
     if (!tourState) return;
     const step = tourState.steps[index];
+    const sizeBefore = document.getElementById('tourCard').getBoundingClientRect().height;
     const direction = index > tourState.index ? 'next' : (index < tourState.index ? 'prev' : 'none');
     tourState.index = index;
     const total = tourState.steps.length;
@@ -241,6 +256,7 @@ function showTourStep(index) {
     document.getElementById('tourNext').textContent = index === total - 1 ? 'Done' : 'Next';
     document.getElementById('tourDots').innerHTML = tourState.steps.map((_, i) => `<span class="tour-dot ${i === index ? 'on' : ''}"></span>`).join('');
     document.getElementById('tourCard').classList.toggle('tour-short', !step.id);
+    tourAnimateSize(sizeBefore);
     tourAnimateStep(direction);
     tourFitSoon();
     document.getElementById('tourNext').focus();
@@ -296,6 +312,7 @@ function rememberTourAnswer(answer) {
 }
 
 function maybeOfferTour() {
+    if (window.__noTourPrompts) return;   // test hook
     if (!currentUsername || isGuest || isPdfExportMode || tourState || tourAlreadyAnswered()) return;
     const modal = document.getElementById('tourPromptModal');
     if (!modal) return;
@@ -328,6 +345,7 @@ function rememberAdminTourAnswer(answer) {
 }
 
 function maybeOfferAdminTour() {
+    if (window.__noTourPrompts) return;   // test hook
     if (!currentUsername || isGuest || tourState || tourSuppressOffer || !isCurrentUserAdmin()) return;
     try { if (localStorage.getItem(adminTourAnswerKey())) return; } catch (error) { return; }   // no storage: do not nag
     const modal = document.getElementById('adminTourPromptModal');
