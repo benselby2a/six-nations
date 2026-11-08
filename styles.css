@@ -4705,3 +4705,15 @@ body.in-app .container { padding-top: 0.8rem; }
     .summary-toolbar .summary-updated-row { order: 0; flex: 1; justify-content: flex-end; gap: 1rem; }
     .summary-toolbar .summary-updated-row .profile-hint { margin: 0; }
 }
+
+/* No sideways scrolling of the page: wrap the Predictions toolbar, and stack the Years table on a narrow screen */
+.admin-score-corrections-toolbar { flex-wrap: wrap; }
+.admin-score-corrections-toolbar select { min-width: 0; max-width: 100%; flex: 1 1 220px; }
+@media (max-width: 700px) {
+    .admin-table-stack, .admin-table-stack tbody { display: block; width: 100%; }
+    .admin-table-stack thead { display: none; }
+    .admin-table-stack tr { display: block; margin-bottom: 0.8rem; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; background: rgba(255, 255, 255, 0.04); overflow: hidden; }
+    .admin-table-stack td { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.6rem 0.8rem; text-align: right; }
+    .admin-table-stack td::before { content: attr(data-label); flex: none; color: var(--gold); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; text-align: left; }
+    .admin-table-stack td:last-child { border-bottom: 0; }
+}
