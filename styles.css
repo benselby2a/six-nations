@@ -4717,3 +4717,8 @@ body.in-app .container { padding-top: 0.8rem; }
     .admin-table-stack td::before { content: attr(data-label); flex: none; color: var(--gold); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; text-align: left; }
     .admin-table-stack td:last-child { border-bottom: 0; }
 }
+
+/* Home Screen app on iPhone: the status bar area is solid, not a see-through strip with the page fading under it.
+   (A no-op in a normal browser, where the top safe area is 0.) */
+html { background-color: var(--deep-green); }
+body::after { content: ''; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 0px); background: var(--deep-green); z-index: 99999; pointer-events: none; }
