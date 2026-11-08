@@ -153,7 +153,7 @@ const IPHONE_CHROME = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) Ap
   console.log('6 signed in, summary shows:', await page.evaluate(() => !document.getElementById('summaryTab').classList.contains('hidden')), '| label:', await page.textContent('#summaryUpdatedAt'));
   let n0 = await usersFetches();
   await page.click('#summaryRefreshBtn'); await page.waitForTimeout(Math.min(600, 40));
-  console.log('7 Refresh button fetches again:', (await usersFetches()) > n0, '| button text restored:', await page.textContent('#summaryRefreshBtn'));
+  console.log('7 Refresh button fetches again:', (await usersFetches()) > n0, '| button ready again:', await page.evaluate(() => { const b = document.getElementById('summaryRefreshBtn'); return !b.disabled && !b.classList.contains('refreshing') && b.getAttribute('aria-label') === 'Refresh'; }));
   const visibilityChange = () => page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
   n0 = await usersFetches(); await visibilityChange(); await page.waitForTimeout(Math.min(500, 40));
   console.log('8 back in the app within 5 minutes -> refetched:', (await usersFetches()) > n0, '(expect false)');

@@ -60,12 +60,12 @@
             if (summaryRefreshInFlight) return;
             const button = document.getElementById('summaryRefreshBtn');
             summaryRefreshInFlight = true;
-            if (button) { button.disabled = true; button.textContent = 'Refreshing...'; }
+            if (button) { button.disabled = true; button.classList.add('refreshing'); button.setAttribute('aria-label', 'Refreshing'); }
             try {
                 await refreshSummaryData();
             } finally {
                 summaryRefreshInFlight = false;
-                if (button) { button.disabled = false; button.textContent = 'Refresh'; }
+                if (button) { button.disabled = false; button.classList.remove('refreshing'); button.setAttribute('aria-label', 'Refresh'); }
             }
         }
 
