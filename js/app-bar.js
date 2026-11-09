@@ -24,14 +24,31 @@ function toggleAccountMenu(event) {
     if (menu.classList.contains('hidden')) openAccountMenu(); else closeAccountMenu();
 }
 
-// The avatar shows the first letter of the display name, with a red dot for admins
+// What the avatar shows: the first letter of the display name, or "X&Y" for a pair such as "Trev and Carol"
+function avatarInitials(displayName) {
+    const name = (displayName || '').trim();
+    if (!name) return '?';
+    const first = (word) => (word.trim().match(/[A-Za-z0-9\u00C0-\u024F]/) || [''])[0].toUpperCase();
+    const parts = name.split(/\s+(?:and|&|\+)\s+/i).filter(p => p.trim());
+    if (parts.length >= 2) {
+        const a = first(parts[0]);
+        const b = first(parts[1]);
+        if (a && b) return `${a}&${b}`;
+    }
+    return first(name) || name.charAt(0).toUpperCase() || '?';
+}
+
+// The avatar shows the initials, with a red dot for admins
 function updateAvatar() {
     const initial = document.getElementById('avatarInitial');
     const dot = document.getElementById('avatarDot');
     const name = document.getElementById('currentUser');
+    const btn = document.getElementById('avatarBtn');
     if (!initial || !name) return;
     const text = (name.textContent || '').replace(/admin$/i, '').trim();
-    initial.textContent = text ? text.charAt(0).toUpperCase() : '?';
+    const shown = avatarInitials(text);
+    initial.textContent = shown;
+    if (btn) btn.classList.toggle('avatar-pair', shown.length > 1);
     if (dot) dot.classList.toggle('hidden', !(typeof isCurrentUserAdmin === 'function' && isCurrentUserAdmin()));
 }
 
