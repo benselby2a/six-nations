@@ -85,3 +85,31 @@ document.addEventListener('pointerdown', (event) => {
 window.addEventListener('scroll', () => {
     if (window.scrollX !== 0) window.scrollTo(0, window.scrollY);
 }, { passive: true });
+
+// ---- Open at the very top ----
+// The iPhone Home Screen app (and a browser reload) otherwise brings the page back part-way down.
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+let appTouchedByUser = false;   // set once the person scrolls, so a late jump to the top never fights them
+function scrollToTop() {
+    window.scrollTo(0, 0);
+}
+['touchmove', 'wheel', 'keydown'].forEach(type => window.addEventListener(type, () => { appTouchedByUser = true; }, { passive: true, once: true }));
+
+window.addEventListener('load', () => {
+    scrollToTop();
+    // The screens fill in as data arrives: check again while the person has not scrolled
+    [300, 900, 2000].forEach(ms => setTimeout(() => { if (!appTouchedByUser) scrollToTop(); }, ms));
+});
+window.addEventListener('pageshow', (event) => { if (event.persisted) scrollToTop(); });
+
+// Coming back to the app after a while away (more than 5 minutes) also starts at the top
+let appHiddenAt = 0;
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+        appHiddenAt = Date.now();
+    } else if (appHiddenAt && Date.now() - appHiddenAt > 5 * 60 * 1000) {
+        scrollToTop();
+        appHiddenAt = 0;
+    }
+});

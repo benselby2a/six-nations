@@ -99,6 +99,7 @@
             setRememberedUsername('guest');
             trackUsage('guest logs in', formatUsagePayload({ mode: 'guest' }), 'guest');
             showAppAsGuest();
+            scrollToTop();
         }
 
         // Email a login code (also creates the account on first use)
@@ -265,6 +266,7 @@
                         currentUsername = null;
                         trackUsage('guest logs in', formatUsagePayload({ source: 'cookie_auto_login' }), 'guest');
                         showAppAsGuest();
+                        scrollToTop();
                     } else {
                         // Remembered usernames from the pre-auth login system are no longer used.
                         clearRememberedUsername();
@@ -324,6 +326,7 @@
             adminUsernames = await Storage.getAdminUsernames();
             trackUsage('user logs in', formatUsagePayload({ username, source }), username);
             showApp();
+            scrollToTop();
         }
 
         // First sign-in by an invited person: they choose how they appear on the leaderboard
