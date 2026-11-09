@@ -80,3 +80,8 @@ document.addEventListener('pointerdown', (event) => {
     const sync = () => document.body.classList.toggle('in-app', !!appView && !appView.classList.contains('hidden'));
     if (appView) { new MutationObserver(sync).observe(appView, { attributes: true, attributeFilter: ['class'] }); sync(); }
 })();
+
+// Belt and braces for the iPhone Home Screen app: if the page is ever dragged sideways, snap it back
+window.addEventListener('scroll', () => {
+    if (window.scrollX !== 0) window.scrollTo(0, window.scrollY);
+}, { passive: true });

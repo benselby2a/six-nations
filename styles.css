@@ -4737,3 +4737,9 @@ body::after { content: ''; position: fixed; top: 0; left: 0; right: 0; height: e
 
 /* Two initials for a pair of names ("Trev and Carol" shows T&C) */
 .avatar-btn.avatar-pair { font-size: 0.72rem; letter-spacing: -0.02em; }
+
+/* Lock sideways movement of the page (the Home Screen app on iPhone otherwise lets you drag it side to side).
+   Wide tables still scroll sideways inside their own box. */
+html { overflow-x: clip; overscroll-behavior-x: none; }
+body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-width: 100%; touch-action: pan-y pinch-zoom; }
+.summary-container, .results-table-container, .tour-body, pre { touch-action: pan-x pan-y pinch-zoom; }
