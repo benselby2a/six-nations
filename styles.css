@@ -1189,6 +1189,7 @@
         }
 
         .tooltip {
+            display: none; /* not just invisible: a hidden tooltip still widened the table's scroll area on phones */
             visibility: hidden;
             opacity: 0;
             position: absolute;
@@ -1220,6 +1221,7 @@
 
         .tooltip-container:hover .tooltip,
         .tooltip-container.tooltip-active .tooltip {
+            display: block;
             visibility: visible;
             opacity: 1;
         }
@@ -4743,3 +4745,7 @@ body::after { content: ''; position: fixed; top: 0; left: 0; right: 0; height: e
 html { overflow-x: clip; overscroll-behavior-x: none; }
 body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-width: 100%; touch-action: pan-y pinch-zoom; }
 .summary-container, .results-table-container, .tour-body, pre { touch-action: pan-x pan-y pinch-zoom; }
+
+/* Signed in: no faint horizontal stripes behind the page. Under the solid status-bar strip they showed up as a lighter band,
+   which made the top of the Home Screen app look faded. */
+body.in-app::before { display: none; }
