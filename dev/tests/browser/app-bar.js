@@ -136,6 +136,12 @@ const mock = `
     await page.setViewportSize({ width: w, height: 800 }); await page.waitForTimeout(200);
     console.log(`tabs at ${w}px:`, JSON.stringify(await page.evaluate(() => [...document.querySelectorAll('#appView .app-bar > .tabs .tab')].filter(t => t.offsetParent).map(t => !(t.scrollWidth > t.clientWidth + 1)))), '| bar fits:', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
   }
+  // avatar initials: one letter normally, "X&Y" for a pair of names
+  console.log('initials:', JSON.stringify(await page.evaluate(() => Object.fromEntries(['Ben', 'Trev and Carol', 'sam & jo', 'Jo AND Chris', 'Andrew', 'Anderson Brand', 'Mum + Dad', ' ', 'and Carol', 'Trev and'].map(n => [n, avatarInitials(n)])))));
+  await page.evaluate(() => { document.getElementById('currentUser').innerHTML = 'Trev and Carol<span class="admin-badge">Admin</span>'; }); await page.waitForTimeout(150);
+  console.log('avatar for a pair, with the admin badge:', JSON.stringify(await page.evaluate(() => { const b = document.getElementById('avatarBtn'); const i = document.getElementById('avatarInitial'); return { text: i.textContent, pairClass: b.classList.contains('avatar-pair'), fits: i.getBoundingClientRect().width <= b.getBoundingClientRect().width - 6, circle: Math.round(b.getBoundingClientRect().width) }; })));
+  await page.evaluate(() => { document.getElementById('currentUser').innerHTML = 'Ben<span class="admin-badge">Admin</span>'; }); await page.waitForTimeout(150);
+  console.log('back to one letter:', await page.evaluate(() => document.getElementById('avatarInitial').textContent));
   // the two filter buttons line up: same height, no stray bottom border, text on the same line
   for (const w of [390, 1280]) {
     await page.setViewportSize({ width: w, height: 800 }); await page.waitForTimeout(200);

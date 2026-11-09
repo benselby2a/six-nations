@@ -4734,3 +4734,12 @@ body::after { content: ''; position: fixed; top: 0; left: 0; right: 0; height: e
 [data-tip]::after { content: attr(data-tip); position: absolute; right: 0; top: calc(100% + 8px); background: var(--deep-green); color: var(--white); border: 1px solid var(--gold); border-radius: 6px; padding: 0.3rem 0.65rem; font-family: var(--body-font); font-size: 0.78rem; font-weight: 600; letter-spacing: 0; text-transform: none; white-space: nowrap; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45); opacity: 0; transform: translateY(-4px); pointer-events: none; transition: opacity 0.15s ease, transform 0.15s ease; z-index: 41; }
 [data-tip]:hover::after, [data-tip]:focus-visible::after, [data-tip].tip-show::after { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) { [data-tip]::after { transition: none; } }
+
+/* Two initials for a pair of names ("Trev and Carol" shows T&C) */
+.avatar-btn.avatar-pair { font-size: 0.72rem; letter-spacing: -0.02em; }
+
+/* Lock sideways movement of the page (the Home Screen app on iPhone otherwise lets you drag it side to side).
+   Wide tables still scroll sideways inside their own box. */
+html { overflow-x: clip; overscroll-behavior-x: none; }
+body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-width: 100%; touch-action: pan-y pinch-zoom; }
+.summary-container, .results-table-container, .tour-body, pre { touch-action: pan-x pan-y pinch-zoom; }
