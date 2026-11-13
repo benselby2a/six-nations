@@ -480,7 +480,7 @@
                         <td class="prediction-scores-cell">Predicted: ${userPrediction ? `${userPrediction.team1}-${userPrediction.team2}` : '--'}, Actual: ${isMatchCompleted ? `${match.actualScore1}-${match.actualScore2}` : '--'}${jokerSuffix}</td>
                         <td>${pointsPill}</td>
                         <td class="prediction-actions-cell">
-                            <button class="btn-small btn-success" onclick="openEditPredictionModal('self', ${match.id})">Edit</button>
+                            ${appSettings.predictionsLocked ? '' : `<button class="btn-small btn-success" onclick="openEditPredictionModal('self', ${match.id})">Edit</button>`}
                         </td>
                     </tr>
                 `;
