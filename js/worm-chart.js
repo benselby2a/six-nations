@@ -80,7 +80,7 @@
             const marginTop = 16;
             const marginBottom = 88;
             const plotWidth = Math.max(980, completedMatches.length * 86);
-            const plotHeight = 720;
+            const plotHeight = 280;
             const svgWidth = marginLeft + plotWidth + marginRight;
             const svgHeight = marginTop + plotHeight + marginBottom;
 
