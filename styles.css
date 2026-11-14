@@ -4425,7 +4425,7 @@
 .admin-panel.collapsed .admin-panel-heading { margin-bottom: 0 !important; font-size: 1.5rem !important; }
 .admin-panel.collapsed .admin-tabs,
 .admin-panel.collapsed #adminTabsSubheading,
-.admin-panel.collapsed #readinessChecklist { display: none !important; }
+.admin-panel.collapsed #checklistBtn { display: none !important; }
 
 .app-version { text-align: center; font-size: 0.72rem; opacity: 0.45; padding: 1.5rem 1rem calc(1rem + env(safe-area-inset-bottom)); letter-spacing: 0.04em; }
 .app-version:empty { display: none; }
@@ -4762,3 +4762,16 @@ body.in-app::before { display: none; }
 [data-theme="retro"] .summary-table.header-pinned thead th:not(.rank-col):not(.competitor-col):not(.pts-col) { background: #2a2a8a !important; }
 [data-theme="dark"] .summary-table.header-pinned thead th:not(.rank-col):not(.competitor-col):not(.pts-col) { background: #183242 !important; }
 .summary-table thead th.match-header-cell, .summary-table thead th.tries-col { position: relative; }
+
+.fixture-actuals-hint { font-size: 0.85rem; line-height: 1.4; margin: 0 0 0.9rem; padding: 0.55rem 0.8rem; border-left: 3px solid var(--gold); background: rgba(255, 255, 255, 0.06); border-radius: 0 6px 6px 0; }
+#editFixtureModal .input-group:has(#edit-fixture-score1) label, #editFixtureModal .input-group:has(#edit-fixture-score2) label,
+#editFixtureModal .input-group:has(#edit-fixture-tries1) label, #editFixtureModal .input-group:has(#edit-fixture-tries2) label { color: var(--bright-gold); }
+
+/* Setup checklist: a button at the top of Admin Functions that opens its own screen */
+.checklist-btn { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; margin: 0 0 1rem; padding: 0.8rem 1.1rem; text-align: left; border: 2px solid var(--gold); background: rgba(212, 175, 55, 0.12); color: var(--white); border-radius: 10px; cursor: pointer; }
+.checklist-btn:hover { background: rgba(212, 175, 55, 0.22); }
+.checklist-btn-label { font-family: 'Bebas Neue', cursive; font-size: 1.3rem; letter-spacing: 0.08em; color: var(--bright-gold); }
+.checklist-btn-status { font-size: 0.85rem; font-weight: 700; padding: 0.15rem 0.6rem; border-radius: 999px; background: var(--gold); color: var(--deep-green); white-space: nowrap; }
+.checklist-btn.done { border-color: #2ecc71; background: rgba(46, 204, 113, 0.12); }
+.checklist-btn.done .checklist-btn-status { background: #2ecc71; }
+.readiness-checklist { margin-top: 0; }
