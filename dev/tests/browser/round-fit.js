@@ -123,6 +123,9 @@ const mock = `
     out.push(w + ': ' + JSON.stringify(await page.evaluate(() => { const c = document.querySelector('.summary-container'); const q = (s) => Math.round(document.querySelector(s).getBoundingClientRect().width); return { games: c.querySelectorAll('thead th.match-header-cell').length, box: c.clientWidth, scrollW: c.scrollWidth, scrolls: c.scrollWidth > c.clientWidth + 1, pinned: [q('th.rank-col'), q('th.competitor-col'), q('th.pts-col')] }; })));
   }
   console.log(out.join('\n'));
+  await page.setViewportSize({width:390,height:800}); await page.waitForTimeout(300);
+  const hd = await page.evaluate(() => { const g = (c) => { const t = document.querySelector('.summary-container th.' + c); const r = document.createRange(); r.selectNodeContents(t); const textW = Math.round(r.getBoundingClientRect().width); return { w: Math.round(t.getBoundingClientRect().width), textW, fs: getComputedStyle(t).fontSize, lines: Math.round(r.getBoundingClientRect().height / parseFloat(getComputedStyle(t).lineHeight || 1) ) }; }; return { comp: g('competitor-col'), score: g('pts-col') }; });
+  console.log('header sizes:', JSON.stringify(hd), '| Score fits on one line and is the same size as Competitor:', hd.score.fs === hd.comp.fs && hd.score.textW <= hd.score.w);
   console.log('three games fit without sideways scrolling from 360px up:', out.filter(l => !l.startsWith('320')).every(l => l.includes('"games":3') && l.includes('"scrolls":false')));
   await page.setViewportSize({width:390,height:800}); await page.waitForTimeout(300); await page.screenshot({path:'/tmp/claude-0/-home-user-six-nations/55e70b8c-24a4-53e8-973b-d120bef1189e/scratchpad/round3.png', clip:{x:0,y:130,width:390,height:420}});
   console.log('errors', errors);
