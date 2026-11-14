@@ -4616,3 +4616,8 @@ body.summary-compact .match-header-cell .match-header-top .match-teams { margin-
     .summary-table th.competitor-col, .summary-table td.competitor-name { padding-right: 0.05rem; }
     .summary-table th.pts-col, .summary-table td.pts-col { left: 86px; }
 }
+
+/* iPhone held sideways: use the full width, with a slim border (the notch area is already kept clear by the page padding) */
+@media (orientation: landscape) and (max-height: 500px) and (hover: none) {
+    .container { max-width: none; padding-left: 0.5rem; padding-right: 0.5rem; }
+}

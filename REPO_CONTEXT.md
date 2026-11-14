@@ -487,3 +487,4 @@ This is the main browser-to-Supabase boundary.
 
 - `lastTab` (`predictions` / `summary` / `adminHome`, saved in `showTab`, restored by `restoreLastTab()` after sign-in) and `summaryView` (`{filter, round}` for All matches / Current round and which round, saved by `filterMatches` / `onRoundSelectChange`, restored by `restoreSavedSummaryView()`). Other localStorage keys: `summaryCompact`, `rugbyPredictorColourMode`, tour answers.
 - The Points Progression chart follows the same filter as the table: all games, or only the selected round's games with running totals carried on from earlier rounds (title shows the round). Test: `remember-view`.
+- Compact mode defaults on for phones (`isPhoneScreen()`: width 480px or less, or a phone held sideways) when nothing is saved; a saved choice (`summaryCompact` 1/0) always wins. A phone held sideways also uses the full width with a 0.5rem border. The tour has a Compact mode step (picture `compact`). Test: `compact-default`.

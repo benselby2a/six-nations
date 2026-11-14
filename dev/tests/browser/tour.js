@@ -194,7 +194,7 @@ const mock = `
   await page.evaluate(() => { closeGlobalHelpModal(); closeAdminHelpModal(); startTour(); });
   await page.waitForTimeout(500);
   const loadedAtOnce = [];
-  for (let i = 0; i < 5; i++) { await page.click('#tourNext'); loadedAtOnce.push(await page.evaluate(() => { const im = document.querySelector('#tourBody img'); return im ? im.complete && im.naturalWidth > 0 : null; })); }
+  for (let i = 0; i < 6; i++) { await page.click('#tourNext'); loadedAtOnce.push(await page.evaluate(() => { const im = document.querySelector('#tourBody img'); return im ? im.complete && im.naturalWidth > 0 : null; })); }
   console.log('each picture is loaded as its step opens:', loadedAtOnce.join(','), '| preloaded images:', await page.evaluate(() => tourPreloaded.length));
   await page.keyboard.press('Escape');
   // ---- the card fits small and short screens (iPhone with its toolbars, landscape), top and bottom visible ----
@@ -203,14 +203,14 @@ const mock = `
   for (const [w, h] of [[320, 480], [390, 664], [844, 390], [1280, 800]]) {
     await page.setViewportSize({ width: w, height: h }); await page.waitForTimeout(450);
     let bad = 0; const pics = [];
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 7; i++) {
       const ok = await page.evaluate(() => { const c = document.getElementById('tourCard').getBoundingClientRect(); const hd = document.querySelector('.tour-head').getBoundingClientRect(); const n = document.getElementById('tourNext').getBoundingClientRect(); const b = document.getElementById('tourBody');
         return c.top >= 0 && c.bottom <= innerHeight + 1 && hd.top >= 0 && n.bottom <= innerHeight && c.left >= 0 && c.right <= innerWidth + 1 && b.scrollHeight <= b.clientHeight + 1; });
       if (!ok) bad++;
       if (true) pics.push(await page.evaluate(() => { const f = document.querySelector('#tourBody .tour-figure'); return f ? (f.style.display === 'none' ? 'hidden' : Math.round(f.getBoundingClientRect().height)) : 'text'; }));
-      if (i < 5) { await page.click('#tourNext'); await page.waitForTimeout(i === 0 ? 450 : 80); }
+      if (i < 6) { await page.click('#tourNext'); await page.waitForTimeout(i === 0 ? 450 : 80); }
     }
-    for (let i = 0; i < 5; i++) { await page.click('#tourBack'); await page.waitForTimeout(i === 4 ? 450 : 30); }
+    for (let i = 0; i < 6; i++) { await page.click('#tourBack'); await page.waitForTimeout(i === 5 ? 450 : 30); }
     console.log(`fits with no scrolling at ${w}x${h}:`, bad === 0 && !pics.includes('hidden'), '| picture heights (first/last step):', pics.join(','), '| pictures all shown:', !pics.includes('hidden'));
   }
   // the admin tour too (picture hidden only where the screen is too short for picture and text together)
