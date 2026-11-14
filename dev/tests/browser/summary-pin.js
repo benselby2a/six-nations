@@ -126,6 +126,10 @@ const mock = `
   await page.evaluate(() => { const t = document.querySelector('.summary-table'); scrollTo(0, t.getBoundingClientRect().top + scrollY + 60); document.querySelector('.summary-container').scrollLeft = 120; }); await page.waitForTimeout(250);
   const f = await page.evaluate(() => { const g = (sel) => { const r = document.querySelector(sel).getBoundingClientRect(); return { top: Math.round(r.top), left: Math.round(r.left) }; }; return { rank: g('.summary-table th.rank-col'), comp: g('.summary-table th.competitor-col'), pts: g('.summary-table th.pts-col'), box: Math.round(document.querySelector('.summary-container').getBoundingClientRect().left) }; });
   console.log('first three headers pinned:', JSON.stringify(f), f.rank.top === 0 && f.comp.top === 0 && f.pts.top === 0 && f.rank.left <= f.box + 4);
+  // scrolled sideways, nothing from the scrolling header cells shows through or over the pinned first three
+  await page.evaluate(() => { scrollTo(0, 0); document.querySelector('.summary-container').scrollLeft = 150; }); await page.waitForTimeout(250);
+  const over = await page.evaluate(() => { const bad = []; ['rank-col', 'competitor-col', 'pts-col'].forEach(c => { const th = document.querySelector('.summary-table th.' + c); const r = th.getBoundingClientRect(); for (const [fx, fy] of [[0.5, 0.2], [0.5, 0.5], [0.5, 0.85]]) { const el = document.elementFromPoint(r.left + r.width * fx, r.top + r.height * fy); if (el && el.closest('th') !== th) bad.push(c + ' covered by ' + el.className); } }); return bad; });
+  console.log('first three header cells stay on top when scrolled sideways:', JSON.stringify(over), over.length === 0);
   console.log('errors', errors);
   await browser.close();
 })();
