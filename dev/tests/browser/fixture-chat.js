@@ -117,7 +117,7 @@ const mock = `
   await page.evaluate(() => switchYear(2026)); await page.waitForTimeout(500);
   await page.click('button.tab:has-text("Match Summary")'); await page.waitForTimeout(200);
   await t('1 chips and badges', () => ({ chips: [...document.querySelectorAll('.summary-container [data-chat-chip]')].map(c => c.textContent.trim()), badges: [...document.querySelectorAll('td[data-chat-user] .chat-badge')].map(b => b.parentElement.dataset.chatUser + ':' + b.textContent) }));
-  await t('1b no comment counts anywhere', () => ({ counts: document.querySelectorAll('.chat-count').length, tooltipText: document.querySelector('td[data-chat-user="sam"][data-chat-match="1"] .tooltip').textContent.replace(/\s+/g, ' ').trim().slice(-50) }));
+  await t('1b no comment counts anywhere', () => ({ counts: document.querySelectorAll('.chat-count').length, cellTooltips: document.querySelectorAll('td[data-chat-user] .tooltip').length }));
   await chip();
   await t('2 match reactions open in a centred pop-up', () => { const r = document.getElementById('fixtureChatSheet').getBoundingClientRect(); return { open: document.body.classList.contains('fixture-chat-open'), title: document.getElementById('fixtureChatTitle').textContent, centredX: Math.abs((r.left + r.right) / 2 - innerWidth / 2) < 2, centredY: Math.abs((r.top + r.bottom) / 2 - innerHeight / 2) < 2, who: [...document.querySelectorAll('.fc-who li')].map(x => x.textContent), textarea: !!document.getElementById('fixtureChatInput') }; });
   await page.click('.fc-emoji:has-text("👏")'); await page.waitForTimeout(300);
@@ -129,11 +129,9 @@ const mock = `
   await chip(); await page.mouse.click(5, 5); await page.waitForTimeout(150);
   console.log('5b closed by tapping outside the pop-up:', !(await sheetOpen()));
   await page.click('td[data-chat-user="sam"][data-chat-match="1"]'); await page.waitForTimeout(250);
-  await t('6 prediction pop-up', () => ({ title: document.getElementById('fixtureChatTitle').textContent, tabs: [...document.querySelectorAll('.fc-tab')].map(x => x.textContent), card: document.querySelector('.fc-pred-card') && document.querySelector('.fc-pred-card').textContent.replace(/\s+/g, ' ') }));
+  await t('6 prediction pop-up', () => ({ title: document.getElementById('fixtureChatTitle').textContent, tabs: document.querySelectorAll('.fc-tab').length, card: document.querySelector('.fc-pred-card') && document.querySelector('.fc-pred-card').textContent.replace(/\s+/g, ' ') }));
   await page.click('.fc-emoji:has-text("🔥")'); await page.waitForTimeout(300);
-  await t('7 reacted to a prediction (badge and tooltip update in place)', () => ({ row: __db.fixture_reactions.filter(r => r.user_id === 1 && r.target_user_id !== null).map(r => r.emoji), badge: document.querySelector('td[data-chat-user="sam"][data-chat-match="1"] .chat-badge').textContent, tip: document.querySelector('td[data-chat-user="sam"][data-chat-match="1"] .tooltip').textContent.replace(/\s+/g, ' ').trim().slice(-40) }));
-  await page.click('.fc-tab:has-text("The match")'); await page.waitForTimeout(100);
-  await t('8 tab switch', () => ({ title: document.getElementById('fixtureChatTitle').textContent }));
+  await t('7 reacted to a prediction (the badge updates in place)', () => ({ row: __db.fixture_reactions.filter(r => r.user_id === 1 && r.target_user_id !== null).map(r => r.emoji), badge: document.querySelector('td[data-chat-user="sam"][data-chat-match="1"] .chat-badge').textContent, cellTooltips: document.querySelectorAll('td[data-chat-user] .tooltip').length }));
   await page.keyboard.press('Escape');
   await page.evaluate(() => { fixtureChat = { available: false, reactions: [] }; showSummary(); });
   await t('9 feature hidden when the table does not exist', () => ({ chips: document.querySelectorAll('[data-chat-chip]').length, cells: document.querySelectorAll('td[data-chat-user]').length }));

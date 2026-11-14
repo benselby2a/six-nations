@@ -50,12 +50,12 @@ function tourBuildSteps(rulesHtml, chatLive) {
         'Tap <strong>Edit</strong> next to a match, enter your scores, tick <strong>Use Joker</strong> on a Joker match, then tap <strong>Save</strong>.'
     ], isGuest
         ? '<p>Sign in to enter your own predictions.</p>'
-        : '<p>Predictions lock when the tournament starts, so get them in early.</p>'));
+        : '<p>Predictions lock when the tournament starts, so get them in early. Open <strong>Rules</strong> at the top of the screen any time to see how points are won.</p>'));
     steps.push(tourStep('score', 'See the current score', [
         'Tap <strong>Match Summary</strong> at the top of the screen. It is the screen you land on after signing in.',
         'Everyone\'s rank and total score are on the left, with each prediction and the points it earned for every match.',
         'Tap the <strong>refresh icon</strong> to pull the latest results.'
-    ], '<p>Hover or tap a prediction to see how it was scored.</p>'));
+    ], '<p>Tap any prediction to see how it was scored. The header row stays at the top as you scroll, and a 🃏 marks a Joker. Turn your phone sideways for a compact view with just the countries and scores.</p>'));
     steps.push(tourStep('pdf', 'The traditional view', [
         'On the Match Summary, tap the <strong>PDF icon</strong> above the table if you want the traditional view.'
     ], '<p>It lays the table out on a page you can read at a glance, save or print. The picture shows the page you get.</p>'));
@@ -63,7 +63,7 @@ function tourBuildSteps(rulesHtml, chatLive) {
         steps.push(tourStep('chips', 'React to matches and results', [
             'Tap the <strong>😀＋ chip</strong> under a match to react to the match with an emoji.',
             'Or tap any <strong>prediction</strong> to react to that guess.'
-        ], '<p>The most popular emoji show right on the table.</p>'));
+        ], '<p>The most popular emoji show right on the table, and the pop-up lists who reacted.</p>'));
     }
     steps.push(tourStep('stats', 'Stats and insights', [
         'Scroll down on the Match Summary, under the table.',
@@ -81,10 +81,10 @@ function tourBuildAdminSteps() {
         tourStep('admin-menu', 'Your admin menu', [
             'Tap <strong>Admin Functions</strong> at the top of the screen.',
             'Each button opens a section, and the menu stays at the top so you can jump between sections.'
-        ], '<p>The <strong>Setup Checklist</strong> button opens a screen showing which setup tasks for the year are done.</p>'),
+        ], '<p>The <strong>Setup Checklist</strong> button opens a screen showing which setup tasks for the year are done, including locking predictions once everyone is in and entering scores for finished matches.</p>'),
         tourStep('admin-fixtures', 'Fixtures and Scores', [
             'Admin Functions, then <strong>Fixtures and Scores</strong>.',
-            'Tap a row to edit a fixture, set it Joker eligible, or enter the result and tries.'
+            'Tap a row to edit a fixture, set it Joker eligible, or enter the actual score and tries once the match is played.'
         ], '<p>Add New Fixture adds one match and Bulk Import pastes in several. Rounds are worked out from the dates: matches in the same Thursday to Sunday weekend are one round. the red <strong>+ score</strong> button above the table on the Match Summary is the quick way to enter a result.</p>'),
         tourStep('admin-lock', 'Predictions and the lock', [
             'Admin Functions, then <strong>Predictions</strong>.',

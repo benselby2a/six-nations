@@ -473,3 +473,10 @@ This is the main browser-to-Supabase boundary.
 - Opens at the very top: `js/app-bar.js` sets `history.scrollRestoration = 'manual'`, scrolls to the top on load (and again at 0.3s, 0.9s and 2s unless the person has already scrolled), after a login, when restored from the back/forward cache, and when the app returns after more than 5 minutes away. Test: `dev/tests/browser/open-top.js`.
 
 - Rounds are inferred from fixture dates (`assignRoundsFromDates` in `js/years-admin.js`): fixtures in the same Monday to Sunday week (a Thursday to Sunday weekend) are one round, numbered from the earliest week. It runs when a year's fixtures load and inside `Storage.saveMatches`, so the stored `round` column is kept in step. There is no round input on Edit Fixture, and Bulk Import ignores a leading round number. Fixtures with no usable date keep their old round.
+
+## Match Summary table layout
+
+- Header cells and prediction cells use fixed slots (see "fixed slots" blocks at the end of `styles.css`) so rows line up whatever a match or cell has: header = joker badge, teams, date, result, tries, reactions chip; cell = score, points pill, then one line (`.cell-extras`) holding the Joker card beside the top emoji (at most two emoji when the cell holds a Joker, otherwise three: `chatCellMaxEmoji`). Tests: `summary-header-slots`.
+- Prediction cells have no hover tooltip when the reactions pop-up is available (`fixtureChat.available`); clicking or tapping a prediction opens the pop-up with the score, points breakdown, Joker note and who reacted. The tooltips remain only if the reactions table is missing. The Predicted Tries column keeps its small tooltip.
+- A phone held sideways (`orientation: landscape`, `max-height: 500px`, `hover: none`) collapses the match headers to the countries and score (CSS only).
+- The pinned header is a copy of the header row in a sticky strip (`buildSummaryStickyHead` in `js/app-bar.js`); it is rebuilt after every summary render. Tests: `summary-pin`, `landscape-header`, `touch-no-tooltips`.
