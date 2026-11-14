@@ -6,6 +6,7 @@
   await dismiss('No thanks');
   await page.addScriptTag({ content: fs.readFileSync(REPO + '/dev/tour-demo.js', 'utf8') });
   await page.evaluate(() => enterTourDemo());
+  await page.evaluate(() => { localStorage.setItem('summaryCompact', '0'); applySummaryCompact(false); });   // pictures show the full table (compact is the default on a phone-sized screen)
   await page.waitForTimeout(500);
 
   // Finds an element from a spec: a CSS selector, {sel, text} (button/element whose text starts with it), or {visible: sel} (first one actually on screen)
@@ -61,6 +62,8 @@
   // ---- the app tour ----
   await shot('predictions', { before: () => clickTab('My Predictions'), clip: [tab('My Predictions'), '#matchesContainer .prediction-table-container'], marks: [tab('My Predictions'), '#matchesContainer .prediction-table-container button.btn-success'], maxH: 760 });
   await shot('score', { before: () => clickTab('Match Summary'), clip: [tab('Match Summary'), '.summary-container'], marks: [tab('Match Summary'), '.summary-container', '#summaryRefreshBtn'], maxH: 760 });
+  await shot('compact', { before: async () => { await clickTab('Match Summary'); await page.evaluate(() => applySummaryCompact(true)); await page.waitForTimeout(300); }, clip: ['.summary-toolbar', '.summary-container'], marks: ['#summaryCompactBtn', '.summary-container'], maxH: 560 });
+  await page.evaluate(() => applySummaryCompact(false));
   await shot('pdf', { clip: ['.summary-toolbar', '.summary-updated-row'], marks: ['#exportPdfBtn'] });
   // The PDF itself: build it with the app's own export, save the download, turn page 1 into a picture
   try {

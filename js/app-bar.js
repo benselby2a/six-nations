@@ -200,8 +200,13 @@ function toggleSummaryCompact() {
     try { localStorage.setItem(SUMMARY_COMPACT_KEY, compact ? '1' : '0'); } catch (error) { /* not remembered */ }
     applySummaryCompact(compact);
 }
+// Compact mode starts on for phones (a narrow screen, or a phone held sideways) unless the person has chosen for themselves
+function isPhoneScreen() {
+    return !!(window.matchMedia && window.matchMedia('(max-width: 480px), (orientation: landscape) and (max-height: 500px) and (hover: none)').matches);
+}
 document.addEventListener('DOMContentLoaded', () => {
-    let saved = false;
-    try { saved = localStorage.getItem(SUMMARY_COMPACT_KEY) === '1'; } catch (error) { saved = false; }
-    if (saved) applySummaryCompact(true);
+    let saved = null;
+    try { saved = localStorage.getItem(SUMMARY_COMPACT_KEY); } catch (error) { saved = null; }
+    const compact = saved === '1' || (saved === null && isPhoneScreen());
+    if (compact) applySummaryCompact(true);
 });
