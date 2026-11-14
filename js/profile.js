@@ -124,48 +124,65 @@
             closeProfile();
         }
 
-        // Light (default) or dark. Older saved values ("classic", "retro") count as light.
-        function changeTheme(theme) {
-            const normalizedTheme = theme === 'dark' ? 'dark' : 'light';
-            if (normalizedTheme === 'dark') {
+        // Colour mode: "auto" follows the device's dark or light setting (the default); "light" and "dark" are the user's own choice.
+        let colourMode = 'auto';
+
+        function applyColourMode() {
+            const systemDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            const dark = colourMode === 'dark' || (colourMode === 'auto' && systemDark);
+            if (dark) {
                 document.documentElement.setAttribute('data-theme', 'dark');
             } else {
                 document.documentElement.removeAttribute('data-theme');
             }
             updateThemeToggle();
+        }
 
-            // Remember it across visits
-            setCookie(THEME_COOKIE_NAME, normalizedTheme);
+        function changeTheme(mode) {
+            colourMode = ['light', 'dark'].includes(mode) ? mode : 'auto';
+            applyColourMode();
+            // Remember the choice across visits
+            setCookie(THEME_COOKIE_NAME, colourMode);
             try {
-                localStorage.setItem(THEME_STORAGE_KEY, normalizedTheme);
+                localStorage.setItem(THEME_STORAGE_KEY, colourMode);
             } catch (error) {
                 // Ignore storage errors.
             }
         }
 
+        // The account menu button cycles Auto, Light, Dark
         function toggleTheme() {
-            changeTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+            changeTheme({ auto: 'light', light: 'dark', dark: 'auto' }[colourMode]);
         }
 
-        // The account menu button says what it will switch to
         function updateThemeToggle() {
             const btn = document.getElementById('themeToggleBtn');
             if (!btn) return;
-            const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-            btn.textContent = dark ? 'Light mode' : 'Dark mode';
-            btn.setAttribute('aria-pressed', dark ? 'true' : 'false');
+            btn.textContent = `Appearance: ${{ auto: 'Auto', light: 'Light', dark: 'Dark' }[colourMode]}`;
         }
 
-        // Load the saved theme
+        // Load the saved choice (none: Auto). Someone who picked Dark under the old theme selector keeps Dark.
         function loadUserTheme() {
-            let storageTheme = '';
+            let stored = '';
+            let legacy = '';
             try {
-                storageTheme = (localStorage.getItem(THEME_STORAGE_KEY) || '').trim().toLowerCase();
+                stored = (localStorage.getItem(THEME_STORAGE_KEY) || '').trim().toLowerCase();
+                legacy = (localStorage.getItem(LEGACY_THEME_KEY) || '').trim().toLowerCase();
             } catch (error) {
-                storageTheme = '';
+                stored = '';
             }
-            const cookieTheme = (getCookie(THEME_COOKIE_NAME) || '').trim().toLowerCase();
-            changeTheme(storageTheme || cookieTheme || 'light');
+            if (!stored) stored = (getCookie(THEME_COOKIE_NAME) || '').trim().toLowerCase();
+            if (!stored && legacy === 'dark') stored = 'dark';
+            colourMode = ['light', 'dark'].includes(stored) ? stored : 'auto';
+            applyColourMode();
+        }
+
+        // Follow the device while the mode is Auto
+        if (window.matchMedia) {
+            const systemScheme = window.matchMedia('(prefers-color-scheme: dark)');
+            const onSystemSchemeChange = () => { if (colourMode === 'auto') applyColourMode(); };
+            if (systemScheme.addEventListener) systemScheme.addEventListener('change', onSystemSchemeChange);
+            else if (systemScheme.addListener) systemScheme.addListener(onSystemSchemeChange);
         }
 
         function toggleGlobalHelp() {

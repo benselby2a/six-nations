@@ -54,6 +54,7 @@
             const scrollHintMarkup = `<div class="scroll-hint hidden" id="scrollHint"><span>${scrollHintText}</span><span class="scroll-hint-arrow">${scrollHintArrow}</span></div>`;
 
             let html = scrollHintMarkup;
+            html += '<div class="summary-table-wrap"><div class="summary-sticky-head"><div class="summary-sticky-inner"></div></div>';
             html += '<div class="summary-container">';
             html += '<table class="summary-table">';
             
@@ -259,9 +260,10 @@
             
             html += '</tbody>';
             html += '</table>';
-            html += '</div>';
+            html += '</div></div>';
 
             container.innerHTML = html;
+            buildSummaryStickyHead();
             renderPrizeMoneyPanel(sortedUsers);
             renderWormChart(sortedUsers);
             updateLeaderboard();
