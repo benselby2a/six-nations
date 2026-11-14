@@ -80,7 +80,7 @@ function tourBuildAdminSteps() {
     return [
         tourStep('admin-menu', 'Your admin menu', [
             'Tap <strong>Admin Functions</strong> at the top of the screen.',
-            'Each button opens a section. The menu tucks itself away to leave room: tap Admin Functions again to bring it back.'
+            'Each button opens a section, and the menu stays at the top so you can jump between sections.'
         ], '<p>The <strong>Setup Checklist</strong> button opens a screen showing which setup tasks for the year are done.</p>'),
         tourStep('admin-fixtures', 'Fixtures and Scores', [
             'Admin Functions, then <strong>Fixtures and Scores</strong>.',

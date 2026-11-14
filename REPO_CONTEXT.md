@@ -27,7 +27,7 @@
 
 ### `js/` file map (load order, all classic scripts sharing one global scope; no build step)
 `constants` fixtures/flags/team helpers; `storage` Supabase client and `Storage`; `state` globals, usage tracking, escaping, cookies, remembered user; `years-admin` years, Years tab, readiness checklist, who plays; `init` initializeData/init/lock toggle; `admin-fixtures` fixtures, bulk import, results; `admin-competitors` competitors, invitations, account linking; `profile` profile, theme, help; `auth` login code flow, handleAuthChange, showApp; `predictions` predictions UI and admin prediction editing; `scoring` rules and points; `trevs-tips` Trev's Tips/Statto text; `leaderboard` round filter, prize projection/panel; `worm-chart`; `summary`; `fixture-chat` Match Summary comments and emoji; `export-pdf`; `rules-admin` rules and prize forms; `recovery-usage` recovery SQL, usage report; `app-shell` showTab, refresh, install tip, start-up wiring (auth listener) last. Keep this order: files run top to bottom at load.
-Admin menu: `#adminPanel` folds to a slim bar when an admin section opens (`setAdminPanelCollapsed` in `app-shell`); tapping its heading reopens it.
+Admin menu: `#adminPanel` is always fully shown at the top of every admin section (it is not collapsible).
 
 ### (legacy notes below were written for the single `app.js`)
 

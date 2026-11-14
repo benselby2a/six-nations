@@ -84,7 +84,7 @@ const mock = `
 
 
 
-  const clickByText = (text) => page.evaluate((t) => { if (typeof setAdminPanelCollapsed === 'function' && document.querySelector('#adminPanel.collapsed') && [...document.querySelectorAll('#adminPanel .admin-tabs button')].some(b => b.textContent.trim() === t)) setAdminPanelCollapsed(false); [...document.querySelectorAll('button')].find(b => b.textContent.trim() === t && b.offsetParent !== null).click(); }, text);
+  const clickByText = (text) => page.evaluate((t) => { [...document.querySelectorAll('button')].find(b => b.textContent.trim() === t && b.offsetParent !== null).click(); }, text);
   const checklist = () => page.evaluate(() => { const c = document.getElementById('readinessChecklist'); return { cls: c.className, title: (c.querySelector('.readiness-title')||{}).textContent, summary: (c.querySelector('.readiness-summary')||{}).textContent, items: [...c.querySelectorAll('.readiness-item')].map(i => (i.classList.contains('ok') ? '[x] ' : '[ ] ') + i.querySelector('.readiness-label').textContent + ' | ' + i.querySelector('.readiness-detail').textContent + (i.querySelector('button') ? ' | btn: ' + i.querySelector('button').textContent : '')) }; });
   const settings = () => page.evaluate(() => JSON.stringify(__db.settings));
 

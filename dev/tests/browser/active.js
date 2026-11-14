@@ -79,7 +79,7 @@ const mock = `
   await page.route('**/fonts.googleapis.com/**', r => r.fulfill({body:''}));
   await page.goto('file://' + path);
   await page.waitForTimeout(Math.min(900, 40));
-  const clickByText = (text) => page.evaluate((t) => { if (typeof setAdminPanelCollapsed === 'function' && document.querySelector('#adminPanel.collapsed') && [...document.querySelectorAll('#adminPanel .admin-tabs button')].some(b => b.textContent.trim() === t)) setAdminPanelCollapsed(false); [...document.querySelectorAll('button')].find(b => b.textContent.trim() === t && b.offsetParent !== null).click(); }, text);
+  const clickByText = (text) => page.evaluate((t) => { [...document.querySelectorAll('button')].find(b => b.textContent.trim() === t && b.offsetParent !== null).click(); }, text);
   const row = () => page.evaluate(() => { const i = [...document.querySelectorAll('#readinessChecklist .readiness-item')][1]; return (i.classList.contains('ok') ? '[x] ' : '[ ] ') + i.querySelector('.readiness-detail').textContent + (i.querySelector('.readiness-outstanding') ? ' || ' + [...i.querySelectorAll('.readiness-outstanding li')].map(l => l.textContent).join(' ; ') : ''); });
   const overrides = () => page.evaluate(() => JSON.stringify(__db.settings.filter(s => s.key.startsWith('active_overrides'))));
 

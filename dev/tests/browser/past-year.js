@@ -122,7 +122,7 @@ const mock = `
     const seen = {};
     await page.click('button.tab:has-text("Admin Functions")'); await page.waitForTimeout(200);
     for (const [label, id] of [['Fixtures and Scores', 'resultsTab'], ['Predictions', 'scoreCorrectionsTab'], ['Guesser Rules', 'rulesTab'], ['Prize Fund', 'prizeFundTab']]) {
-      await page.evaluate(() => setAdminPanelCollapsed(false));
+      await page.evaluate(() => 0);
       await page.click(`.admin-tabs .tab:has-text("${label}")`); await page.waitForTimeout(250);
       seen[label] = await page.evaluate((tab) => { const b = document.querySelector(`#${tab} [data-past-year-banner]`); return b.classList.contains('hidden') ? 'hidden' : b.textContent.trim().slice(0, 90); }, id);
     }

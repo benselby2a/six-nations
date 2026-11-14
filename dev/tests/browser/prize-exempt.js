@@ -118,7 +118,7 @@ const mock = `
   console.log('before:', JSON.stringify(await panel()), '| exempt:', await page.evaluate(() => JSON.stringify(appSettings.prizeExempt)));
   // tick the box on Sam's card
   await page.click('button.tab:has-text("Admin Functions")'); await page.waitForTimeout(200);
-  await page.evaluate(() => setAdminPanelCollapsed(false));
+  await page.evaluate(() => 0);
   await page.click('.admin-tabs .tab:has-text("Competitors")'); await page.waitForTimeout(400);
   await page.evaluate(() => { document.getElementById('user-row-sam').open = true; });
   console.log('card text:', await page.evaluate(() => document.querySelector('label.cc-toggle-prize').textContent.replace(/\s+/g, ' ').trim()));

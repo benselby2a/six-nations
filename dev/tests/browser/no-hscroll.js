@@ -118,9 +118,9 @@ const mock = `
   for (const w of [320, 360, 390, 430, 768, 1024, 1280]) {
     await page.setViewportSize({ width: w, height: 800 }); await page.waitForTimeout(150);
     for (const t of ['My Predictions', 'Match Summary']) { await page.click(`#appView .app-bar > .tabs .tab:has-text("${t}")`); await page.waitForTimeout(250); await check(w, t); }
-    await page.click('#appView .app-bar > .tabs .tab:has-text("Admin Functions")'); await page.evaluate(() => setAdminPanelCollapsed(false)); await check(w, 'Admin menu');
+    await page.click('#appView .app-bar > .tabs .tab:has-text("Admin Functions")'); await page.evaluate(() => 0); await check(w, 'Admin menu');
     for (const label of ['Fixtures and Scores', 'Predictions', 'Competitors', 'Guesser Rules', 'Prize Fund', 'Years', 'Database Recovery', 'Usage Report']) {
-      await page.evaluate(() => setAdminPanelCollapsed(false)); await page.click(`.admin-tabs .tab:has-text("${label}")`); await page.waitForTimeout(300); await check(w, 'Admin: ' + label);
+      await page.evaluate(() => 0); await page.click(`.admin-tabs .tab:has-text("${label}")`); await page.waitForTimeout(300); await check(w, 'Admin: ' + label);
     }
     await page.click('#avatarBtn'); await page.waitForTimeout(100); await check(w, 'Account menu open'); await page.keyboard.press('Escape');
     await page.evaluate(() => { openProfile(); }); await page.waitForTimeout(150); await check(w, 'Profile pop-up'); await page.evaluate(() => closeProfile());

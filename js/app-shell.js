@@ -84,11 +84,6 @@
                 event.target.classList.add('active');
             }
 
-            // Opening an admin section folds the admin menu away to save room; the heading reopens it
-            const adminSections = ['competitors', 'scoreCorrections', 'results', 'rules', 'prizeFund', 'years', 'recovery', 'usageReport', 'checklist'];
-            if (adminSections.includes(tabName)) setAdminPanelCollapsed(true);
-            else if (tabName === 'adminHome') setAdminPanelCollapsed(false);
-
             updatePastYearBanners();
             renderReadinessChecklist();
             if (tabName === 'adminHome') { tourPreload('admin'); maybeOfferAdminTour(); }
@@ -118,19 +113,6 @@
                 render(info);
                 try { localStorage.setItem(KEY, JSON.stringify(info)); } catch (e) { /* ignore */ }
             } catch (e) { /* offline: leave blank */ }
-        }
-
-        function setAdminPanelCollapsed(collapsed) {
-            const panel = document.getElementById('adminPanel');
-            const heading = document.getElementById('adminPanelHeading');
-            if (!panel) return;
-            panel.classList.toggle('collapsed', collapsed);
-            if (heading) heading.setAttribute('aria-expanded', String(!collapsed));
-        }
-
-        function toggleAdminPanel() {
-            const panel = document.getElementById('adminPanel');
-            if (panel) setAdminPanelCollapsed(!panel.classList.contains('collapsed'));
         }
 
         async function refreshSummaryData() {
