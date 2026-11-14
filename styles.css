@@ -4570,3 +4570,9 @@ body.summary-compact .match-header-cell .match-header-top .match-teams { margin-
 .match-header-cell .match-header-bottom .match-result,
 .match-header-cell .match-header-bottom .no-result { height: 1.8rem; padding-top: 0.05rem; padding-bottom: 0.05rem; }
 body.summary-compact .match-header-cell .match-header-top .match-teams { margin-bottom: 0.6rem; }
+
+/* Narrower gap between the match columns (desktop; phones are already tight) */
+@media (min-width: 700px) {
+    .summary-table th.match-header-cell { min-width: 84px; padding-left: 0.35rem !important; padding-right: 0.35rem !important; }
+    .summary-table td.prediction-cell { padding-left: 0.35rem; padding-right: 0.35rem; }
+}
