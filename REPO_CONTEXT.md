@@ -482,3 +482,8 @@ This is the main browser-to-Supabase boundary.
 - A phone held sideways (`orientation: landscape`, `max-height: 500px`, `hover: none`) collapses the match headers to the countries and score (CSS only).
 - The pinned header is a copy of the header row in a sticky strip (`buildSummaryStickyHead` in `js/app-bar.js`); it is rebuilt after every summary render. Tests: `summary-pin`, `landscape-header`, `touch-no-tooltips`.
 - Compact mode: the two-arrows button beside refresh (`#summaryCompactBtn`, `toggleSummaryCompact()` in `js/app-bar.js`, remembered in localStorage `summaryCompact`) adds `body.summary-compact`, which hides the emoji rows (`.cell-extras`, `.match-extras`) and the header dates and tries; the Joker then shows inline beside the score (`.joker-inline`). The header's Joker-eligible card sits beside the reactions chip in `.match-extras`. Teams are always on two rows (no "vs"). On desktop (900px and up) the app is full width with a slim side border.
+
+## Remembered view (localStorage)
+
+- `lastTab` (`predictions` / `summary` / `adminHome`, saved in `showTab`, restored by `restoreLastTab()` after sign-in) and `summaryView` (`{filter, round}` for All matches / Current round and which round, saved by `filterMatches` / `onRoundSelectChange`, restored by `restoreSavedSummaryView()`). Other localStorage keys: `summaryCompact`, `rugbyPredictorColourMode`, tour answers.
+- The Points Progression chart follows the same filter as the table: all games, or only the selected round's games with running totals carried on from earlier rounds (title shows the round). Test: `remember-view`.

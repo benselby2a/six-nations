@@ -2,6 +2,16 @@
 // Classic script (shared global scope); load order is set in index.html.
 
         // Tab switching
+        // The last main tab (My Predictions, Match Summary, Admin Functions) is remembered on this device
+        const LAST_TAB_KEY = 'lastTab';
+        function restoreLastTab() {
+            let last = '';
+            try { last = localStorage.getItem(LAST_TAB_KEY) || ''; } catch (error) { last = ''; }
+            if (!last || last === 'summary') return;
+            const btn = document.querySelector(`#appView .app-bar > .tabs .tab[onclick="showTab('${last}')"]`);
+            if (btn && !btn.classList.contains('hidden') && !btn.closest('.hidden')) btn.click();
+        }
+
         function showTab(tabName) {
             // Hide all tabs
             document.getElementById('predictionsTab').classList.add('hidden');
@@ -84,6 +94,9 @@
                 event.target.classList.add('active');
             }
 
+            if (['predictions', 'summary', 'adminHome'].includes(tabName)) {
+                try { localStorage.setItem(LAST_TAB_KEY, tabName); } catch (error) { /* not remembered */ }
+            }
             updatePastYearBanners();
             renderReadinessChecklist();
             if (tabName === 'adminHome') { tourPreload('admin'); maybeOfferAdminTour(); }

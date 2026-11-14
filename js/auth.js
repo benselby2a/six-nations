@@ -519,9 +519,11 @@
             );
             if (summaryTabBtn) summaryTabBtn.classList.add('active');
 
+            restoreSavedSummaryView();   // Current round, if that is how it was left
             renderMatches(); // Render the prediction inputs first
             loadPredictions(); // Then populate with saved predictions
             showSummary(); // Load summary by default (includes leaderboard)
+            restoreLastTab();   // and the tab that was last open (My Predictions or Admin Functions)
             maybeOfferTour();
             setTimeout(() => tourPreload('app'), 2500);   // quietly, so the tour pictures are ready
         }
@@ -560,5 +562,6 @@
             document.getElementById('adminHomeTab').classList.add('hidden');
 
             // Show summary
+            restoreSavedSummaryView();
             showSummary();
         }
