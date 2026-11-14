@@ -128,6 +128,11 @@ const mock = `
   await page.evaluate(() => { setAdminPanelCollapsed(false); }); await page.click('#checklistBtn'); await page.waitForTimeout(200);
   await page.click('#appView .app-bar > .tabs .tab:has-text("Match Summary")'); await page.waitForTimeout(300);
   console.log('checklist hidden on Match Summary:', await page.evaluate(() => ['checklistTab', 'adminHomeTab', 'readinessChecklist'].every(id => { const e = document.getElementById(id); return !e.offsetParent; })));
+  // signing out and back in lands on Match Summary with the checklist screen closed
+  await page.evaluate(() => { setAdminPanelCollapsed(false); }); await page.click('#appView .app-bar > .tabs .tab:has-text("Admin Functions")'); await page.click('#checklistBtn'); await page.waitForTimeout(200);
+  await page.evaluate(() => logout()); await page.waitForTimeout(500);
+  await page.fill('#loginEmail', 'ben@example.com'); await page.click('#sendLoginCodeBtn'); await page.waitForTimeout(200); await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(1200);
+  console.log('checklist closed after signing back in:', await page.evaluate(() => !document.getElementById('checklistTab').offsetParent));
   console.log('errors', errors);
   await browser.close();
 })();

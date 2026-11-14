@@ -511,6 +511,7 @@
             document.getElementById('recoveryTab').classList.add('hidden');
             document.getElementById('usageReportTab').classList.add('hidden');
             document.getElementById('yearsTab').classList.add('hidden');
+            document.getElementById('checklistTab').classList.add('hidden');
             document.getElementById('adminHomeTab').classList.add('hidden');
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             const summaryTabBtn = Array.from(document.querySelectorAll('.tab')).find(
@@ -555,6 +556,7 @@
             document.getElementById('recoveryTab').classList.add('hidden');
             document.getElementById('usageReportTab').classList.add('hidden');
             document.getElementById('yearsTab').classList.add('hidden');
+            document.getElementById('checklistTab').classList.add('hidden');
             document.getElementById('adminHomeTab').classList.add('hidden');
 
             // Show summary
