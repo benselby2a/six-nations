@@ -55,7 +55,7 @@
     console.log(id, c.width + 'x' + c.height, 'marks:', manifest[id].marks.length, Math.round(buf.length / 1024) + 'KB');
   };
   const clickTab = async (text) => { await page.evaluate((t) => { const b = [...document.querySelectorAll('.tabs .tab')].find(e => e.offsetParent && e.textContent.trim() === t); if (b) b.click(); }, text); await page.waitForTimeout(500); };
-  const clickAdmin = async (text) => { await page.evaluate((t) => { setAdminPanelCollapsed(false); const b = [...document.querySelectorAll('.admin-tabs .tab')].find(e => e.textContent.trim() === t); if (b) b.click(); }, text); await page.waitForTimeout(600); };
+  const clickAdmin = async (text) => { await page.evaluate((t) => { 0; const b = [...document.querySelectorAll('.admin-tabs .tab')].find(e => e.textContent.trim() === t); if (b) b.click(); }, text); await page.waitForTimeout(600); };
   const tab = (t) => ({ sel: '.tabs .tab', text: t });
 
   // ---- the app tour ----
@@ -94,7 +94,7 @@
 
   // ---- the admin tour ----
   await clickTab('Admin Functions');
-  await shot('admin-menu', { before: () => page.evaluate(() => setAdminPanelCollapsed(false)), clip: [tab('Admin Functions'), '.admin-tabs', '#adminPanel'], marks: [tab('Admin Functions'), '.admin-tabs'], maxH: 470 });
+  await shot('admin-menu', { before: () => page.evaluate(() => 0), clip: [tab('Admin Functions'), '.admin-tabs', '#adminPanel'], marks: [tab('Admin Functions'), '.admin-tabs'], maxH: 470 });
   await shot('admin-fixtures', { before: () => clickAdmin('Fixtures and Scores'), scrollTo: '#resultsTab', clip: ['#resultsTab .results-table-container', { sel: '#resultsTab button', text: '+ Add New Fixture' }], marks: ['#resultsTab .results-table-container', { sel: '#resultsTab button', text: '+ Add New Fixture' }], maxH: 640 });
   await shot('admin-lock', { before: () => clickAdmin('Predictions'), scrollTo: '#scoreCorrectionsTab', clip: ['#scoreCorrectionsTab .lock-toggle', '.admin-score-corrections-toolbar', '#adminUserMatchesContainer'], marks: ['#scoreCorrectionsTab .lock-toggle', '.admin-score-corrections-toolbar'], maxH: 560 });
   await shot('admin-competitors', { before: () => clickAdmin('Competitors'), scrollTo: '#competitorsTab', clip: ['#new-competitor-card', '.competitor-card:not(.competitor-card-new)'], marks: ['#new-competitor-card', '.competitor-card:not(.competitor-card-new)'], maxH: 520 });
