@@ -4608,3 +4608,11 @@ body.summary-compact .match-header-cell .match-header-top .match-teams { margin-
     .summary-table th.match-header-cell { min-width: 70px !important; padding-left: 0.2rem !important; padding-right: 0.2rem !important; }
     .summary-table td.prediction-cell { padding-left: 0.15rem; padding-right: 0.15rem; }
 }
+
+/* iPhone: the Score header uses the same (smaller) size as Competitor and does not wrap, so the Score column can be as slim as it can be */
+@media (max-width: 480px) {
+    .summary-table th.pts-col { font-size: 0.62rem; letter-spacing: 0.01em; white-space: nowrap; min-width: 30px; width: 30px; max-width: 30px; padding-left: 0.05rem; padding-right: 0.05rem; }
+    .summary-table td.pts-col { min-width: 30px; width: 30px; max-width: 30px; padding-left: 0.05rem; padding-right: 0.05rem; }
+    .summary-table th.competitor-col, .summary-table td.competitor-name { padding-right: 0.05rem; }
+    .summary-table th.pts-col, .summary-table td.pts-col { left: 86px; }
+}
