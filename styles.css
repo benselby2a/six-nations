@@ -4632,3 +4632,8 @@ body.summary-compact .match-header-cell .match-header-top .match-teams { margin-
 }
 .round-select:hover { background-color: #f0bc3c; }
 .round-select option { background: #ffffff; color: #10241a; }
+
+/* The Joker-eligible card always shows in the header: beside the reactions chip normally, beside the score whenever that row is hidden (compact mode, or a phone held sideways) */
+@media (orientation: landscape) and (max-height: 500px) and (hover: none) {
+    .match-result-row .joker-inline { display: inline-flex; }
+}
