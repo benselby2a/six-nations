@@ -113,7 +113,7 @@ const mock = `
   await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(Math.min(1000, 40));
   await page.evaluate(() => switchYear(2026)); await page.waitForTimeout(500);
   await page.click('#appView .app-bar > .tabs .tab:has-text("Match Summary")'); await page.waitForTimeout(1000);
-  const hidden = await page.evaluate(() => ['.joker-eligible-badge', '.match-date', '.match-tries', '.chat-chip'].map(sel => [sel, [...document.querySelectorAll('.summary-container thead ' + sel)].every(e => getComputedStyle(e).display === 'none')]));
+  const hidden = await page.evaluate(() => ['.match-date', '.match-tries', '.match-extras'].map(sel => [sel, [...document.querySelectorAll('.summary-container thead ' + sel)].every(e => getComputedStyle(e).display === 'none')]));
   const shown = await page.evaluate(() => ['.match-teams', '.match-result, .no-result'].map(sel => [sel, [...document.querySelectorAll('.summary-container thead ' + sel)].every(e => getComputedStyle(e).display !== 'none')]));
   console.log('landscape phone header hides:', JSON.stringify(hidden), '| keeps:', JSON.stringify(shown));
   console.log('header height:', await page.evaluate(() => Math.round(document.querySelector('.summary-container thead').getBoundingClientRect().height)));
