@@ -2462,31 +2462,31 @@
 
             .summary-table th.rank-col,
             .summary-table td.rank-col {
-                min-width: 24px;
-                width: 24px;
-                padding: 0.25rem 0.15rem;
-                font-size: 0.75rem;
+                min-width: 22px;
+                width: 22px;
+                padding: 0.25rem 0.1rem;
+                font-size: 0.72rem;
             }
 
             .summary-table th.competitor-col {
-                min-width: 72px;
-                max-width: 84px;
-                width: 72px;
+                min-width: 64px;
+                max-width: 64px;
+                width: 64px;
                 padding: 0.25rem 0.15rem;
                 font-size: 0.62rem;
                 letter-spacing: 0.01em;
-                left: 24px;
+                left: 22px;
                 white-space: normal;
                 line-height: 1.05;
             }
 
             .summary-table td.competitor-name {
-                min-width: 72px;
-                max-width: 84px;
-                width: 72px;
+                min-width: 64px;
+                max-width: 64px;
+                width: 64px;
                 padding: 0.25rem 0.15rem;
                 font-size: 0.66rem;
-                left: 24px;
+                left: 22px;
                 white-space: normal;
                 overflow-wrap: anywhere;
                 word-break: break-word;
@@ -2495,10 +2495,12 @@
 
             .summary-table th.pts-col,
             .summary-table td.pts-col {
-                min-width: 36px;
-                padding: 0.25rem 0.15rem;
+                min-width: 34px;
+                width: 34px;
+                max-width: 34px;
+                padding: 0.25rem 0.1rem;
                 font-size: 0.8rem;
-                left: 96px;
+                left: 86px;
             }
 
             .summary-table td {
@@ -4599,3 +4601,10 @@ body.summary-compact .match-header-cell .match-header-top .match-teams { margin-
 .summary-table td.joker-cell .joker-indicator,
 .match-result-row .joker-inline,
 .cell-score .joker-inline { background: transparent; box-shadow: none; padding: 0; filter: none; }
+
+/* iPhone: slimmer page edges, so a round's three games fit beside the pinned columns without sideways scrolling */
+@media (max-width: 480px) {
+    .container { padding-left: 0.6rem; padding-right: 0.6rem; }
+    .summary-table th.match-header-cell { min-width: 70px !important; padding-left: 0.2rem !important; padding-right: 0.2rem !important; }
+    .summary-table td.prediction-cell { padding-left: 0.15rem; padding-right: 0.15rem; }
+}
