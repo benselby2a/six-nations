@@ -496,6 +496,7 @@
             },
 
             saveMatches: async (matchesData, options = {}) => {
+                assignRoundsFromDates(matchesData);   // rounds follow the dates
                 // Keep the all-years cache in step with the selected year's fixtures
                 allMatches = allMatches
                     .filter(m => m.year !== selectedYear)

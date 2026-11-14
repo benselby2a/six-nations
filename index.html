@@ -20,7 +20,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261025-118">
+    <link rel="stylesheet" href="styles.css?v=20261025-119">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -367,12 +367,12 @@
                         <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Bulk Import Fixtures</h2>
             <div class="past-year-banner hidden" data-past-year-banner role="alert"></div>
                         <p style="margin-bottom: 1rem;">Enter one fixture per line in the format:</p>
-                        <p style="margin-bottom: 1rem; font-family: monospace; background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 5px;">Round, DD/MM/YYYY, HH:MM, Home Team, Away Team</p>
+                        <p style="margin-bottom: 1rem; font-family: monospace; background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 5px;">DD/MM/YYYY, HH:MM, Home Team, Away Team</p>
                         <p style="margin-bottom: 1rem; font-size: 0.9rem; opacity: 0.8;">Example:<br>
-                        <span style="font-family: monospace;">1, 01/02/2026, 14:30, England, France</span><br>
-                        <span style="font-family: monospace;">1, 01/02/2026, 17:00, Ireland, Wales</span><br>
-                        <span style="font-family: monospace;">2, 08/02/2026, 14:30, France, Ireland</span></p>
-                        <textarea id="bulkImportData" rows="10" style="width: 100%; padding: 1rem; background: rgba(255,255,255,0.1); border: 2px solid rgba(212,175,55,0.3); color: var(--white); font-family: monospace; font-size: 0.9rem; border-radius: 5px; resize: vertical;" placeholder="1, 01/02/2026, 14:30, England, France&#10;1, 01/02/2026, 17:00, Ireland, Wales&#10;2, 08/02/2026, 14:30, France, Ireland"></textarea>
+                        <span style="font-family: monospace;">01/02/2026, 14:30, England, France</span><br>
+                        <span style="font-family: monospace;">01/02/2026, 17:00, Ireland, Wales</span><br>
+                        <span style="font-family: monospace;">08/02/2026, 14:30, France, Ireland</span><br>Rounds are worked out from the dates: fixtures in the same Thursday to Sunday weekend are one round.</p>
+                        <textarea id="bulkImportData" rows="10" style="width: 100%; padding: 1rem; background: rgba(255,255,255,0.1); border: 2px solid rgba(212,175,55,0.3); color: var(--white); font-family: monospace; font-size: 0.9rem; border-radius: 5px; resize: vertical;" placeholder="01/02/2026, 14:30, England, France&#10;01/02/2026, 17:00, Ireland, Wales&#10;08/02/2026, 14:30, France, Ireland"></textarea>
                         <div class="bulk-import-actions" style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: flex-end;">
                             <button class="btn-cancel" onclick="closeBulkImport()">Cancel</button>
                             <button onclick="processBulkImport()">Import Fixtures</button>
@@ -387,10 +387,6 @@
             <div class="past-year-banner hidden" data-past-year-banner role="alert"></div>
                         <p class="fixture-actuals-hint">The score and tries boxes record the <strong>actual result</strong> of the match (what really happened, not a prediction). Leave them blank until the match has been played.</p>
                         <div class="fixture-edit-grid">
-                            <div class="input-group">
-                                <label for="edit-fixture-round">Round</label>
-                                <input type="number" id="edit-fixture-round" min="1" max="10">
-                            </div>
                             <div class="input-group">
                                 <label for="edit-fixture-date">Date</label>
                                 <input type="date" id="edit-fixture-date">
@@ -829,28 +825,28 @@
         <button type="button" class="install-tip-close" aria-label="Dismiss" onclick="dismissInstallTip()">&#10005;</button>
     </div>
 
-    <script src="js/constants.js?v=20261025-118"></script>
-    <script src="js/storage.js?v=20261025-118"></script>
-    <script src="js/state.js?v=20261025-118"></script>
-    <script src="js/years-admin.js?v=20261025-118"></script>
-    <script src="js/init.js?v=20261025-118"></script>
-    <script src="js/admin-fixtures.js?v=20261025-118"></script>
-    <script src="js/admin-competitors.js?v=20261025-118"></script>
-    <script src="js/profile.js?v=20261025-118"></script>
-    <script src="js/auth.js?v=20261025-118"></script>
-    <script src="js/predictions.js?v=20261025-118"></script>
-    <script src="js/scoring.js?v=20261025-118"></script>
-    <script src="js/trevs-tips.js?v=20261025-118"></script>
-    <script src="js/leaderboard.js?v=20261025-118"></script>
-    <script src="js/worm-chart.js?v=20261025-118"></script>
-    <script src="js/summary.js?v=20261025-118"></script>
-    <script src="js/fixture-chat.js?v=20261025-118"></script>
-    <script src="js/tour-images.js?v=20261025-118"></script>
-    <script src="js/tour.js?v=20261025-118"></script>
-    <script src="js/app-bar.js?v=20261025-118"></script>
-    <script src="js/export-pdf.js?v=20261025-118"></script>
-    <script src="js/rules-admin.js?v=20261025-118"></script>
-    <script src="js/recovery-usage.js?v=20261025-118"></script>
-    <script src="js/app-shell.js?v=20261025-118"></script>
+    <script src="js/constants.js?v=20261025-119"></script>
+    <script src="js/storage.js?v=20261025-119"></script>
+    <script src="js/state.js?v=20261025-119"></script>
+    <script src="js/years-admin.js?v=20261025-119"></script>
+    <script src="js/init.js?v=20261025-119"></script>
+    <script src="js/admin-fixtures.js?v=20261025-119"></script>
+    <script src="js/admin-competitors.js?v=20261025-119"></script>
+    <script src="js/profile.js?v=20261025-119"></script>
+    <script src="js/auth.js?v=20261025-119"></script>
+    <script src="js/predictions.js?v=20261025-119"></script>
+    <script src="js/scoring.js?v=20261025-119"></script>
+    <script src="js/trevs-tips.js?v=20261025-119"></script>
+    <script src="js/leaderboard.js?v=20261025-119"></script>
+    <script src="js/worm-chart.js?v=20261025-119"></script>
+    <script src="js/summary.js?v=20261025-119"></script>
+    <script src="js/fixture-chat.js?v=20261025-119"></script>
+    <script src="js/tour-images.js?v=20261025-119"></script>
+    <script src="js/tour.js?v=20261025-119"></script>
+    <script src="js/app-bar.js?v=20261025-119"></script>
+    <script src="js/export-pdf.js?v=20261025-119"></script>
+    <script src="js/rules-admin.js?v=20261025-119"></script>
+    <script src="js/recovery-usage.js?v=20261025-119"></script>
+    <script src="js/app-shell.js?v=20261025-119"></script>
 </body>
 </html>

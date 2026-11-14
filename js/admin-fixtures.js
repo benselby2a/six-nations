@@ -61,7 +61,6 @@
                 team2Select.value = match.team2 || 'France';
             }
 
-            document.getElementById('edit-fixture-round').value = match.round || 1;
             document.getElementById('edit-fixture-date').value = parseDateForInput(match.date || '');
             document.getElementById('edit-fixture-time').value = (match.time && match.time !== 'TBD') ? match.time : '';
             document.getElementById('edit-fixture-score1').value = match.actualScore1 !== null ? match.actualScore1 : '';
@@ -252,7 +251,6 @@
             const match = isNewFixture ? pendingNewMatch : matches.find(m => m.id === editingFixtureId);
             if (!match) return;
 
-            const roundVal = parseInt(document.getElementById('edit-fixture-round').value, 10);
             const dateVal = document.getElementById('edit-fixture-date').value;
             const timeVal = (document.getElementById('edit-fixture-time').value || '').trim();
             const team1Val = document.getElementById('edit-fixture-team1').value;
@@ -263,10 +261,6 @@
             const tries2Val = document.getElementById('edit-fixture-tries2').value;
             const jokerVal = document.getElementById('edit-fixture-joker').checked;
 
-            if (!roundVal || roundVal < 1) {
-                alert('Round must be at least 1.');
-                return;
-            }
             if (!team1Val || !team2Val) {
                 alert('Home and away teams are required.');
                 return;
@@ -324,7 +318,6 @@
                 }
             }
 
-            match.round = roundVal;
             match.team1 = team1Val;
             match.team2 = team2Val;
             // Preserve existing date/time unless the admin explicitly changes them.
@@ -540,19 +533,14 @@
             lines.forEach((line, index) => {
                 const parts = line.split(',').map(p => p.trim());
                 
-                if (parts.length < 5) {
-                    errors.push(`Line ${index + 1}: Not enough fields (need round, date, time, home team, away team)`);
+                // A leading round number is accepted but ignored: rounds come from the dates
+                if (parts.length === 5 && /^\d+$/.test(parts[0])) parts.shift();
+                if (parts.length < 4) {
+                    errors.push(`Line ${index + 1}: Not enough fields (need date, time, home team, away team)`);
                     return;
                 }
                 
-                const [roundStr, dateStr, timeStr, homeTeam, awayTeam] = parts;
-                
-                // Parse round
-                const round = parseInt(roundStr);
-                if (isNaN(round) || round < 1) {
-                    errors.push(`Line ${index + 1}: Invalid round number "${roundStr}"`);
-                    return;
-                }
+                const [dateStr, timeStr, homeTeam, awayTeam] = parts;
                 
                 // Parse date (DD/MM/YYYY)
                 const dateMatch = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
@@ -616,7 +604,7 @@
                 
                 newFixtures.push({
                     id: nextId++,
-                    round: round,
+                    round: 0,   // set from the dates when saved
                     date: displayDate,
                     time: displayTime,
                     team1: team1,
@@ -676,7 +664,6 @@
         async function autoSaveResults() {
             matches.forEach(match => {
                 // Get all editable fields
-                const roundEl = document.getElementById(`round-${match.id}`);
                 const team1SelectEl = document.getElementById(`team1-select-${match.id}`);
                 const team2SelectEl = document.getElementById(`team2-select-${match.id}`);
                 const dateEl = document.getElementById(`date-${match.id}`);
@@ -688,7 +675,6 @@
                 const jokerEligibleEl = document.getElementById(`joker-eligible-${match.id}`);
 
                 // Update fixture details
-                if (roundEl) match.round = parseInt(roundEl.value) || 1;
                 if (jokerEligibleEl) match.jokerEligible = jokerEligibleEl.checked;
                 if (team1SelectEl) match.team1 = team1SelectEl.value;
                 if (team2SelectEl) match.team2 = team2SelectEl.value;
