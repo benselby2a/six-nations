@@ -183,15 +183,15 @@ function queueSummaryStickyVisibility() {
 window.addEventListener('scroll', queueSummaryStickyVisibility, { passive: true });
 window.addEventListener('resize', () => { sizeSummaryStickyHead(); queueSummaryStickyVisibility(); });
 
-// Compact summary: hides the emoji rows and, in the headers, the date and tries, to save space. Remembered on this device.
+// Compact mode: hides the emoji rows and, in the headers, the date and tries, to save space. Remembered on this device.
 const SUMMARY_COMPACT_KEY = 'summaryCompact';
 function applySummaryCompact(compact) {
     document.body.classList.toggle('summary-compact', compact);
     const btn = document.getElementById('summaryCompactBtn');
     if (btn) {
         btn.setAttribute('aria-pressed', compact ? 'true' : 'false');
-        btn.setAttribute('data-tip', compact ? 'Show reactions' : 'Hide reactions');
-        btn.setAttribute('aria-label', compact ? 'Show reactions' : 'Hide reactions');
+        btn.setAttribute('data-tip', compact ? 'Compact mode: on' : 'Compact mode');
+        btn.setAttribute('aria-label', compact ? 'Compact mode: on' : 'Compact mode');
     }
     buildSummaryStickyHead();   // the pinned copy follows the new header height
 }

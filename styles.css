@@ -4554,8 +4554,13 @@ body.summary-compact .summary-table td.prediction-cell .cell-extras { display: n
 
 /* Desktop: use the full width of the screen, keeping just a slim border either side */
 @media (min-width: 900px) {
-    .container { max-width: none; padding-left: 1rem; padding-right: 1rem; }
+    .container { max-width: none; padding-left: 2rem; padding-right: 2rem; }
 }
 
 /* Tighter gap between the two teams in the headers */
 .match-header-cell .match-header-top .match-teams { height: 2.35em; line-height: 1.15; margin-bottom: 0.2rem; }
+
+/* Compact mode: a little more room between the away team and the score box, and a slimmer score box */
+body.summary-compact .match-header-cell .match-header-top .match-teams { margin-bottom: 0.6rem; }
+.match-header-cell .match-header-bottom .match-result,
+.match-header-cell .match-header-bottom .no-result { padding: 0.12rem 0.4rem; }
