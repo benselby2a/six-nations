@@ -26,9 +26,12 @@
             if (!container) return;
 
             const usersForChart = Array.isArray(sortedUsers) ? sortedUsers : [];
-            const completedMatches = matches
+            const allCompletedMatches = matches
                 .filter(m => m.actualScore1 !== null && m.actualScore2 !== null)
                 .sort((a, b) => Number(a.id) - Number(b.id));
+            // Same games as the table: all of them, or just the selected round (the running totals still carry on from earlier rounds)
+            const roundOnly = currentFilter === 'round';
+            const completedMatches = roundOnly ? allCompletedMatches.filter(m => m.round === selectedRound) : allCompletedMatches;
 
             if (usersForChart.length === 0) {
                 container.innerHTML = `
@@ -40,8 +43,8 @@
 
             if (completedMatches.length === 0) {
                 container.innerHTML = `
-                    <div class="worm-chart-title">Points Progression</div>
-                    <div class="worm-chart-empty">Add match results to show the game-by-game points chart.</div>
+                    <div class="worm-chart-title">Points Progression${roundOnly ? ` (Round ${selectedRound})` : ''}</div>
+                    <div class="worm-chart-empty">${roundOnly ? 'No results in this round yet.' : 'Add match results to show the game-by-game points chart.'}</div>
                 `;
                 return;
             }
@@ -49,6 +52,13 @@
             const series = usersForChart.map((user, index) => {
                 let runningTotal = 0;
                 const points = completedMatches.map(match => {
+                    if (roundOnly && completedMatches.indexOf(match) === 0) {
+                        // totals before this round
+                        runningTotal = allCompletedMatches.filter(m => m.round < selectedRound).reduce((sum, earlier) => {
+                            const earlierPrediction = users[user.username] && users[user.username].predictions ? users[user.username].predictions[earlier.id] : null;
+                            return sum + calculateMatchPoints(earlierPrediction, earlier, isUserJokerForMatch(user.username, earlier.id));
+                        }, 0);
+                    }
                     const prediction = users[user.username] && users[user.username].predictions
                         ? users[user.username].predictions[match.id]
                         : null;
@@ -148,7 +158,7 @@
             `).join('');
 
             container.innerHTML = `
-                <div class="worm-chart-title">Points Progression</div>
+                <div class="worm-chart-title">Points Progression${roundOnly ? ` (Round ${selectedRound})` : ''}</div>
                 <div class="worm-chart-hover-hint">Mouse over or tap a player, line, or point to highlight and view details.</div>
                 <div class="worm-chart-wrap">
                     <svg class="worm-chart-svg" width="100%" viewBox="0 0 ${svgWidth} ${svgHeight}" role="img" aria-label="Line chart showing each player's cumulative points per game">

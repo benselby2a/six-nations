@@ -67,26 +67,22 @@
             return rounds.length > 0 ? rounds[rounds.length - 1] : 1;
         }
 
-        // Handle round select dropdown change
-        function onRoundSelectChange() {
-            const select = document.getElementById('roundSelect');
-            selectedRound = parseInt(select.value);
-            showSummary();
+        // The last summary view (All matches or Current round, and which round) is remembered on this device
+        const SUMMARY_VIEW_KEY = 'summaryView';
+        function saveSummaryView() {
+            try { localStorage.setItem(SUMMARY_VIEW_KEY, JSON.stringify({ filter: currentFilter, round: selectedRound })); } catch (error) { /* not remembered */ }
         }
 
-        // Filter matches based on selected filter
-        function filterMatches(filterType) {
-            currentFilter = filterType;
-
-            // Update toggle button states
-            document.querySelectorAll('.filter-toggle-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-
-            // Show/hide round selector
+        // Show the filter buttons and the round dropdown for the current filter (no re-render)
+        function syncSummaryFilterUi() {
+            document.querySelectorAll('.filter-toggle-btn').forEach(btn => {
+                const wantsRound = (btn.getAttribute('onclick') || '').includes("'round'");
+                btn.classList.toggle('active', wantsRound === (currentFilter === 'round'));
+            });
             const roundSelect = document.getElementById('roundSelect');
             const roundSelectLabel = document.getElementById('roundSelectLabel');
-            if (filterType === 'round') {
-                selectedRound = getDefaultRound();
+            if (!roundSelect) return;
+            if (currentFilter === 'round') {
                 roundSelect.value = selectedRound;
                 roundSelect.classList.remove('hidden');
                 if (roundSelectLabel) roundSelectLabel.classList.remove('hidden');
@@ -94,7 +90,33 @@
                 roundSelect.classList.add('hidden');
                 if (roundSelectLabel) roundSelectLabel.classList.add('hidden');
             }
+        }
 
+        // After sign-in: go back to the view that was last used (needs initRoundSelector to have run)
+        function restoreSavedSummaryView() {
+            let saved = null;
+            try { saved = JSON.parse(localStorage.getItem(SUMMARY_VIEW_KEY) || 'null'); } catch (error) { saved = null; }
+            if (!saved || saved.filter !== 'round') return;
+            const rounds = [...new Set(matches.map(m => m.round))];
+            currentFilter = 'round';
+            selectedRound = rounds.includes(saved.round) ? saved.round : getDefaultRound();
+            syncSummaryFilterUi();
+        }
+
+        // Handle round select dropdown change
+        function onRoundSelectChange() {
+            const select = document.getElementById('roundSelect');
+            selectedRound = parseInt(select.value);
+            saveSummaryView();
+            showSummary();
+        }
+
+        // Filter matches based on selected filter
+        function filterMatches(filterType) {
+            currentFilter = filterType;
+            if (filterType === 'round') selectedRound = getDefaultRound();
+            syncSummaryFilterUi();
+            saveSummaryView();
             showSummary();
         }
 
