@@ -452,7 +452,7 @@
                                     <th>Fixture</th>
                                     <th>Scores</th>
                                     <th>Points</th>
-                                    <th>Actions</th>
+                                    ${appSettings.predictionsLocked ? '' : '<th>Actions</th>'}
                                 </tr>
                             </thead>
                             <tbody>
@@ -469,7 +469,7 @@
                     ? getMatchPointsBreakdown(userPrediction, match, isJoker)
                     : { points: 0, summary: '' };
                 const pointsPill = isMatchCompleted
-                    ? `<span class="capture-status captured" title="${pointsBreakdown.summary || 'No points awarded'}">Pts: ${pointsBreakdown.points}</span>`
+                    ? `<span class="capture-status captured" title="${pointsBreakdown.summary || 'No points awarded'}">Pts: ${pointsBreakdown.points}</span><div class="pts-breakdown${pointsBreakdown.summary ? '' : ' none'}">${pointsBreakdown.summary || 'No points awarded'}</div>`
                     : '';
                 const jokerSuffix = isJoker ? ` <span class="joker-indicator">JOKER</span>` : '';
 
@@ -478,10 +478,8 @@
                         <td>${match.date}</td>
                         <td>${getCompactFixtureLabel(match)}</td>
                         <td class="prediction-scores-cell">Predicted: ${userPrediction ? `${userPrediction.team1}-${userPrediction.team2}` : '--'}, Actual: ${isMatchCompleted ? `${match.actualScore1}-${match.actualScore2}` : '--'}${jokerSuffix}</td>
-                        <td>${pointsPill}</td>
-                        <td class="prediction-actions-cell">
-                            ${appSettings.predictionsLocked ? '' : `<button class="btn-small btn-success" onclick="openEditPredictionModal('self', ${match.id})">Edit</button>`}
-                        </td>
+                        <td class="prediction-points-cell">${pointsPill}</td>
+                        ${appSettings.predictionsLocked ? '' : `<td class="prediction-actions-cell"><button class="btn-small btn-success" onclick="openEditPredictionModal('self', ${match.id})">Edit</button></td>`}
                     </tr>
                 `;
                 });

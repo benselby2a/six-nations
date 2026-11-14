@@ -4749,3 +4749,16 @@ body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-wi
 /* Signed in: no faint horizontal stripes behind the page. Under the solid status-bar strip they showed up as a lighter band,
    which made the top of the Home Screen app look faded. */
 body.in-app::before { display: none; }
+
+/* My Predictions: the points breakdown is written out under the pill (a hover title is invisible on phones) */
+.prediction-table .pts-breakdown { margin-top: 0.3rem; font-size: 0.8rem; font-weight: 600; line-height: 1.3; color: var(--bright-gold, #f0c040); max-width: 14rem; }
+.prediction-table .pts-breakdown.none { color: rgba(255, 255, 255, 0.6); font-weight: 500; }
+.prediction-table td.prediction-points-cell { white-space: normal; overflow: visible; text-overflow: unset; }
+.prediction-table .pts-breakdown { overflow-wrap: anywhere; max-width: none; }
+/* Summary header row stays pinned while the table is on screen (see updateSummaryHeaderPin) */
+.summary-table thead th { z-index: 30 !important; }
+.summary-table.header-pinned thead th { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35); }
+.summary-table.header-pinned thead th:not(.rank-col):not(.competitor-col):not(.pts-col) { background: var(--gold) !important; }
+[data-theme="retro"] .summary-table.header-pinned thead th:not(.rank-col):not(.competitor-col):not(.pts-col) { background: #2a2a8a !important; }
+[data-theme="dark"] .summary-table.header-pinned thead th:not(.rank-col):not(.competitor-col):not(.pts-col) { background: #183242 !important; }
+.summary-table thead th.match-header-cell, .summary-table thead th.tries-col { position: relative; }
