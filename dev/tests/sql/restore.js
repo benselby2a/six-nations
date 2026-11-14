@@ -6,7 +6,7 @@ const repo = pathm.resolve(__dirname, '../../..');
 const src = fs.readFileSync(repo + '/js/recovery-usage.js', 'utf8');
 const body = src.slice(src.indexOf('function generateSchemaSQL()'), src.indexOf('function generateFullSQL('));
 const mig = f => fs.readFileSync(repo + '/supabase/' + f, 'utf8');
-const ORDER = ['auth_migration','years_migration','preregistered_emails_migration','registered_logins_migration','invitations_migration','users_email_migration','second_email_migration','profile_second_email_migration','fixture_chat_migration','reaction_flags_migration'].map(x => x + '.sql');
+const ORDER = ['auth_migration','years_migration','preregistered_emails_migration','registered_logins_migration','invitations_migration','users_email_migration','second_email_migration','profile_second_email_migration','fixture_chat_migration','reaction_flags_migration','usage_events_trim_migration'].map(x => x + '.sql');
 let fail = 0; const ok = (n, c, x = '') => { if (!c) fail++; console.log((c ? 'PASS ' : 'FAIL ') + n + (c ? '' : ' -> ' + x)); };
 const boot = async () => { const db = new PGlite(); await db.exec(`create schema auth;
   create table auth.users (id uuid primary key, email text, email_confirmed_at timestamptz, created_at timestamptz default now(), last_sign_in_at timestamptz);
