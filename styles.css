@@ -4564,3 +4564,9 @@ body.summary-compact .summary-table td.prediction-cell .cell-extras { display: n
 body.summary-compact .match-header-cell .match-header-top .match-teams { margin-bottom: 0.6rem; }
 .match-header-cell .match-header-bottom .match-result,
 .match-header-cell .match-header-bottom .no-result { padding: 0.12rem 0.4rem; }
+
+/* Header spacing: teams closer together, a little more room before the date, and a slimmer score box */
+.match-header-cell .match-header-top .match-teams { gap: 0; margin-bottom: 0.55rem; }
+.match-header-cell .match-header-bottom .match-result,
+.match-header-cell .match-header-bottom .no-result { height: 1.8rem; padding-top: 0.05rem; padding-bottom: 0.05rem; }
+body.summary-compact .match-header-cell .match-header-top .match-teams { margin-bottom: 0.6rem; }
