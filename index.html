@@ -20,7 +20,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261025-147">
+    <link rel="stylesheet" href="styles.css?v=20261025-152">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -691,7 +691,7 @@
                 <div><strong>Dark and light mode:</strong> The app follows your device&#39;s dark or light setting. To choose for yourself, open your account menu (your initial, top right) and tap Appearance to cycle between Auto, Light and Dark.</div>
                 <div><strong>Your Profile:</strong> If you are logged in, open your account menu (your initial, top right) and click your name to customise your profile and choose your preferred team(s). Appearance, Take a tour, Help and Log out are in the same menu.</div>
                 <div><strong>My Predictions:</strong> Enter your score predictions for each fixture, choose your jokers, and set your tournament tries prediction. Predictions can only be entered/edited while predictions are unlocked.</div>
-                <div><strong>Match Summary:</strong> View the live table, points breakdowns, tries tracking, and prize projections as results are entered.</div>
+                <div><strong>Match Summary:</strong> View the live table, tries tracking, and prize projections as results are entered. Tap a prediction to see how it was scored and who reacted. The header row stays pinned as you scroll, and turning your phone sideways shows just the countries and scores.</div>
                 <div><strong>Reactions:</strong> Tap the 😀＋ chip under a match, or any prediction in the Match Summary table, to react with an emoji.</div>
                 <div><strong>Admin Functions:</strong> Fixtures and Scores, Predictions, Competitors, Prize Fund, and recovery are available to admins only. Admins can lock predictions (typically once the tournament starts).</div>
             </div>
@@ -707,8 +707,9 @@
         <div class="modal-content admin-help-modal-content">
             <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bad-text); margin-bottom: 0.8rem; letter-spacing: 0.1em;">Admin Help</h2>
             <div class="admin-help-content">
-                <div><strong>Fixtures and Scores</strong> Add/edit fixtures, enter scores and tries, set joker-eligible matches, and lock/unlock predictions.</div>
-                <div><strong>Predictions</strong> Review and correct competitor score predictions and tournament tries values.</div>
+                <div><strong>Setup Checklist</strong> The tasks to finish before a year is ready: fixtures, all predictions in, predictions locked, scores entered for finished matches, rules and prize fund saved.</div>
+                <div><strong>Fixtures and Scores</strong> Add/edit fixtures, enter the actual score and tries after each match, and set joker-eligible matches. Rounds are worked out from the dates (a Thursday to Sunday weekend is one round).</div>
+                <div><strong>Predictions</strong> Review and correct competitor score predictions and tournament tries values, and lock or unlock predictions.</div>
                 <div><strong>Competitors</strong> Add, edit, or remove competitors, update display names, assign teams, and manage admin access.</div>
                 <div><strong>Prize Fund</strong> Set entry fee and payout allocation for 1st/2nd/3rd and closest tries prize.</div>
                 <div><strong>Database Recovery</strong> Generate SQL to recreate schema and optionally restore current data.</div>
@@ -817,28 +818,28 @@
         <button type="button" class="install-tip-close" aria-label="Dismiss" onclick="dismissInstallTip()">&#10005;</button>
     </div>
 
-    <script src="js/constants.js?v=20261025-147"></script>
-    <script src="js/storage.js?v=20261025-147"></script>
-    <script src="js/state.js?v=20261025-147"></script>
-    <script src="js/years-admin.js?v=20261025-147"></script>
-    <script src="js/init.js?v=20261025-147"></script>
-    <script src="js/admin-fixtures.js?v=20261025-147"></script>
-    <script src="js/admin-competitors.js?v=20261025-147"></script>
-    <script src="js/profile.js?v=20261025-147"></script>
-    <script src="js/auth.js?v=20261025-147"></script>
-    <script src="js/predictions.js?v=20261025-147"></script>
-    <script src="js/scoring.js?v=20261025-147"></script>
-    <script src="js/trevs-tips.js?v=20261025-147"></script>
-    <script src="js/leaderboard.js?v=20261025-147"></script>
-    <script src="js/worm-chart.js?v=20261025-147"></script>
-    <script src="js/summary.js?v=20261025-147"></script>
-    <script src="js/fixture-chat.js?v=20261025-147"></script>
-    <script src="js/tour-images.js?v=20261025-147"></script>
-    <script src="js/tour.js?v=20261025-147"></script>
-    <script src="js/app-bar.js?v=20261025-147"></script>
-    <script src="js/export-pdf.js?v=20261025-147"></script>
-    <script src="js/rules-admin.js?v=20261025-147"></script>
-    <script src="js/recovery-usage.js?v=20261025-147"></script>
-    <script src="js/app-shell.js?v=20261025-147"></script>
+    <script src="js/constants.js?v=20261025-152"></script>
+    <script src="js/storage.js?v=20261025-152"></script>
+    <script src="js/state.js?v=20261025-152"></script>
+    <script src="js/years-admin.js?v=20261025-152"></script>
+    <script src="js/init.js?v=20261025-152"></script>
+    <script src="js/admin-fixtures.js?v=20261025-152"></script>
+    <script src="js/admin-competitors.js?v=20261025-152"></script>
+    <script src="js/profile.js?v=20261025-152"></script>
+    <script src="js/auth.js?v=20261025-152"></script>
+    <script src="js/predictions.js?v=20261025-152"></script>
+    <script src="js/scoring.js?v=20261025-152"></script>
+    <script src="js/trevs-tips.js?v=20261025-152"></script>
+    <script src="js/leaderboard.js?v=20261025-152"></script>
+    <script src="js/worm-chart.js?v=20261025-152"></script>
+    <script src="js/summary.js?v=20261025-152"></script>
+    <script src="js/fixture-chat.js?v=20261025-152"></script>
+    <script src="js/tour-images.js?v=20261025-152"></script>
+    <script src="js/tour.js?v=20261025-152"></script>
+    <script src="js/app-bar.js?v=20261025-152"></script>
+    <script src="js/export-pdf.js?v=20261025-152"></script>
+    <script src="js/rules-admin.js?v=20261025-152"></script>
+    <script src="js/recovery-usage.js?v=20261025-152"></script>
+    <script src="js/app-shell.js?v=20261025-152"></script>
 </body>
 </html>

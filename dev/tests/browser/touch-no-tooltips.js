@@ -116,7 +116,7 @@ const mock = `
   console.log('touch device:', await page.evaluate(() => matchMedia('(hover: none)').matches));
   const cell = page.locator('td[data-chat-user="sam"][data-chat-match="1"]'); await cell.scrollIntoViewIfNeeded();
   await cell.tap(); await page.waitForTimeout(400);
-  console.log('tapping a prediction:', JSON.stringify(await page.evaluate(() => ({ modal: document.body.classList.contains('fixture-chat-open'), title: document.getElementById('fixtureChatTitle').textContent, tooltipShown: getComputedStyle(document.querySelector('td[data-chat-user="sam"][data-chat-match="1"] .tooltip')).display !== 'none', breakdown: !!document.querySelector('.fc-pred-card') }))));
+  console.log('tapping a prediction:', JSON.stringify(await page.evaluate(() => ({ modal: document.body.classList.contains('fixture-chat-open'), title: document.getElementById('fixtureChatTitle').textContent, tooltips: document.querySelectorAll('td[data-chat-user] .tooltip').length, breakdown: !!document.querySelector('.fc-pred-card') }))));
   console.log('errors', errors);
   await browser.close();
 })();

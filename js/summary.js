@@ -72,7 +72,7 @@
                     <div class="match-header-cell-inner">
                         <div class="match-header-top">
                             ${jokerBadge}
-                            <div class="match-teams">${getFlag(match.team1)} ${getTeamAbbr(match.team1)}<br>vs<br>${getFlag(match.team2)} ${getTeamAbbr(match.team2)}</div>
+                            <div class="match-teams"><span>${getFlag(match.team1)} ${getTeamAbbr(match.team1)}</span><span>vs</span><span>${getFlag(match.team2)} ${getTeamAbbr(match.team2)}</span></div>
                             <div class="match-date">${match.date} - ${match.time}</div>
                         </div>
                         <div class="match-header-bottom">
@@ -197,7 +197,8 @@
                         ? `<span class="points-earned ${pointsClass}">${pointsEarned} pts</span>`
                         : '<span class="points-earned points-placeholder">&nbsp;</span>';
                     const extrasLine = `<div class="cell-extras">${jokerIndicator}${chatCellBadge(user.username, match.id)}</div>`;
-                    const showTooltip = hasResult || isJoker || fixtureChat.available;
+                    // With the reactions pop-up available, tapping or clicking a prediction shows the detail there, so no hover tooltip
+                    const showTooltip = !fixtureChat.available && (hasResult || isJoker);
                     html += `<td class="${jokerCellClass}"${chatCellAttrs(user.username, match.id)}>
                         ${showTooltip
                             ? `<div class="tooltip-container">${scoreLine}${pointsLine}<div class="${tipClass}">${tooltipContent}</div></div>`

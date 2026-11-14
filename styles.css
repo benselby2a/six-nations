@@ -4522,7 +4522,14 @@ body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-wi
 /* Scores on the summary grid: darker green and red on the light background so they read clearly (dark mode keeps the bright ones) */
 :root:not([data-theme="dark"]) .pred-score-win { color: #0a6b34; }
 
-/* Touch devices (iPhone): no hover tooltips on predictions; tapping a prediction opens the pop-up with the detail */
-@media (hover: none) {
-    .summary-table td[data-chat-user] .tooltip { display: none !important; }
+/* Phone held sideways: the match headers shrink to the countries and the score */
+@media (orientation: landscape) and (max-height: 500px) and (hover: none) {
+    .match-header-cell .joker-eligible-badge,
+    .match-header-cell .match-header-top .match-date,
+    .match-header-cell .match-header-bottom .match-tries,
+    .match-header-cell .match-header-bottom .chat-chip { display: none; }
+    .match-header-cell .match-header-top .match-teams { height: auto; margin: 0 0 0.3rem; line-height: 1.3; flex-direction: row; flex-wrap: nowrap; white-space: nowrap; justify-content: center; gap: 0 0.4em; }
+    .match-header-cell .match-header-bottom .match-result,
+    .match-header-cell .match-header-bottom .no-result { height: auto; padding: 0.1rem 0.4rem; }
+    .summary-table thead th { padding-top: 0.5rem; padding-bottom: 0.5rem; }
 }
