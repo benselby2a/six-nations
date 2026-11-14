@@ -115,7 +115,47 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // Match Summary: while any part of the table is on screen, its header row stays pinned at the top (like the first columns stay pinned at the left).
-// The table sits in a box that scrolls sideways, which stops CSS "sticky" following the page, so the header cells are shifted down by script instead.
+// The table sits in a box that scrolls sideways, and a box like that cannot "stick" to the page. So a copy of the header sits in a
+// sticky strip outside the box (the browser keeps that smooth), is scrolled sideways in step with the table, and is shown only once the real
+// header has scrolled out of view. The two look identical, so the hand-over is not visible.
+function buildSummaryStickyHead() {
+    const wrap = document.querySelector('.summary-table-wrap');
+    if (!wrap) return;
+    const box = wrap.querySelector('.summary-container');
+    const table = box && box.querySelector('table.summary-table');
+    const inner = wrap.querySelector('.summary-sticky-inner');
+    if (!table || !table.tHead || !inner) return;
+    inner.innerHTML = '';
+    const copy = document.createElement('table');
+    copy.className = 'summary-table summary-table-clone';
+    copy.setAttribute('aria-hidden', 'true');
+    copy.appendChild(table.tHead.cloneNode(true));
+    copy.querySelectorAll('[id]').forEach(e => e.removeAttribute('id'));
+    inner.appendChild(copy);
+    box.addEventListener('scroll', () => { inner.scrollLeft = box.scrollLeft; }, { passive: true });
+    sizeSummaryStickyHead();
+    updateSummaryStickyVisibility();
+}
+function sizeSummaryStickyHead() {
+    const wrap = document.querySelector('.summary-table-wrap');
+    if (!wrap) return;
+    const box = wrap.querySelector('.summary-container');
+    const table = box.querySelector('table.summary-table');
+    const inner = wrap.querySelector('.summary-sticky-inner');
+    const copy = inner.querySelector('table');
+    if (!table || !copy) return;
+    const real = table.tHead.querySelectorAll('th');
+    const mine = copy.tHead.querySelectorAll('th');
+    inner.style.left = box.clientLeft + 'px';
+    inner.style.width = box.clientWidth + 'px';
+    copy.style.width = table.offsetWidth + 'px';
+    real.forEach((th, i) => {
+        if (!mine[i]) return;
+        const w = th.getBoundingClientRect().width + 'px';
+        mine[i].style.width = w; mine[i].style.minWidth = w; mine[i].style.maxWidth = w;
+    });
+    inner.scrollLeft = box.scrollLeft;
+}
 let pinProbe = null;
 function summaryPinTop() {
     if (!pinProbe) {
@@ -125,30 +165,20 @@ function summaryPinTop() {
     }
     return parseFloat(getComputedStyle(pinProbe).paddingTop) || 0;
 }
-let pinQueued = false;
-function updateSummaryHeaderPin() {
-    pinQueued = false;
-    const table = document.querySelector('.summary-table');
-    if (!table || !table.tHead) return;
-    const cells = table.tHead.querySelectorAll('th');
+function updateSummaryStickyVisibility() {
+    const table = document.querySelector('.summary-table:not(.summary-table-clone)');
+    const inner = document.querySelector('.summary-sticky-inner');
+    if (!table || !table.tHead || !inner) return;
     const rect = table.getBoundingClientRect();
     const headH = table.tHead.offsetHeight;
-    let shift = Math.max(0, summaryPinTop() - rect.top);
-    shift = Math.min(shift, Math.max(0, rect.height - headH));
-    // Every header cell is "sticky" (the first three also stick to the left); the page scroll sets how far down they sit.
-    // Moving them by their sticky offset, not a transform, keeps the sticky columns working in Safari.
-    const value = shift > 0 ? `${shift}px` : '';
-    cells.forEach(th => { if (th.style.top !== value) th.style.top = value; });
-    table.classList.toggle('header-pinned', shift > 0);
+    const top = summaryPinTop();
+    inner.classList.toggle('show', rect.top < top && rect.bottom > top + headH);
 }
-function queueSummaryHeaderPin() {
+let pinQueued = false;
+function queueSummaryStickyVisibility() {
     if (pinQueued) return;
     pinQueued = true;
-    requestAnimationFrame(updateSummaryHeaderPin);
+    requestAnimationFrame(() => { pinQueued = false; updateSummaryStickyVisibility(); });
 }
-window.addEventListener('scroll', queueSummaryHeaderPin, { passive: true });
-window.addEventListener('resize', queueSummaryHeaderPin);
-document.addEventListener('DOMContentLoaded', () => {
-    const host = document.getElementById('summaryContainer');
-    if (host) new MutationObserver(queueSummaryHeaderPin).observe(host, { childList: true, subtree: true });
-});
+window.addEventListener('scroll', queueSummaryStickyVisibility, { passive: true });
+window.addEventListener('resize', () => { sizeSummaryStickyHead(); queueSummaryStickyVisibility(); });

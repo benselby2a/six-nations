@@ -20,8 +20,9 @@
         let adminPredictionUsername = null;
         let usageReportEvents = [];
         let usageReportHideLogins = true;
-        const THEME_COOKIE_NAME = 'rugbyPredictorTheme';
-        const THEME_STORAGE_KEY = 'rugbyPredictorTheme';
+        const THEME_COOKIE_NAME = 'rugbyPredictorColourMode';
+        const THEME_STORAGE_KEY = 'rugbyPredictorColourMode';
+        const LEGACY_THEME_KEY = 'rugbyPredictorTheme';   // the old theme choice: only "dark" counts as a real choice
         const COOKIE_FALLBACK_PREFIX = 'rugbyPredictorCookieFallback:';
         const REMEMBERED_USER_KEY = 'rugbyPredictorRememberedUser';
         const SELECTED_YEAR_KEY = 'rugbyPredictorSelectedYear';

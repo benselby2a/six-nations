@@ -114,22 +114,18 @@ const mock = `
   await page.evaluate(() => switchYear(2026)); await page.waitForTimeout(500);
   await page.setViewportSize({width:390,height:260});
   await page.click('#appView .app-bar > .tabs .tab:has-text("Match Summary")'); await page.waitForTimeout(400);
-  const top = () => page.evaluate(() => { const th = document.querySelector('.summary-table thead th.match-header-cell'); const t = document.querySelector('.summary-table'); return { th: Math.round(th.getBoundingClientRect().top), tableTop: Math.round(t.getBoundingClientRect().top), tableBottom: Math.round(t.getBoundingClientRect().bottom) }; });
   const y = await page.evaluate(() => document.querySelector('.summary-table').getBoundingClientRect().top + scrollY);
-  await page.evaluate(v => scrollTo(0, v + 60), y); await page.waitForTimeout(250);
-  const a = await top(); console.log('pinned while scrolled into table:', JSON.stringify(a), a.th === 0);
+  const state = () => page.evaluate(() => { const i = document.querySelector('.summary-sticky-inner'); const th = i.querySelector('th.match-header-cell'); const r = th.getBoundingClientRect(); const real = document.querySelector('.summary-container th.match-header-cell').getBoundingClientRect(); return { shown: i.classList.contains('show') && getComputedStyle(i).visibility === 'visible', top: Math.round(r.top), left: Math.round(r.left), realLeft: Math.round(real.left), box: Math.round(document.querySelector('.summary-container').getBoundingClientRect().left), cloneW: Math.round(r.width), realW: Math.round(real.width) }; });
   await page.evaluate(() => scrollTo(0, 0)); await page.waitForTimeout(250);
-  const b = await top(); console.log('back to normal at top:', JSON.stringify(b), b.th === b.tableTop);
+  const a0 = await state(); console.log('at the top the copy is hidden:', JSON.stringify(a0), !a0.shown);
+  await page.evaluate(v => scrollTo(0, v + 60), y); await page.waitForTimeout(250);
+  const a = await state(); console.log('scrolled into the table the copy is pinned at the top:', JSON.stringify(a), a.shown && a.top === 0);
+  console.log('copy columns match the real ones:', a.cloneW === a.realW);
+  await page.evaluate(() => { document.querySelector('.summary-container').scrollLeft = 150; }); await page.waitForTimeout(250);
+  const f = await page.evaluate(() => { const g = (c) => Math.round(document.querySelector('.summary-sticky-inner th.' + c).getBoundingClientRect().left); const m = document.querySelector('.summary-sticky-inner th.match-header-cell').getBoundingClientRect().left; const r = document.querySelector('.summary-container th.match-header-cell').getBoundingClientRect().left; return { rank: g('rank-col'), comp: g('competitor-col'), pts: g('pts-col'), copyMatch: Math.round(m), realMatch: Math.round(r), box: Math.round(document.querySelector('.summary-container').getBoundingClientRect().left) }; });
+  console.log('sideways: first three stay left, match columns move with the table:', JSON.stringify(f), f.rank <= f.box + 4 && Math.abs(f.copyMatch - f.realMatch) <= 1);
   await page.evaluate(() => scrollTo(0, document.body.scrollHeight)); await page.waitForTimeout(250);
-  const c = await top(); console.log('past the table:', JSON.stringify(c), c.th < c.tableBottom);
-  // the first three header cells (#, Competitor, Score) pin too, downwards and sideways
-  await page.evaluate(() => { const t = document.querySelector('.summary-table'); scrollTo(0, t.getBoundingClientRect().top + scrollY + 60); document.querySelector('.summary-container').scrollLeft = 120; }); await page.waitForTimeout(250);
-  const f = await page.evaluate(() => { const g = (sel) => { const r = document.querySelector(sel).getBoundingClientRect(); return { top: Math.round(r.top), left: Math.round(r.left) }; }; return { rank: g('.summary-table th.rank-col'), comp: g('.summary-table th.competitor-col'), pts: g('.summary-table th.pts-col'), box: Math.round(document.querySelector('.summary-container').getBoundingClientRect().left) }; });
-  console.log('first three headers pinned:', JSON.stringify(f), f.rank.top === 0 && f.comp.top === 0 && f.pts.top === 0 && f.rank.left <= f.box + 4);
-  // scrolled sideways, nothing from the scrolling header cells shows through or over the pinned first three
-  await page.evaluate(() => { scrollTo(0, 0); document.querySelector('.summary-container').scrollLeft = 150; }); await page.waitForTimeout(250);
-  const over = await page.evaluate(() => { const bad = []; ['rank-col', 'competitor-col', 'pts-col'].forEach(c => { const th = document.querySelector('.summary-table th.' + c); const r = th.getBoundingClientRect(); for (const [fx, fy] of [[0.5, 0.2], [0.5, 0.5], [0.5, 0.85]]) { const el = document.elementFromPoint(r.left + r.width * fx, r.top + r.height * fy); if (el && el.closest('th') !== th) bad.push(c + ' covered by ' + el.className); } }); return bad; });
-  console.log('first three header cells stay on top when scrolled sideways:', JSON.stringify(over), over.length === 0);
+  console.log('past the table the copy is gone:', await page.evaluate(() => !document.querySelector('.summary-sticky-inner').classList.contains('show')));
   console.log('errors', errors);
   await browser.close();
 })();

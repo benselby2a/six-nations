@@ -20,7 +20,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261025-130">
+    <link rel="stylesheet" href="styles.css?v=20261025-134">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -183,7 +183,9 @@
                 <button type="button" id="avatarBtn" class="avatar-btn" aria-haspopup="true" aria-expanded="false" aria-controls="accountMenu" aria-label="Account menu" onclick="toggleAccountMenu(event)"><span id="avatarInitial">?</span><i class="avatar-dot hidden" id="avatarDot"></i></button>
                 <div id="accountMenu" class="account-menu hidden" role="menu" aria-label="Account">
                     <div class="account-who"><div class="username profile-link" id="currentUser" onclick="closeAccountMenu(); openProfile()"></div></div>
-                    <button type="button" class="account-item" id="themeToggleBtn" role="menuitem" aria-pressed="false" onclick="toggleTheme()">Dark mode</button>
+                    <button type="button" class="account-item" id="themeToggleBtn" role="menuitem" onclick="toggleTheme()">Appearance: Auto</button>
+                    <button type="button" class="account-item" id="menuTourBtn" role="menuitem" onclick="closeAccountMenu(); startTour()">Take a tour</button>
+                    <button type="button" class="account-item admin-only hidden" id="menuAdminTourBtn" role="menuitem" onclick="closeAccountMenu(); startTour('admin')">Admin tour</button>
                     <button type="button" class="account-item" id="menuHelpBtn" role="menuitem" onclick="closeAccountMenu(); toggleGlobalHelp()">Help</button>
                     <button type="button" class="account-item account-logout" id="logoutBtn" role="menuitem" onclick="logout()">Logout</button>
                 </div>
@@ -686,8 +688,8 @@
         <div class="modal-content global-help-modal-content">
             <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 0.8rem; letter-spacing: 0.1em;">App Help</h2>
             <div class="global-help-content">
-                <div><strong>Themes:</strong> Open your account menu (your initial, top right) and use the Theme selector to switch between the available visual styles.</div>
-                <div><strong>Your Profile:</strong> If you are logged in, open your account menu (your initial, top right) and click your name to customise your profile and choose your preferred team(s). Help and Log out are in the same menu.</div>
+                <div><strong>Dark and light mode:</strong> The app follows your device&#39;s dark or light setting. To choose for yourself, open your account menu (your initial, top right) and tap Appearance to cycle between Auto, Light and Dark.</div>
+                <div><strong>Your Profile:</strong> If you are logged in, open your account menu (your initial, top right) and click your name to customise your profile and choose your preferred team(s). Appearance, Take a tour, Help and Log out are in the same menu.</div>
                 <div><strong>My Predictions:</strong> Enter your score predictions for each fixture, choose your jokers, and set your tournament tries prediction. Predictions can only be entered/edited while predictions are unlocked.</div>
                 <div><strong>Match Summary:</strong> View the live table, points breakdowns, tries tracking, and prize projections as results are entered.</div>
                 <div><strong>Comments:</strong> Tap the 💬 chip under a match, or any prediction in the Match Summary table, to comment or react with an emoji.</div>
@@ -815,28 +817,28 @@
         <button type="button" class="install-tip-close" aria-label="Dismiss" onclick="dismissInstallTip()">&#10005;</button>
     </div>
 
-    <script src="js/constants.js?v=20261025-130"></script>
-    <script src="js/storage.js?v=20261025-130"></script>
-    <script src="js/state.js?v=20261025-130"></script>
-    <script src="js/years-admin.js?v=20261025-130"></script>
-    <script src="js/init.js?v=20261025-130"></script>
-    <script src="js/admin-fixtures.js?v=20261025-130"></script>
-    <script src="js/admin-competitors.js?v=20261025-130"></script>
-    <script src="js/profile.js?v=20261025-130"></script>
-    <script src="js/auth.js?v=20261025-130"></script>
-    <script src="js/predictions.js?v=20261025-130"></script>
-    <script src="js/scoring.js?v=20261025-130"></script>
-    <script src="js/trevs-tips.js?v=20261025-130"></script>
-    <script src="js/leaderboard.js?v=20261025-130"></script>
-    <script src="js/worm-chart.js?v=20261025-130"></script>
-    <script src="js/summary.js?v=20261025-130"></script>
-    <script src="js/fixture-chat.js?v=20261025-130"></script>
-    <script src="js/tour-images.js?v=20261025-130"></script>
-    <script src="js/tour.js?v=20261025-130"></script>
-    <script src="js/app-bar.js?v=20261025-130"></script>
-    <script src="js/export-pdf.js?v=20261025-130"></script>
-    <script src="js/rules-admin.js?v=20261025-130"></script>
-    <script src="js/recovery-usage.js?v=20261025-130"></script>
-    <script src="js/app-shell.js?v=20261025-130"></script>
+    <script src="js/constants.js?v=20261025-134"></script>
+    <script src="js/storage.js?v=20261025-134"></script>
+    <script src="js/state.js?v=20261025-134"></script>
+    <script src="js/years-admin.js?v=20261025-134"></script>
+    <script src="js/init.js?v=20261025-134"></script>
+    <script src="js/admin-fixtures.js?v=20261025-134"></script>
+    <script src="js/admin-competitors.js?v=20261025-134"></script>
+    <script src="js/profile.js?v=20261025-134"></script>
+    <script src="js/auth.js?v=20261025-134"></script>
+    <script src="js/predictions.js?v=20261025-134"></script>
+    <script src="js/scoring.js?v=20261025-134"></script>
+    <script src="js/trevs-tips.js?v=20261025-134"></script>
+    <script src="js/leaderboard.js?v=20261025-134"></script>
+    <script src="js/worm-chart.js?v=20261025-134"></script>
+    <script src="js/summary.js?v=20261025-134"></script>
+    <script src="js/fixture-chat.js?v=20261025-134"></script>
+    <script src="js/tour-images.js?v=20261025-134"></script>
+    <script src="js/tour.js?v=20261025-134"></script>
+    <script src="js/app-bar.js?v=20261025-134"></script>
+    <script src="js/export-pdf.js?v=20261025-134"></script>
+    <script src="js/rules-admin.js?v=20261025-134"></script>
+    <script src="js/recovery-usage.js?v=20261025-134"></script>
+    <script src="js/app-shell.js?v=20261025-134"></script>
 </body>
 </html>
