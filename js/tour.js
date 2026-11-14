@@ -55,7 +55,7 @@ function tourBuildSteps(rulesHtml, chatLive) {
         'Tap <strong>Match Summary</strong> at the top of the screen. It is the screen you land on after signing in.',
         'Everyone\'s rank and total score are on the left, with each prediction and the points it earned for every match.',
         'Tap the <strong>refresh icon</strong> to pull the latest results.'
-    ], '<p>Tap any prediction to see how it was scored. The header row stays at the top as you scroll, and a 🃏 marks a Joker. Turn your phone sideways for a compact view with just the countries and scores, or tap the <strong>smiley button</strong> beside refresh to hide the emoji rows, dates and tries and save space.</p>'));
+    ], '<p>Tap any prediction to see how it was scored. The header row stays at the top as you scroll, and a 🃏 marks a Joker. Turn your phone sideways for a compact view with just the countries and scores, or tap the <strong>Compact mode</strong> button (the two arrows) beside refresh to hide the emoji rows, dates and tries and save space.</p>'));
     steps.push(tourStep('pdf', 'The traditional view', [
         'On the Match Summary, tap the <strong>PDF icon</strong> above the table if you want the traditional view.'
     ], '<p>It lays the table out on a page you can read at a glance, save or print. The picture shows the page you get.</p>'));
