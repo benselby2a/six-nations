@@ -135,8 +135,10 @@ function updateSummaryHeaderPin() {
     const headH = table.tHead.offsetHeight;
     let shift = Math.max(0, summaryPinTop() - rect.top);
     shift = Math.min(shift, Math.max(0, rect.height - headH));
-    const value = shift > 0 ? `translateY(${shift}px)` : '';
-    cells.forEach(th => { if (th.style.transform !== value) th.style.transform = value; });
+    // Every header cell is "sticky" (the first three also stick to the left); the page scroll sets how far down they sit.
+    // Moving them by their sticky offset, not a transform, keeps the sticky columns working in Safari.
+    const value = shift > 0 ? `${shift}px` : '';
+    cells.forEach(th => { if (th.style.top !== value) th.style.top = value; });
     table.classList.toggle('header-pinned', shift > 0);
 }
 function queueSummaryHeaderPin() {

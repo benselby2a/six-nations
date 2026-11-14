@@ -124,6 +124,10 @@ const mock = `
   console.log('lock row after locking:', await page.evaluate(() => document.querySelectorAll('#checklistTab .readiness-item')[2].className));
   await page.click('#checklistTab .readiness-item button'); await page.waitForTimeout(300);
   console.log('item button opens its section:', await page.evaluate(() => !document.getElementById('resultsTab').classList.contains('hidden') && document.getElementById('checklistTab').classList.contains('hidden')));
+  await page.click('#checklistBtn').catch(() => {});
+  await page.evaluate(() => { setAdminPanelCollapsed(false); }); await page.click('#checklistBtn'); await page.waitForTimeout(200);
+  await page.click('#appView .app-bar > .tabs .tab:has-text("Match Summary")'); await page.waitForTimeout(300);
+  console.log('checklist hidden on Match Summary:', await page.evaluate(() => ['checklistTab', 'adminHomeTab', 'readinessChecklist'].every(id => { const e = document.getElementById(id); return !e.offsetParent; })));
   console.log('errors', errors);
   await browser.close();
 })();

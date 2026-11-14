@@ -40,7 +40,7 @@ Admin menu: `#adminPanel` folds to a slim bar when an admin section opens (`setA
 
 ### `styles.css`
 
-- Contains three themes: `classic`, `retro`, `dark`.
+- Two colour modes, defined as CSS variables at the top of the file: light (default: green header band, white cards) and dark (`data-theme="dark"` on `<html>`). Style with the variables (`--bg`, `--surface`, `--text`, `--muted`, `--line`, `--gold` = main accent, `--on-accent`, `--ink`/`--accent-rgb` triplets for translucent tints via `rgb(var(--ink) / 0.1)`), not hard-coded colours. The header band, account menu, tour card and chat sheet stay green in light mode and re-declare the variables locally. The account menu button (`toggleTheme()` in `js/profile.js`) switches mode; the choice is saved in a cookie and localStorage (`rugbyPredictorTheme`: `light`/`dark`; old `classic`/`retro` count as light).
 - Styles summary table, prediction cards, admin panels, prize section, tooltips, and responsive behavior.
 
 ## Core Data Model

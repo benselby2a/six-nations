@@ -16,11 +16,11 @@
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=2">
     <meta name="apple-mobile-web-app-title" content="Six Nations">
     <link rel="manifest" href="manifest.json">
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;600;800&family=VT323&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=20261025-119">
+    <link rel="stylesheet" href="styles.css?v=20261025-125">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -118,7 +118,7 @@
         <!-- Offered the first time an admin opens the admin panel -->
         <div id="adminTourPromptModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="adminTourPromptTitle">
             <div class="modal-content">
-                <h2 id="adminTourPromptTitle" style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: #ff9b92; margin-bottom: 0.8rem; letter-spacing: 0.1em;">Admin Functions</h2>
+                <h2 id="adminTourPromptTitle" style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bad-text); margin-bottom: 0.8rem; letter-spacing: 0.1em;">Admin Functions</h2>
                 <p style="margin-bottom: 0.6rem;">Welcome to the admin screens. Would you like a quick tour of what you can do here?</p>
                 <p class="profile-hint" style="margin-bottom: 1.2rem;">It takes about a minute and you can take it any time from the ? Help button on this screen.</p>
                 <div class="fixture-modal-actions">
@@ -183,14 +183,7 @@
                 <button type="button" id="avatarBtn" class="avatar-btn" aria-haspopup="true" aria-expanded="false" aria-controls="accountMenu" aria-label="Account menu" onclick="toggleAccountMenu(event)"><span id="avatarInitial">?</span><i class="avatar-dot hidden" id="avatarDot"></i></button>
                 <div id="accountMenu" class="account-menu hidden" role="menu" aria-label="Account">
                     <div class="account-who"><div class="username profile-link" id="currentUser" onclick="closeAccountMenu(); openProfile()"></div></div>
-                    <div class="account-row">
-                        <label for="themeSelect">Theme</label>
-                        <select id="themeSelect" onchange="changeTheme(this.value)">
-                            <option value="classic">Classic</option>
-                            <option value="retro">Teletext</option>
-                            <option value="dark">Dark Mode</option>
-                        </select>
-                    </div>
+                    <button type="button" class="account-item" id="themeToggleBtn" role="menuitem" aria-pressed="false" onclick="toggleTheme()">Dark mode</button>
                     <button type="button" class="account-item" id="menuHelpBtn" role="menuitem" onclick="closeAccountMenu(); toggleGlobalHelp()">Help</button>
                     <button type="button" class="account-item account-logout" id="logoutBtn" role="menuitem" onclick="logout()">Logout</button>
                 </div>
@@ -203,15 +196,12 @@
 
             <!-- Admin Home Tab (Admin Only) -->
             <div id="adminHomeTab" class="prediction-section admin-only hidden" style="margin-top: 2rem;">
-                <div id="adminPanel" class="admin-panel" style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--red); margin-bottom: 1rem; position: relative;">
+                <div id="adminPanel" class="admin-panel" style="background: var(--surface); padding: 2rem; border-radius: 10px; border: 2px solid var(--red); margin-bottom: 1rem; position: relative;">
                     <button class="admin-panel-help-btn" onclick="toggleAdminHelp()" title="Open admin help" aria-label="Open admin help">?</button>
-                    <h2 id="adminPanelHeading" class="admin-panel-heading" role="button" tabindex="0" aria-expanded="true" onclick="toggleAdminPanel()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleAdminPanel(); }" style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: #ffb3ac; margin-bottom: 0.6rem; letter-spacing: 0.1em;">Admin Functions</h2>
+                    <h2 id="adminPanelHeading" class="admin-panel-heading" role="button" tabindex="0" aria-expanded="true" onclick="toggleAdminPanel()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleAdminPanel(); }" style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bad-text); margin-bottom: 0.6rem; letter-spacing: 0.1em;">Admin Functions</h2>
                     <div class="admin-tabs-subheading" id="adminTabsSubheading" style="margin-bottom: 0.9rem; text-align: center;">These sections are only visible to admins</div>
-                    <button id="checklistBtn" class="checklist-btn" onclick="showTab('checklist')">
-                        <span class="checklist-btn-label">Setup checklist</span>
-                        <span id="checklistBtnStatus" class="checklist-btn-status"></span>
-                    </button>
                     <div class="tabs admin-tabs">
+                        <button id="checklistBtn" class="tab" onclick="showTab('checklist')">Setup Checklist <span id="checklistBtnStatus" class="tab-badge"></span></button>
                         <button class="tab" onclick="showTab('results')">Fixtures and Scores</button>
                         <button class="tab" onclick="showTab('scoreCorrections')">Predictions</button>
                         <button class="tab" onclick="showTab('competitors')">Competitors</button>
@@ -226,7 +216,7 @@
 
             <!-- Setup Checklist Tab (Admin Only) -->
             <div id="checklistTab" class="prediction-section admin-only hidden" style="margin-top: 2rem;">
-                <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 1rem;">
+                <div style="background: var(--surface); padding: 2rem; border-radius: 10px; border: 1px solid var(--line-strong); margin-bottom: 1rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Setup checklist</h2>
                     <p style="margin-bottom: 0;">The tasks to finish before the viewed year is ready to run. Each one links to the screen where you complete it.</p>
                 </div>
@@ -247,7 +237,7 @@
 
             <!-- Score Corrections Tab (Admin Only) -->
             <div id="scoreCorrectionsTab" class="prediction-section admin-only hidden" style="margin-top: 2rem;">
-                <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
+                <div style="background: var(--surface); padding: 2rem; border-radius: 10px; border: 1px solid var(--line-strong); margin-bottom: 2rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Predictions</h2>
                     <p style="margin-bottom: 0;">Review and update any competitor's match predictions, joker selection, and tournament tries entry from one place.</p>
                     <div class="past-year-banner hidden" data-past-year-banner role="alert"></div>
@@ -324,7 +314,7 @@
 
             <!-- Competitor Management Tab (Admin Only) -->
             <div id="competitorsTab" class="prediction-section hidden" style="margin-top: 2rem;">
-                <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
+                <div style="background: var(--surface); padding: 2rem; border-radius: 10px; border: 1px solid var(--line-strong); margin-bottom: 2rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Competitors</h2>
                     <p style="margin-bottom: 1rem;">Manage competitor accounts - edit details or remove users.</p>
                 </div>
@@ -334,7 +324,7 @@
 
             <!-- Fixture Setup Tab (Admin Only) -->
             <div id="resultsTab" class="prediction-section hidden" style="margin-top: 2rem;">
-                <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
+                <div style="background: var(--surface); padding: 2rem; border-radius: 10px; border: 1px solid var(--line-strong); margin-bottom: 2rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Fixtures and Scores</h2>
                     <p style="margin-bottom: 1rem;">Manage fixtures and results. Click a row or Edit to update all fixture fields.</p>
                     <div class="past-year-banner hidden" data-past-year-banner role="alert"></div>
@@ -367,12 +357,12 @@
                         <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Bulk Import Fixtures</h2>
             <div class="past-year-banner hidden" data-past-year-banner role="alert"></div>
                         <p style="margin-bottom: 1rem;">Enter one fixture per line in the format:</p>
-                        <p style="margin-bottom: 1rem; font-family: monospace; background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 5px;">DD/MM/YYYY, HH:MM, Home Team, Away Team</p>
+                        <p style="margin-bottom: 1rem; font-family: monospace; background: var(--surface-2); padding: 0.5rem; border-radius: 5px;">DD/MM/YYYY, HH:MM, Home Team, Away Team</p>
                         <p style="margin-bottom: 1rem; font-size: 0.9rem; opacity: 0.8;">Example:<br>
                         <span style="font-family: monospace;">01/02/2026, 14:30, England, France</span><br>
                         <span style="font-family: monospace;">01/02/2026, 17:00, Ireland, Wales</span><br>
                         <span style="font-family: monospace;">08/02/2026, 14:30, France, Ireland</span><br>Rounds are worked out from the dates: fixtures in the same Thursday to Sunday weekend are one round.</p>
-                        <textarea id="bulkImportData" rows="10" style="width: 100%; padding: 1rem; background: rgba(255,255,255,0.1); border: 2px solid rgba(212,175,55,0.3); color: var(--white); font-family: monospace; font-size: 0.9rem; border-radius: 5px; resize: vertical;" placeholder="01/02/2026, 14:30, England, France&#10;01/02/2026, 17:00, Ireland, Wales&#10;08/02/2026, 14:30, France, Ireland"></textarea>
+                        <textarea id="bulkImportData" rows="10" style="width: 100%; padding: 1rem; background: var(--surface-2); border: 2px solid var(--line-strong); color: var(--white); font-family: monospace; font-size: 0.9rem; border-radius: 5px; resize: vertical;" placeholder="01/02/2026, 14:30, England, France&#10;01/02/2026, 17:00, Ireland, Wales&#10;08/02/2026, 14:30, France, Ireland"></textarea>
                         <div class="bulk-import-actions" style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: flex-end;">
                             <button class="btn-cancel" onclick="closeBulkImport()">Cancel</button>
                             <button onclick="processBulkImport()">Import Fixtures</button>
@@ -435,7 +425,7 @@
 
             <!-- Rules Tab (Admin Only) -->
             <div id="rulesTab" class="prediction-section admin-only hidden" style="margin-top: 2rem;">
-                <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 1rem;">
+                <div style="background: var(--surface); padding: 2rem; border-radius: 10px; border: 1px solid var(--line-strong); margin-bottom: 1rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Scoring Rules</h2>
                     <p style="margin-bottom: 0;">Edit draft scoring values, preview points output, then publish when valid.</p>
                     <div class="past-year-banner hidden" data-past-year-banner role="alert"></div>
@@ -547,7 +537,7 @@
 
             <!-- Prize Fund Tab (Admin Only) -->
             <div id="prizeFundTab" class="prediction-section admin-only hidden" style="margin-top: 2rem;">
-                <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 1rem;">
+                <div style="background: var(--surface); padding: 2rem; border-radius: 10px; border: 1px solid var(--line-strong); margin-bottom: 1rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Prize Fund</h2>
                     <p style="margin-bottom: 0;">Configure entry fee and payout allocation. Currency is fixed to GBP.</p>
                     <p style="margin: 0.5rem 0 0; font-size: 0.9rem; opacity: 0.85;">Competitors who have not paid can be marked <strong>Exempt from the prize fund</strong> on the Competitors screen. They stay on the leaderboard but cannot win a prize and are not counted in the pot.</p>
@@ -600,7 +590,7 @@
 
             <!-- Years Tab (Admin Only) -->
             <div id="yearsTab" class="prediction-section admin-only hidden" style="margin-top: 2rem;">
-                <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
+                <div style="background: var(--surface); padding: 2rem; border-radius: 10px; border: 1px solid var(--line-strong); margin-bottom: 2rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Years</h2>
                     <p style="margin-bottom: 0;">Each year has its own fixtures, predictions, scoring and prize rules, and prediction lock. Competitors are shared across years.</p>
                 </div>
@@ -626,7 +616,7 @@
 
             <!-- Database Recovery Tab (Admin Only) -->
             <div id="recoveryTab" class="prediction-section hidden" style="margin-top: 4rem;">
-                <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 2rem;">
+                <div style="background: var(--surface); padding: 2rem; border-radius: 10px; border: 1px solid var(--line-strong); margin-bottom: 2rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Database Recovery</h2>
                     <p style="margin-bottom: 1rem;">Copy the SQL below and run it in your Supabase SQL Editor to recreate the database with all current data.</p>
                 </div>
@@ -679,7 +669,7 @@
 
             <!-- Usage Report Tab (Admin Only) -->
             <div id="usageReportTab" class="prediction-section admin-only hidden" style="margin-top: 2rem;">
-                <div style="background: rgba(255, 255, 255, 0.05); padding: 2rem; border-radius: 10px; border: 2px solid var(--gold); margin-bottom: 1rem;">
+                <div style="background: var(--surface); padding: 2rem; border-radius: 10px; border: 1px solid var(--line-strong); margin-bottom: 1rem;">
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Usage Report</h2>
                     <p style="margin-bottom: 0;">Shows the latest 100 usage events (logins and database writes).</p>
                 </div>
@@ -713,7 +703,7 @@
     <!-- Admin Help Modal -->
     <div id="adminHelpModal" class="modal hidden" onclick="if (event.target === this) closeAdminHelpModal()">
         <div class="modal-content admin-help-modal-content">
-            <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: #ff9b92; margin-bottom: 0.8rem; letter-spacing: 0.1em;">Admin Help</h2>
+            <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bad-text); margin-bottom: 0.8rem; letter-spacing: 0.1em;">Admin Help</h2>
             <div class="admin-help-content">
                 <div><strong>Fixtures and Scores</strong> Add/edit fixtures, enter scores and tries, set joker-eligible matches, and lock/unlock predictions.</div>
                 <div><strong>Predictions</strong> Review and correct competitor score predictions and tournament tries values.</div>
@@ -825,28 +815,28 @@
         <button type="button" class="install-tip-close" aria-label="Dismiss" onclick="dismissInstallTip()">&#10005;</button>
     </div>
 
-    <script src="js/constants.js?v=20261025-119"></script>
-    <script src="js/storage.js?v=20261025-119"></script>
-    <script src="js/state.js?v=20261025-119"></script>
-    <script src="js/years-admin.js?v=20261025-119"></script>
-    <script src="js/init.js?v=20261025-119"></script>
-    <script src="js/admin-fixtures.js?v=20261025-119"></script>
-    <script src="js/admin-competitors.js?v=20261025-119"></script>
-    <script src="js/profile.js?v=20261025-119"></script>
-    <script src="js/auth.js?v=20261025-119"></script>
-    <script src="js/predictions.js?v=20261025-119"></script>
-    <script src="js/scoring.js?v=20261025-119"></script>
-    <script src="js/trevs-tips.js?v=20261025-119"></script>
-    <script src="js/leaderboard.js?v=20261025-119"></script>
-    <script src="js/worm-chart.js?v=20261025-119"></script>
-    <script src="js/summary.js?v=20261025-119"></script>
-    <script src="js/fixture-chat.js?v=20261025-119"></script>
-    <script src="js/tour-images.js?v=20261025-119"></script>
-    <script src="js/tour.js?v=20261025-119"></script>
-    <script src="js/app-bar.js?v=20261025-119"></script>
-    <script src="js/export-pdf.js?v=20261025-119"></script>
-    <script src="js/rules-admin.js?v=20261025-119"></script>
-    <script src="js/recovery-usage.js?v=20261025-119"></script>
-    <script src="js/app-shell.js?v=20261025-119"></script>
+    <script src="js/constants.js?v=20261025-125"></script>
+    <script src="js/storage.js?v=20261025-125"></script>
+    <script src="js/state.js?v=20261025-125"></script>
+    <script src="js/years-admin.js?v=20261025-125"></script>
+    <script src="js/init.js?v=20261025-125"></script>
+    <script src="js/admin-fixtures.js?v=20261025-125"></script>
+    <script src="js/admin-competitors.js?v=20261025-125"></script>
+    <script src="js/profile.js?v=20261025-125"></script>
+    <script src="js/auth.js?v=20261025-125"></script>
+    <script src="js/predictions.js?v=20261025-125"></script>
+    <script src="js/scoring.js?v=20261025-125"></script>
+    <script src="js/trevs-tips.js?v=20261025-125"></script>
+    <script src="js/leaderboard.js?v=20261025-125"></script>
+    <script src="js/worm-chart.js?v=20261025-125"></script>
+    <script src="js/summary.js?v=20261025-125"></script>
+    <script src="js/fixture-chat.js?v=20261025-125"></script>
+    <script src="js/tour-images.js?v=20261025-125"></script>
+    <script src="js/tour.js?v=20261025-125"></script>
+    <script src="js/app-bar.js?v=20261025-125"></script>
+    <script src="js/export-pdf.js?v=20261025-125"></script>
+    <script src="js/rules-admin.js?v=20261025-125"></script>
+    <script src="js/recovery-usage.js?v=20261025-125"></script>
+    <script src="js/app-shell.js?v=20261025-125"></script>
 </body>
 </html>

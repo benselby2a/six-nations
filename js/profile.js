@@ -124,24 +124,17 @@
             closeProfile();
         }
 
-        // Change theme
+        // Light (default) or dark. Older saved values ("classic", "retro") count as light.
         function changeTheme(theme) {
-            const normalizedTheme = ['classic', 'retro', 'dark'].includes(theme) ? theme : 'classic';
-
-            // Apply theme to document
-            if (normalizedTheme === 'classic') {
-                document.documentElement.removeAttribute('data-theme');
+            const normalizedTheme = theme === 'dark' ? 'dark' : 'light';
+            if (normalizedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
             } else {
-                document.documentElement.setAttribute('data-theme', normalizedTheme);
+                document.documentElement.removeAttribute('data-theme');
             }
+            updateThemeToggle();
 
-            // Update the selector immediately
-            const selector = document.getElementById('themeSelect');
-            if (selector) {
-                selector.value = normalizedTheme;
-            }
-
-            // Save theme to cookie so it persists across page reloads
+            // Remember it across visits
             setCookie(THEME_COOKIE_NAME, normalizedTheme);
             try {
                 localStorage.setItem(THEME_STORAGE_KEY, normalizedTheme);
@@ -150,7 +143,20 @@
             }
         }
 
-        // Load user's saved theme
+        function toggleTheme() {
+            changeTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        }
+
+        // The account menu button says what it will switch to
+        function updateThemeToggle() {
+            const btn = document.getElementById('themeToggleBtn');
+            if (!btn) return;
+            const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+            btn.textContent = dark ? 'Light mode' : 'Dark mode';
+            btn.setAttribute('aria-pressed', dark ? 'true' : 'false');
+        }
+
+        // Load the saved theme
         function loadUserTheme() {
             let storageTheme = '';
             try {
@@ -159,7 +165,7 @@
                 storageTheme = '';
             }
             const cookieTheme = (getCookie(THEME_COOKIE_NAME) || '').trim().toLowerCase();
-            changeTheme(storageTheme || cookieTheme || 'classic');
+            changeTheme(storageTheme || cookieTheme || 'light');
         }
 
         function toggleGlobalHelp() {
