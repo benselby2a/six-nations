@@ -65,7 +65,7 @@ function tourBuildSteps(rulesHtml, chatLive) {
     ], '<p>It lays the table out on a page you can read at a glance, save or print. The picture shows the page you get.</p>'));
     if (chatLive) {
         steps.push(tourStep('chips', 'React to matches and results', [
-            'Tap the <strong>😀＋ chip</strong> under a match to react to the match with an emoji or one of the two team flags.',
+            'Tap the <strong>😀＋ chip</strong> under a match (or anywhere on the match header) to react to the match with an emoji or one of the two team flags.',
             'Or tap any <strong>prediction</strong> to react to that guess.'
         ], '<p>The most popular emoji show right on the table, and the pop-up lists who reacted.</p>'));
     }
