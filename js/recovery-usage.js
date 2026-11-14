@@ -222,7 +222,7 @@ ALTER TABLE usage_events ENABLE ROW LEVEL SECURITY;`;
 -- RESTORE ORDER: run everything above, then these files from the repo's supabase/ folder in order:
 --   auth_migration, years_migration, preregistered_emails_migration, registered_logins_migration,
 --   invitations_migration, users_email_migration, second_email_migration, profile_second_email_migration,
---   fixture_chat_migration, reaction_flags_migration
+--   fixture_chat_migration, reaction_flags_migration, usage_events_trim_migration
 -- Then run the sign-in emails and match chat below. Competitors sign in with an emailed code and link to their
 -- row by email automatically.
 -- ===========================================================================
