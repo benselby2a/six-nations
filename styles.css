@@ -26,6 +26,7 @@
     --card-bg: var(--surface);
     --card-border: var(--line-strong);
     --white: var(--text);
+    --grid-bg: #edf1ed;          /* the summary grid: a soft tint instead of stark white */
     --bad-text: #9b1c1c;
     --warn-text: #8a5300;
     --good-text: #0f6b3a;
@@ -52,6 +53,7 @@
     --red: #ff6b6b;
     --accent-blue: #6cb6ff;
     --shadow: rgba(0, 0, 0, 0.5);
+    --grid-bg: var(--surface);
     --bad-text: #ffb1a5;
     --warn-text: #ffe7b8;
     --good-text: #7ef5a8;
@@ -1313,7 +1315,7 @@
 
         .summary-table {
             width: 100%;
-            background: var(--surface);
+            background: var(--grid-bg);
             backdrop-filter: blur(10px);
             border-collapse: separate;
             border-spacing: 0;
@@ -1350,7 +1352,7 @@
         }
 
         .summary-table td.rank-col {
-            background: var(--surface);
+            background: var(--grid-bg);
             font-weight: 700;
             color: var(--gold);
         }
@@ -1373,7 +1375,7 @@
             font-size: 0.8rem;
             position: sticky;
             left: 40px;
-            background: var(--surface);
+            background: var(--grid-bg);
             z-index: 19;
             border-right: none;
             width: 140px;
@@ -1404,7 +1406,7 @@
         }
 
         .summary-table td.pts-col {
-            background: var(--surface);
+            background: var(--grid-bg);
             font-weight: 800;
             font-size: 1.1rem;
             color: var(--bright-gold);
@@ -1425,7 +1427,7 @@
         .summary-table tr:hover td.rank-col,
         .summary-table tr:hover td.competitor-name,
         .summary-table tr:hover td.pts-col {
-            background: var(--surface);
+            background: var(--grid-bg);
         }
 
         /* Highlight current logged in user */
@@ -1436,7 +1438,7 @@
         .summary-table tr.current-user-row td.rank-col,
         .summary-table tr.current-user-row td.competitor-name,
         .summary-table tr.current-user-row td.pts-col {
-            background: color-mix(in srgb, var(--gold) 16%, var(--surface));
+            background: color-mix(in srgb, var(--gold) 16%, var(--grid-bg));
         }
 
         .summary-table tr.current-user-row td.competitor-name {
@@ -1450,7 +1452,7 @@
         .summary-table tr.current-user-row:hover td.rank-col,
         .summary-table tr.current-user-row:hover td.competitor-name,
         .summary-table tr.current-user-row:hover td.pts-col {
-            background: color-mix(in srgb, var(--gold) 26%, var(--surface));
+            background: color-mix(in srgb, var(--gold) 26%, var(--grid-bg));
         }
 
         .match-header-cell {
@@ -4500,3 +4502,11 @@ body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-wi
 .summary-table thead th.rank-col { z-index: 36 !important; }
 .summary-table thead th.competitor-col { z-index: 35 !important; }
 .summary-table thead th.pts-col { z-index: 34 !important; }
+
+/* Tooltips: always a dark panel with light text, so they read on both themes */
+.tooltip { background: #10231a; color: #f4f7f4; border: 1px solid #e0b84a; font-size: 0.9rem; line-height: 1.35; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); }
+.tooltip::after { border-top-color: #e0b84a; }
+.tooltip-line.correct { color: #7be0a4; }
+.tooltip-line.incorrect { color: #ff9f9f; }
+.tooltip-line.bonus, .tooltip-line.joker-bonus { color: #f1d06a; }
+[data-tip]::after { background: #10231a; color: #f4f7f4; border-color: #e0b84a; }
