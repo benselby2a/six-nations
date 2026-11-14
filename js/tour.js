@@ -81,7 +81,7 @@ function tourBuildAdminSteps() {
         tourStep('admin-menu', 'Your admin menu', [
             'Tap <strong>Admin Functions</strong> at the top of the screen.',
             'Each button opens a section. The menu tucks itself away to leave room: tap Admin Functions again to bring it back.'
-        ], '<p>The <strong>Setup checklist</strong> button at the top opens a screen showing which setup tasks for the year are done.</p>'),
+        ], '<p>The <strong>Setup Checklist</strong> button opens a screen showing which setup tasks for the year are done.</p>'),
         tourStep('admin-fixtures', 'Fixtures and Scores', [
             'Admin Functions, then <strong>Fixtures and Scores</strong>.',
             'Tap a row to edit a fixture, set it Joker eligible, or enter the result and tries.'

@@ -122,6 +122,10 @@ const mock = `
   const b = await top(); console.log('back to normal at top:', JSON.stringify(b), b.th === b.tableTop);
   await page.evaluate(() => scrollTo(0, document.body.scrollHeight)); await page.waitForTimeout(250);
   const c = await top(); console.log('past the table:', JSON.stringify(c), c.th < c.tableBottom);
+  // the first three header cells (#, Competitor, Score) pin too, downwards and sideways
+  await page.evaluate(() => { const t = document.querySelector('.summary-table'); scrollTo(0, t.getBoundingClientRect().top + scrollY + 60); document.querySelector('.summary-container').scrollLeft = 120; }); await page.waitForTimeout(250);
+  const f = await page.evaluate(() => { const g = (sel) => { const r = document.querySelector(sel).getBoundingClientRect(); return { top: Math.round(r.top), left: Math.round(r.left) }; }; return { rank: g('.summary-table th.rank-col'), comp: g('.summary-table th.competitor-col'), pts: g('.summary-table th.pts-col'), box: Math.round(document.querySelector('.summary-container').getBoundingClientRect().left) }; });
+  console.log('first three headers pinned:', JSON.stringify(f), f.rank.top === 0 && f.comp.top === 0 && f.pts.top === 0 && f.rank.left <= f.box + 4);
   console.log('errors', errors);
   await browser.close();
 })();

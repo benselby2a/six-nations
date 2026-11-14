@@ -77,6 +77,7 @@
             } else if (tabName === 'checklist') {
                 if (!isCurrentUserAdmin()) return;
                 document.getElementById('checklistTab').classList.remove('hidden');
+                event.target.closest('.tab').classList.add('active');
             } else if (tabName === 'adminHome') {
                 if (!isCurrentUserAdmin()) return;
                 document.getElementById('adminHomeTab').classList.remove('hidden');
@@ -162,15 +163,8 @@
         const appReady = initializeData().then(() => {
             init();
 
-            // Apply previously selected theme from cookie immediately on load
-            let savedStorageTheme = '';
-            try {
-                savedStorageTheme = (localStorage.getItem(THEME_STORAGE_KEY) || '').trim().toLowerCase();
-            } catch (error) {
-                savedStorageTheme = '';
-            }
-            const savedTheme = (getCookie(THEME_COOKIE_NAME) || '').trim().toLowerCase();
-            changeTheme(savedStorageTheme || savedTheme || 'classic');
+            // Apply the saved light/dark choice straight away
+            loadUserTheme();
 
             // Direct PDF URL support: index.html?export=pdf
             const params = new URLSearchParams(window.location.search);
