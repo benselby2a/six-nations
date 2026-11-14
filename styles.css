@@ -4556,3 +4556,6 @@ body.summary-compact .summary-table td.prediction-cell .cell-extras { display: n
 @media (min-width: 900px) {
     .container { max-width: none; padding-left: 1rem; padding-right: 1rem; }
 }
+
+/* Tighter gap between the two teams in the headers */
+.match-header-cell .match-header-top .match-teams { height: 2.35em; line-height: 1.15; margin-bottom: 0.2rem; }
