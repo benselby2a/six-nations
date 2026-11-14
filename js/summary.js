@@ -77,7 +77,7 @@
                         </div>
                         <div class="match-header-bottom">
                             ${hasResult ? `<div class="match-result">${match.actualScore1} - ${match.actualScore2}</div>` : '<div class="no-result">-</div>'}
-                            ${hasTries ? `<div class="match-tries">(${totalMatchTries} tries)</div>` : ''}
+                            <div class="match-tries${hasTries ? '' : ' match-tries-empty'}">${hasTries ? `(${totalMatchTries} tries)` : '&nbsp;'}</div>
                             ${chatChipMarkup(match.id)}
                         </div>
                     </div>

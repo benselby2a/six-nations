@@ -4515,3 +4515,16 @@ body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-wi
 /* Tournament Stats and Prize Money: solid emerald panels in light mode (gold numbers, light text), as on the header */
 :root:not([data-theme="dark"]) .tries-stats-box,
 :root:not([data-theme="dark"]) .prize-money-box { background: var(--bar-bg); border-color: var(--bar-bg); color: var(--text); }
+
+/* Summary header cells: a fixed slot for each part, so everything lines up whatever a match has (joker, result, tries, chat) */
+.match-header-cell .match-header-cell-inner { display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; gap: 0; height: auto; min-height: 0; }
+.match-header-cell .match-header-top { display: flex; flex-direction: column; align-items: center; }
+.match-header-cell .match-header-bottom { display: flex; flex-direction: column; align-items: center; margin-top: 0; padding-top: 0; }
+.match-header-cell .joker-eligible-badge { height: 2.4em; margin: 0 0 0.3rem; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.15; }
+.match-header-cell .match-header-top .match-teams { height: 5.6em; margin: 0 0 0.3rem; line-height: 1.4; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+.match-header-cell .match-header-top .match-date { height: 2.8em; margin: 0 0 0.5rem; line-height: 1.4; display: flex; align-items: flex-start; justify-content: center; text-align: center !important; }
+.match-header-cell .match-header-bottom .match-result,
+.match-header-cell .match-header-bottom .no-result { height: 2.2rem; display: inline-flex; align-items: center; justify-content: center; margin: 0; }
+.match-header-cell .match-header-bottom .match-tries { height: 1.2rem; display: flex; align-items: center; justify-content: center; margin: 0.2rem 0 0; }
+.match-header-cell .match-header-bottom .match-tries-empty { visibility: hidden; }
+.match-header-cell .match-header-bottom .chat-chip { margin-top: 0.3rem; height: 2rem; }
