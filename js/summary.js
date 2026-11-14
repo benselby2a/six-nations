@@ -119,7 +119,7 @@
                 
                 html += `<tr class="${rowClass}" data-player="${escapeHtml(user.username)}">`;
                 html += `<td class="rank-col">${rank}</td>`;
-                html += `<td class="competitor-name">${getUserFlags(user.username)}${user.nickname}</td>`;
+                html += `<td class="competitor-name"><div class="comp-name"><span class="comp-nick">${user.nickname}</span>${getUserFlags(user.username)}</div></td>`;
                 html += `<td class="pts-col">${user.totalPoints}</td>`;
 
                 // Column for each match
