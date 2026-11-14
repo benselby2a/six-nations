@@ -60,10 +60,10 @@ function tourBuildSteps(rulesHtml, chatLive) {
         'On the Match Summary, tap the <strong>PDF icon</strong> above the table if you want the traditional view.'
     ], '<p>It lays the table out on a page you can read at a glance, save or print. The picture shows the page you get.</p>'));
     if (chatLive) {
-        steps.push(tourStep('chips', 'Comment on matches and results', [
-            'Tap the <strong>💬 chip</strong> under a match to comment on the match or react with an emoji.',
-            'Or tap any <strong>prediction</strong> to comment on that guess.'
-        ], '<p>Emoji and comment counts show right on the table.</p>'));
+        steps.push(tourStep('chips', 'React to matches and results', [
+            'Tap the <strong>😀＋ chip</strong> under a match to react to the match with an emoji.',
+            'Or tap any <strong>prediction</strong> to react to that guess.'
+        ], '<p>The most popular emoji show right on the table.</p>'));
     }
     steps.push(tourStep('stats', 'Stats and insights', [
         'Scroll down on the Match Summary, under the table.',

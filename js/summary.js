@@ -211,7 +211,7 @@
                                 ${chatCellBadge(user.username, match.id)}
                             </td>`;
                         } else if (fixtureChat.available) {
-                            // No result yet and no Joker: the tooltip only carries the chat (emoji and comments)
+                            // No result yet and no Joker: the tooltip only carries the reactions
                             html += `<td class="${jokerCellClass}"${chatCellAttrs(user.username, match.id)}>
                                 <div class="tooltip-container">
                                     <div class="${jokerScoreClass}"><span class="${score1Class}">${score1}</span> - <span class="${score2Class}">${score2}</span> ${jokerIndicator}</div>
