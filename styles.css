@@ -4594,3 +4594,8 @@ body.summary-compact .match-header-cell .match-header-top .match-teams { margin-
 
 /* Header row: the Joker-eligible card has no gold backing (the gold bar under the header already marks the column) */
 .match-header-cell .joker-eligible-icon { background: transparent; box-shadow: none; padding: 0; }
+
+/* Joker card in the prediction cells (and the inline card in compact mode): no gold backing either */
+.summary-table td.joker-cell .joker-indicator,
+.match-result-row .joker-inline,
+.cell-score .joker-inline { background: transparent; box-shadow: none; padding: 0; filter: none; }
