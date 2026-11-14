@@ -113,3 +113,40 @@ document.addEventListener('visibilitychange', () => {
         appHiddenAt = 0;
     }
 });
+
+// Match Summary: while any part of the table is on screen, its header row stays pinned at the top (like the first columns stay pinned at the left).
+// The table sits in a box that scrolls sideways, which stops CSS "sticky" following the page, so the header cells are shifted down by script instead.
+let pinProbe = null;
+function summaryPinTop() {
+    if (!pinProbe) {
+        pinProbe = document.createElement('div');
+        pinProbe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;padding-top:env(safe-area-inset-top,0px)';
+        document.body.appendChild(pinProbe);
+    }
+    return parseFloat(getComputedStyle(pinProbe).paddingTop) || 0;
+}
+let pinQueued = false;
+function updateSummaryHeaderPin() {
+    pinQueued = false;
+    const table = document.querySelector('.summary-table');
+    if (!table || !table.tHead) return;
+    const cells = table.tHead.querySelectorAll('th');
+    const rect = table.getBoundingClientRect();
+    const headH = table.tHead.offsetHeight;
+    let shift = Math.max(0, summaryPinTop() - rect.top);
+    shift = Math.min(shift, Math.max(0, rect.height - headH));
+    const value = shift > 0 ? `translateY(${shift}px)` : '';
+    cells.forEach(th => { if (th.style.transform !== value) th.style.transform = value; });
+    table.classList.toggle('header-pinned', shift > 0);
+}
+function queueSummaryHeaderPin() {
+    if (pinQueued) return;
+    pinQueued = true;
+    requestAnimationFrame(updateSummaryHeaderPin);
+}
+window.addEventListener('scroll', queueSummaryHeaderPin, { passive: true });
+window.addEventListener('resize', queueSummaryHeaderPin);
+document.addEventListener('DOMContentLoaded', () => {
+    const host = document.getElementById('summaryContainer');
+    if (host) new MutationObserver(queueSummaryHeaderPin).observe(host, { childList: true, subtree: true });
+});
