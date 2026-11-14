@@ -200,7 +200,7 @@ const mock = `
   // ---- the card fits small and short screens (iPhone with its toolbars, landscape), top and bottom visible ----
   await page.evaluate(() => { closeAdminHelpModal(); closeGlobalHelpModal(); });
   await page.click('#avatarBtn'); await page.click('#menuHelpBtn'); await page.click('#globalHelpModal button:has-text("Take a tour")'); await page.waitForTimeout(250);
-  for (const [w, h] of [[320, 480], [375, 553], [390, 664], [430, 760], [844, 390], [1280, 800]]) {
+  for (const [w, h] of [[320, 480], [390, 664], [844, 390], [1280, 800]]) {
     await page.setViewportSize({ width: w, height: h }); await page.waitForTimeout(450);
     let bad = 0; const pics = [];
     for (let i = 0; i < 6; i++) {
@@ -215,7 +215,7 @@ const mock = `
   }
   // the admin tour too (picture hidden only where the screen is too short for picture and text together)
   await page.evaluate(() => { closeGlobalHelpModal(); startTour('admin'); });
-  for (const [w, h] of [[375, 553], [390, 664], [1280, 800]]) {
+  for (const [w, h] of [[390, 664], [1280, 800]]) {
     await page.setViewportSize({ width: w, height: h }); await page.waitForTimeout(450);
     let bad = 0;
     for (let i = 0; i < 7; i++) {

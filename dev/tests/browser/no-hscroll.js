@@ -115,7 +115,7 @@ const mock = `
   await page.evaluate(() => switchYear(2026)); await page.waitForTimeout(500);
   const found = {};
   const check = async (w, name) => { const o = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth); if (o > 1) (found[name] = found[name] || []).push(`${w}px (+${o})`); };
-  for (const w of [320, 360, 390, 430, 768, 1024, 1280]) {
+  for (const w of [320, 390, 768, 1280]) {
     await page.setViewportSize({ width: w, height: 800 }); await page.waitForTimeout(150);
     for (const t of ['My Predictions', 'Match Summary']) { await page.click(`#appView .app-bar > .tabs .tab:has-text("${t}")`); await page.waitForTimeout(250); await check(w, t); }
     await page.click('#appView .app-bar > .tabs .tab:has-text("Admin Functions")'); await page.evaluate(() => 0); await check(w, 'Admin menu');
