@@ -4644,3 +4644,15 @@ body.summary-compact .match-header-cell .match-header-top .match-teams { margin-
 @media (max-width: 480px) {
     .summary-table th.match-header-cell { min-width: 68px !important; }
 }
+
+/* Competitor and Score headers: larger, set at an angle so they stay readable in narrow columns (phones) */
+.th-angled { display: inline; }
+@media (max-width: 480px), (orientation: landscape) and (max-height: 500px) and (hover: none) {
+    .summary-table th.competitor-col, .summary-table th.pts-col { vertical-align: bottom; text-align: left; overflow: visible; white-space: nowrap; }
+    .summary-table th.competitor-col .th-angled, .summary-table th.pts-col .th-angled {
+        display: block; width: 0; height: 1.3em; font-size: 0.95rem; line-height: 1.3; letter-spacing: 0.02em;
+        white-space: nowrap; transform: rotate(-40deg); transform-origin: left bottom; margin-left: 0.55rem; margin-bottom: 0.5rem;
+    }
+}
+.summary-table td.tries-col, .match-header-cell[role="button"] { cursor: pointer; }
+.match-header-cell[role="button"]:focus-visible { outline: 2px solid var(--bright-gold); outline-offset: -2px; }

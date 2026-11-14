@@ -61,13 +61,13 @@
             // Header row: Rank | Competitor | Score | Match 1 | Match 2 | ... | Predicted Tries
             html += '<thead><tr>';
             html += '<th class="rank-col">#</th>';
-            html += '<th class="competitor-col">Competitor</th>';
-            html += '<th class="pts-col">Score</th>';
+            html += '<th class="competitor-col"><span class="th-angled">Competitor</span></th>';
+            html += '<th class="pts-col"><span class="th-angled">Score</span></th>';
             filteredMatches.forEach((match, colIndex) => {
                 const hasResult = match.actualScore1 !== null && match.actualScore2 !== null;
                 const hasTries = match.actualTries1 !== null && match.actualTries2 !== null;
                 const totalMatchTries = hasTries ? match.actualTries1 + match.actualTries2 : null;
-                html += `<th class="match-header-cell ${match.jokerEligible ? 'joker-eligible-header' : ''}" data-match-col="${colIndex}" data-chat-match="${match.id}">
+                html += `<th class="match-header-cell ${match.jokerEligible ? 'joker-eligible-header' : ''}" data-match-col="${colIndex}" data-chat-match="${match.id}"${chatHeaderAttrs(match)}>
                     <div class="match-header-cell-inner">
                         <div class="match-header-top">
                             <div class="match-teams"><span>${getFlag(match.team1)} ${getTeamAbbr(match.team1)}</span><span>${getFlag(match.team2)} ${getTeamAbbr(match.team2)}</span></div>
@@ -211,23 +211,10 @@
                     let predictedTriesDisplay = '-';
                     let projectedTries = null;
                     
-                    if (userTries !== null && userTries !== undefined) {
-                        // Calculate average tries per game from user's predictions and project to 15 games
-                        const userPredictions = users[user.username].predictions;
-                        const numPredictions = Object.keys(userPredictions).length;
-                        
-                        if (numPredictions > 0 && completedMatches > 0) {
-                            // Calculate average actual tries per completed match
-                            const avgTriesPerMatch = totalActualTries / completedMatches;
-                            // Project to full tournament
-                            projectedTries = Math.round(avgTriesPerMatch * totalMatches);
-                            predictedTriesDisplay = `<div class="tooltip-container">${userTries}<div class="tooltip"><span class="tooltip-line">User prediction: ${userTries}</span><span class="tooltip-line">Avg tries/match: ${avgTriesPerMatch.toFixed(1)}</span><span class="tooltip-line">Projected total: ${projectedTries}</span></div></div>`;
-                        } else {
-                            predictedTriesDisplay = userTries;
-                        }
-                    }
+                    // The detail (average per match, projected total) opens in the pop-up when the cell is tapped or clicked
+                    if (userTries !== null && userTries !== undefined) predictedTriesDisplay = userTries;
                     
-                    html += `<td class="tries-col">${predictedTriesDisplay}</td>`;
+                    html += `<td class="tries-col" data-tries-user="${escapeHtml(user.username)}" tabindex="0" role="button" aria-label="${escapeHtml(chatDisplayName(user.username))}'s tries prediction: open details">${predictedTriesDisplay}</td>`;
                 }
                 
                 html += '</tr>';
