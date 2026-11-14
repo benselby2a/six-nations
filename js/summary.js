@@ -267,6 +267,15 @@
             container.scrollLeft = Math.max(0, scrollTarget);
         }
 
+        // A table that is only a pixel or two wider than its box (a round of three games on a phone) must not scroll at all:
+        // on iPhone that sliver let the box bounce from side to side. Locked, it simply stays put.
+        function syncSummaryScrollLock() {
+            const box = document.querySelector('.summary-container');
+            if (!box) return;
+            box.classList.remove('no-scroll');
+            box.classList.toggle('no-scroll', box.scrollWidth - box.clientWidth <= 3);
+        }
+
         function checkTableOverflow() {
             const container = document.querySelector('.summary-container');
             const scrollHint = document.getElementById('scrollHint');
@@ -278,6 +287,7 @@
             } else {
                 scrollHint.classList.add('hidden');
             }
+            syncSummaryScrollLock();
 
             // Enable touch tooltips for mobile
             initTouchTooltips();
