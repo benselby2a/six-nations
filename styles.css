@@ -4583,5 +4583,11 @@ body.summary-compact .match-header-cell .match-header-top .match-teams { margin-
 @media (min-width: 700px) {
     .summary-table th.rank-col, .summary-table td.rank-col { min-width: 32px; width: 32px; padding-left: 0.3rem; padding-right: 0.3rem; }
     .summary-table th.competitor-col, .summary-table td.competitor-name { min-width: 104px; width: 104px; max-width: 104px; left: 32px; padding-left: 0.5rem; padding-right: 0.4rem; }
-    .summary-table th.pts-col, .summary-table td.pts-col { min-width: 46px; width: 46px; max-width: 46px; left: 136px; padding-left: 0.4rem; padding-right: 0.4rem; }
+    .summary-table th.pts-col, .summary-table td.pts-col { min-width: 56px; width: 56px; max-width: 56px; left: 136px; padding-left: 0.4rem; padding-right: 0.4rem; }
 }
+
+/* Match columns: thin dividers, and a Joker-eligible match gets a gold bar along its whole header so it is clear which column the Joker belongs to */
+.summary-table th.match-header-cell { border-left: 1px solid rgb(var(--ink) / 0.0); }
+.summary-table th.match-header-cell, .summary-table td.prediction-cell { border-left: 1px solid rgba(255, 255, 255, 0.18); }
+.summary-table td.prediction-cell { border-left-color: var(--line); }
+.summary-table th.joker-eligible-header { box-shadow: inset 0 -5px 0 #e8b02a; }
