@@ -58,7 +58,7 @@ function tourBuildSteps(rulesHtml, chatLive) {
     ], '<p>Hover or tap a prediction to see how it was scored.</p>'));
     steps.push(tourStep('pdf', 'The traditional view', [
         'On the Match Summary, tap the <strong>PDF icon</strong> above the table if you want the traditional view.'
-    ], '<p>It lays the table out on a page you can read at a glance, save or print.</p>'));
+    ], '<p>It lays the table out on a page you can read at a glance, save or print. The picture shows the page you get.</p>'));
     if (chatLive) {
         steps.push(tourStep('chips', 'Comment on matches and results', [
             'Tap the <strong>💬 chip</strong> under a match to comment on the match or react with an emoji.',

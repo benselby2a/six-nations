@@ -62,6 +62,33 @@
   await shot('predictions', { before: () => clickTab('My Predictions'), clip: [tab('My Predictions'), '#matchesContainer .prediction-table-container'], marks: [tab('My Predictions'), '#matchesContainer .prediction-table-container button.btn-success'], maxH: 760 });
   await shot('score', { before: () => clickTab('Match Summary'), clip: [tab('Match Summary'), '.summary-container'], marks: [tab('Match Summary'), '.summary-container', '#summaryRefreshBtn'], maxH: 760 });
   await shot('pdf', { clip: ['.summary-toolbar', '.summary-updated-row'], marks: ['#exportPdfBtn'] });
+  // The PDF itself: build it with the app's own export, save the download, turn page 1 into a picture
+  try {
+    const glob = (name) => require('child_process').execSync(`find ${process.env.JSPDF_DIR} -name ${name} | head -1`).toString().trim();
+    await page.addScriptTag({ content: fs.readFileSync(glob('jspdf.umd.min.js'), 'utf8') });
+    await page.addScriptTag({ content: fs.readFileSync(glob('jspdf.plugin.autotable.min.js'), 'utf8') });
+    const [download] = await Promise.all([page.waitForEvent('download'), page.evaluate(() => exportToPDF())]);
+    const pdfPath = process.env.JSPDF_DIR + '/summary.pdf';
+    await download.saveAs(pdfPath);
+    require('child_process').execSync(`pdftoppm -png -r 130 -f 1 -l 1 -singlefile ${pdfPath} ${process.env.JSPDF_DIR}/page`);
+    require('child_process').execSync(`convert ${process.env.JSPDF_DIR}/page.png -trim +repage -bordercolor white -border 12 -quality 85 ${REPO}/tour-images/pdf-output.jpg`);
+    // Stack the toolbar picture and the PDF page into one picture (same width), keeping the mark on the PDF icon
+    const cp = require('child_process');
+    const top = `${REPO}/tour-images/pdf.jpg`, pageImg = `${REPO}/tour-images/pdf-output.jpg`;
+    const dimsOf = (f) => cp.execSync(`identify -format "%w %h" ${f}`).toString().split(' ').map(Number);
+    const [tw, th] = dimsOf(top);
+    cp.execSync(`convert ${pageImg} -resize ${tw}x ${process.env.JSPDF_DIR}/pdfpage.png`);
+    const gap = 24;
+    const ph = dimsOf(process.env.JSPDF_DIR + '/pdfpage.png')[1];
+    cp.execSync(`convert ${top} -size ${tw}x${gap} xc:#0d2818 ${process.env.JSPDF_DIR}/pdfpage.png -append -quality 85 ${top}`);
+    fs.unlinkSync(pageImg);
+    const total = th + gap + ph;
+    const bufP = fs.readFileSync(top);
+    const m = manifest['pdf'];
+    m.marks = m.marks.map(k => ({ ...k, y: Math.round(k.y * th / total * 10) / 10, h: Math.round(k.h * th / total * 10) / 10 }));
+    m.h = total; m.v = crypto.createHash('md5').update(bufP).digest('hex').slice(0, 8);
+    console.log('pdf (with page)', tw + 'x' + total, Math.round(bufP.length / 1024) + 'KB');
+  } catch (e) { console.log('PDF PICTURE FAILED', e.message); }
   await shot('chips', { clip: ['.summary-container'], marks: [{ visible: '[data-chat-chip]' }, { visible: 'td[data-chat-user]' }], maxH: 560 });
   await shot('stats', { scrollTo: '#triesStatsContainer', clip: ['#triesStatsContainer', '#prizeMoneyContainer'], marks: ['#triesStatsContainer', '#prizeMoneyContainer'], maxH: 760 });
 
