@@ -24,7 +24,7 @@ const TOUR_IMAGES = {
  },
  "score": {
   "src": "tour-images/score.jpg",
-  "v": "68723d10",
+  "v": "b896da2e",
   "w": 756,
   "h": 1520,
   "marks": [
@@ -53,7 +53,7 @@ const TOUR_IMAGES = {
  },
  "pdf": {
   "src": "tour-images/pdf.jpg",
-  "v": "8f275ee1",
+  "v": "12ab5621",
   "w": 756,
   "h": 450,
   "marks": [
@@ -68,21 +68,21 @@ const TOUR_IMAGES = {
  },
  "chips": {
   "src": "tour-images/chips.jpg",
-  "v": "a45f5fb4",
+  "v": "2374889d",
   "w": 756,
   "h": 1120,
   "marks": [
    {
     "n": 1,
-    "x": 43.9,
-    "y": 32.3,
-    "w": 11.8,
-    "h": 5
+    "x": 43.4,
+    "y": 37.1,
+    "w": 12.8,
+    "h": 5.7
    },
    {
     "n": 2,
     "x": 61,
-    "y": 40.1,
+    "y": 43.6,
     "w": 19.2,
     "h": 10.5
    }
@@ -90,7 +90,7 @@ const TOUR_IMAGES = {
  },
  "stats": {
   "src": "tour-images/stats.jpg",
-  "v": "485b4d83",
+  "v": "3200f9a8",
   "w": 756,
   "h": 1520,
   "marks": [
