@@ -6,6 +6,13 @@ let fixtureChatSelection = null;   // { matchId, username (or null for the match
 let fixtureChatBusy = false;
 const FIXTURE_CHAT_EMOJIS = ['🔥', '😂', '😱', '👏', '😭', '🏉'];
 
+// The reactions offered on a match: the six standard ones plus the home and away team flags
+function chatEmojiOptions(matchId) {
+    const match = matches.find(m => m.id === matchId);
+    const flags = match ? [getFlag(match.team1), getFlag(match.team2)].filter(Boolean) : [];
+    return [...FIXTURE_CHAT_EMOJIS, ...flags];
+}
+
 function chatUsernameById(id) {
     return Object.keys(users).find(u => users[u].id === id) || null;
 }
@@ -75,7 +82,7 @@ function chatCellBadge(username, matchId) {
 function chatTooltipInner(username, matchId) {
     const thread = chatThread(matchId, username);
     let html = '';
-    FIXTURE_CHAT_EMOJIS.filter(e => (thread.reactions[e] || []).length).forEach(emoji => {
+    chatEmojiOptions(matchId).filter(e => (thread.reactions[e] || []).length).forEach(emoji => {
         const names = thread.reactions[emoji].map(w => w.username === currentUsername ? 'You' : escapeHtml(chatDisplayName(w.username))).join(', ');
         html += `<span class="tooltip-line tooltip-reaction">${emoji} ${names}</span>`;
     });
@@ -179,14 +186,15 @@ function renderFixtureChat() {
         }
     }
 
-    const reactButtons = FIXTURE_CHAT_EMOJIS.map(emoji => {
+    const options = chatEmojiOptions(match.id);
+    const reactButtons = options.map(emoji => {
         const who = thread.reactions[emoji] || [];
         const mine = who.some(w => w.username === currentUsername);
         const names = who.map(w => w.username === currentUsername ? 'You' : chatDisplayName(w.username)).join(', ');
         return `<button type="button" class="fc-emoji" ${canPost ? '' : 'disabled'} aria-pressed="${mine}" title="${escapeHtml(names || 'No reactions yet')}" aria-label="${emoji} ${who.length}${names ? ': ' + escapeHtml(names) : ''}" onclick="toggleFixtureReaction('${emoji}')">${emoji}${who.length ? `<small>${who.length}</small>` : ''}</button>`;
     }).join('');
 
-    const whoRows = FIXTURE_CHAT_EMOJIS.filter(e => (thread.reactions[e] || []).length).map(emoji =>
+    const whoRows = options.filter(e => (thread.reactions[e] || []).length).map(emoji =>
         `<li><span aria-hidden="true">${emoji}</span><span>${thread.reactions[emoji].map(w => w.username === currentUsername ? '<span class="fc-you">You</span>' : escapeHtml(chatDisplayName(w.username))).join(', ')}</span></li>`);
 
     document.getElementById('fixtureChatBody').innerHTML = `${predCard}
