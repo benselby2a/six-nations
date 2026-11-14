@@ -4775,3 +4775,11 @@ body.in-app::before { display: none; }
 .checklist-btn.done { border-color: #2ecc71; background: rgba(46, 204, 113, 0.12); }
 .checklist-btn.done .checklist-btn-status { background: #2ecc71; }
 .readiness-checklist { margin-top: 0; }
+
+/* My Predictions: rules in an expandable section (same wording as the tour) */
+.rules-expander { margin: 0 0 1rem; border: 2px solid rgba(212, 175, 55, 0.5); border-radius: 10px; background: rgba(255, 255, 255, 0.05); }
+.rules-expander summary { cursor: pointer; padding: 0.7rem 1rem; font-family: 'Bebas Neue', cursive; font-size: 1.25rem; letter-spacing: 0.08em; color: var(--bright-gold); list-style: none; display: flex; justify-content: space-between; align-items: center; }
+.rules-expander summary::-webkit-details-marker { display: none; }
+.rules-expander summary::after { content: '▸'; color: var(--gold); }
+.rules-expander[open] summary::after { content: '▾'; }
+.rules-expander .tour-list { margin: 0; padding: 0 1rem 0.9rem 2.2rem; font-size: 0.9rem; line-height: 1.5; }

@@ -31,6 +31,8 @@
             return Math.min(maxAllowed, getEligibleJokerMatchIds().length);
         }
 
+        let predictionRulesOpen = false;
+
         function getPredictionChecklistStatus(username) {
             const userData = users[username] || {};
             const userPredictions = userData.predictions || {};
@@ -429,6 +431,12 @@
             } else {
                 html += '<div class="unlock-banner">🔓 Predictions are OPEN. Click Edit then Save to submit each scoreline.</div>';
             }
+
+            // Rules for this year, the same wording as the tour; stays open/closed across re-draws
+            html += `<details class="rules-expander"${predictionRulesOpen ? ' open' : ''} ontoggle="predictionRulesOpen = this.open">
+                <summary>Rules for ${selectedYear}</summary>
+                ${tourRulesHtml()}
+            </details>`;
 
             // Always show checklist so missing scores/joker/tries are explicit.
             html += renderPredictionChecklist(currentUsername);
