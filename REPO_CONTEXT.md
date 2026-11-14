@@ -270,7 +270,7 @@ This is the main browser-to-Supabase boundary.
 
 ## App icon
 
-- Original artwork (not the official Six Nations crest): a gold rugby ball inside a ring of the six nations' flags (England, France, Italy, Wales, Ireland, Scotland) on green. Sources are `icons/icon.svg` (full), `icons/icon-small.svg` (favicon, ball only) and `icons/icon-maskable.svg` (Android, inside the safe zone). The PNGs in `icons/` and `favicon.ico` are rendered from them (opaque, as iOS requires for `apple-touch-icon`).
+- Original artwork (not the official Six Nations crest): a modern flat rugby ball (white with emerald seams and gold lacing, soft shadow) on an emerald gradient. Sources are `icons/icon.svg` (full), `icons/icon-small.svg` (favicon, ball only on a rounded square) and `icons/icon-maskable.svg` (Android, ball scaled into the safe zone). The PNGs in `icons/` and `favicon.ico` are rendered from them with Playwright (screenshot of the SVG at each size; opaque for `apple-touch-icon`; `favicon.ico` = `convert favicon-16.png favicon-32.png favicon-48.png favicon.ico`). Bump the `?v=` on the icon links in `index.html` and `manifest.json` when the artwork changes, so phones refetch it.
 - `index.html` links the favicons, the 180px `apple-touch-icon`, a theme colour and `manifest.json`.
 
 ## Competitors screen
@@ -490,4 +490,4 @@ This is the main browser-to-Supabase boundary.
 - Compact mode defaults on for phones (`isPhoneScreen()`: width 480px or less, or a phone held sideways) when nothing is saved; a saved choice (`summaryCompact` 1/0) always wins. A phone held sideways also uses the full width with a 0.5rem border. The tour has a Compact mode step (picture `compact`). Test: `compact-default`.
 
 - Usage log: `supabase/usage_events_trim_migration.sql` (idempotent) adds a trigger that keeps only the newest 100 `usage_events` rows after every insert (a security definer function, so it works for non-admins; clients cannot call it) and trims existing rows when run. Test: `dev/tests/sql/sql-usage-trim.js`; `verify_security.sql` check 20. The Usage Report shows those 100; "Remove All Usage Events" still clears the log.
-- Taps: a match header (anywhere, not just the chip) opens that match's reactions; a prediction cell opens the prediction; a Predicted Tries cell opens the tries pop-up (`openTriesDetail` in `js/fixture-chat.js`, reusing the same modal; there is no tries tooltip). On phones the Competitor and Score headers are larger and set at an angle (`.th-angled`). Test: `header-click`.
+- Taps: a match header (anywhere, not just the chip) opens that match's reactions; a prediction cell opens the prediction; a point on the Points Progression chart opens that game in the same pop-up (`openWormPointDetail`; there are no tooltips on the chart or the summary table, and the Predicted Tries column is gone). On phones the Competitor and Score headers are larger and set at an angle (`.th-angled`). Test: `header-click`.

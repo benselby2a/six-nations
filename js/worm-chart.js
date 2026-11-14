@@ -159,7 +159,7 @@
 
             container.innerHTML = `
                 <div class="worm-chart-title">Points Progression${roundOnly ? ` (Round ${selectedRound})` : ''}</div>
-                <div class="worm-chart-hover-hint">Mouse over or tap a player, line, or point to highlight and view details.</div>
+                <div class="worm-chart-hover-hint">Hover or tap a player or line to highlight them; click or tap a point for that game's details.</div>
                 <div class="worm-chart-wrap">
                     <svg class="worm-chart-svg" width="100%" viewBox="0 0 ${svgWidth} ${svgHeight}" role="img" aria-label="Line chart showing each player's cumulative points per game">
                         <line class="worm-axis-line" x1="${marginLeft}" y1="${marginTop}" x2="${marginLeft}" y2="${marginTop + plotHeight}"></line>
@@ -170,7 +170,6 @@
                         <text class="worm-axis-title" x="${marginLeft + (plotWidth / 2)}" y="${svgHeight - 8}" text-anchor="middle">Game</text>
                         <text class="worm-axis-title" x="16" y="${marginTop + (plotHeight / 2)}" text-anchor="middle" transform="rotate(-90 16 ${marginTop + (plotHeight / 2)})">Total Points</text>
                     </svg>
-                    <div id="wormPointTooltip" class="worm-point-tooltip hidden"></div>
                 </div>
                 <div class="worm-legend">${legend}</div>
             `;
@@ -200,7 +199,6 @@
             const container = document.getElementById('wormChartContainer');
             if (!container) return;
             const wrap = container.querySelector('.worm-chart-wrap');
-            const tooltip = container.querySelector('#wormPointTooltip');
 
             const activate = username => setActiveWormPlayer(username);
             const clear = () => setActiveWormPlayer(null);
@@ -212,7 +210,32 @@
                 if (!username) return;
                 if (getActiveUsername() === username) {
                     clear();
-                    if (tooltip) tooltip.classList.add('hidden');
+                    return;
+                }
+                activate(username);
+            };
+            container.querySelectorAll('.worm-legend-item').forEach(item => {
+                const isActive = hasActive && item.dataset.player === activeUsername;
+                item.classList.toggle('is-active', isActive);
+                item.classList.toggle('is-dimmed', hasActive && !isActive);
+            });
+        }
+
+        function bindWormChartInteractions() {
+            const container = document.getElementById('wormChartContainer');
+            if (!container) return;
+            const wrap = container.querySelector('.worm-chart-wrap');
+
+            const activate = username => setActiveWormPlayer(username);
+            const clear = () => setActiveWormPlayer(null);
+            const getActiveUsername = () => {
+                const activeSeries = container.querySelector('.worm-series.is-active');
+                return activeSeries ? activeSeries.dataset.player : null;
+            };
+            const togglePlayer = username => {
+                if (!username) return;
+                if (getActiveUsername() === username) {
+                    clear();
                     return;
                 }
                 activate(username);
@@ -274,60 +297,30 @@
                 row.addEventListener('mouseleave', clear);
             });
 
-            if (!wrap || !tooltip) return;
-
-            const showPointTooltip = (event, point) => {
-                tooltip.innerHTML = `
-                    <div class="worm-point-tooltip-player">${escapeHtml(point.dataset.playerName || '')}</div>
-                    <div>${escapeHtml(point.dataset.match || '')}</div>
-                    <div>Result: ${escapeHtml(point.dataset.result || '')}</div>
-                    <div>Prediction: ${escapeHtml(point.dataset.prediction || '')}</div>
-                    <div>Points this game: ${escapeHtml(point.dataset.pointsGame || '0')}</div>
-                    <div>Total points: ${escapeHtml(point.dataset.total || '0')}</div>
-                `;
-                tooltip.classList.remove('hidden');
-
-                const wrapRect = wrap.getBoundingClientRect();
-                const pointer = getClientPosition(event, point);
-                const left = pointer.clientX - wrapRect.left + 12;
-                const top = pointer.clientY - wrapRect.top + 12;
-                const maxLeft = Math.max(8, wrap.clientWidth - tooltip.offsetWidth - 8);
-                const maxTop = Math.max(8, wrap.clientHeight - tooltip.offsetHeight - 8);
-
-                tooltip.style.left = `${Math.min(Math.max(8, left), maxLeft)}px`;
-                tooltip.style.top = `${Math.min(Math.max(8, top), maxTop)}px`;
-            };
-
-            const hidePointTooltip = () => {
-                tooltip.classList.add('hidden');
-            };
+            if (!wrap) return;
 
             container.querySelectorAll('.worm-point').forEach(point => {
-                point.addEventListener('mouseenter', event => showPointTooltip(event, point));
-                point.addEventListener('mousemove', event => showPointTooltip(event, point));
-                point.addEventListener('mouseleave', hidePointTooltip);
+                point.addEventListener('mouseenter', () => activate(point.dataset.username || ''));
                 point.addEventListener('click', event => {
                     event.stopPropagation();
                     activate(point.dataset.username || '');
-                    showPointTooltip(event, point);
+                    openWormPointDetail(point);
                 });
                 point.addEventListener('touchstart', event => {
                     event.preventDefault();
                     event.stopPropagation();
                     activate(point.dataset.username || '');
-                    showPointTooltip(event, point);
+                    openWormPointDetail(point);
                 }, { passive: false });
             });
 
             wrap.addEventListener('click', event => {
                 if (event.target && event.target.classList && event.target.classList.contains('worm-point')) return;
-                hidePointTooltip();
                 clear();
             });
             wrap.addEventListener('touchstart', event => {
                 const target = event.target;
                 if (target && target.classList && target.classList.contains('worm-point')) return;
-                hidePointTooltip();
                 clear();
             }, { passive: true });
         }
