@@ -65,7 +65,9 @@
 :root:not([data-theme="dark"]) .app-bar,
 :root:not([data-theme="dark"]) .account-menu,
 :root:not([data-theme="dark"]) .tour-card,
-:root:not([data-theme="dark"]) .fixture-chat-sheet {
+:root:not([data-theme="dark"]) .fixture-chat-sheet,
+:root:not([data-theme="dark"]) .tries-stats-box,
+:root:not([data-theme="dark"]) .prize-money-box {
     --text: #fafafa;
     --white: #fafafa;
     --ink: 255 255 255;
@@ -4509,3 +4511,7 @@ body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-wi
 
 /* Joker picks: the card itself stands out (a gold badge behind the card emoji), the cell stays as it is */
 .summary-table td.joker-cell .joker-indicator { display: inline-flex; align-items: center; justify-content: center; margin-left: 0.3rem; padding: 0.08rem 0.28rem; font-size: 1.3rem; line-height: 1; border-radius: 6px; background: #e8b02a; box-shadow: 0 0 0 2px rgba(232, 176, 42, 0.4), 0 2px 5px rgba(0, 0, 0, 0.35); vertical-align: middle; }
+
+/* Tournament Stats and Prize Money: solid emerald panels in light mode (gold numbers, light text), as on the header */
+:root:not([data-theme="dark"]) .tries-stats-box,
+:root:not([data-theme="dark"]) .prize-money-box { background: var(--bar-bg); border-color: var(--bar-bg); color: var(--text); }
