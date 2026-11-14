@@ -4637,3 +4637,10 @@ body.summary-compact .match-header-cell .match-header-top .match-teams { margin-
 @media (orientation: landscape) and (max-height: 500px) and (hover: none) {
     .match-result-row .joker-inline { display: inline-flex; }
 }
+
+/* The summary box never bounces sideways: no overscroll chaining, and no scrolling at all when the table only just overflows */
+.summary-container { overscroll-behavior-x: none; }
+.summary-container.no-scroll { overflow-x: hidden; }
+@media (max-width: 480px) {
+    .summary-table th.match-header-cell { min-width: 68px !important; }
+}
