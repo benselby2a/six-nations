@@ -4439,7 +4439,7 @@ body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-wi
 /* Summary header row stays pinned while the table is on screen (see updateSummaryHeaderPin) */
 .summary-table thead th { z-index: 30 !important; }
 .summary-table.header-pinned thead th { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35); }
-.summary-table.header-pinned thead th:not(.rank-col):not(.competitor-col):not(.pts-col) { background: var(--gold) !important; }
+.summary-table thead th:not(.rank-col):not(.competitor-col):not(.pts-col) { background: var(--gold) !important; }
 .summary-table thead th.match-header-cell, .summary-table thead th.tries-col { position: sticky; top: 0; }
 
 .fixture-actuals-hint { font-size: 0.85rem; line-height: 1.4; margin: 0 0 0.9rem; padding: 0.55rem 0.8rem; border-left: 3px solid var(--gold); background: rgb(var(--ink) / 0.06); border-radius: 0 6px 6px 0; }
@@ -4495,3 +4495,8 @@ body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-wi
 #appView .app-bar > .tabs .tab:hover { background: transparent; color: var(--text); }
 #appView .app-bar > .tabs .tab.active, #appView .app-bar > .tabs .tab.admin-top-tab.active { background: transparent; color: var(--text); border-bottom-color: var(--tab-underline); }
 .summary-table thead .match-teams, .summary-table thead .match-date, .summary-table thead .joker-eligible-badge, .summary-table thead .match-tries, .summary-table thead .no-result { color: var(--on-accent); }
+
+/* The pinned first three header cells sit above the header cells that scroll under them */
+.summary-table thead th.rank-col { z-index: 36 !important; }
+.summary-table thead th.competitor-col { z-index: 35 !important; }
+.summary-table thead th.pts-col { z-index: 34 !important; }
