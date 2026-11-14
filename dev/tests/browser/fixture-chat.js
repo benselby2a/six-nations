@@ -119,15 +119,15 @@ const mock = `
   await t('1b tooltip text', () => ({ withResult: document.querySelector('td[data-chat-user="sam"][data-chat-match="1"] .tooltip').textContent.replace(/\s+/g, ' ').trim(), noResultNoJoker: document.querySelector('td[data-chat-user="ben"][data-chat-match="2"] .tooltip').textContent.replace(/\s+/g, ' ').trim(), empty: document.querySelector('td[data-chat-user="ben"][data-chat-match="1"] .tooltip').className }));
   await page.hover('td[data-chat-user="sam"][data-chat-match="1"]'); await page.waitForTimeout(400);
   console.log('1c hover shows the tooltip:', await page.evaluate(() => getComputedStyle(document.querySelector('td[data-chat-user="sam"][data-chat-match="1"] .tooltip')).visibility), '| clicking still opens the sheet:');
-  await page.click('[data-chat-chip="1"]'); await page.waitForTimeout(200);
+  await page.evaluate(() => scrollTo(0, 0)); await page.mouse.move(2, 2); await page.click('.summary-container [data-chat-chip="1"]'); await page.waitForTimeout(200);
   await t('2 match chat opens', () => ({ open: document.body.classList.contains('fixture-chat-open'), title: document.getElementById('fixtureChatTitle').textContent, comments: [...document.querySelectorAll('.fc-comment-text')].map(x => x.textContent), who: [...document.querySelectorAll('.fc-who li')].map(x => x.textContent), injected: document.querySelectorAll('.fc-comment-text b').length, tabs: document.querySelectorAll('.fc-tab').length }));
   await page.fill('#fixtureChatInput', 'My first comment'); await page.click('#fixtureChatPost'); await page.waitForTimeout(300);
   console.log('3a Post closed the chat:', !(await sheetOpen()));
   await t('3 posted', () => ({ comments: 0, chip: document.querySelector('[data-chat-chip="1"]').textContent.trim(), row: __db.fixture_comments.filter(c => c.body === 'My first comment').map(c => ({ user_id: c.user_id, target: c.target_user_id, match: c.match_id })), }));
-  await page.click('[data-chat-chip="1"]'); await page.waitForTimeout(200);
+  await page.evaluate(() => scrollTo(0, 0)); await page.mouse.move(2, 2); await page.click('.summary-container [data-chat-chip="1"]'); await page.waitForTimeout(200);
   await page.click('#fixtureChatPost'); await page.waitForTimeout(150);
   console.log('3b Post with nothing typed closes the chat too:', !(await sheetOpen()), '| rows added:', await page.evaluate(() => __db.fixture_comments.length));
-  await page.click('[data-chat-chip="1"]'); await page.waitForTimeout(200);
+  await page.evaluate(() => scrollTo(0, 0)); await page.mouse.move(2, 2); await page.click('.summary-container [data-chat-chip="1"]'); await page.waitForTimeout(200);
   await page.click('.fc-emoji:has-text("👏")'); await page.waitForTimeout(300);
   await t('4 reacted', () => ({ rows: __db.fixture_reactions.filter(r => r.user_id === 1).map(r => r.emoji + ':' + r.target_user_id), who: [...document.querySelectorAll('.fc-who li')].map(x => x.textContent), pressed: document.querySelector('.fc-emoji[aria-pressed="true"]').textContent }));
   await page.click('.fc-emoji:has-text("👏")'); await page.waitForTimeout(300);
@@ -151,7 +151,7 @@ const mock = `
   await page.evaluate(async () => { await refreshSummaryData(); });
   await page.evaluate(() => logout()); await page.waitForTimeout(300);
   await page.evaluate(() => loginAsGuest()); await page.waitForTimeout(500);
-  await page.click('[data-chat-chip="1"]'); await page.waitForTimeout(200);
+  await page.evaluate(() => scrollTo(0, 0)); await page.mouse.move(2, 2); await page.click('.summary-container [data-chat-chip="1"]'); await page.waitForTimeout(200);
   await t('12 guest is read only', () => ({ comments: document.querySelectorAll('.fc-comment').length, textarea: !!document.getElementById('fixtureChatInput'), note: !!document.querySelector('.fc-guest-note'), emojiDisabled: [...document.querySelectorAll('.fc-emoji')].every(b => b.disabled), deleteButtons: document.querySelectorAll('.fc-delete').length }));
   console.log('errors', errors);
   await browser.close();
