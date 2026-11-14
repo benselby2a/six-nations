@@ -28,13 +28,13 @@ function chatThread(matchId, username) {
 }
 
 // The most used emoji (up to three, most popular first) as a short string
-function chatTopEmoji(reactions) {
-    return Object.entries(reactions).filter(([, who]) => who.length).sort((a, b) => b[1].length - a[1].length).slice(0, 3).map(([e]) => e).join('');
+function chatTopEmoji(reactions, max = 3) {
+    return Object.entries(reactions).filter(([, who]) => who.length).sort((a, b) => b[1].length - a[1].length).slice(0, max).map(([e]) => e).join('');
 }
 
 // Small summary shown in a column header or a prediction cell: the top emoji (the header chip shows a prompt when there are none)
-function chatBadgeInner(thread, showPrompt) {
-    const top = chatTopEmoji(thread.reactions);
+function chatBadgeInner(thread, showPrompt, max = 3) {
+    const top = chatTopEmoji(thread.reactions, max);
     if (top) return `<span class="chat-emoji">${top}</span>`;
     return showPrompt ? '<span class="chat-add" aria-hidden="true">😀＋</span>' : '';
 }
@@ -60,9 +60,14 @@ function chatCellAttrs(username, matchId) {
     return ` data-chat-match="${matchId}" data-chat-user="${escapeHtml(username)}" tabindex="0" role="button" aria-label="${escapeHtml(chatDisplayName(username))}'s prediction: open reactions"`;
 }
 
+// A cell holding a Joker has less room, so it shows at most two emoji (otherwise three)
+function chatCellMaxEmoji(username, matchId) {
+    return isUserJokerForMatch(username, matchId) ? 2 : 3;
+}
+
 function chatCellBadge(username, matchId) {
     if (!fixtureChat.available) return '';
-    const inner = chatBadgeInner(chatThread(matchId, username), false);
+    const inner = chatBadgeInner(chatThread(matchId, username), false, chatCellMaxEmoji(username, matchId));
     return inner ? `<span class="chat-badge" data-chat-badge aria-hidden="true">${inner}</span>` : '';
 }
 
@@ -90,10 +95,12 @@ function refreshChatIndicators() {
         chip.classList.toggle('has-activity', chatChipHasActivity(id));
     });
     document.querySelectorAll('td[data-chat-user]').forEach(cell => {
+        const extras = cell.querySelector('.cell-extras') || cell;
         const old = cell.querySelector('[data-chat-badge]');
         if (old) old.remove();
-        const inner = chatBadgeInner(chatThread(Number(cell.dataset.chatMatch), cell.dataset.chatUser), false);
-        if (inner) cell.insertAdjacentHTML('beforeend', `<span class="chat-badge" data-chat-badge aria-hidden="true">${inner}</span>`);
+        const matchId = Number(cell.dataset.chatMatch);
+        const inner = chatBadgeInner(chatThread(matchId, cell.dataset.chatUser), false, chatCellMaxEmoji(cell.dataset.chatUser, matchId));
+        if (inner) extras.insertAdjacentHTML('beforeend', `<span class="chat-badge" data-chat-badge aria-hidden="true">${inner}</span>`);
         const tipChat = cell.querySelector('[data-tooltip-chat]');
         if (tipChat) {
             tipChat.innerHTML = chatTooltipInner(cell.dataset.chatUser, Number(cell.dataset.chatMatch));
@@ -138,12 +145,6 @@ function closeFixtureChat() {
     if (opener && document.body.contains(opener)) opener.focus();
 }
 
-function switchFixtureChatTab(tab) {
-    if (!fixtureChatSelection) return;
-    fixtureChatSelection.tab = tab;
-    renderFixtureChat();
-}
-
 function renderFixtureChat() {
     const sel = fixtureChatSelection;
     if (!sel) return;
@@ -158,11 +159,7 @@ function renderFixtureChat() {
         ? `${match.team1} v ${match.team2} · ${match.date}`
         : `${match.date} · ${match.time}` + (match.actualScore1 !== null && match.actualScore2 !== null ? ` · Final ${match.actualScore1}-${match.actualScore2}` : ' · Not played yet');
 
-    document.getElementById('fixtureChatTabs').innerHTML = sel.username ? `
-        <div class="fc-tabs" role="tablist">
-            <button type="button" class="fc-tab" role="tab" aria-selected="${isPred ? 'true' : 'false'}" onclick="switchFixtureChatTab('pred')">${escapeHtml(chatDisplayName(sel.username))}'s prediction</button>
-            <button type="button" class="fc-tab" role="tab" aria-selected="${isPred ? 'false' : 'true'}" onclick="switchFixtureChatTab('match')">The match</button>
-        </div>` : '';
+    document.getElementById('fixtureChatTabs').innerHTML = '';
 
     let predCard = '';
     if (isPred) {

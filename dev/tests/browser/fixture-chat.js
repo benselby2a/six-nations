@@ -129,11 +129,9 @@ const mock = `
   await chip(); await page.mouse.click(5, 5); await page.waitForTimeout(150);
   console.log('5b closed by tapping outside the pop-up:', !(await sheetOpen()));
   await page.click('td[data-chat-user="sam"][data-chat-match="1"]'); await page.waitForTimeout(250);
-  await t('6 prediction pop-up', () => ({ title: document.getElementById('fixtureChatTitle').textContent, tabs: [...document.querySelectorAll('.fc-tab')].map(x => x.textContent), card: document.querySelector('.fc-pred-card') && document.querySelector('.fc-pred-card').textContent.replace(/\s+/g, ' ') }));
+  await t('6 prediction pop-up', () => ({ title: document.getElementById('fixtureChatTitle').textContent, tabs: document.querySelectorAll('.fc-tab').length, card: document.querySelector('.fc-pred-card') && document.querySelector('.fc-pred-card').textContent.replace(/\s+/g, ' ') }));
   await page.click('.fc-emoji:has-text("🔥")'); await page.waitForTimeout(300);
   await t('7 reacted to a prediction (badge and tooltip update in place)', () => ({ row: __db.fixture_reactions.filter(r => r.user_id === 1 && r.target_user_id !== null).map(r => r.emoji), badge: document.querySelector('td[data-chat-user="sam"][data-chat-match="1"] .chat-badge').textContent, tip: document.querySelector('td[data-chat-user="sam"][data-chat-match="1"] .tooltip').textContent.replace(/\s+/g, ' ').trim().slice(-40) }));
-  await page.click('.fc-tab:has-text("The match")'); await page.waitForTimeout(100);
-  await t('8 tab switch', () => ({ title: document.getElementById('fixtureChatTitle').textContent }));
   await page.keyboard.press('Escape');
   await page.evaluate(() => { fixtureChat = { available: false, reactions: [] }; showSummary(); });
   await t('9 feature hidden when the table does not exist', () => ({ chips: document.querySelectorAll('[data-chat-chip]').length, cells: document.querySelectorAll('td[data-chat-user]').length }));

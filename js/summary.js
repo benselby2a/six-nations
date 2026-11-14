@@ -191,43 +191,19 @@
                     tooltipContent += chatTooltipHtml(user.username, match.id);
                     const tipClass = tooltipContent.replace(/<[^>]*>/g, '').trim() ? 'tooltip' : 'tooltip tooltip-empty';
 
-                    if (hasResult) {
-                        html += `<td class="${jokerCellClass}"${chatCellAttrs(user.username, match.id)}>
-                            <div class="tooltip-container">
-                                <div class="${jokerScoreClass}"><span class="${score1Class}">${score1}</span> - <span class="${score2Class}">${score2}</span> ${jokerIndicator}</div>
-                                <span class="points-earned ${pointsClass}">${pointsEarned} pts</span>
-                                <div class="${tipClass}">${tooltipContent}</div>
-                            </div>
-                                ${chatCellBadge(user.username, match.id)}
-                        </td>`;
-                    } else {
-                        if (isJoker) {
-                            html += `<td class="${jokerCellClass}"${chatCellAttrs(user.username, match.id)}>
-                                <div class="tooltip-container">
-                                    <div class="${jokerScoreClass}"><span class="${score1Class}">${score1}</span> - <span class="${score2Class}">${score2}</span> ${jokerIndicator}</div>
-                                    <span class="points-earned points-placeholder">&nbsp;</span>
-                                    <div class="${tipClass}">${tooltipContent}</div>
-                                </div>
-                                ${chatCellBadge(user.username, match.id)}
-                            </td>`;
-                        } else if (fixtureChat.available) {
-                            // No result yet and no Joker: the tooltip only carries the reactions
-                            html += `<td class="${jokerCellClass}"${chatCellAttrs(user.username, match.id)}>
-                                <div class="tooltip-container">
-                                    <div class="${jokerScoreClass}"><span class="${score1Class}">${score1}</span> - <span class="${score2Class}">${score2}</span> ${jokerIndicator}</div>
-                                    <span class="points-earned points-placeholder">&nbsp;</span>
-                                    <div class="${tipClass}">${tooltipContent}</div>
-                                </div>
-                                ${chatCellBadge(user.username, match.id)}
-                            </td>`;
-                        } else {
-                            html += `<td class="${jokerCellClass}"${chatCellAttrs(user.username, match.id)}>
-                                <div class="${jokerScoreClass}"><span class="${score1Class}">${score1}</span> - <span class="${score2Class}">${score2}</span> ${jokerIndicator}</div>
-                                <span class="points-earned points-placeholder">&nbsp;</span>
-                                ${chatCellBadge(user.username, match.id)}
-                            </td>`;
-                        }
-                    }
+                    // Every cell has the same slots, so rows line up: the score, the points pill, then one line holding the Joker and the top emoji
+                    const scoreLine = `<div class="cell-score"><span class="${score1Class}">${score1}</span> - <span class="${score2Class}">${score2}</span></div>`;
+                    const pointsLine = hasResult
+                        ? `<span class="points-earned ${pointsClass}">${pointsEarned} pts</span>`
+                        : '<span class="points-earned points-placeholder">&nbsp;</span>';
+                    const extrasLine = `<div class="cell-extras">${jokerIndicator}${chatCellBadge(user.username, match.id)}</div>`;
+                    const showTooltip = hasResult || isJoker || fixtureChat.available;
+                    html += `<td class="${jokerCellClass}"${chatCellAttrs(user.username, match.id)}>
+                        ${showTooltip
+                            ? `<div class="tooltip-container">${scoreLine}${pointsLine}<div class="${tipClass}">${tooltipContent}</div></div>`
+                            : `${scoreLine}${pointsLine}`}
+                        ${extrasLine}
+                    </td>`;
                 });
                 
                 // Predicted tries column with calculated projection (only when not filtering by round)
