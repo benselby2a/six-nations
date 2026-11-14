@@ -67,18 +67,16 @@
                 const hasResult = match.actualScore1 !== null && match.actualScore2 !== null;
                 const hasTries = match.actualTries1 !== null && match.actualTries2 !== null;
                 const totalMatchTries = hasTries ? match.actualTries1 + match.actualTries2 : null;
-                const jokerBadge = match.jokerEligible ? '<div class="joker-eligible-badge">🃏 Joker Eligible</div>' : '<div class="joker-eligible-badge" style="visibility: hidden;">🃏 Joker Eligible</div>';
                 html += `<th class="match-header-cell ${match.jokerEligible ? 'joker-eligible-header' : ''}" data-match-col="${colIndex}" data-chat-match="${match.id}">
                     <div class="match-header-cell-inner">
                         <div class="match-header-top">
-                            ${jokerBadge}
-                            <div class="match-teams"><span>${getFlag(match.team1)} ${getTeamAbbr(match.team1)}</span><span>vs</span><span>${getFlag(match.team2)} ${getTeamAbbr(match.team2)}</span></div>
+                            <div class="match-teams"><span>${getFlag(match.team1)} ${getTeamAbbr(match.team1)}</span><span>${getFlag(match.team2)} ${getTeamAbbr(match.team2)}</span></div>
                             <div class="match-date">${match.date} - ${match.time}</div>
                         </div>
                         <div class="match-header-bottom">
-                            ${hasResult ? `<div class="match-result">${match.actualScore1} - ${match.actualScore2}</div>` : '<div class="no-result">-</div>'}
+                            <div class="match-result-row">${hasResult ? `<div class="match-result">${match.actualScore1} - ${match.actualScore2}</div>` : '<div class="no-result">-</div>'}${match.jokerEligible ? '<span class="joker-inline" aria-hidden="true">🃏</span>' : ''}</div>
                             <div class="match-tries${hasTries ? '' : ' match-tries-empty'}">${hasTries ? `(${totalMatchTries} tries)` : '&nbsp;'}</div>
-                            ${chatChipMarkup(match.id)}
+                            <div class="match-extras">${match.jokerEligible ? '<span class="joker-indicator joker-eligible-icon" title="Joker eligible" role="img" aria-label="Joker eligible">🃏</span>' : ''}${chatChipMarkup(match.id)}</div>
                         </div>
                     </div>
                 </th>`;
@@ -192,7 +190,7 @@
                     const tipClass = tooltipContent.replace(/<[^>]*>/g, '').trim() ? 'tooltip' : 'tooltip tooltip-empty';
 
                     // Every cell has the same slots, so rows line up: the score, the points pill, then one line holding the Joker and the top emoji
-                    const scoreLine = `<div class="cell-score"><span class="${score1Class}">${score1}</span> - <span class="${score2Class}">${score2}</span></div>`;
+                    const scoreLine = `<div class="cell-score"><span class="${score1Class}">${score1}</span> - <span class="${score2Class}">${score2}</span>${isJoker ? '<span class="joker-inline" aria-hidden="true">🃏</span>' : ''}</div>`;
                     const pointsLine = hasResult
                         ? `<span class="points-earned ${pointsClass}">${pointsEarned} pts</span>`
                         : '<span class="points-earned points-placeholder">&nbsp;</span>';

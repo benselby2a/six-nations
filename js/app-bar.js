@@ -182,3 +182,26 @@ function queueSummaryStickyVisibility() {
 }
 window.addEventListener('scroll', queueSummaryStickyVisibility, { passive: true });
 window.addEventListener('resize', () => { sizeSummaryStickyHead(); queueSummaryStickyVisibility(); });
+
+// Compact summary: hides the emoji rows and, in the headers, the date and tries, to save space. Remembered on this device.
+const SUMMARY_COMPACT_KEY = 'summaryCompact';
+function applySummaryCompact(compact) {
+    document.body.classList.toggle('summary-compact', compact);
+    const btn = document.getElementById('summaryCompactBtn');
+    if (btn) {
+        btn.setAttribute('aria-pressed', compact ? 'true' : 'false');
+        btn.setAttribute('data-tip', compact ? 'Show reactions' : 'Hide reactions');
+        btn.setAttribute('aria-label', compact ? 'Show reactions' : 'Hide reactions');
+    }
+    buildSummaryStickyHead();   // the pinned copy follows the new header height
+}
+function toggleSummaryCompact() {
+    const compact = !document.body.classList.contains('summary-compact');
+    try { localStorage.setItem(SUMMARY_COMPACT_KEY, compact ? '1' : '0'); } catch (error) { /* not remembered */ }
+    applySummaryCompact(compact);
+}
+document.addEventListener('DOMContentLoaded', () => {
+    let saved = false;
+    try { saved = localStorage.getItem(SUMMARY_COMPACT_KEY) === '1'; } catch (error) { saved = false; }
+    if (saved) applySummaryCompact(true);
+});

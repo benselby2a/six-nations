@@ -118,10 +118,10 @@ const mock = `
   const slots = await page.evaluate(() => {
     const cells = [...document.querySelectorAll('.summary-container thead th.match-header-cell')];
     const top = (c, sel) => { const e = c.querySelector(sel); return e ? Math.round(e.getBoundingClientRect().top) : null; };
-    return cells.map(c => ({ badge: top(c, '.joker-eligible-badge'), teams: top(c, '.match-teams'), date: top(c, '.match-date'), result: top(c, '.match-result, .no-result'), tries: top(c, '.match-tries'), chip: top(c, '.chat-chip'), h: Math.round(c.getBoundingClientRect().height) }));
+    return cells.map(c => ({ teams: top(c, '.match-teams'), date: top(c, '.match-date'), result: top(c, '.match-result, .no-result'), tries: top(c, '.match-tries'), extras: top(c, '.match-extras'), chip: top(c, '.chat-chip'), h: Math.round(c.getBoundingClientRect().height) }));
   });
   console.log(JSON.stringify(slots));
-  const keys = ['badge','teams','date','result','tries','chip','h'];
+  const keys = ['teams','date','result','tries','extras','chip','h'];
   const aligned = keys.every(k => slots.every(c => c[k] === slots[0][k]));
   console.log('every header slot lines up across matches:', aligned);
   await page.screenshot({path:'/tmp/claude-0/-home-user-six-nations/55e70b8c-24a4-53e8-973b-d120bef1189e/scratchpad/hdr_slots.png', clip:{x:0,y:230,width:390,height:260}});
