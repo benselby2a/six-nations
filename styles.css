@@ -4576,3 +4576,12 @@ body.summary-compact .match-header-cell .match-header-top .match-teams { margin-
     .summary-table th.match-header-cell { min-width: 84px; padding-left: 0.35rem !important; padding-right: 0.35rem !important; }
     .summary-table td.prediction-cell { padding-left: 0.35rem; padding-right: 0.35rem; }
 }
+
+/* Pinned left columns: the supported-team flags sit under the name, so the name column can be narrower */
+.summary-table td.competitor-name .comp-name { display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; }
+.summary-table td.competitor-name .supported-team-flags { font-size: 0.85em; line-height: 1.1; }
+@media (min-width: 700px) {
+    .summary-table th.rank-col, .summary-table td.rank-col { min-width: 32px; width: 32px; padding-left: 0.3rem; padding-right: 0.3rem; }
+    .summary-table th.competitor-col, .summary-table td.competitor-name { min-width: 104px; width: 104px; max-width: 104px; left: 32px; padding-left: 0.5rem; padding-right: 0.4rem; }
+    .summary-table th.pts-col, .summary-table td.pts-col { min-width: 46px; width: 46px; max-width: 46px; left: 136px; padding-left: 0.4rem; padding-right: 0.4rem; }
+}
