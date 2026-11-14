@@ -1996,28 +1996,6 @@
             opacity: 0.8;
         }
 
-        .worm-point-tooltip {
-            position: absolute;
-            z-index: 4;
-            min-width: 180px;
-            max-width: 280px;
-            background: rgba(8, 12, 20, 0.96);
-            border: 1px solid rgb(var(--accent-rgb) / 0.65);
-            border-radius: 8px;
-            padding: 0.55rem 0.65rem;
-            font-size: 0.78rem;
-            line-height: 1.35;
-            color: rgb(var(--ink) / 0.95);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-            pointer-events: none;
-        }
-
-        .worm-point-tooltip-player {
-            color: var(--bright-gold);
-            font-weight: 700;
-            margin-bottom: 0.2rem;
-        }
-
         /* Joker styles - My Predictions page */
         .joker-selection {
             margin-top: 0.75rem;
@@ -4411,7 +4389,7 @@ body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-wi
 /* Summary header row stays pinned while the table is on screen (see updateSummaryHeaderPin) */
 .summary-table thead th { z-index: 30 !important; }
 .summary-table thead th:not(.rank-col):not(.competitor-col):not(.pts-col) { background: var(--gold) !important; }
-.summary-table thead th.match-header-cell, .summary-table thead th.tries-col { position: relative; }
+.summary-table thead th.match-header-cell { position: relative; }
 
 .fixture-actuals-hint { font-size: 0.85rem; line-height: 1.4; margin: 0 0 0.9rem; padding: 0.55rem 0.8rem; border-left: 3px solid var(--gold); background: rgb(var(--ink) / 0.06); border-radius: 0 6px 6px 0; }
 #editFixtureModal .input-group:has(#edit-fixture-score1) label, #editFixtureModal .input-group:has(#edit-fixture-score2) label,
@@ -4506,9 +4484,6 @@ body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-wi
 .match-header-cell .match-header-bottom .match-tries-empty { visibility: hidden; }
 .match-header-cell .match-header-bottom .chat-chip { margin-top: 0.3rem; height: 2rem; }
 
-/* Points progression tooltip: always a dark panel with light text (readable on the lighter chart background) */
-.worm-point-tooltip { background: #10231a; color: #f4f7f4; border-color: #e8b02a; }
-.worm-point-tooltip-player { color: #f3c85a; }
 
 .chat-chip .chat-add { font-size: 0.8rem; opacity: 0.75; letter-spacing: 0; }
 
@@ -4654,5 +4629,5 @@ body.summary-compact .match-header-cell .match-header-top .match-teams { margin-
         white-space: nowrap; transform: rotate(-40deg); transform-origin: left bottom; margin-left: 0.55rem; margin-bottom: 0.5rem;
     }
 }
-.summary-table td.tries-col, .match-header-cell[role="button"] { cursor: pointer; }
+.match-header-cell[role="button"] { cursor: pointer; }
 .match-header-cell[role="button"]:focus-visible { outline: 2px solid var(--bright-gold); outline-offset: -2px; }

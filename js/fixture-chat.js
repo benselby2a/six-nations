@@ -130,7 +130,7 @@ function chatCanPost() {
 function highlightChatSelection() {
     document.querySelectorAll('.chat-selected, .chat-picked').forEach(el => el.classList.remove('chat-selected', 'chat-picked'));
     if (!fixtureChatSelection) return;
-    if (fixtureChatSelection.kind === 'tries') return;
+    if (fixtureChatSelection.kind === 'worm') return;
     const { matchId, username } = fixtureChatSelection;
     document.querySelectorAll(`[data-chat-match="${matchId}"]`).forEach(el => el.classList.add('chat-selected'));
     if (username) {
@@ -159,10 +159,10 @@ function closeFixtureChat() {
     if (opener && document.body.contains(opener)) opener.focus();
 }
 
-// The Predicted Tries pop-up: one person's tries guess against how the tournament is going
-function openTriesDetail(username, opener) {
-    if (!username || !users[username]) return;
-    fixtureChatSelection = { kind: 'tries', matchId: null, username, tab: 'tries', opener: opener || null };
+// A point on the Points Progression chart: the same pop-up, with that player's game
+function openWormPointDetail(point) {
+    if (!point) return;
+    fixtureChatSelection = { kind: 'worm', matchId: null, username: null, tab: 'worm', opener: null, data: { ...point.dataset } };
     document.body.classList.add('fixture-chat-open');
     document.getElementById('fixtureChatSheet').setAttribute('aria-hidden', 'false');
     renderFixtureChat();
@@ -170,28 +170,22 @@ function openTriesDetail(username, opener) {
     if (close) close.focus();
 }
 
-function renderTriesDetail(sel) {
-    const name = chatDisplayName(sel.username);
-    const guess = users[sel.username].totalTries;
-    const played = matches.filter(m => m.actualTries1 !== null && m.actualTries2 !== null);
-    const soFar = getTotalActualTries();
-    document.getElementById('fixtureChatTitle').textContent = `${name}'s tries prediction`;
-    document.getElementById('fixtureChatSub').textContent = 'Total tries across the whole tournament';
+function renderWormPointDetail(sel) {
+    const d = sel.data || {};
+    document.getElementById('fixtureChatTitle').textContent = d.playerName || '';
+    document.getElementById('fixtureChatSub').textContent = d.match || '';
     document.getElementById('fixtureChatTabs').innerHTML = '';
-    let lines = `<dt>Prediction</dt><dd><strong>${guess !== null && guess !== undefined ? guess : 'Not entered yet'}</strong></dd>`;
-    lines += `<dt>So far</dt><dd>${soFar} tries in ${played.length} match${played.length === 1 ? '' : 'es'}</dd>`;
-    if (played.length > 0) {
-        const average = soFar / played.length;
-        lines += `<dt>Average</dt><dd>${average.toFixed(1)} tries per match</dd>`;
-        lines += `<dt>Projected</dt><dd><strong>${Math.round(average * matches.length)}</strong> tries over ${matches.length} matches</dd>`;
-    }
+    let lines = `<dt>Result</dt><dd>${escapeHtml(d.result || '')}</dd>`;
+    lines += `<dt>Prediction</dt><dd>${escapeHtml(d.prediction || '')}</dd>`;
+    lines += `<dt>This game</dt><dd><strong>${escapeHtml(d.pointsGame || '0')} pts</strong></dd>`;
+    lines += `<dt>Total</dt><dd><strong>${escapeHtml(d.total || '0')} pts</strong></dd>`;
     document.getElementById('fixtureChatBody').innerHTML = `<div class="fc-pred-card"><dl class="fc-pred-lines">${lines}</dl></div>`;
 }
 
 function renderFixtureChat() {
     const sel = fixtureChatSelection;
     if (!sel) return;
-    if (sel.kind === 'tries') { renderTriesDetail(sel); return; }
+    if (sel.kind === 'worm') { renderWormPointDetail(sel); return; }
     const match = matches.find(m => m.id === sel.matchId);
     if (!match) { closeFixtureChat(); return; }
     const isPred = sel.tab === 'pred' && sel.username;
@@ -275,8 +269,6 @@ async function toggleFixtureReaction(emoji) {
         container.addEventListener('click', (event) => {
             const cell = event.target.closest('td[data-chat-user]');
             if (cell) { openFixtureChat(Number(cell.dataset.chatMatch), cell.dataset.chatUser, cell); return; }
-            const tries = event.target.closest('td[data-tries-user]');
-            if (tries) { openTriesDetail(tries.dataset.triesUser, tries); return; }
             const head = event.target.closest('th[data-chat-match]');
             if (head && !event.target.closest('.chat-chip')) openFixtureChat(Number(head.dataset.chatMatch), null, head);
         });
@@ -284,8 +276,6 @@ async function toggleFixtureReaction(emoji) {
             if (event.key !== 'Enter' && event.key !== ' ') return;
             const cell = event.target.closest('td[data-chat-user]');
             if (cell && event.target === cell) { event.preventDefault(); openFixtureChat(Number(cell.dataset.chatMatch), cell.dataset.chatUser, cell); return; }
-            const tries = event.target.closest('td[data-tries-user]');
-            if (tries && event.target === tries) { event.preventDefault(); openTriesDetail(tries.dataset.triesUser, tries); return; }
             const head = event.target.closest('th[data-chat-match]');
             if (head && event.target === head) { event.preventDefault(); openFixtureChat(Number(head.dataset.chatMatch), null, head); }
         });

@@ -58,7 +58,7 @@
             html += '<div class="summary-container">';
             html += '<table class="summary-table">';
             
-            // Header row: Rank | Competitor | Score | Match 1 | Match 2 | ... | Predicted Tries
+            // Header row: Rank | Competitor | Score | Match 1 | Match 2 | ...
             html += '<thead><tr>';
             html += '<th class="rank-col">#</th>';
             html += '<th class="competitor-col"><span class="th-angled">Competitor</span></th>';
@@ -81,10 +81,6 @@
                     </div>
                 </th>`;
             });
-            // Only show Tries column when not filtering by round
-            if (currentFilter !== 'round') {
-                html += '<th class="tries-col">Predicted Tries</th>';
-            }
             html += '</tr></thead>';
             
             html += '<tbody>';
@@ -204,18 +200,6 @@
                         ${extrasLine}
                     </td>`;
                 });
-                
-                // Predicted tries column with calculated projection (only when not filtering by round)
-                if (currentFilter !== 'round') {
-                    const userTries = users[user.username].totalTries;
-                    let predictedTriesDisplay = '-';
-                    let projectedTries = null;
-                    
-                    // The detail (average per match, projected total) opens in the pop-up when the cell is tapped or clicked
-                    if (userTries !== null && userTries !== undefined) predictedTriesDisplay = userTries;
-                    
-                    html += `<td class="tries-col" data-tries-user="${escapeHtml(user.username)}" tabindex="0" role="button" aria-label="${escapeHtml(chatDisplayName(user.username))}'s tries prediction: open details">${predictedTriesDisplay}</td>`;
-                }
                 
                 html += '</tr>';
             });
