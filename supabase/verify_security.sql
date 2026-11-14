@@ -127,5 +127,13 @@ select * from (
                 else (xpath('/row/c/text()', query_to_xml(
                         'select count(*) as c from public.users u where u.nickname is null and u.auth_user_id is null',
                         false, true, '')))[1]::text || ' invitation(s)' end
+    union all
+    select 20, 'Usage events are trimmed to the latest 100 automatically',
+           case when to_regclass('public.usage_events') is null then 'n/a'
+                when not exists (select 1 from pg_trigger where tgrelid = 'public.usage_events'::regclass and tgname = 'usage_events_trim' and not tgisinternal)
+                  then 'n/a (run supabase/usage_events_trim_migration.sql)'
+                when has_function_privilege('anon', 'public.trim_usage_events()', 'execute')
+                  or has_function_privilege('authenticated', 'public.trim_usage_events()', 'execute') then 'FAIL: clients can call the trim function'
+                else 'ok' end
 ) checks
 order by n;
