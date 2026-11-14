@@ -1429,7 +1429,7 @@
         .summary-table tr:hover td.rank-col,
         .summary-table tr:hover td.competitor-name,
         .summary-table tr:hover td.pts-col {
-            background: var(--grid-bg);
+            background: color-mix(in srgb, rgb(var(--ink)) 10%, var(--grid-bg));
         }
 
         /* Highlight current logged in user */
@@ -1844,7 +1844,7 @@
         }
 
         .worm-chart-box {
-            background: var(--surface);
+            background: var(--grid-bg);
             border: 1px solid var(--line-strong);
             border-radius: 10px;
             padding: 1rem;
@@ -1873,9 +1873,9 @@
 
         .worm-chart-wrap {
             overflow: hidden;
-            border: 1px solid rgb(var(--accent-rgb) / 0.2);
+            border: 1px solid var(--line);
             border-radius: 8px;
-            background: rgba(0, 0, 0, 0.16);
+            background: var(--grid-bg);
             padding: 0.45rem 0.35rem 0.25rem;
             position: relative;
         }
@@ -4528,3 +4528,7 @@ body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-wi
 .match-header-cell .match-header-bottom .match-tries { height: 1.2rem; display: flex; align-items: center; justify-content: center; margin: 0.2rem 0 0; }
 .match-header-cell .match-header-bottom .match-tries-empty { visibility: hidden; }
 .match-header-cell .match-header-bottom .chat-chip { margin-top: 0.3rem; height: 2rem; }
+
+/* Points progression tooltip: always a dark panel with light text (readable on the lighter chart background) */
+.worm-point-tooltip { background: #10231a; color: #f4f7f4; border-color: #e8b02a; }
+.worm-point-tooltip-player { color: #f3c85a; }
