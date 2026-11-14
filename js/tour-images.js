@@ -2,7 +2,7 @@
 const TOUR_IMAGES = {
  "predictions": {
   "src": "tour-images/predictions.jpg",
-  "v": "14d33020",
+  "v": "7962f7ac",
   "w": 756,
   "h": 1520,
   "marks": [
@@ -24,7 +24,7 @@ const TOUR_IMAGES = {
  },
  "score": {
   "src": "tour-images/score.jpg",
-  "v": "7507cc86",
+  "v": "c09f7517",
   "w": 756,
   "h": 1520,
   "marks": [
@@ -53,7 +53,7 @@ const TOUR_IMAGES = {
  },
  "pdf": {
   "src": "tour-images/pdf.jpg",
-  "v": "4babb16e",
+  "v": "231445ae",
   "w": 756,
   "h": 450,
   "marks": [
@@ -68,7 +68,7 @@ const TOUR_IMAGES = {
  },
  "chips": {
   "src": "tour-images/chips.jpg",
-  "v": "a26ec053",
+  "v": "c87fa3ee",
   "w": 756,
   "h": 1120,
   "marks": [
@@ -90,7 +90,7 @@ const TOUR_IMAGES = {
  },
  "stats": {
   "src": "tour-images/stats.jpg",
-  "v": "ff6177dc",
+  "v": "f41a723b",
   "w": 756,
   "h": 1520,
   "marks": [
@@ -112,7 +112,7 @@ const TOUR_IMAGES = {
  },
  "admin-menu": {
   "src": "tour-images/admin-menu.jpg",
-  "v": "2d9405b6",
+  "v": "40572a14",
   "w": 756,
   "h": 940,
   "marks": [
@@ -134,7 +134,7 @@ const TOUR_IMAGES = {
  },
  "admin-fixtures": {
   "src": "tour-images/admin-fixtures.jpg",
-  "v": "6c9ea261",
+  "v": "571960d6",
   "w": 756,
   "h": 1246,
   "marks": [
@@ -156,7 +156,7 @@ const TOUR_IMAGES = {
  },
  "admin-lock": {
   "src": "tour-images/admin-lock.jpg",
-  "v": "b77f0951",
+  "v": "a5562b16",
   "w": 756,
   "h": 640,
   "marks": [
@@ -178,7 +178,7 @@ const TOUR_IMAGES = {
  },
  "admin-competitors": {
   "src": "tour-images/admin-competitors.jpg",
-  "v": "e9fa3242",
+  "v": "31a6448f",
   "w": 756,
   "h": 376,
   "marks": [
@@ -200,7 +200,7 @@ const TOUR_IMAGES = {
  },
  "admin-rules": {
   "src": "tour-images/admin-rules.jpg",
-  "v": "70597e66",
+  "v": "68b77121",
   "w": 756,
   "h": 1280,
   "marks": [
@@ -215,7 +215,7 @@ const TOUR_IMAGES = {
  },
  "admin-prize": {
   "src": "tour-images/admin-prize.jpg",
-  "v": "bd18457d",
+  "v": "acf5555e",
   "w": 756,
   "h": 1280,
   "marks": [
@@ -230,7 +230,7 @@ const TOUR_IMAGES = {
  },
  "admin-years": {
   "src": "tour-images/admin-years.jpg",
-  "v": "b3119fc5",
+  "v": "ceac3e50",
   "w": 756,
   "h": 1280,
   "marks": [
