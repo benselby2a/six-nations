@@ -163,7 +163,7 @@
                     return;
                 }
                 await Storage.updateActiveOverrideUsername(oldUsername, newUsername);
-                trackUsage('rename user', formatUsagePayload({ oldUsername, newUsername }), newUsername);
+                trackUsage('rename user', formatUsagePayload({ oldUsername, newUsername }));
             },
 
             // Save predictions for a user
@@ -281,7 +281,7 @@
                     return;
                 }
                 await Storage.updateActiveOverrideUsername(username, null);
-                trackUsage('delete user', formatUsagePayload({ username }), username);
+                trackUsage('delete user', formatUsagePayload({ username }));
             },
             
             // Matches/Fixtures
@@ -1012,7 +1012,7 @@
                             return false;
                         }
                     }
-                    trackUsage('save joker selections', formatUsagePayload({ username: normalizedUsername, matchIds: [] }), normalizedUsername);
+                    trackUsage('save joker selections', formatUsagePayload({ username: normalizedUsername, matchIds: [] }));
                     return true;
                 }
 
@@ -1028,7 +1028,7 @@
                     }
                 }
 
-                trackUsage('save joker selections', formatUsagePayload({ username: normalizedUsername, matchIds: uniqueMatchIds }), normalizedUsername);
+                trackUsage('save joker selections', formatUsagePayload({ username: normalizedUsername, matchIds: uniqueMatchIds }));
                 return true;
             }
         };
