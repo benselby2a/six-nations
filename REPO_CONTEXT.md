@@ -438,6 +438,7 @@ This is the main browser-to-Supabase boundary.
 
 - Text comments were removed; the feature is emoji reactions on a fixture (the 😀＋ chip in each column header) or on one person's prediction (tap a cell). They open in a centred pop-up (`#fixtureChatSheet` in `index.html`, styled as a modal; Escape or tapping outside closes it).
 - `supabase/fixture_chat_migration.sql` still creates `fixture_comments` and `fixture_reactions` (six emoji, one of each per person). The app now only reads and writes `fixture_reactions`; `fixture_comments` is unused (left in the database, nothing else touches it). `target_user_id` is empty for the match and set for a prediction.
+- `supabase/reaction_flags_migration.sql` (run after `fixture_chat_migration.sql`, idempotent) widens the allowed reaction emoji to the six plus the six team flags; every match offers the six plus its home and away flags (`chatEmojiOptions`). Until it has been run, reacting with a flag shows a save error.
 - `js/fixture-chat.js` holds the feature. `Storage.getFixtureChat` runs inside `loadYearData`; if the reactions table is missing it returns `available: false` and the feature stays hidden, so the code can ship before the migration.
 - The Match Summary table (`js/summary.js`) calls `chatChipMarkup`, `chatCellAttrs` and `chatCellBadge`; the hover tooltip on a prediction lists who reacted with what.
 - Tests: `dev/tests/sql/fixture-chat.js` (security rules), `dev/tests/browser/fixture-chat.js` (behaviour), `dev/tests/sql/restore.js` (backup round trip).

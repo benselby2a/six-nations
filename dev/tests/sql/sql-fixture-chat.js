@@ -19,6 +19,8 @@ let fail = 0; const ok = (n, c, x = '') => { if (!c) fail++; console.log((c ? 'P
   await db.exec(gen());
   for (const f of ['auth_migration','years_migration','preregistered_emails_migration','registered_logins_migration','invitations_migration','users_email_migration','second_email_migration','profile_second_email_migration','fixture_chat_migration']) await db.exec(mig(f + '.sql'));
   await db.exec(mig('fixture_chat_migration.sql'));
+  await db.exec(mig('reaction_flags_migration.sql'));
+  await db.exec(mig('reaction_flags_migration.sql'));   // idempotent
   ok('migration runs twice', true);
   await db.exec(`insert into auth.users (id,email,email_confirmed_at) values ('${A}','ben@x.com',now()),('${B}','sam@x.com',now()),('${G}','nobody@x.com',now());
     insert into matches (id,year,round,team1,team2) values (1,2026,1,'France','Ireland');
@@ -41,7 +43,9 @@ let fail = 0; const ok = (n, c, x = '') => { if (!c) fail++; console.log((c ? 'P
   r = await q(`insert into fixture_reactions (match_id,user_id,emoji) values (1,${sam},'🔥')`); ok('the same reaction twice is refused', !r.ok);
   r = await q(`insert into fixture_reactions (match_id,user_id,target_user_id,emoji) values (1,${sam},${ben},'🔥')`); ok('same emoji on a prediction is separate', r.ok, r.err);
   r = await q(`insert into fixture_reactions (match_id,user_id,target_user_id,emoji) values (1,${sam},${ben},'🔥')`); ok('...but not twice', !r.ok);
-  r = await q(`insert into fixture_reactions (match_id,user_id,emoji) values (1,${sam},'💩')`); ok('only the six emoji are allowed', !r.ok);
+  r = await q(`insert into fixture_reactions (match_id,user_id,emoji) values (1,${sam},'💩')`); ok('only the standard emoji and team flags are allowed', !r.ok);
+  r = await q(`insert into fixture_reactions (match_id,user_id,emoji) values (1,${sam},'🇫🇷')`); ok('a team flag is an allowed reaction', r.ok, r.err);
+  r = await q(`insert into fixture_reactions (match_id,user_id,emoji) values (1,${sam},'🏳️')`); ok('a flag that is not a Six Nations team is still refused', !r.ok);
   r = await q(`insert into fixture_reactions (match_id,user_id,emoji) values (1,${ben},'👏')`); ok('cannot react as someone else', !r.ok);
   r = await q(`update fixture_comments set body='changed' where user_id=${sam}`); ok('comments cannot be edited', !r.ok);
 
@@ -60,7 +64,7 @@ let fail = 0; const ok = (n, c, x = '') => { if (!c) fail++; console.log((c ? 'P
   await as(B);
   r = await q(`delete from fixture_comments where user_id=${ben} returning id`); ok('cannot delete someone else comment', r.ok && r.rows.length === 0, JSON.stringify(r));
   r = await q(`delete from fixture_comments where body='Great game' returning id`); ok('can delete their own', r.ok && r.rows.length === 1);
-  r = await q(`delete from fixture_reactions where user_id=${sam} and target_user_id is null returning id`); ok('can remove their own reaction', r.ok && r.rows.length === 1);
+  r = await q(`delete from fixture_reactions where user_id=${sam} and target_user_id is null returning id`); ok('can remove their own reaction', r.ok && r.rows.length >= 1);
   await as(A);
   r = await q(`delete from fixture_comments where user_id=${sam} returning id`); ok('an admin deletes any comment', r.ok && r.rows.length >= 2, JSON.stringify(r));
   r = await q(`delete from fixture_reactions where user_id=${sam} returning id`); ok('an admin removes any reaction', r.ok && r.rows.length >= 1);
