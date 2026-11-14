@@ -112,7 +112,7 @@ const mock = `
     await page.goto('file://' + path); await page.waitForTimeout(500);
     await page.fill('#loginEmail', 'ben@example.com'); await page.click('#sendLoginCodeBtn'); await page.waitForTimeout(150);
     await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(1200);
-    const r = await page.evaluate(() => ({ compact: document.body.classList.contains('summary-compact'), pressed: document.getElementById('summaryCompactBtn').getAttribute('aria-pressed'), pad: getComputedStyle(document.querySelector('.container')).paddingLeft, containerW: Math.round(document.querySelector('.container').getBoundingClientRect().width), vw: innerWidth }));
+    const r = await page.evaluate(() => ({ headerJokers: [...document.querySelectorAll('.summary-container thead .joker-eligible-icon, .summary-container thead .joker-inline')].filter(e => e.offsetParent).length, compact: document.body.classList.contains('summary-compact'), pressed: document.getElementById('summaryCompactBtn').getAttribute('aria-pressed'), pad: getComputedStyle(document.querySelector('.container')).paddingLeft, containerW: Math.round(document.querySelector('.container').getBoundingClientRect().width), vw: innerWidth }));
     console.log(label, JSON.stringify(r), errors.length ? errors : '');
     await ctx.close();
     return r;
@@ -121,6 +121,9 @@ const mock = `
   const phoneOff = await run('iPhone portrait, chose compact off:', { viewport: {width:390,height:800}, isMobile: true, hasTouch: true }, '0');
   const land = await run('iPhone landscape, no saved choice:', { viewport: {width:844,height:390}, isMobile: true, hasTouch: true }, null);
   const desk = await run('desktop, no saved choice:', { viewport: {width:1280,height:800} }, null);
+  const landOff = await run('iPhone landscape, compact switched off:', { viewport: {width:844,height:390}, isMobile: true, hasTouch: true }, '0');
+  const deskOn = await run('desktop, compact on:', { viewport: {width:1280,height:800} }, '1');
+  console.log('the header always shows the Joker-eligible card (any mode, any screen):', [phone, phoneOff, land, landOff, desk, deskOn].every(r => r.headerJokers >= 1));
   console.log('compact is the default on phones only, and the choice wins:', phone.compact && !phoneOff.compact && land.compact && !desk.compact);
   console.log('landscape iPhone uses the full width with a narrow border:', land.pad === '8px' && land.containerW >= land.vw - 2);
   await browser.close();
