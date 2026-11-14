@@ -349,25 +349,6 @@
 
         // ---- Admin: readiness checklist for the selected year's tournament ----
         const EXPECTED_FIXTURE_COUNT = 15;
-        const CHECKLIST_COLLAPSED_KEY = 'rugbyPredictorChecklistCollapsed';
-
-        function isReadinessChecklistCollapsed() {
-            try {
-                return localStorage.getItem(CHECKLIST_COLLAPSED_KEY) === '1';
-            } catch (error) {
-                return false;
-            }
-        }
-
-        function toggleReadinessChecklist() {
-            const collapsed = !isReadinessChecklistCollapsed();
-            try {
-                localStorage.setItem(CHECKLIST_COLLAPSED_KEY, collapsed ? '1' : '0');
-            } catch (error) {
-                // Ignore storage errors; the choice just won't be remembered.
-            }
-            renderReadinessChecklist();
-        }
 
         function goToAdminTab(tabName) {
             const button = document.querySelector(`.admin-tabs button[onclick="showTab('${tabName}')"]`);
@@ -379,7 +360,6 @@
             if (!container) return;
             if (!isCurrentUserAdmin() || !selectedYear) {
                 container.innerHTML = '';
-                container.className = 'readiness-checklist hidden';
                 return;
             }
 
@@ -433,35 +413,62 @@
                 ? `Saved for ${selectedYear}${formatSavedDate(savedAt) ? ` on ${formatSavedDate(savedAt)}` : ''}`
                 : `${what} not saved for ${selectedYear} yet. Review and click Save`;
 
+            // Lock predictions once everyone's are in
+            const lockedOk = !!appSettings.predictionsLocked;
+            const lockDetail = lockedOk
+                ? `Predictions are locked for ${selectedYear}`
+                : predictionsOk
+                    ? 'Everything is in. Lock predictions so nobody can change them'
+                    : 'Not yet. Lock predictions once all predictions are in';
+
+            // Results: any match that kicked off over 3 hours ago must have its score and tries entered
+            const nowMs = appNow().getTime();
+            const missingResults = matches.filter(match => {
+                const kickoff = getMatchKickoffDate(match);
+                if (!kickoff || nowMs - kickoff.getTime() <= 3 * 60 * 60 * 1000) return false;
+                return match.actualScore1 === null || match.actualScore2 === null || match.actualTries1 === null || match.actualTries2 === null;
+            });
+            const resultsOk = missingResults.length === 0;
+            const resultsDetail = resultsOk
+                ? 'No finished matches are waiting for a score'
+                : `${missingResults.length} finished match${missingResults.length !== 1 ? 'es need' : ' needs'} a score and tries`;
+            const resultsExtra = resultsOk ? '' : `
+                <ul class="readiness-outstanding">
+                    ${missingResults.map(match => {
+                        const missing = [];
+                        if (match.actualScore1 === null || match.actualScore2 === null) missing.push('score');
+                        if (match.actualTries1 === null || match.actualTries2 === null) missing.push('tries');
+                        return `<li><strong>${escapeHtml(match.team1)} v ${escapeHtml(match.team2)}</strong> (${escapeHtml(match.date)}): ${missing.join(' and ')} not entered</li>`;
+                    }).join('')}
+                </ul>`;
+
             const items = [
                 { ok: fixturesOk, label: 'Fixtures', detail: fixturesDetail, tab: 'results', action: 'Fixtures and Scores' },
                 { ok: predictionsOk, label: 'All predictions in', detail: predictionsDetail, extra: predictionsExtra, tab: 'scoreCorrections', action: 'Predictions' },
+                { ok: lockedOk, label: 'Predictions locked', detail: lockDetail, tab: 'scoreCorrections', action: 'Predictions' },
+                { ok: resultsOk, label: 'Scores entered for finished matches', detail: resultsDetail, extra: resultsExtra, tab: 'results', action: 'Fixtures and Scores' },
                 { ok: rulesOk, label: 'Guesser rules saved', detail: savedDetail(appSettings.rulesSavedAt, rulesOk, 'Guesser rules'), tab: 'rules', action: 'Guesser Rules' },
                 { ok: prizeOk, label: 'Prize fund saved', detail: savedDetail(appSettings.prizeSavedAt, prizeOk, 'Prize fund'), tab: 'prizeFund', action: 'Prize Fund' }
             ];
             const doneCount = items.filter(item => item.ok).length;
             const allDone = doneCount === items.length;
 
-            // Nothing outstanding: nothing to show. It comes back as soon as a step is outstanding again.
-            if (allDone) {
-                container.innerHTML = '';
-                container.className = 'readiness-checklist hidden';
-                return;
-            }
+            // Button at the top of Admin Functions: how many setup tasks are done
+            const btnStatus = document.getElementById('checklistBtnStatus');
+            const btn = document.getElementById('checklistBtn');
+            if (btnStatus) btnStatus.textContent = allDone ? 'All done ✓' : `${doneCount} of ${items.length} done`;
+            if (btn) btn.classList.toggle('done', allDone);
 
-            const collapsed = isReadinessChecklistCollapsed();
-            container.className = `readiness-checklist${collapsed ? ' collapsed' : ''}`;
+            // The dedicated screen
+            container.className = `readiness-checklist${allDone ? ' ready' : ''}`;
             container.innerHTML = `
-                <div class="readiness-header" role="button" tabindex="0" aria-expanded="${collapsed ? 'false' : 'true'}"
-                     onclick="toggleReadinessChecklist()"
-                     onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleReadinessChecklist(); }">
+                <div class="readiness-header">
                     <div>
-                        <div class="readiness-title">Ready for ${selectedYear}?</div>
+                        <div class="readiness-title">${allDone ? `${selectedYear} is ready` : `Ready for ${selectedYear}?`}</div>
                         <div class="readiness-summary">${doneCount} of ${items.length} steps done</div>
                     </div>
-                    <span class="readiness-chevron" aria-hidden="true">${collapsed ? '▸' : '▾'}</span>
                 </div>
-                ${collapsed ? '' : items.map(item => `
+                ${items.map(item => `
                     <div class="readiness-item ${item.ok ? 'ok' : 'todo'}">
                         <span class="readiness-icon">${item.ok ? '✓' : ''}</span>
                         <div class="readiness-text">
@@ -469,7 +476,7 @@
                             <div class="readiness-detail">${escapeHtml(item.detail)}</div>
                             ${item.extra || ''}
                         </div>
-                        ${item.ok ? '' : `<button class="btn-small" onclick="goToAdminTab('${item.tab}')">${item.action}</button>`}
+                        <button class="btn-small" onclick="goToAdminTab('${item.tab}')">${item.ok ? 'Open' : item.action}</button>
                     </div>`).join('')}`;
         }
 

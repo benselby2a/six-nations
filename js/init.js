@@ -82,6 +82,7 @@
             await Storage.saveSettings(appSettings);
             updateLockToggleUI();
             renderMatches(); // Re-render to show/hide inputs
+            renderReadinessChecklist();
         }
 
         // Update lock toggle UI

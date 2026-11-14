@@ -14,6 +14,7 @@
             document.getElementById('recoveryTab').classList.add('hidden');
             document.getElementById('usageReportTab').classList.add('hidden');
             document.getElementById('yearsTab').classList.add('hidden');
+            document.getElementById('checklistTab').classList.add('hidden');
 
             // Update tab buttons
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
@@ -73,6 +74,9 @@
                 document.getElementById('usageReportTab').classList.remove('hidden');
                 event.target.classList.add('active');
                 renderUsageReport();
+            } else if (tabName === 'checklist') {
+                if (!isCurrentUserAdmin()) return;
+                document.getElementById('checklistTab').classList.remove('hidden');
             } else if (tabName === 'adminHome') {
                 if (!isCurrentUserAdmin()) return;
                 document.getElementById('adminHomeTab').classList.remove('hidden');
@@ -80,7 +84,7 @@
             }
 
             // Opening an admin section folds the admin menu away to save room; the heading reopens it
-            const adminSections = ['competitors', 'scoreCorrections', 'results', 'rules', 'prizeFund', 'years', 'recovery', 'usageReport'];
+            const adminSections = ['competitors', 'scoreCorrections', 'results', 'rules', 'prizeFund', 'years', 'recovery', 'usageReport', 'checklist'];
             if (adminSections.includes(tabName)) setAdminPanelCollapsed(true);
             else if (tabName === 'adminHome') setAdminPanelCollapsed(false);
 
