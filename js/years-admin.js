@@ -29,6 +29,25 @@
             return candidates[candidates.length - 1];
         }
 
+        // Rounds come from the dates, not from anyone typing them: fixtures in the same Monday to Sunday week
+        // (a Thursday to Sunday weekend) are one round, and rounds count up from the earliest week.
+        // A fixture with no usable date keeps whatever round it already has.
+        function assignRoundsFromDates(list) {
+            const weekStart = (match) => {
+                const kickoff = typeof getMatchKickoffDate === 'function' ? getMatchKickoffDate(match) : null;
+                if (!kickoff) return null;
+                const monday = new Date(kickoff.getFullYear(), kickoff.getMonth(), kickoff.getDate());
+                monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+                return monday.getTime();
+            };
+            const keys = [...new Set(list.map(weekStart).filter(k => k !== null))].sort((a, b) => a - b);
+            list.forEach(match => {
+                const key = weekStart(match);
+                if (key !== null) match.round = keys.indexOf(key) + 1;
+            });
+            return list;
+        }
+
         // Point `matches` at the selected year's fixtures (mutated in place: it is a const array)
         function applySelectedYearMatches() {
             let yearMatches = allMatches.filter(m => m.year === selectedYear);
@@ -37,6 +56,7 @@
             }
             matches.length = 0;
             yearMatches.forEach(m => matches.push(m));
+            assignRoundsFromDates(matches);
         }
 
         // Next fixture id, unique across all years (ids are a single global sequence)
