@@ -136,27 +136,32 @@
             if (!note) return;
             note.classList.add('hidden');
             note.textContent = '';
-            const prev = (allMatches || []).find(m => m.year === match.year - 1 &&
-                ((m.team1 === match.team1 && m.team2 === match.team2) || (m.team1 === match.team2 && m.team2 === match.team1)));
+            const norm = (t) => String(t || '').trim().toLowerCase();
+            const prev = (allMatches || []).find(m => Number(m.year) === Number(match.year) - 1 &&
+                ((norm(m.team1) === norm(match.team1) && norm(m.team2) === norm(match.team2)) || (norm(m.team1) === norm(match.team2) && norm(m.team2) === norm(match.team1))));
             const userId = users[username] && users[username].id;
-            if (!prev || !userId) return;
+            if (!prev || userId === undefined || userId === null) return;
             const key = userId + ':' + prev.id;
             if (!(key in lastYearPredictionCache)) {
                 try {
-                    const { data } = await supabaseClient.from('predictions').select('team1_score,team2_score').eq('user_id', userId).eq('match_id', prev.id).maybeSingle();
-                    lastYearPredictionCache[key] = data || null;
-                } catch (e) { lastYearPredictionCache[key] = null; }
+                    const { data, error } = await supabaseClient.from('predictions').select('team1_score,team2_score').eq('user_id', userId).eq('match_id', prev.id).limit(1);
+                    if (error) console.warn('Could not load last year\'s prediction:', error.message);
+                    lastYearPredictionCache[key] = !error ? ((data && data[0]) || null) : undefined;
+                } catch (e) { lastYearPredictionCache[key] = undefined; }
             }
+            if (lastYearPredictionCache[key] === undefined) { delete lastYearPredictionCache[key]; return; }   // failed: try again next time
             const pred = lastYearPredictionCache[key];
-            if (!pred || pred.team1_score === null || pred.team2_score === null) return;
+            const hasGuess = !!pred && pred.team1_score !== null && pred.team2_score !== null;
             if (!editingPredictionContext || editingPredictionContext.matchId !== match.id || editingPredictionContext.username !== username) return;
             // Show scores in this year's home/away order
-            const flip = prev.team1 !== match.team1;
-            const guess = flip ? `${pred.team2_score}-${pred.team1_score}` : `${pred.team1_score}-${pred.team2_score}`;
+            const flip = norm(prev.team1) !== norm(match.team1);
+            const guess = !hasGuess ? '' : flip ? `${pred.team2_score}-${pred.team1_score}` : `${pred.team1_score}-${pred.team2_score}`;
             const played = prev.actualScore1 !== null && prev.actualScore2 !== null;
             const actual = played ? (flip ? `${prev.actualScore2}-${prev.actualScore1}` : `${prev.actualScore1}-${prev.actualScore2}`) : null;
             const who = (editingPredictionContext.mode === 'admin') ? `${getDisplayName(username)} predicted` : 'You predicted';
-            note.textContent = `Last year (${prev.year}) ${who} ${guess}${actual ? `, the result was ${actual}` : ''}.`;
+            const guessText = hasGuess ? `${who} ${guess}` : (editingPredictionContext.mode === 'admin' ? `${getDisplayName(username)} made no prediction` : 'you made no prediction');
+            if (!hasGuess && !actual) return;
+            note.textContent = `Last year (${prev.year}) ${guessText}${actual ? `, the result was ${actual}` : ''}.`;
             note.classList.remove('hidden');
         }
 

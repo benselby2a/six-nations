@@ -119,6 +119,9 @@ const mock = `
   console.log('fixture played last year (home/away swapped):', withHistory, '|', withHistory === 'Last year (2026) You predicted 22-15, the result was 20-12.');
   await page.evaluate(() => closeEditPredictionModal());
   await page.evaluate(() => { matches.push({ id: 99, year: 2027, round: 2, date: 'Sat, Feb 20', time: '14:10', team1: 'Italy', team2: 'France', actualScore1: null, actualScore2: null }); });
+  await page.evaluate(() => { allMatches.find(m => m.id === 5).team1 = ' WALES '; });
+  console.log('team names with different case/spacing still match:', (await note(3)) === 'Last year (2026) You predicted 22-15, the result was 20-12.');
+  await page.evaluate(() => closeEditPredictionModal());
   console.log('no fixture last year -> nothing shown:', (await note(99)) === null);
   console.log('errors', errors);
   await browser.close();
