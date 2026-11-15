@@ -12,4 +12,5 @@ head -$((MARK-1)) dev/tests/browser/admin-collapse.js \
 sed "s#__REPO__#$PWD#g" dev/tour-shots-body.js >> "$OUT"
 NODE_PATH="$(npm root -g)" node "$OUT"
 python3 dev/tour-webp.py >/dev/null   # pictures are shipped as WebP (about half the size)
+dev/build.sh >/dev/null               # js/tour-images.js changed: rebuild dist/
 rm -f "$OUT"; rm -rf "$JSPDF_DIR"

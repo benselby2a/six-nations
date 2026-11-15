@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 [ -n "$1" ] || { echo "usage: dev/ship.sh \"commit message\""; exit 1; }
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 dev/bump.sh >/dev/null
-dev/check.sh | tail -2
+dev/check.sh | tail -3
 git fetch -q origin main
 git reset -q --soft origin/main   # one clean commit on top of the latest main (earlier work was squash-merged)
 git add -A

@@ -168,7 +168,7 @@ setInterval(liveRefreshTick, 30 * 1000);
 // compare version tags. A newer version reloads the app automatically. It never reloads while a pop-up is open, so nothing
 // half-typed is lost; it simply tries again next time.
 const APP_VERSION_TAG = (() => {
-    const el = document.querySelector('script[src*="connectivity.js"]');
+    const el = document.querySelector('script[src*="app.min.js"]');
     const m = el && /[?&]v=([\w-]+)/.exec(el.getAttribute('src') || '');
     return m ? m[1] : null;
 })();
@@ -182,7 +182,7 @@ async function checkForNewVersion() {
         const response = await fetch(location.pathname + '?_=' + Date.now(), { cache: 'no-store' });
         if (!response.ok) return;
         const html = await response.text();
-        const m = /src="js\/connectivity\.js\?v=([\w-]+)"/.exec(html);
+        const m = /src="dist\/app\.min\.js\?v=([\w-]+)"/.exec(html);
         if (!m || m[1] === APP_VERSION_TAG) return;
         if (document.querySelector('.modal:not(.hidden), body.tour-open')) return;   // do not interrupt: try again next time
         let tried = null;
@@ -195,3 +195,8 @@ async function checkForNewVersion() {
 
 setTimeout(checkForNewVersion, 1500);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkForNewVersion(); });
+
+// ---- Service worker: lets the app open with no signal (see sw.js; reads only, nothing is queued) ----
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => { /* not available here: the app works without it */ }); });
+}

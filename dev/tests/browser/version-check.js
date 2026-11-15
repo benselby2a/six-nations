@@ -106,7 +106,7 @@ const server = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', '1
 process.on('exit', () => { try { server.kill(); } catch (e) {} });
 (async () => {
   const browser = await chromium.launch();
-  const page = await browser.newPage();
+  const page = await (await browser.newContext({ serviceWorkers: 'block' })).newPage();   // the service worker has its own test (service-worker.js)
   await page.addInitScript(() => { window.__noTourPrompts = true; });
   const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('dialog', d => d.accept());
   await page.route('**/@supabase/supabase-js**', r => r.fulfill({contentType:'application/javascript', body: mock}));
@@ -117,11 +117,12 @@ process.on('exit', () => { try { server.kill(); } catch (e) {} });
   await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(Math.min(1000, 40));
   console.log('the page knows its own version tag:', !!(await page.evaluate(() => APP_VERSION_TAG)));
   let reloads = 0; page.on('load', () => reloads++);
-  await page.route('**/index.html?_=*', r => r.fulfill({ contentType: 'text/html', body: '<script src="js/connectivity.js?v=99999999-999"></script>' }));
+  await page.route('**/index.html?_=*', r => r.fulfill({ contentType: 'text/html', body: '<script src="dist/app.min.js?v=99999999"></script>' }));
   await page.evaluate(() => { lastVersionCheckAt = 0; document.getElementById('editPredictionModal').classList.remove('hidden'); return checkForNewVersion(); }); await page.waitForTimeout(800);
   console.log('a pop-up being open stops it reloading:', reloads === 0);
   await page.evaluate(() => { document.getElementById('editPredictionModal').classList.add('hidden'); lastVersionCheckAt = 0; return checkForNewVersion(); }); await page.waitForTimeout(1500);
   console.log('a newer version reloads the app automatically:', reloads === 1);
+  await page.waitForFunction(() => { try { return typeof checkForNewVersion === 'function' && lastVersionCheckAt >= 0; } catch (e) { return false; } });
   await page.evaluate(() => { lastVersionCheckAt = 0; return checkForNewVersion(); }); await page.waitForTimeout(1500);
   console.log('and it does not keep reloading:', reloads === 1);
   console.log('errors', errors);
