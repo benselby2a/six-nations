@@ -25,7 +25,7 @@
   - `Guesser Rules`
   - `Prize Fund`
 
-### `js/` file map (load order, all classic scripts sharing one global scope; no build step)
+### `js/` file map (load order is `js/load-order.txt`; all classic scripts sharing one global scope; built into `dist/app.min.js` by `dev/build.sh`)
 `constants` fixtures/flags/team helpers; `storage` Supabase client and `Storage`; `state` globals, usage tracking, escaping, cookies, remembered user; `years-admin` years, Years tab, readiness checklist, who plays; `init` initializeData/init/lock toggle; `admin-fixtures` fixtures, bulk import, results; `admin-competitors` competitors, invitations, account linking; `profile` profile, theme, help; `auth` login code flow, handleAuthChange, showApp; `predictions` predictions UI and admin prediction editing; `scoring` rules and points; `trevs-tips` Trev's Tips/Statto text; `leaderboard` round filter, prize projection/panel; `worm-chart`; `summary`; `fixture-chat` Match Summary comments and emoji; `export-pdf`; `rules-admin` rules and prize forms; `recovery-usage` recovery SQL, usage report; `app-shell` showTab, refresh, install tip, start-up wiring (auth listener) last. Keep this order: files run top to bottom at load.
 Admin menu: `#adminPanel` is always fully shown at the top of every admin section (it is not collapsible).
 
@@ -526,3 +526,9 @@ New-version check (connectivity.js): about 1.5s after loading, and whenever the 
 Refresh efficiency: `getUsers`/`getUserJokerSelections` fetch only the selected year's fixtures. The 2-minute live refresh (`refreshLiveScores` in connectivity.js) fetches only that year's matches (`Storage.getYearMatches`) and the reactions. `showSummaryIfChanged()` (summary.js) skips the redraw when `summarySignature()` is unchanged; manual refresh uses it too.
 
 Load time: jsPDF and its table plugin are fetched on demand by `loadPdfLibs()` (export-pdf.js) and quietly ~6s after start-up, not in `<head>`. The Google Fonts stylesheet loads without blocking rendering (`media="print"` swap). The tour pictures are WebP: `dev/tour-shots.sh` writes JPEGs then `dev/tour-webp.py` converts them and updates js/tour-images.js. Test: `dev/test.sh pdf-lazy`.
+
+
+## Build and service worker
+- Sources are `js/*.js` (order: `js/load-order.txt`) and `styles.css`. `dev/build.sh` concatenates and minifies them into `dist/app.min.js` and `dist/app.min.css` (esbuild via npx, pinned), writes `?v=<hash of the built files>` into `index.html`, and generates `sw.js` from `dev/sw.template.js`. `dist/` and `sw.js` are committed build output. `dev/bump.sh` is an alias for the build; `dev/check.sh` fails if `dist/` is out of date. Tests run against the built files.
+- `sw.js` (service worker): precaches the app shell; the page is network-first (4s, then the saved copy); `dist/`, `tour-images/`, `icons/` are cache-first; the CDN libraries and fonts are stale-while-revalidate; Supabase calls, non-GET requests and the new-version check (`?_=`) are never handled by it. It is registered in `js/connectivity.js`. Test: `dev/test.sh service-worker` (it blocks the worker in other http tests: `serviceWorkers: 'block'`).
+- New file in `js/`: add it to `js/load-order.txt`. Version check: `js/connectivity.js` compares the `?v=` of `dist/app.min.js` with the one in a freshly fetched `index.html`.
