@@ -4631,3 +4631,7 @@ body.summary-compact .match-header-cell .match-header-top .match-teams { margin-
 }
 .match-header-cell[role="button"] { cursor: pointer; }
 .match-header-cell[role="button"]:focus-visible { outline: 2px solid var(--bright-gold); outline-offset: -2px; }
+
+/* PDF preview pop-up (desktop) */
+.pdf-modal-content { width: min(1200px, 96vw); max-width: none; }
+.pdf-preview-frame { width: 100%; height: min(70vh, 640px); border: 1px solid var(--line-strong); border-radius: 8px; background: #ffffff; display: block; }

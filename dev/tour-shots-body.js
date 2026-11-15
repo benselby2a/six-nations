@@ -61,7 +61,7 @@
 
   // ---- the app tour ----
   await shot('predictions', { before: () => clickTab('My Predictions'), clip: [tab('My Predictions'), '#matchesContainer .prediction-table-container'], marks: [tab('My Predictions'), '#matchesContainer .prediction-table-container button.btn-success'], maxH: 760 });
-  await shot('score', { before: () => clickTab('Match Summary'), clip: [tab('Match Summary'), '.summary-container'], marks: [tab('Match Summary'), '.summary-container', '#summaryRefreshBtn'], maxH: 760 });
+  await shot('score', { before: () => clickTab('Match Summary'), clip: [tab('Match Summary'), '.summary-container'], marks: [tab('Match Summary'), '.summary-container', '#summaryCompactBtn'], maxH: 760 });
   await shot('compact', { before: async () => { await clickTab('Match Summary'); await page.evaluate(() => applySummaryCompact(true)); await page.waitForTimeout(300); }, clip: ['.summary-toolbar', '.summary-container'], marks: ['#summaryCompactBtn', '.summary-container'], maxH: 560 });
   await page.evaluate(() => applySummaryCompact(false));
   await shot('pdf', { clip: ['.summary-toolbar', '.summary-updated-row'], marks: ['#exportPdfBtn'] });
