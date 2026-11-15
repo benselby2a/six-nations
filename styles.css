@@ -4716,7 +4716,9 @@ body.summary-compact .cell-score .joker-inline { width: 1.25rem; height: 1.25rem
    The header (real and pinned copy alike, so nothing jumps when it pins) gets an empty strip of header colour there, so the names sit below the blurred band. (Not applied in a browser or on desktop.) */
 @media (display-mode: standalone) {
     @supports (-webkit-touch-callout: none) {
-        .summary-table thead th { border-top: 24px solid transparent; }   /* on the real header too, so the pinned copy is exactly the same height and the header does not jump when it pins */
+        /* The spacer is page-coloured: iOS tints the status bar to match whatever is pinned at the top, so this makes the top of the screen match the page. It is on the real header too, so the pinned copy is the same height and nothing jumps when it pins. */
+        .summary-table thead th { border-top: 24px solid var(--bg); }
+        .summary-sticky-inner { border-radius: 0; box-shadow: 0 5px 6px -4px rgba(0, 0, 0, 0.3); }
     }
 }
 
