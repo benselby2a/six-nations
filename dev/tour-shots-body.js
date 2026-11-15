@@ -62,15 +62,15 @@
   // ---- the app tour ----
   await shot('predictions', { before: () => clickTab('My Predictions'), clip: [tab('My Predictions'), '#matchesContainer .prediction-table-container'], marks: [tab('My Predictions'), '#matchesContainer .prediction-table-container button.btn-success'], maxH: 760 });
   await shot('score', { before: () => clickTab('Match Summary'), clip: [tab('Match Summary'), '.summary-container'], marks: [tab('Match Summary'), '.summary-container', '#summaryCompactBtn'], maxH: 760 });
-  await shot('compact', { before: async () => { await clickTab('Match Summary'); await page.evaluate(() => applySummaryCompact(true)); await page.waitForTimeout(300); }, clip: ['.summary-toolbar', '.summary-container'], marks: ['#summaryCompactBtn', '.summary-container'], maxH: 560 });
-  await page.evaluate(() => applySummaryCompact(false));
   await shot('pdf', { clip: ['.summary-toolbar', '.summary-updated-row'], marks: ['#exportPdfBtn'] });
   // The PDF itself: build it with the app's own export, save the download, turn page 1 into a picture
   try {
     const glob = (name) => require('child_process').execSync(`find ${process.env.JSPDF_DIR} -name ${name} | head -1`).toString().trim();
     await page.addScriptTag({ content: fs.readFileSync(glob('jspdf.umd.min.js'), 'utf8') });
     await page.addScriptTag({ content: fs.readFileSync(glob('jspdf.plugin.autotable.min.js'), 'utf8') });
-    const [download] = await Promise.all([page.waitForEvent('download'), page.evaluate(() => exportToPDF())]);
+    // on a desktop-style pointer the app shows the PDF in a pop-up instead of downloading it: pretend to be a phone so it downloads, and no pop-up is left over the later pictures
+    const [download] = await Promise.all([page.waitForEvent('download'), page.evaluate(() => { window.isDesktopPointer = () => false; exportToPDF(); })]);
+    await page.evaluate(() => { delete window.isDesktopPointer; if (typeof closePdfModal === 'function') closePdfModal(); });
     const pdfPath = process.env.JSPDF_DIR + '/summary.pdf';
     await download.saveAs(pdfPath);
     require('child_process').execSync(`pdftoppm -png -r 130 -f 1 -l 1 -singlefile ${pdfPath} ${process.env.JSPDF_DIR}/page`);

@@ -122,6 +122,8 @@ const mock = `
   await page.evaluate(() => { const doc = { output: () => new Blob(['%PDF-1.4 test'], { type: 'application/pdf' }), save: (n) => window.__saved.push(n) }; showPdfModal(doc, 'SixNations_Summary_test.pdf'); });
   await page.waitForTimeout(400);
   console.log('desktop: the PDF opens in a pop-up with Print, Save and Close:', JSON.stringify(await page.evaluate(() => ({ open: !document.getElementById('pdfModal').classList.contains('hidden'), src: document.getElementById('pdfPreviewFrame').src.startsWith('blob:'), buttons: [...document.querySelectorAll('#pdfModal button')].map(b => b.textContent.trim()), desktop: isDesktopPointer() }))));
+  const box = await page.evaluate(() => { const m = document.getElementById('pdfModal').getBoundingClientRect(); const c = document.querySelector('.pdf-modal-content').getBoundingClientRect(); const f = document.getElementById('pdfPreviewFrame').getBoundingClientRect(); return { vw: innerWidth, vh: innerHeight, modalW: Math.round(c.width), modalH: Math.round(c.height), frameW: Math.round(f.width), frameH: Math.round(f.height) }; });
+  console.log('pop-up and preview fill the screen:', JSON.stringify(box), box.modalW >= box.vw - 30 && box.modalH >= box.vh - 30 && box.frameW >= box.vw - 60 && box.frameH >= box.vh * 0.8);
   await page.evaluate(() => { document.getElementById('pdfPreviewFrame').contentWindow.print = () => { window.__printed++; }; });
   await page.click('#pdfPrintBtn'); await page.click('#pdfModal button:has-text("Save PDF")'); await page.waitForTimeout(200);
   console.log('Print and Save:', JSON.stringify(await page.evaluate(() => ({ printed: window.__printed, saved: window.__saved }))));
