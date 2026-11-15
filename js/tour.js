@@ -54,7 +54,7 @@ function tourBuildSteps(rulesHtml, chatLive) {
     steps.push(tourStep('score', 'See the current score', [
         'Tap <strong>Match Summary</strong> at the top of the screen. It is the screen you land on after signing in.',
         'Everyone\'s rank and total score are on the left, with each prediction and the points it earned for every match.',
-        'Tap the <strong>refresh icon</strong> to pull the latest results.'
+        'Tap the <strong>Compact mode</strong> button (the two arrows) to hide the emoji rows, dates and tries so more fits on screen.'
     ], '<p>Tap any prediction to see how it was scored. The header row stays at the top as you scroll, and a 🃏 marks a Joker. Turn your phone sideways for a compact view with just the countries and scores.</p>'));
     steps.push(tourStep('compact', 'Compact mode', [
         'Tap the <strong>Compact mode</strong> button (the two arrows) beside refresh.',
@@ -62,7 +62,7 @@ function tourBuildSteps(rulesHtml, chatLive) {
     ], '<p>Compact mode starts switched on for phones, so a round\'s games fit without sideways scrolling.</p>'));
     steps.push(tourStep('pdf', 'The traditional view', [
         'On the Match Summary, tap the <strong>PDF icon</strong> above the table if you want the traditional view.'
-    ], '<p>It lays the table out on a page you can read at a glance, save or print. The picture shows the page you get.</p>'));
+    ], '<p>It lays the table out on a page you can read at a glance. On a computer it opens in a pop-up with Print and Save buttons. The picture shows the page you get.</p>'));
     if (chatLive) {
         steps.push(tourStep('chips', 'React to matches and results', [
             'Tap the <strong>😀＋ chip</strong> under a match (or anywhere on the match header) to react to the match with an emoji or one of the two team flags.',

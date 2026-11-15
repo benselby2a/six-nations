@@ -439,8 +439,63 @@
                 window.location.href = blobUrl;
                 return;
             }
-            doc.save(filename);
+            // Desktop browsers tend to download the file straight away, so show it in a pop-up first with Print and Save.
+            // Phones keep the usual behaviour (their own viewer / share sheet).
+            if (isDesktopPointer()) {
+                showPdfModal(doc, filename);
+            } else {
+                doc.save(filename);
+            }
         }
+
+        function isDesktopPointer() {
+            return !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+        }
+
+        // PDF preview pop-up (desktop): the page in a frame, with Print and Save
+        let pdfModalState = null;   // { doc, filename, url }
+
+        function showPdfModal(doc, filename) {
+            const modal = document.getElementById('pdfModal');
+            const frame = document.getElementById('pdfPreviewFrame');
+            if (!modal || !frame) { doc.save(filename); return; }
+            closePdfModal();
+            const url = URL.createObjectURL(doc.output('blob'));
+            pdfModalState = { doc, filename, url };
+            frame.src = url + '#toolbar=0&navpanes=0&view=FitH';
+            modal.classList.remove('hidden');
+            const printBtn = document.getElementById('pdfPrintBtn');
+            if (printBtn) printBtn.focus();
+        }
+
+        function closePdfModal() {
+            const modal = document.getElementById('pdfModal');
+            const frame = document.getElementById('pdfPreviewFrame');
+            if (modal) modal.classList.add('hidden');
+            if (frame) frame.src = 'about:blank';
+            if (pdfModalState) { URL.revokeObjectURL(pdfModalState.url); pdfModalState = null; }
+        }
+
+        function printPdfPreview() {
+            if (!pdfModalState) return;
+            const frame = document.getElementById('pdfPreviewFrame');
+            try {
+                frame.contentWindow.focus();
+                frame.contentWindow.print();
+            } catch (error) {
+                // The browser would not print from the frame: open the PDF in a tab, where Print works
+                window.open(pdfModalState.url, '_blank');
+            }
+        }
+
+        function savePdfPreview() {
+            if (!pdfModalState) return;
+            pdfModalState.doc.save(pdfModalState.filename);
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && pdfModalState) closePdfModal();
+        });
 
         function initTouchTooltips() {
             // Add click/touch handlers for tooltip containers

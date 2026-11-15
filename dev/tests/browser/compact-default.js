@@ -112,7 +112,7 @@ const mock = `
     await page.goto('file://' + path); await page.waitForTimeout(500);
     await page.fill('#loginEmail', 'ben@example.com'); await page.click('#sendLoginCodeBtn'); await page.waitForTimeout(150);
     await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(1200);
-    const r = await page.evaluate(() => ({ headerJokers: [...document.querySelectorAll('.summary-container thead .joker-eligible-icon, .summary-container thead .joker-inline')].filter(e => e.offsetParent).length, compact: document.body.classList.contains('summary-compact'), pressed: document.getElementById('summaryCompactBtn').getAttribute('aria-pressed'), pad: getComputedStyle(document.querySelector('.container')).paddingLeft, containerW: Math.round(document.querySelector('.container').getBoundingClientRect().width), vw: innerWidth }));
+    const r = await page.evaluate(() => ({ pdfModalOnThisDevice: isDesktopPointer(), headerJokers: [...document.querySelectorAll('.summary-container thead .joker-eligible-icon, .summary-container thead .joker-inline')].filter(e => e.offsetParent).length, compact: document.body.classList.contains('summary-compact'), pressed: document.getElementById('summaryCompactBtn').getAttribute('aria-pressed'), pad: getComputedStyle(document.querySelector('.container')).paddingLeft, containerW: Math.round(document.querySelector('.container').getBoundingClientRect().width), vw: innerWidth }));
     console.log(label, JSON.stringify(r), errors.length ? errors : '');
     await ctx.close();
     return r;
@@ -125,6 +125,7 @@ const mock = `
   const deskOn = await run('desktop, compact on:', { viewport: {width:1280,height:800} }, '1');
   console.log('the header always shows the Joker-eligible card (any mode, any screen):', [phone, phoneOff, land, landOff, desk, deskOn].every(r => r.headerJokers >= 1));
   console.log('compact is the default on phones only, and the choice wins:', phone.compact && !phoneOff.compact && land.compact && !desk.compact);
+  console.log('the PDF pop-up is for desktop only (phones keep opening it as before):', [phone, phoneOff, land, landOff].every(r => !r.pdfModalOnThisDevice) && desk.pdfModalOnThisDevice && deskOn.pdfModalOnThisDevice);
   console.log('landscape iPhone uses the full width with a narrow border:', land.pad === '8px' && land.containerW >= land.vw - 2);
   await browser.close();
 })();
