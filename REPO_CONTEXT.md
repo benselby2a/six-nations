@@ -521,4 +521,4 @@ A player's Joker pick on the summary has a small gold circle behind the card (`t
 
 Before predictions lock (and with no result in), the Match Summary shows only a bulleted "Signed up for <year>" list (`getActiveUsernames()`), not the table. The table (with 🔒 cells for others, for the odd case) appears once locked or any result exists.
 
-New-version check (connectivity.js): on start and when the app comes back to the front it fetches a fresh index.html (no-store) and compares the connectivity.js version tag with its own. Within 15s of loading it reloads once; later it shows a "New version available, Reload" banner. Needed because a Home Screen app can keep an old copy of the page. Test: `dev/test.sh version-check`.
+New-version check (connectivity.js): about 1.5s after loading, and whenever the app comes back to the front, it fetches a fresh index.html (no-store) and compares the connectivity.js version tag with its own; a newer one reloads the app automatically (once per version, never while a pop-up or the tour is open). Needed because a Home Screen app can keep an old copy of the page. Test: `dev/test.sh version-check`.

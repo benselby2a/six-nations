@@ -115,17 +115,15 @@ process.on('exit', () => { try { server.kill(); } catch (e) {} });
   await page.goto(BASE + '/index.html'); await page.waitForTimeout(Math.min(800, 40));
   await page.fill('#loginEmail', 'ben@example.com'); await page.click('#sendLoginCodeBtn'); await page.waitForTimeout(Math.min(150, 40));
   await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(Math.min(1000, 40));
-  const tag = await page.evaluate(() => APP_VERSION_TAG);
-  console.log('the page knows its own version tag:', !!tag);
-  // 1) later in the session, a newer version on the server -> a banner, not a surprise reload
+  console.log('the page knows its own version tag:', !!(await page.evaluate(() => APP_VERSION_TAG)));
+  let reloads = 0; page.on('load', () => reloads++);
   await page.route('**/index.html?_=*', r => r.fulfill({ contentType: 'text/html', body: '<script src="js/connectivity.js?v=99999999-999"></script>' }));
-  await page.evaluate(() => { const real = Date.now; Date.now = () => real() + 60000; lastVersionCheckAt = 0; return checkForNewVersion(); }); await page.waitForTimeout(500);
-  console.log('a newer version later on shows a reload banner:', await page.evaluate(() => !!document.querySelector('.new-version-banner button')));
-  // 2) same version -> nothing
-  await page.evaluate(() => { document.querySelector('.new-version-banner').remove(); newVersionBannerShown = false; });
-  await page.unroute('**/index.html?_=*'); await page.route('**/index.html?_=*', r => r.continue());
-  await page.evaluate(() => { lastVersionCheckAt = 0; return checkForNewVersion(); }); await page.waitForTimeout(500);
-  console.log('the same version shows nothing:', await page.evaluate(() => !document.querySelector('.new-version-banner')));
+  await page.evaluate(() => { lastVersionCheckAt = 0; document.getElementById('editPredictionModal').classList.remove('hidden'); return checkForNewVersion(); }); await page.waitForTimeout(800);
+  console.log('a pop-up being open stops it reloading:', reloads === 0);
+  await page.evaluate(() => { document.getElementById('editPredictionModal').classList.add('hidden'); lastVersionCheckAt = 0; return checkForNewVersion(); }); await page.waitForTimeout(1500);
+  console.log('a newer version reloads the app automatically:', reloads === 1);
+  await page.evaluate(() => { lastVersionCheckAt = 0; return checkForNewVersion(); }); await page.waitForTimeout(1500);
+  console.log('and it does not keep reloading:', reloads === 1);
   console.log('errors', errors);
   await browser.close(); server.kill();
 })();
