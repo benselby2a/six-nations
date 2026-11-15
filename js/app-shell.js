@@ -2,12 +2,12 @@
 // Classic script (shared global scope); load order is set in index.html.
 
         // Tab switching
-        // The last main tab (My Predictions, Match Summary, Admin Functions) is remembered on this device
+        // The last main tab (My Predictions or Match Summary; not Admin Functions) is remembered on this device
         const LAST_TAB_KEY = 'lastTab';
         function restoreLastTab() {
             let last = '';
             try { last = localStorage.getItem(LAST_TAB_KEY) || ''; } catch (error) { last = ''; }
-            if (!last || last === 'summary') return;
+            if (!last || last === 'summary' || last === 'adminHome') return;   // the app never reopens on Admin (an old saved value is ignored)
             const btn = document.querySelector(`#appView .app-bar > .tabs .tab[onclick="showTab('${last}')"]`);
             if (btn && !btn.classList.contains('hidden') && !btn.closest('.hidden')) btn.click();
         }
@@ -99,7 +99,7 @@
                 const adminTop = document.querySelector('#appView .app-bar > .tabs .admin-top-tab');
                 if (adminTop) adminTop.classList.add('active');
             }
-            if (['predictions', 'summary', 'adminHome'].includes(tabName)) {
+            if (['predictions', 'summary'].includes(tabName)) {   // Admin is not remembered: the app reopens on whichever of these two was viewed last
                 try { localStorage.setItem(LAST_TAB_KEY, tabName); } catch (error) { /* not remembered */ }
             }
             updatePastYearBanners();

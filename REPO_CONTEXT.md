@@ -514,3 +514,5 @@ Tour pictures: the picture stays hidden until the 120ms refit has sized it (no t
 - connectivity.js wraps the `Storage` read methods in `CACHED_READS`: a good read saves a copy in `localStorage` (`rugbyPredictorReadCache:v1:<name>[:<year>]`); if the network fails, the saved copy is returned instead and `#connectionBanner` says "Showing scores saved at HH:MM". `clearReadCache()` runs on logout.
 - Live refresh: every 30s `liveRefreshTick` refreshes the summary (keeping scroll position) if the summary tab is showing, the page is visible, and a fixture kicked off within the last 3 hours; at most every 2 minutes. While a match is live, coming back to the page refreshes after 1 minute (5 otherwise).
 - Test: `dev/test.sh connectivity`.
+
+The app remembers only My Predictions or Match Summary as the last tab (never Admin); an old saved Admin value is ignored. Test: `dev/test.sh last-tab`.
