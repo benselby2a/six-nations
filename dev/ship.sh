@@ -7,6 +7,8 @@ cd "$(dirname "$0")/.."
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 dev/bump.sh >/dev/null
 dev/check.sh | tail -2
+git fetch -q origin main
+git reset -q --soft origin/main   # one clean commit on top of the latest main (earlier work was squash-merged)
 git add -A
 git commit -qm "$1
 
