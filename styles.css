@@ -4713,14 +4713,12 @@ body.summary-compact .cell-score .joker-inline { width: 1.25rem; height: 1.25rem
 .signed-up-you { opacity: 0.7; font-size: 0.85em; }
 
 /* iPhone Home Screen app: iOS fades and blurs anything within about 35px of the top edge (under the status bar), which made the team names in the pinned header fuzzy.
-   The header (real and pinned copy alike, so nothing jumps when it pins) gets an empty strip of header colour there, so the names sit below the blurred band. (Not applied in a browser or on desktop.) */
-@media (display-mode: standalone) {
-    @supports (-webkit-touch-callout: none) {
+   The header (real and pinned copy alike, so nothing jumps when it pins) gets an empty strip of header colour there, so the names sit below the blurred band. (iPhone and iPad only, in the Home Screen app and in Safari; not on desktop.) */
+@supports (-webkit-touch-callout: none) {
         /* The spacer is page-coloured: iOS tints the status bar to match whatever is pinned at the top, so this makes the top of the screen match the page. It is on the real header too, so the pinned copy is the same height and nothing jumps when it pins. */
         .summary-table thead th { border-top: 24px solid var(--bg); }
         .summary-sticky-inner { border-radius: 0; box-shadow: 0 5px 6px -4px rgba(0, 0, 0, 0.3); }
     }
-}
 
 /* Dark mode: the summary header row is dark with gold edging, not solid yellow. (iOS colours the status bar to match the pinned header, so a yellow one flashed a yellow band across the top of the phone when scrolling.) */
 :root[data-theme="dark"] .summary-table thead { background: var(--bar-bg); --on-accent: var(--text); }
