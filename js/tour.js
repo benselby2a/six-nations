@@ -83,9 +83,9 @@ function tourBuildAdminSteps() {
             'Each button opens a section, and the menu stays at the top so you can jump between sections.'
         ], '<p>The <strong>Setup Checklist</strong> button opens a screen showing which setup tasks for the year are done, including locking predictions once everyone is in and entering scores for finished matches.</p>'),
         tourStep('admin-fixtures', 'Fixtures and Scores', [
-            'Admin Functions, then <strong>Fixtures and Scores</strong>.',
-            'Tap a row to edit a fixture, set it Joker eligible, or enter the actual score and tries once the match is played.'
-        ], '<p><strong>Bulk Import</strong> adds a whole year in one go: one fixture per line as <em>DD/MM/YYYY, HH:MM, Home, Away</em>. Tip: ask Google AI to write the fixtures in that format, then check them against the official list. Rounds are worked out from the dates. The red <strong>+ score</strong> button on the Match Summary is the quick way to enter a result.</p>'),
+            'Tap a row to edit a fixture, set it Joker eligible, or enter the actual score and tries once the match is played.',
+            '<strong>Bulk Import</strong> adds a whole year in one go: one fixture per line as <em>DD/MM/YYYY, HH:MM, Home, Away</em>. Tip: ask Google AI to write the fixtures in that format, then check them against the official list.'
+        ], '<p>Find it under Admin Functions, then <strong>Fixtures and Scores</strong>. <strong>Add New Fixture</strong> adds a single match. Rounds are worked out from the dates. The red <strong>+ score</strong> button on the Match Summary is the quick way to enter a result.</p>'),
         tourStep('admin-lock', 'Predictions and the lock', [
             'Admin Functions, then <strong>Predictions</strong>.',
             'Switch on <strong>Lock Predictions</strong> when the tournament starts. Each year has its own lock.',
