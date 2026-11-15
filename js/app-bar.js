@@ -181,7 +181,7 @@ function queueSummaryStickyVisibility() {
     requestAnimationFrame(() => { pinQueued = false; updateSummaryStickyVisibility(); });
 }
 window.addEventListener('scroll', queueSummaryStickyVisibility, { passive: true });
-window.addEventListener('resize', () => { sizeSummaryStickyHead(); queueSummaryStickyVisibility(); const hint = document.getElementById('scrollHint'); const box = document.querySelector('.summary-container'); if (hint && box) hint.classList.toggle('hidden', box.scrollWidth <= box.clientWidth); if (typeof syncSummaryScrollLock === 'function') syncSummaryScrollLock(); });
+window.addEventListener('resize', () => { sizeSummaryStickyHead(); queueSummaryStickyVisibility(); const hint = document.getElementById('scrollHint'); const box = document.querySelector('.summary-container'); if (hint && box) hint.classList.toggle('hidden', box.scrollWidth <= box.clientWidth); if (typeof syncSummaryScrollLock === 'function') syncSummaryScrollLock(); if (typeof refreshWormChartLayout === 'function') refreshWormChartLayout(); });
 
 // Compact mode: hides the emoji rows and, in the headers, the date and tries, to save space. Remembered on this device.
 const SUMMARY_COMPACT_KEY = 'summaryCompact';

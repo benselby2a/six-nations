@@ -4672,3 +4672,13 @@ body.summary-compact .match-header-cell .match-header-top .match-teams { margin-
 @keyframes unsavedIn { from { opacity: 0; transform: translate(-50%, -8px); } to { opacity: 1; transform: translate(-50%, 0); } }
 .unsaved-field { outline: 3px solid rgba(232, 176, 42, 0.75); outline-offset: 1px; }
 @media (prefers-reduced-motion: reduce) { .unsaved-toast { animation: none; } }
+
+/* Points Progression on a phone: taller, with larger labels and points */
+.worm-chart-svg.phone .worm-axis-label { font-size: 21px; }
+.worm-chart-svg.phone .worm-axis-match-label { font-size: 19px; }
+.worm-chart-svg.phone .worm-axis-title { font-size: 22px; }
+.worm-chart-svg.phone .worm-series-line { stroke-width: 4; }
+.worm-chart-svg.phone .worm-series.is-active .worm-series-line { stroke-width: 6; }
+.worm-chart-svg.phone .worm-point { r: 10; }
+.worm-chart-svg.phone .worm-series.is-active .worm-point { r: 13; }
+.worm-chart-svg.phone .worm-grid-line { stroke-width: 1.5; }
