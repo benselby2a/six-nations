@@ -130,13 +130,16 @@ const mock = `
   await rulesInput.fill(String(Number(before) + 1)); await page.waitForTimeout(100);
   await page.click('#rulesSaveUpdatedBtn'); await page.waitForTimeout(900);
   const t2b = await toast(); console.log('2 after Save Updated Rules:', JSON.stringify(t2b), !t2b.shown);
-  // 3. Edit Fixture pop-up, then Cancel
+  // 3. Pop-ups ask for their own Save or Cancel, so they never show the toast
   await page.click('.admin-tabs .tab:has-text("Fixtures and Scores")'); await page.waitForTimeout(600);
   await page.evaluate(() => openEditFixtureModal(matches[0].id)); await page.waitForTimeout(300);
   await page.click('#edit-fixture-time'); await page.fill('#edit-fixture-time', '09:15'); await page.waitForTimeout(150);
-  const t3 = await toast(); console.log('3 after editing a fixture:', JSON.stringify(t3), t3.shown && /Fixture/.test(t3.text));
+  const t3 = await toast(); console.log('3 editing inside the Edit Fixture pop-up:', JSON.stringify(t3), !t3.shown && t3.fields === 0);
   await page.evaluate(() => closeEditFixtureModal()); await page.waitForTimeout(200);
-  console.log('3 after Cancel:', JSON.stringify(await toast()), !(await toast()).shown);
+  await page.evaluate(() => { openProfile(); }); await page.waitForTimeout(300);
+  const nick = page.locator('#profileDisplayName'); await nick.click(); await nick.fill('Benny'); await page.waitForTimeout(150);
+  const t3b = await toast(); console.log('3 editing inside the Profile pop-up:', JSON.stringify(t3b), !t3b.shown && t3b.fields === 0);
+  await page.evaluate(() => closeProfile()); await page.waitForTimeout(200);
   // 4. Competitors card
   await page.click('.admin-tabs .tab:has-text("Competitors")'); await page.waitForTimeout(600);
   await page.click('#user-row-sam > summary'); await page.click('#edit-nickname-sam'); await page.fill('#edit-nickname-sam', 'Sammy2'); await page.waitForTimeout(150);
