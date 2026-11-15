@@ -443,6 +443,7 @@
             authAccountsLoaded = false;
             authAccountsRequested = false;
             clearRememberedUsername();
+            if (typeof clearReadCache === 'function') clearReadCache();
             showLoginScreen();
 
             // Reset logout button text

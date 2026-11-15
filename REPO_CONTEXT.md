@@ -508,3 +508,9 @@ This is the main browser-to-Supabase boundary.
 `loadLastYearNote` (predictions.js) finds last year's fixture with the same two teams (either order), fetches that player's prediction for it, and shows "Last year (YYYY) You predicted a-b, the result was c-d." under the scores (`#edit-prediction-lastyear`), in this year's home/away order. Hidden when there is no such fixture or prediction. Test: `dev/test.sh last-year-note`. The admin tour's Fixtures step now promotes Bulk Import and suggests Google AI for generating the lines.
 
 Tour pictures: the picture stays hidden until the 120ms refit has sized it (no tiny flash on first open), and step text must stay short or the picture shrinks (the admin Fixtures step is the longest). Test: `dev/test.sh tour-picture-size`.
+
+## Connectivity (network.js, connectivity.js)
+- `netFetch` (network.js) is the Supabase client's fetch: 20s timeout on everything, tracks `NET.offline`, and **refuses writes** (`/rest/v1/` non-GET) when offline with a 503 "not saved" response and a banner. Writes are never queued or answered from a cache.
+- connectivity.js wraps the `Storage` read methods in `CACHED_READS`: a good read saves a copy in `localStorage` (`rugbyPredictorReadCache:v1:<name>[:<year>]`); if the network fails, the saved copy is returned instead and `#connectionBanner` says "Showing scores saved at HH:MM". `clearReadCache()` runs on logout.
+- Live refresh: every 30s `liveRefreshTick` refreshes the summary (keeping scroll position) if the summary tab is showing, the page is visible, and a fixture kicked off within the last 3 hours; at most every 2 minutes. While a match is live, coming back to the page refreshes after 1 minute (5 otherwise).
+- Test: `dev/test.sh connectivity`.
