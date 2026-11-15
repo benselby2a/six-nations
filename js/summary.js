@@ -5,7 +5,21 @@
         function showSummary() {
             const container = document.getElementById('summaryContainer');
             const allUsers = getParticipantUsernames();
-            
+
+            // Until predictions lock (or a result is in) nobody's guesses are shown, so the summary is just who has signed up
+            if (!predictionsRevealed()) {
+                const names = getActiveUsernames().map(u => ({ username: u, name: getDisplayName(u) }))
+                    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+                const list = names.length
+                    ? `<ul class="signed-up-list">${names.map(n => `<li>${escapeHtml(n.name)}${n.username === currentUsername ? ' <span class="signed-up-you">(you)</span>' : ''}</li>`).join('')}</ul>`
+                    : '<p class="signed-up-empty">Nobody has signed up for this year yet.</p>';
+                container.innerHTML = `<div class="signed-up-panel"><h3>Signed up for ${selectedYear}${names.length ? ` (${names.length})` : ''}</h3><p class="signed-up-note">🔒 Predictions will be revealed after all guesses are in.</p>${list}</div>`;
+                renderPrizeMoneyPanel([]);
+                renderWormChart([]);
+                updateLeaderboard();
+                return;
+            }
+
             if (matches.length === 0 || allUsers.length === 0) {
                 const emptyMessage = matches.length === 0
                     ? `Predictions will be revealed after all guesses are in.`

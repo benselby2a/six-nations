@@ -117,16 +117,14 @@ const mock = `
   await page.click('#appView .app-bar > .tabs .tab:has-text("Match Summary")'); await page.waitForTimeout(600);
   await page.evaluate(() => { users.sam.predictions[matches[0].id] = { team1: 21, team2: 17 }; users.ben.predictions[matches[0].id] = { team1: 30, team2: 10 }; users.sam.totalTries = 9; users.ben.totalTries = 11; showSummary(); });
   await page.waitForTimeout(500);
-  const hidden = await state(); console.log('before the lock:', JSON.stringify({ locked: hidden.locked, note: hidden.note, lockIcons: hidden.lockIcons, triesCol: hidden.triesCol }));
-  const own = hidden.rows.find(r => r.startsWith('ben:')), other = hidden.rows.find(r => r.startsWith('sam:'));
-  console.log('  your own row:', own, '| someone else:', other);
-  const closest = await page.evaluate(() => { const p = document.getElementById('prizeMoneyContainer'); return p ? p.innerText.replace(/\\s+/g, ' ') : ''; });
-  console.log('before the lock your own guess shows, nobody else\'s does, and the closest-tries names are held back:', /30\s*-\s*10/.test(own) && !/21\s*-\s*17/.test(other) && /🔒/.test(other) && hidden.note && !/\(\d+ tries/.test(closest) && /Shown when predictions lock/.test(closest));
-  // locking reveals everything
+  const before = await page.evaluate(() => ({ list: [...document.querySelectorAll('.signed-up-list li')].map(li => li.textContent.trim()), table: !!document.querySelector('.summary-table'), note: (document.querySelector('.signed-up-note') || {}).textContent || '', head: (document.querySelector('.signed-up-panel h3') || {}).textContent || '' }));
+  console.log('before the lock:', JSON.stringify(before));
+  console.log('before the lock only a list of who signed up shows (no table, no predictions):', !before.table && before.list.length >= 1 && /Predictions will be revealed/.test(before.note) && /Signed up for 2027/.test(before.head));
   await page.evaluate(() => { appSettings.predictionsLocked = true; showSummary(); }); await page.waitForTimeout(500);
   const shown = await state(); const otherShown = shown.rows.find(r => r.startsWith('sam:'));
-  console.log('after the lock:', JSON.stringify({ locked: shown.locked, note: shown.note, lockIcons: shown.lockIcons, triesCol: shown.triesCol }), '|', otherShown);
-  console.log('once locked everyone\'s predictions show:', /21\s*-\s*17/.test(otherShown) && shown.lockIcons === 0 && !shown.note);
+  console.log('once locked the full table with everyone\'s predictions shows:', /21\s*-\s*17/.test(otherShown) && shown.lockIcons === 0 && !shown.note);
+  await page.evaluate(() => { appSettings.predictionsLocked = false; matches[0].actualScore1 = 20; matches[0].actualScore2 = 10; showSummary(); }); await page.waitForTimeout(400);
+  console.log('a result being in also reveals the table:', await page.evaluate(() => !!document.querySelector('.summary-table') && !document.querySelector('.signed-up-list')));
   console.log('errors', errors);
   await browser.close();
 })();
