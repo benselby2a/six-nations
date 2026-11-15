@@ -14,8 +14,8 @@
                 .sort((a, b) => b.totalPoints - a.totalPoints);
 
             function getMatchPoints(username, match) {
-                const pred = users[username].predictions[match.id];
-                return calculateMatchPoints(pred, match, isUserJokerForMatch(username, match.id));
+                const pred = getViewablePrediction(username, match.id);
+                return calculateMatchPoints(pred, match, canSeePredictionsOf(username) && isUserJokerForMatch(username, match.id));
             }
 
             const P = {
@@ -202,8 +202,8 @@
                 ];
 
                 matchSchemas.forEach(({ match, cols }) => {
-                    const pred = users[user.username].predictions[match.id];
-                    const isJoker = isUserJokerForMatch(user.username, match.id);
+                    const pred = getViewablePrediction(user.username, match.id);
+                    const isJoker = canSeePredictionsOf(user.username) && isUserJokerForMatch(user.username, match.id);
                     const pts = getMatchPoints(user.username, match);
 
                     if (!pred) {
@@ -341,9 +341,7 @@
                         }
 
                         if (isUserRow && rowUser && (colMeta.kind === 'home' || colMeta.kind === 'away')) {
-                            const pred = users[rowUser.username] && users[rowUser.username].predictions
-                                ? users[rowUser.username].predictions[colMeta.match.id]
-                                : null;
+                            const pred = getViewablePrediction(rowUser.username, colMeta.match.id) || null;
                             if (pred) {
                                 const isDraw = pred.team1 === pred.team2;
                                 const isHomeWin = pred.team1 > pred.team2;

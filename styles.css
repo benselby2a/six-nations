@@ -4689,3 +4689,7 @@ body.summary-compact .match-header-cell .match-header-top .match-teams { margin-
 
 /* The Admin Functions tab uses a red accent (admin screens are the red ones) */
 #appView .app-bar > .tabs .tab.admin-top-tab.active { border-bottom-color: #ff5560; }
+
+/* Predictions hidden until predictions are locked */
+.predictions-hidden-note { margin: 0 0 0.6rem; padding: 0.55rem 0.8rem; border-radius: 8px; border: 1px solid var(--field-border); background: var(--field-bg); color: var(--text); font-size: 0.85rem; font-weight: 600; }
+.summary-table td.hidden-prediction { opacity: 0.7; }

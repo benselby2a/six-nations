@@ -275,3 +275,20 @@
         function isTournamentComplete() {
             return matches.length > 0 && matches.every(isMatchComplete);
         }
+
+        // ---- Other people's predictions stay hidden until predictions are locked, so nobody is influenced by them ----
+        // (the tournament having started, i.e. any result in, also counts as revealed, for years that were never locked)
+        function predictionsRevealed() {
+            return !!(appSettings && appSettings.predictionsLocked) || matches.some(m => m.actualScore1 !== null && m.actualScore2 !== null);
+        }
+
+        // You can always see your own; everyone else's once revealed
+        function canSeePredictionsOf(username) {
+            return predictionsRevealed() || (!!currentUsername && username === currentUsername);
+        }
+
+        function getViewablePrediction(username, matchId) {
+            if (!canSeePredictionsOf(username)) return undefined;
+            const userData = users[username];
+            return userData && userData.predictions ? userData.predictions[matchId] : undefined;
+        }

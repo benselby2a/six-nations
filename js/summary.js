@@ -53,7 +53,8 @@
             const scrollHintArrow = currentFilter === 'default' ? '↔' : '→';
             const scrollHintMarkup = `<div class="scroll-hint hidden" id="scrollHint"><span>${scrollHintText}</span><span class="scroll-hint-arrow">${scrollHintArrow}</span></div>`;
 
-            let html = scrollHintMarkup;
+            let html = predictionsRevealed() ? '' : '<div class="predictions-hidden-note" role="status">🔒 Other players\' predictions are hidden until predictions are locked, so nobody is influenced by them. You can still see your own.</div>';
+            html += scrollHintMarkup;
             html += '<div class="summary-table-wrap"><div class="summary-sticky-head"><div class="summary-sticky-inner"></div></div>';
             html += '<div class="summary-container">';
             html += '<table class="summary-table">';
@@ -124,6 +125,11 @@
 
                 // Column for each match
                 filteredMatches.forEach(match => {
+                    if (!canSeePredictionsOf(user.username)) {
+                        // Hidden until predictions are locked: same slots as a normal cell, so rows still line up
+                        html += '<td class="prediction-cell hidden-prediction" title="Hidden until predictions are locked"><div class="cell-score"><span aria-label="Hidden until predictions are locked">🔒</span></div><span class="points-earned points-placeholder">&nbsp;</span><div class="cell-extras"></div></td>';
+                        return;
+                    }
                     const pred = users[user.username].predictions[match.id];
                     const hasResult = match.actualScore1 !== null && match.actualScore2 !== null;
                     
@@ -208,7 +214,7 @@
                 // Predicted tries column (only when not filtering by round): just the number, no tooltip
                 if (currentFilter !== 'round') {
                     const userTries = users[user.username].totalTries;
-                    html += `<td class="tries-col">${userTries !== null && userTries !== undefined ? userTries : '-'}</td>`;
+                    html += `<td class="tries-col">${!canSeePredictionsOf(user.username) ? '🔒' : (userTries !== null && userTries !== undefined ? userTries : '-')}</td>`;
                 }
                 
                 html += '</tr>';
