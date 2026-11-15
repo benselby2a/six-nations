@@ -4686,3 +4686,6 @@ body.summary-compact .match-header-cell .match-header-top .match-teams { margin-
 /* Tournament tries save themselves: a small status line instead of a Save button */
 .tries-save-status { display: block; min-height: 1.3em; margin-top: 0.5rem; font-size: 0.85rem; font-weight: 700; color: var(--good-text); }
 .tries-save-status.error { color: var(--bad-text); }
+
+/* The Admin Functions tab uses a red accent (admin screens are the red ones) */
+#appView .app-bar > .tabs .tab.admin-top-tab.active { border-bottom-color: #ff5560; }

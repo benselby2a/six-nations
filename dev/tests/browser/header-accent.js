@@ -117,7 +117,7 @@ const mock = `
   for (const tab of ['My Predictions', 'Match Summary', 'Admin Functions']) { await page.click('#appView .app-bar > .tabs .tab:has-text("' + tab + '")'); await page.waitForTimeout(350); results.push([tab, await marked(), tab]); }
   for (const section of ['Setup Checklist', 'Fixtures and Scores', 'Predictions', 'Competitors', 'Guesser Rules', 'Prize Fund', 'Years', 'Database Recovery', 'Usage Report']) { await page.click('.admin-tabs .tab:has-text("' + section + '")'); await page.waitForTimeout(350); results.push([section, await marked(), 'Admin Functions']); }
   results.forEach(([where, m, want]) => console.log(where.padEnd(22), JSON.stringify(m)));
-  console.log('the header accent is on the selected tab on every screen:', results.every(([, m, want]) => m.count === 1 && m.name.toUpperCase().startsWith(want.toUpperCase().slice(0, 8)) && m.width === '3px' && m.accent !== 'rgba(0, 0, 0, 0)'));
+  console.log('the header accent is on the selected tab on every screen:', results.every(([, m, want]) => m.count === 1 && m.name.toUpperCase().startsWith(want.toUpperCase().slice(0, 8)) && m.width === '3px' && m.accent === (want === 'Admin Functions' ? 'rgb(255, 85, 96)' : 'rgb(232, 176, 42)')));
   // right after signing in, after a reload that restores another tab, and as a guest
   const signIn = async () => { await page.fill('#loginEmail', 'ben@example.com'); await page.click('#sendLoginCodeBtn'); await page.waitForTimeout(150); await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(1200); };
   await page.click('#appView .app-bar > .tabs .tab:has-text("Admin Functions")'); await page.waitForTimeout(300);
