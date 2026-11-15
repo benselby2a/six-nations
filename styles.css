@@ -4719,6 +4719,8 @@ body.summary-compact .cell-score .joker-inline { width: 1.25rem; height: 1.25rem
         .summary-table thead th { border-top: 24px solid var(--bg); }
         .summary-sticky-inner { border-radius: 0; box-shadow: 0 5px 6px -4px rgba(0, 0, 0, 0.3); }
         /* The column dividers in the header are inset shadows, not left borders: a left border meets the spacer's top border at a slant and showed as thin dark lines above the table */
+        /* the pinned Score column's edge shadow is drawn inside the cell, so it does not run up through the spacer as a line */
+        .summary-table thead th.pts-col { box-shadow: inset -6px 0 6px -6px rgba(0, 0, 0, 0.3); }
         .summary-table thead th.match-header-cell { border-left: 0; box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.18); }
         .summary-table thead th.match-header-cell.joker-eligible-header { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.18), inset 0 -5px 0 #e8b02a; }
     }
