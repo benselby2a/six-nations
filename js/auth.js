@@ -577,6 +577,11 @@
             document.getElementById('checklistTab').classList.add('hidden');
             document.getElementById('adminHomeTab').classList.add('hidden');
 
+            // Match Summary is the selected tab (the tab bar itself is hidden for guests)
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            const guestSummaryTab = Array.from(document.querySelectorAll('.tab')).find(tab => tab.textContent.trim() === 'Match Summary');
+            if (guestSummaryTab) guestSummaryTab.classList.add('active');
+
             // Show summary
             restoreSavedSummaryView();
             showSummary();

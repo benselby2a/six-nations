@@ -402,22 +402,87 @@
             }
         }
 
-        async function autoSaveAdminPredictions() {
-            const username = adminPredictionUsername;
+        async function autoSaveAdminPredictions(usernameArg = null, valueArg = null) {
+            const username = usernameArg || adminPredictionUsername;
             if (!username || !users[username]) return;
 
             const triesInput = document.getElementById('adminTotalTries');
-            const totalTries = triesInput ? triesInput.value : '';
+            const totalTries = valueArg !== null ? valueArg : (triesInput ? triesInput.value : '');
             const newTries = totalTries === '' ? null : parseInt(totalTries, 10);
 
             users[username].totalTries = newTries;
             await Storage.savePredictions(username, users[username].predictions || {}, newTries);
         }
 
-        async function saveAdminTournamentTries() {
-            await autoSaveAdminPredictions();
-            alert('Tournament tries saved.');
+        // ---- Tournament tries save themselves shortly after typing stops: no Save button, no pop-up ----
+        const TRIES_AUTOSAVE_DELAY = 800;
+        const triesAutosave = {
+            mine: { timer: null, value: null, username: null, input: 'totalTries', status: 'triesSaveStatus' },
+            admin: { timer: null, value: null, username: null, input: 'adminTotalTries', status: 'adminTriesSaveStatus' }
+        };
+        let triesStatusTimers = {};
+
+        function setTriesStatus(id, text, isError = false) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = text;
+            el.classList.toggle('error', !!isError);
+            clearTimeout(triesStatusTimers[id]);
+            if (text && !isError) triesStatusTimers[id] = setTimeout(() => { el.textContent = ''; }, 2500);
         }
+
+        async function runTriesAutosave(kind) {
+            const state = triesAutosave[kind];
+            if (state.value === null) return;
+            const value = state.value, username = state.username;
+            state.timer = null; state.value = null;
+            try {
+                if (kind === 'mine') {
+                    if (appSettings.predictionsLocked) return;
+                    await autoSavePredictions();
+                } else {
+                    await autoSaveAdminPredictions(username, value);
+                }
+                setTriesStatus(state.status, 'Saved ✓');
+            } catch (error) {
+                setTriesStatus(state.status, 'Could not save. Try again.', true);
+            }
+        }
+
+        // Save now if a save is waiting (the box lost focus, another competitor was picked, or the page is being left)
+        function flushTriesAutosave(kind) {
+            const state = triesAutosave[kind];
+            if (state.timer !== null) { clearTimeout(state.timer); runTriesAutosave(kind); }
+        }
+
+        function scheduleTriesAutosave(kind) {
+            const state = triesAutosave[kind];
+            const input = document.getElementById(state.input);
+            if (!input) return;
+            clearTimeout(state.timer);
+            const value = input.value;
+            if (value !== '' && !/^\d+$/.test(value)) {
+                state.timer = null; state.value = null;
+                setTriesStatus(state.status, 'Enter a whole number of 0 or more', true);
+                return;
+            }
+            setTriesStatus(state.status, '');
+            state.value = value;
+            state.username = kind === 'admin' ? adminPredictionUsername : currentUsername;
+            state.timer = setTimeout(() => runTriesAutosave(kind), TRIES_AUTOSAVE_DELAY);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            Object.keys(triesAutosave).forEach(kind => {
+                const input = document.getElementById(triesAutosave[kind].input);
+                if (!input) return;
+                input.addEventListener('input', () => scheduleTriesAutosave(kind));
+                input.addEventListener('blur', () => flushTriesAutosave(kind));
+            });
+            const flushAll = () => Object.keys(triesAutosave).forEach(flushTriesAutosave);
+            window.addEventListener('pagehide', flushAll);
+            document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushAll(); });
+        });
 
         // Render matches
         function renderMatches() {
@@ -503,17 +568,11 @@
             
             // Also disable/enable tries input
             const triesInput = document.getElementById('totalTries');
-            const triesSaveBtn = document.getElementById('saveTriesBtn');
             
             if (triesInput) {
                 triesInput.disabled = appSettings.predictionsLocked;
                 triesInput.style.opacity = appSettings.predictionsLocked ? '0.6' : '1';
                 triesInput.style.cursor = appSettings.predictionsLocked ? 'not-allowed' : '';
-            }
-            if (triesSaveBtn) {
-                triesSaveBtn.disabled = appSettings.predictionsLocked;
-                triesSaveBtn.style.opacity = appSettings.predictionsLocked ? '0.6' : '1';
-                triesSaveBtn.style.cursor = appSettings.predictionsLocked ? 'not-allowed' : '';
             }
             
         }
@@ -534,11 +593,6 @@
             renderMatches();
         }
 
-        async function saveTournamentTries() {
-            if (appSettings.predictionsLocked) return;
-            await autoSavePredictions();
-            alert('Tournament tries saved.');
-        }
         
         // Update the outstanding predictions banner
         function updateOutstandingBanner() {
