@@ -146,11 +146,11 @@
                 if (loadedMatches) allMatches = loadedMatches;
                 await loadYearData();
 
-                // Restore opacity and show summary
+                // Restore opacity and show summary (only redrawn if something changed)
                 if (container) {
                     container.style.opacity = '1';
                 }
-                showSummary();
+                showSummaryIfChanged();
 
             } catch (error) {
                 console.error('Error refreshing summary data:', error);

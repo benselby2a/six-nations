@@ -14,6 +14,21 @@
         // ============================================
         // STORAGE ABSTRACTION LAYER (Supabase)
         // ============================================
+        const matchFromRow = (m) => ({
+            id: m.id,
+            year: m.year || 2026,
+            round: m.round,
+            date: m.date,
+            time: m.time,
+            team1: m.team1,
+            team2: m.team2,
+            actualScore1: m.actual_score1,
+            actualScore2: m.actual_score2,
+            actualTries1: m.actual_tries1,
+            actualTries2: m.actual_tries2,
+            jokerEligible: m.joker_eligible || false
+        });
+
         const Storage = {
             // Users - get all users as object keyed by username
             getUsers: async () => {
@@ -304,20 +319,18 @@
                 if (!data || data.length === 0) return null;
                 
                 // Convert to app format
-                return data.map(m => ({
-                    id: m.id,
-                    year: m.year || 2026,
-                    round: m.round,
-                    date: m.date,
-                    time: m.time,
-                    team1: m.team1,
-                    team2: m.team2,
-                    actualScore1: m.actual_score1,
-                    actualScore2: m.actual_score2,
-                    actualTries1: m.actual_tries1,
-                    actualTries2: m.actual_tries2,
-                    jokerEligible: m.joker_eligible || false
-                }));
+                return data.map(matchFromRow);
+            },
+
+            // One year's fixtures only (used by the live-score refresh); null when the request fails
+            getYearMatches: async (year) => {
+                const { data, error } = await supabaseClient
+                    .from('matches')
+                    .select('*')
+                    .eq('year', year)
+                    .order('id');
+                if (error || !data) return null;
+                return data.map(matchFromRow);
             },
 
             // Years available in the year dropdown

@@ -132,11 +132,17 @@ const mock = `
     const d = new Date(Date.now() - min * 60000); const pad = n => String(n).padStart(2, '0');
     matches.forEach(m => { m.date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; m.time = `${pad(d.getHours())}:${pad(d.getMinutes())}`; });
     lastDataRefreshAt = Date.now() - 3 * 60 * 1000;
-    const real = supabaseClient.from.bind(supabaseClient); let n = 0; supabaseClient.from = (...a) => { n++; return real(...a); };
-    liveRefreshTick(); await new Promise(r => setTimeout(r, 900)); supabaseClient.from = real; return n;
+    const real = supabaseClient.from.bind(supabaseClient); const tables = []; supabaseClient.from = (t, ...a) => { tables.push(t); return real(t, ...a); };
+    liveRefreshTick(); await new Promise(r => setTimeout(r, 900)); supabaseClient.from = real; return tables;
   }, minutesAgo);
-  console.log('30 minutes after kick-off the scores refresh by themselves:', (await tick(30)) > 0);
-  console.log('5 hours after kick-off they do not:', (await tick(300)) === 0);
+  const live = await tick(30);
+  console.log('30 minutes after kick-off the scores refresh by themselves:', live.length > 0);
+  console.log('and only fixtures and reactions are fetched (not users or predictions):', JSON.stringify(live), live.every(t => ['matches', 'fixture_reactions'].includes(t)));
+  console.log('5 hours after kick-off they do not:', (await tick(300)).length === 0);
+  // no redraw when nothing changed, a redraw when a score arrives
+  await page.evaluate(() => { showSummary(); document.querySelector('#summaryContainer').setAttribute('data-mark', 'x'); document.querySelector('#summaryContainer .summary-table').setAttribute('data-mark', 'x'); });
+  console.log('a refresh that finds nothing new leaves the table alone:', await page.evaluate(async () => { await refreshLiveScores(); const before = document.querySelector('#summaryContainer .summary-table'); await refreshLiveScores(); return before === document.querySelector('#summaryContainer .summary-table'); }));
+  console.log('a changed score redraws it:', await page.evaluate(async () => { const before = document.querySelector('#summaryContainer .summary-table'); const real = Storage.getYearMatches; Storage.getYearMatches = async (y) => { const r = await real(y); r[1].actualScore1 = 11; r[1].actualScore2 = 9; r[1].actualTries1 = 1; r[1].actualTries2 = 1; return r; }; await refreshLiveScores(); Storage.getYearMatches = real; return before !== document.querySelector('#summaryContainer .summary-table'); }));
   console.log('signing out removes the saved copy:', await page.evaluate(() => { clearReadCache(); return Object.keys(localStorage).filter(k => k.startsWith('rugbyPredictorReadCache:')).length === 0; }));
   console.log('errors', errors);
   await browser.close();

@@ -2,7 +2,26 @@
 // Classic script (shared global scope); load order is set in index.html.
 
         // Show comprehensive summary with matches as columns
+        // What the summary shows depends on all of this; if none of it changed since the last render, a refresh need not redraw it
+        let lastSummarySignature = null;
+        function summarySignature() {
+            try {
+                return JSON.stringify([selectedYear, matches, users, appSettings, userJokerSelections, fixtureChat, activeScoringRules, currentFilter, selectedRound, currentUsername, isGuest, document.body.classList.contains('summary-compact')]);
+            } catch (e) { return null; }
+        }
         function showSummary() {
+            renderSummaryNow();
+            lastSummarySignature = summarySignature();
+        }
+        // Redraw only when something changed (no flicker, no lost scroll position on a refresh that found nothing new)
+        function showSummaryIfChanged() {
+            const sig = summarySignature();
+            if (sig !== null && sig === lastSummarySignature && document.querySelector('#summaryContainer .summary-table, #summaryContainer .signed-up-panel')) return false;
+            showSummary();
+            return true;
+        }
+
+        function renderSummaryNow() {
             const container = document.getElementById('summaryContainer');
             const allUsers = getParticipantUsernames();
 
