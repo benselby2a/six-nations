@@ -112,7 +112,8 @@
         // nobody's half-typed predictions are disturbed. Other tabs refresh when you open the summary.
         function refreshWhenReturning() {
             if (document.visibilityState !== 'visible' || isLoading || summaryRefreshInFlight) return;
-            if (Date.now() - lastDataRefreshAt < FOREGROUND_REFRESH_AFTER_MS) return;
+            const refreshAfter = (typeof isLiveMatchWindow === 'function' && isLiveMatchWindow()) ? 60 * 1000 : FOREGROUND_REFRESH_AFTER_MS;   // keener while a match is on
+            if (Date.now() - lastDataRefreshAt < refreshAfter) return;
             const appView = document.getElementById('appView');
             const summaryTab = document.getElementById('summaryTab');
             if (!appView || appView.classList.contains('hidden') || !summaryTab || summaryTab.classList.contains('hidden')) return;
