@@ -123,6 +123,7 @@ function tourPreload(kind) {
         const img = new Image();
         img.dataset.src = src;
         img.decoding = 'sync';
+        img.fetchPriority = 'low';   // never compete with the app's own loading
         img.src = src;
         tourPreloaded.push(img);   // keep a reference so the download is not dropped
     });

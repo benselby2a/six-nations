@@ -1,8 +1,36 @@
 // PDF export and touch tooltips
 // Classic script (shared global scope); load order is set in index.html.
 
-        function exportToPDF(options = {}) {
+        // jsPDF and its table plugin (about 400 KB) are only needed for the PDF, so they are fetched on demand;
+        // a few seconds after start-up they are also fetched quietly in the background so the first tap is instant.
+        const PDF_LIB_URLS = [
+            'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js',
+            'https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js'
+        ];
+        let pdfLibsPromise = null;
+        function loadPdfLibs() {
+            if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve();
+            if (!pdfLibsPromise) {
+                const load = (src) => new Promise((resolve, reject) => {
+                    const el = document.createElement('script');
+                    el.src = src; el.onload = resolve; el.onerror = () => reject(new Error('Could not load ' + src));
+                    document.head.appendChild(el);
+                });
+                pdfLibsPromise = PDF_LIB_URLS.reduce((chain, src) => chain.then(() => load(src)), Promise.resolve())
+                    .catch(error => { pdfLibsPromise = null; throw error; });   // allow another try after a failure
+            }
+            return pdfLibsPromise;
+        }
+        setTimeout(() => { (window.requestIdleCallback || setTimeout)(() => { loadPdfLibs().catch(() => {}); }); }, 6000);
+
+        async function exportToPDF(options = {}) {
             const { openInBrowser = false } = options;
+            try {
+                await loadPdfLibs();
+            } catch (error) {
+                alert('Could not load the PDF tools. Check your connection and try again.');
+                return;
+            }
             const allMatches = matches;
 
             const sortedUsers = getParticipantUsernames()
