@@ -122,7 +122,7 @@ const mock = `
   await page.locator('.summary-container thead th.match-header-cell').first().tap(); await page.waitForTimeout(400);
   console.log('tapping the match header opens its reactions:', JSON.stringify(await page.evaluate(() => ({ open: document.body.classList.contains('fixture-chat-open'), title: document.getElementById('fixtureChatTitle').textContent }))));
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
-  console.log('no Predicted Tries column:', await page.evaluate(() => !document.querySelector('.summary-container .tries-col') && !/Predicted Tries/.test(document.querySelector('.summary-container').innerText)));
+  console.log('Predicted Tries column is there, with no tooltip:', await page.evaluate(() => !!document.querySelector('.summary-container th.tries-col') && document.querySelectorAll('.summary-container td.tries-col').length > 0 && document.querySelectorAll('.summary-container td.tries-col .tooltip').length === 0));
   await page.evaluate(() => document.querySelector('.worm-point').scrollIntoView({block:'center'})); await page.waitForTimeout(200);
   await page.evaluate(() => document.querySelector('.worm-point').dispatchEvent(new MouseEvent('click', { bubbles: true }))); await page.waitForTimeout(300);
   console.log('a chart point opens the pop-up (no tooltip):', JSON.stringify(await page.evaluate(() => ({ open: document.body.classList.contains('fixture-chat-open'), title: document.getElementById('fixtureChatTitle').textContent, sub: document.getElementById('fixtureChatSub').textContent, lines: document.getElementById('fixtureChatBody').innerText.replace(/\\s+/g, ' ').slice(0, 100), tooltipElement: !!document.getElementById('wormPointTooltip') }))));

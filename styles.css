@@ -4389,7 +4389,7 @@ body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-wi
 /* Summary header row stays pinned while the table is on screen (see updateSummaryHeaderPin) */
 .summary-table thead th { z-index: 30 !important; }
 .summary-table thead th:not(.rank-col):not(.competitor-col):not(.pts-col) { background: var(--gold) !important; }
-.summary-table thead th.match-header-cell { position: relative; }
+.summary-table thead th.match-header-cell, .summary-table thead th.tries-col { position: relative; }
 
 .fixture-actuals-hint { font-size: 0.85rem; line-height: 1.4; margin: 0 0 0.9rem; padding: 0.55rem 0.8rem; border-left: 3px solid var(--gold); background: rgb(var(--ink) / 0.06); border-radius: 0 6px 6px 0; }
 #editFixtureModal .input-group:has(#edit-fixture-score1) label, #editFixtureModal .input-group:has(#edit-fixture-score2) label,

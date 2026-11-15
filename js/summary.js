@@ -58,7 +58,7 @@
             html += '<div class="summary-container">';
             html += '<table class="summary-table">';
             
-            // Header row: Rank | Competitor | Score | Match 1 | Match 2 | ...
+            // Header row: Rank | Competitor | Score | Match 1 | Match 2 | ... | Predicted Tries
             html += '<thead><tr>';
             html += '<th class="rank-col">#</th>';
             html += '<th class="competitor-col"><span class="th-angled">Competitor</span></th>';
@@ -81,6 +81,10 @@
                     </div>
                 </th>`;
             });
+            // Only show Tries column when not filtering by round
+            if (currentFilter !== 'round') {
+                html += '<th class="tries-col">Predicted Tries</th>';
+            }
             html += '</tr></thead>';
             
             html += '<tbody>';
@@ -200,6 +204,12 @@
                         ${extrasLine}
                     </td>`;
                 });
+                
+                // Predicted tries column (only when not filtering by round): just the number, no tooltip
+                if (currentFilter !== 'round') {
+                    const userTries = users[user.username].totalTries;
+                    html += `<td class="tries-col">${userTries !== null && userTries !== undefined ? userTries : '-'}</td>`;
+                }
                 
                 html += '</tr>';
             });
