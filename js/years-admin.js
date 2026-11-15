@@ -14,19 +14,38 @@
             return [...years].sort((a, b) => a - b);
         }
 
-        function pickInitialYear() {
-            let stored = null;
-            try {
-                stored = parseInt(localStorage.getItem(SELECTED_YEAR_KEY), 10);
-            } catch (error) {
-                stored = null;
-            }
-            if (Number.isInteger(stored) && availableYears.includes(stored)) return stored;
+        // The season people mean "now": from November the next Six Nations (the one starting in February) is the one to look at
+        function calendarDefaultYear(now = (typeof appNow === 'function' ? appNow() : new Date())) {
+            const year = now.getFullYear();
+            return now.getMonth() >= 10 ? year + 1 : year;
+        }
 
-            // Default to the latest year that has fixtures, so a newly added empty year is not the landing page
+        // Latest year that has fixtures, so a newly added empty year is not the landing page (used when the calendar year does not exist)
+        function latestYearWithFixtures() {
             const yearsWithFixtures = availableYears.filter(year => allMatches.some(m => m.year === year));
             const candidates = yearsWithFixtures.length > 0 ? yearsWithFixtures : availableYears;
             return candidates[candidates.length - 1];
+        }
+
+        function defaultYear() {
+            const target = calendarDefaultYear();
+            return availableYears.includes(target) ? target : latestYearWithFixtures();
+        }
+
+        // A year picked on this device is remembered, but only until the calendar default moves on (for example in
+        // November, when the next season becomes the default): the choice is stored with the default of that day.
+        function pickInitialYear() {
+            let stored = null;
+            let storedForDefault = null;
+            try {
+                stored = parseInt(localStorage.getItem(SELECTED_YEAR_KEY), 10);
+                storedForDefault = parseInt(localStorage.getItem(SELECTED_YEAR_DEFAULT_KEY), 10);
+            } catch (error) {
+                stored = null;
+            }
+            const fallback = defaultYear();
+            if (Number.isInteger(stored) && availableYears.includes(stored) && storedForDefault === fallback) return stored;
+            return fallback;
         }
 
         // Rounds come from the dates, not from anyone typing them: fixtures in the same Monday to Sunday week
@@ -140,6 +159,7 @@
                 selectedYear = year;
                 try {
                     localStorage.setItem(SELECTED_YEAR_KEY, String(year));
+                    localStorage.setItem(SELECTED_YEAR_DEFAULT_KEY, String(defaultYear()));
                 } catch (error) {
                     // Ignore storage errors; the choice just won't be remembered.
                 }
