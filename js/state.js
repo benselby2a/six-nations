@@ -26,6 +26,7 @@
         const COOKIE_FALLBACK_PREFIX = 'rugbyPredictorCookieFallback:';
         const REMEMBERED_USER_KEY = 'rugbyPredictorRememberedUser';
         const SELECTED_YEAR_KEY = 'rugbyPredictorSelectedYear';
+        const SELECTED_YEAR_DEFAULT_KEY = 'rugbyPredictorSelectedYearDefault';   // the default year on the day a year was picked
 
         // Loading state
         let isLoading = true;
