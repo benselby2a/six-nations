@@ -4718,6 +4718,9 @@ body.summary-compact .cell-score .joker-inline { width: 1.25rem; height: 1.25rem
         /* The spacer is page-coloured: iOS tints the status bar to match whatever is pinned at the top, so this makes the top of the screen match the page. It is on the real header too, so the pinned copy is the same height and nothing jumps when it pins. */
         .summary-table thead th { border-top: 24px solid var(--bg); }
         .summary-sticky-inner { border-radius: 0; box-shadow: 0 5px 6px -4px rgba(0, 0, 0, 0.3); }
+        /* The column dividers in the header are inset shadows, not left borders: a left border meets the spacer's top border at a slant and showed as thin dark lines above the table */
+        .summary-table thead th.match-header-cell { border-left: 0; box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.18); }
+        .summary-table thead th.match-header-cell.joker-eligible-header { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.18), inset 0 -5px 0 #e8b02a; }
     }
 
 /* Dark mode: the summary header row is dark with gold edging, not solid yellow. (iOS colours the status bar to match the pinned header, so a yellow one flashed a yellow band across the top of the phone when scrolling.) */
