@@ -98,7 +98,7 @@
   // ---- the admin tour ----
   await clickTab('Admin Functions');
   await shot('admin-menu', { before: () => page.evaluate(() => 0), clip: [tab('Admin Functions'), '.admin-tabs', '#adminPanel'], marks: [tab('Admin Functions'), '.admin-tabs'], maxH: 470 });
-  await shot('admin-fixtures', { before: () => clickAdmin('Fixtures and Scores'), scrollTo: '#resultsTab', clip: ['#resultsTab .results-table-container', { sel: '#resultsTab button', text: '+ Add New Fixture' }], marks: ['#resultsTab .results-table-container', { sel: '#resultsTab button', text: '+ Add New Fixture' }], maxH: 640 });
+  await shot('admin-fixtures', { before: () => clickAdmin('Fixtures and Scores'), scrollTo: '#resultsTab', clip: ['#resultsTab .results-table-container', { sel: '#resultsTab button', text: '+ Add New Fixture' }, { sel: '#resultsTab button', text: 'Bulk Import' }], marks: ['#resultsTab .results-table-container', { sel: '#resultsTab button', text: 'Bulk Import' }], maxH: 640 });
   await shot('admin-lock', { before: () => clickAdmin('Predictions'), scrollTo: '#scoreCorrectionsTab', clip: ['#scoreCorrectionsTab .lock-toggle', '.admin-score-corrections-toolbar', '#adminUserMatchesContainer'], marks: ['#scoreCorrectionsTab .lock-toggle', '.admin-score-corrections-toolbar'], maxH: 560 });
   await shot('admin-competitors', { before: () => clickAdmin('Competitors'), scrollTo: '#competitorsTab', clip: ['#new-competitor-card', '.competitor-card:not(.competitor-card-new)'], marks: ['#new-competitor-card', '.competitor-card:not(.competitor-card-new)'], maxH: 520 });
   await shot('admin-rules', { before: () => clickAdmin('Guesser Rules'), scrollTo: '#rulesTab', clip: ['#rulesTab > div:first-child', '#rulesTab .rules-card'], marks: ['#rulesTab .rules-card'], maxH: 640 });
