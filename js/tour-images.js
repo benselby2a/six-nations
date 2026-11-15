@@ -24,7 +24,7 @@ const TOUR_IMAGES = {
  },
  "score": {
   "src": "tour-images/score.jpg",
-  "v": "e376ed14",
+  "v": "08e434ae",
   "w": 780,
   "h": 1520,
   "marks": [
@@ -53,7 +53,7 @@ const TOUR_IMAGES = {
  },
  "pdf": {
   "src": "tour-images/pdf.jpg",
-  "v": "9674f592",
+  "v": "064975d4",
   "w": 780,
   "h": 458,
   "marks": [
@@ -156,23 +156,23 @@ const TOUR_IMAGES = {
  },
  "admin-lock": {
   "src": "tour-images/admin-lock.jpg",
-  "v": "0cf69d9e",
+  "v": "85bc6ba4",
   "w": 780,
-  "h": 584,
+  "h": 618,
   "marks": [
    {
     "n": 1,
     "x": 2.5,
-    "y": 3.4,
+    "y": 3.3,
     "w": 95.1,
-    "h": 42.1
+    "h": 39.7
    },
    {
     "n": 2,
     "x": 2.5,
-    "y": 56.5,
+    "y": 53.4,
     "w": 95.1,
-    "h": 17.7
+    "h": 22.4
    }
   ]
  },
@@ -200,7 +200,7 @@ const TOUR_IMAGES = {
  },
  "admin-rules": {
   "src": "tour-images/admin-rules.jpg",
-  "v": "8ae57744",
+  "v": "bacc26af",
   "w": 780,
   "h": 1280,
   "marks": [
@@ -215,7 +215,7 @@ const TOUR_IMAGES = {
  },
  "admin-prize": {
   "src": "tour-images/admin-prize.jpg",
-  "v": "a292c02c",
+  "v": "44049aad",
   "w": 780,
   "h": 1280,
   "marks": [
@@ -230,7 +230,7 @@ const TOUR_IMAGES = {
  },
  "admin-years": {
   "src": "tour-images/admin-years.jpg",
-  "v": "6fc1d40b",
+  "v": "37fa4188",
   "w": 780,
   "h": 1280,
   "marks": [
