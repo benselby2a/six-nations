@@ -4717,5 +4717,7 @@ body.summary-compact .cell-score .joker-inline { width: 1.25rem; height: 1.25rem
 @media (display-mode: standalone) {
     @supports (-webkit-touch-callout: none) {
         .summary-table-clone thead th { border-top: 34px solid transparent; }
+        /* iOS colours the status bar area to match the pinned header, edge to edge: so the header runs edge to edge too (gold extended to both sides, square corners) */
+        .summary-sticky-inner { border-radius: 0; box-shadow: -60px 0 0 var(--gold), 60px 0 0 var(--gold), 0 4px 8px rgba(0, 0, 0, 0.3); }
     }
 }
