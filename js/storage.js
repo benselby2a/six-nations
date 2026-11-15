@@ -9,7 +9,7 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_LDr2Tvnosv-H38JuWV5B0g_aKKA4NV1';  // Your anon/public key
         
         // Initialize Supabase client
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { fetch: netFetch } });
 
         // ============================================
         // STORAGE ABSTRACTION LAYER (Supabase)

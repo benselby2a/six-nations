@@ -4695,3 +4695,7 @@ body.summary-compact .match-header-cell .match-header-top .match-teams { margin-
 .summary-table td.hidden-prediction { opacity: 0.7; }
 
 .last-year-note { font-size: 0.82rem; opacity: 0.75; margin: 0.4rem 0 0; }
+
+/* No-signal banner: fixed to the top, above the app, never in the way of taps below it */
+.connection-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 2800; padding: max(6px, env(safe-area-inset-top, 0px)) 12px 6px; background: var(--field-bg); color: var(--text); border-bottom: 2px solid var(--gold); font-size: 0.85rem; line-height: 1.3; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+.connection-banner.hidden { display: none; }
