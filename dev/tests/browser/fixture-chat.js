@@ -120,6 +120,7 @@ const mock = `
   await t('1b no comment counts anywhere', () => ({ counts: document.querySelectorAll('.chat-count').length, cellTooltips: document.querySelectorAll('td[data-chat-user] .tooltip').length }));
   await chip();
   await t('2 match reactions open in a centred pop-up', () => { const r = document.getElementById('fixtureChatSheet').getBoundingClientRect(); return { open: document.body.classList.contains('fixture-chat-open'), title: document.getElementById('fixtureChatTitle').textContent, centredX: Math.abs((r.left + r.right) / 2 - innerWidth / 2) < 2, centredY: Math.abs((r.top + r.bottom) / 2 - innerHeight / 2) < 2, who: [...document.querySelectorAll('.fc-who li')].map(x => x.textContent), textarea: !!document.getElementById('fixtureChatInput') }; });
+  await t('2a the match pop-up shows the result, total tries and Joker status', () => ({ card: document.querySelector('.fc-pred-card').innerText.replace(/\\s+/g, ' ') }));
   await t('2b the match offers the six emoji plus the home and away flags', () => ({ options: [...document.querySelectorAll('.fc-emoji')].map(b => b.textContent.trim().replace(/\\d+$/, '')) }));
   await page.click('.fc-emoji:has-text("👏")'); await page.waitForTimeout(300);
   await t('3 reacted', () => ({ rows: __db.fixture_reactions.filter(r => r.user_id === 1).map(r => r.emoji + ':' + r.target_user_id), pressed: document.querySelector('.fc-emoji[aria-pressed="true"]').textContent, headerChip: document.querySelector('.summary-container [data-chat-chip="1"]').textContent.trim() }));
