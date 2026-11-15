@@ -59,17 +59,6 @@
             return [];
         }
 
-        function getStoredUserJokerMatchIds(username) {
-            const normalizedUsername = (username || '').trim().toLowerCase();
-            if (!normalizedUsername) return [];
-            const storedSelections = userJokerSelections && Array.isArray(userJokerSelections[normalizedUsername])
-                ? userJokerSelections[normalizedUsername]
-                : [];
-
-            return [...new Set(storedSelections.map(id => Number(id)).filter(Number.isInteger))]
-                .sort((a, b) => a - b);
-        }
-
         function setUserSelectedJokerMatchIds(username, matchIds) {
             const normalizedUsername = (username || '').trim().toLowerCase();
             if (!normalizedUsername) return;

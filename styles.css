@@ -99,45 +99,7 @@
             color: #ffffff;
         }
 
-        .header-help-btn {
-            width: 28px;
-            height: 28px;
-            min-width: 28px;
-            padding: 0;
-            margin: 0;
-            border-radius: 50%;
-            border: 1px solid var(--line-strong);
-            background: rgb(var(--accent-rgb) / 0.18);
-            color: var(--bright-gold);
-            font-weight: 800;
-            font-size: 0.95rem;
-            line-height: 1;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            text-transform: none;
-            letter-spacing: 0;
-            box-shadow: none;
-            transform: none;
-        }
-
-        .header-help-btn::after {
-            display: none;
-        }
-
-        .header-help-btn:hover {
-            background: rgb(var(--accent-rgb) / 0.32);
-            transform: none;
-            box-shadow: none;
-        }
-
         /* App header with theme selector */
-        .app-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
 
         * {
             margin: 0;
@@ -197,14 +159,6 @@
             letter-spacing: 0.05em;
             color: var(--gold);
             text-transform: uppercase;
-        }
-
-        .admin-subtitle {
-            font-size: 0.95rem;
-            font-weight: 400;
-            letter-spacing: 0.03em;
-            color: rgb(var(--ink) / 0.7);
-            margin-top: 0.5rem;
         }
 
         /* Tab Navigation */
@@ -288,15 +242,6 @@
             color: #ffffff;
             border-color: var(--red);
             box-shadow: 0 5px 20px rgba(231, 76, 60, 0.35);
-        }
-
-        .admin-top-action-row {
-            margin-top: 0.55rem;
-        }
-
-        .admin-top-action-btn {
-            width: 100%;
-            display: block;
         }
 
         /* Login Section */
@@ -413,10 +358,6 @@
             gap: 1rem;
         }
 
-        .outstanding-banner-icon {
-            font-size: 1.5rem;
-        }
-
         .outstanding-banner-text {
             font-weight: 600;
             color: var(--text);
@@ -474,98 +415,6 @@
             font-weight: 800;
         }
 
-        .prediction-inline-card {
-            background: var(--surface);
-            border: 2px solid rgb(var(--accent-rgb) / 0.3);
-            border-radius: 8px;
-            padding: 0.8rem 1rem;
-            margin-bottom: 0.7rem;
-            backdrop-filter: blur(10px);
-            transition: all 0.25s ease;
-        }
-
-        .prediction-inline-card:hover {
-            border-color: var(--gold);
-            background: rgb(var(--ink) / 0.08);
-        }
-
-        .prediction-inline-row {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto auto;
-            gap: 0.8rem;
-            align-items: center;
-        }
-
-        .prediction-inline-meta {
-            min-width: 0;
-        }
-
-        .prediction-inline-time {
-            font-family: 'Bebas Neue', cursive;
-            color: var(--bright-gold);
-            font-size: 1.05rem;
-            letter-spacing: 0.04em;
-            line-height: 1.1;
-        }
-
-        .prediction-inline-fixture {
-            margin-top: 0.15rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            font-size: 0.9rem;
-        }
-
-        .prediction-inline-score {
-            white-space: nowrap;
-        }
-
-        .prediction-inline-actions {
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        .prediction-inline-actions .btn-small {
-            margin: 0;
-            min-width: 80px;
-        }
-
-        .prediction-inline-card-tight {
-            padding: 0.5rem 0.75rem;
-            margin-bottom: 0.45rem;
-        }
-
-        .prediction-inline-row-tight {
-            grid-template-columns: auto minmax(170px, 1fr) auto auto auto;
-            gap: 0.5rem;
-        }
-
-        .prediction-inline-row-tight .prediction-inline-time,
-        .prediction-inline-row-tight .prediction-inline-fixture {
-            margin-top: 0;
-            font-size: 0.84rem;
-            line-height: 1.15;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .prediction-inline-row-tight .prediction-inline-score .capture-status {
-            font-size: 0.66rem;
-            padding: 0.15rem 0.45rem;
-        }
-
-        .prediction-inline-score-group {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-            white-space: nowrap;
-        }
-
-        .prediction-inline-score-group .capture-status {
-            margin: 0;
-        }
-
         .prediction-table-container {
             margin-top: 0.75rem;
             overflow-x: visible;
@@ -613,74 +462,11 @@
             color: var(--gold);
         }
 
-        .prediction-round-row td {
-            text-align: left;
-            font-family: 'Bebas Neue', cursive;
-            font-size: 1.1rem;
-            letter-spacing: 0.08em;
-            color: var(--bright-gold);
-            background: rgb(var(--accent-rgb) / 0.08);
-            border-top: 2px solid rgb(var(--accent-rgb) / 0.35);
-        }
-
         .prediction-actions-cell .btn-small {
             margin: 0;
             padding: 0.34rem 0.52rem;
             font-size: 0.7rem;
             min-width: 54px;
-        }
-
-        .prediction-joker-readonly {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            font-size: 0.66rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-
-        .prediction-joker-readonly input[type="checkbox"] {
-            width: 14px;
-            height: 14px;
-            margin: 0;
-            accent-color: var(--gold);
-        }
-
-        .tries-save-btn {
-            width: auto;
-            margin: 0.75rem auto 0 auto;
-            padding: 0.65rem 1.2rem;
-            display: inline-flex;
-        }
-
-        .joker-selection-inline {
-            margin: 0;
-            padding: 0;
-            border: none;
-            background: transparent;
-        }
-
-        .joker-selection-inline .joker-label {
-            gap: 0.3rem;
-            font-size: 0.66rem;
-            white-space: nowrap;
-        }
-
-        .joker-selection-inline .joker-icon {
-            font-size: 0.85rem;
-        }
-
-        .joker-selection-inline .joker-checkbox {
-            margin: 0;
-        }
-
-        .prediction-inline-completed {
-            margin-top: 0.55rem;
-            padding-top: 0.5rem;
-            border-top: 1px solid rgba(46, 204, 113, 0.3);
-            color: var(--good-text);
-            font-size: 0.84rem;
-            line-height: 1.35;
         }
 
         .match-card {
@@ -738,120 +524,13 @@
             text-align: center;
         }
 
-        .team-name {
-            font-size: 1rem;
-            font-weight: 800;
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
         .team-flag {
             font-size: 2rem;
             margin-bottom: 0.25rem;
             line-height: 1;
         }
 
-        .match-saved-indicator {
-            color: #2ecc71;
-            font-weight: bold;
-            margin-left: 0.5rem;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .match-saved-indicator.visible {
-            opacity: 1;
-        }
-
-        .prediction-saved-text {
-            font-size: 0.72rem;
-            font-weight: 700;
-            letter-spacing: 0.02em;
-            text-transform: uppercase;
-        }
-
-        .prediction-capture-text {
-            font-size: 0.72rem;
-            font-weight: 700;
-            letter-spacing: 0.02em;
-            text-transform: uppercase;
-        }
-
-        .match-saved-indicator.captured {
-            color: #2ecc71;
-        }
-
-        .match-saved-indicator.not-captured {
-            color: #e67e22;
-        }
-
-        .completed-match-summary {
-            margin-top: 0.8rem;
-            padding: 0.7rem 0.9rem;
-            border: 1px solid rgba(46, 204, 113, 0.5);
-            background: rgba(46, 204, 113, 0.12);
-            border-radius: 6px;
-        }
-
-        .completed-match-badge {
-            display: inline-block;
-            margin-bottom: 0.35rem;
-            padding: 0.15rem 0.5rem;
-            border-radius: 999px;
-            background: rgba(46, 204, 113, 0.25);
-            color: var(--good-text);
-            font-weight: 800;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-
-        .completed-match-result {
-            font-size: 0.92rem;
-            font-weight: 600;
-            color: var(--text);
-            margin-bottom: 0.2rem;
-        }
-
-        .completed-match-points {
-            font-size: 0.92rem;
-            color: var(--good-text);
-        }
-
-        .completed-match-points-reason {
-            margin-top: 0.15rem;
-            font-size: 0.82rem;
-            color: rgba(184, 247, 203, 0.9);
-            text-transform: lowercase;
-        }
-
         @media (max-width: 760px) {
-            .prediction-inline-row {
-                grid-template-columns: 1fr;
-                gap: 0.55rem;
-            }
-
-            .prediction-inline-score,
-            .prediction-inline-actions {
-                justify-content: flex-start;
-            }
-
-            .prediction-inline-row-tight {
-                grid-template-columns: 1fr;
-            }
-
-            .prediction-inline-row-tight .prediction-inline-time,
-            .prediction-inline-row-tight .prediction-inline-fixture {
-                white-space: normal;
-                overflow: visible;
-                text-overflow: unset;
-            }
-
-            .prediction-inline-score-group {
-                flex-wrap: wrap;
-                white-space: normal;
-            }
 
             .prediction-table th,
             .prediction-table td {
@@ -876,14 +555,6 @@
                 font-size: 0.65rem;
             }
 
-            .prediction-joker-readonly {
-                font-size: 0.58rem;
-                gap: 0.2rem;
-            }
-
-            .prediction-joker-readonly span {
-                display: none;
-            }
         }
 
         /* Tooltip styles */
@@ -947,14 +618,6 @@
             color: var(--bright-gold);
         }
 
-        .score-input {
-            width: 70px;
-            text-align: center;
-            font-size: 1.2rem;
-            font-weight: 800;
-            padding: 0.5rem;
-        }
-
         .vs {
             font-family: 'Bebas Neue', cursive;
             font-size: 1.5rem;
@@ -993,7 +656,6 @@
             animation: fadeIn 0.8s ease-out;
         }
 
-
         .points {
             font-weight: 800;
             font-size: 1.3rem;
@@ -1001,90 +663,6 @@
         }
 
         /* Summary Table */
-        .summary-match {
-            background: var(--surface);
-            border: 2px solid rgb(var(--accent-rgb) / 0.3);
-            border-radius: 10px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            backdrop-filter: blur(10px);
-        }
-
-        .summary-match-header {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 2rem;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid var(--gold);
-        }
-
-        .summary-match-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .summary-round {
-            font-family: 'Bebas Neue', cursive;
-            font-size: 1.2rem;
-            color: var(--gold);
-            background: rgb(var(--accent-rgb) / 0.2);
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-        }
-
-        .summary-teams {
-            font-size: 1.4rem;
-            font-weight: 800;
-            color: var(--text);
-        }
-
-        .summary-date {
-            font-size: 0.9rem;
-            opacity: 0.7;
-        }
-
-        .summary-score {
-            text-align: center;
-        }
-
-        .actual-score {
-            font-family: 'Bebas Neue', cursive;
-            font-size: 2.5rem;
-            color: var(--bright-gold);
-            letter-spacing: 0.05em;
-        }
-
-        .score-status {
-            font-size: 0.9rem;
-            opacity: 0.8;
-        }
-
-        .summary-predictions-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .summary-predictions-table th {
-            background: rgb(var(--accent-rgb) / 0.2);
-            padding: 0.8rem;
-            text-align: left;
-            font-weight: 800;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border-bottom: 2px solid rgb(var(--accent-rgb) / 0.3);
-        }
-
-        .summary-predictions-table td {
-            padding: 1rem 0.8rem;
-            border-bottom: 1px solid rgb(var(--accent-rgb) / 0.1);
-        }
-
-        .summary-predictions-table tr:hover {
-            background: var(--surface);
-        }
 
         .prediction-score {
             font-weight: 800;
@@ -1108,59 +686,9 @@
             color: #e74c3c;
         }
 
-        .no-predictions {
-            text-align: center;
-            padding: 2rem;
-            font-style: italic;
-            opacity: 0.6;
-        }
-
         .no-result {
             color: var(--gold);
             font-style: italic;
-        }
-
-        /* Predictions View */
-        .predictions-grid {
-            display: grid;
-            gap: 2rem;
-            animation: fadeIn 0.8s ease-out;
-        }
-
-        .user-predictions {
-            background: var(--surface);
-            border: 2px solid rgb(var(--accent-rgb) / 0.3);
-            border-radius: 10px;
-            padding: 2rem;
-            backdrop-filter: blur(10px);
-        }
-
-        .user-predictions h3 {
-            font-family: 'Bebas Neue', cursive;
-            font-size: 2rem;
-            color: var(--bright-gold);
-            margin-bottom: 1.5rem;
-            letter-spacing: 0.05em;
-            text-align: center;
-        }
-
-        .prediction-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
-            gap: 1rem;
-            padding: 1rem;
-            border-bottom: 1px solid rgb(var(--accent-rgb) / 0.2);
-            align-items: center;
-        }
-
-        .prediction-row:last-child {
-            border-bottom: none;
-        }
-
-        .predicted-score {
-            font-size: 1.2rem;
-            font-weight: 800;
-            color: var(--gold);
         }
 
         .hidden {
@@ -1202,44 +730,6 @@
         @keyframes bounceRight {
             0%, 100% { transform: translateX(0); }
             50% { transform: translateX(5px); }
-        }
-
-        .summary-filters {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1rem;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .export-btn {
-            padding: 0.8rem 1.5rem;
-            background: rgba(46, 204, 113, 0.15);
-            border: 2px solid rgba(46, 204, 113, 0.4);
-            color: #2ecc71;
-            font-size: 0.95rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: all 0.3s ease;
-            margin-left: auto;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .export-btn:hover {
-            background: rgba(46, 204, 113, 0.25);
-            border-color: #2ecc71;
-            color: #fff;
-        }
-
-        .export-btn svg {
-            width: 18px;
-            height: 18px;
-            fill: currentColor;
         }
 
         .filter-toggle {
@@ -1862,12 +1352,6 @@
             margin-bottom: 0.35rem;
         }
 
-        .worm-chart-subtitle {
-            font-size: 0.82rem;
-            opacity: 0.82;
-            margin-bottom: 0.7rem;
-        }
-
         .worm-chart-hover-hint {
             font-size: 0.85rem;
             color: rgb(var(--ink) / 0.9);
@@ -2000,57 +1484,11 @@
         }
 
         /* Joker styles - My Predictions page */
-        .joker-selection {
-            margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 1px solid rgb(var(--accent-rgb) / 0.2);
-            text-align: center;
-        }
-
-        .joker-label {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            cursor: pointer;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            border: 2px solid rgb(var(--accent-rgb) / 0.3);
-            background: rgb(var(--accent-rgb) / 0.1);
-            transition: all 0.3s ease;
-        }
-
-        .joker-label:hover {
-            border-color: var(--gold);
-            background: rgb(var(--accent-rgb) / 0.2);
-        }
-
-        .joker-checkbox {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-
-        .joker-icon {
-            font-size: 1.2rem;
-        }
-
-        .joker-text {
-            font-size: 0.85rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--bright-gold);
-        }
 
         .match-card.joker-selected {
             border-color: var(--bright-gold);
             background: rgb(var(--accent-rgb) / 0.15);
             box-shadow: 0 0 15px rgb(var(--accent-rgb) / 0.3);
-        }
-
-        .match-card.joker-selected .joker-label {
-            background: rgb(var(--accent-rgb) / 0.3);
-            border-color: var(--bright-gold);
         }
 
         /* Joker styles - Match Summary table */
@@ -2065,22 +1503,6 @@
 
         .joker-eligible-header {
             background: transparent !important;
-        }
-
-        .joker-eligible-badge {
-            font-size: 0.78rem;
-            color: var(--text);
-            background: transparent;
-            border: none;
-            padding: 0;
-            border-radius: 0;
-            margin-bottom: 0.3rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            line-height: 1.1;
-            text-shadow: none;
-            display: block;
         }
 
         .tooltip-line.joker-bonus {
@@ -2130,19 +1552,6 @@
         }
 
         /* User info */
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .user-info .username {
-            font-family: var(--body-font);
-            font-size: 0.9rem;
-            color: var(--text);
-            letter-spacing: 0.02em;
-            font-weight: 600;
-        }
 
         .profile-link {
             cursor: pointer;
@@ -2181,27 +1590,7 @@
             font-size: 0.9rem;
         }
 
-        .logout-btn {
-            width: auto;
-            padding: 0.4rem 1rem;
-            margin: 0;
-            background: rgba(231, 76, 60, 0.8);
-            font-size: 0.75rem;
-            border-radius: 15px;
-        }
-
-        .logout-btn:hover {
-            background: var(--red);
-            transform: none;
-            box-shadow: none;
-        }
-
         /* Admin badge adjustment for smaller user info */
-        .user-info .admin-badge {
-            font-size: 0.65rem;
-            padding: 0.15rem 0.4rem;
-            margin-left: 0.25rem;
-        }
 
         /* Responsive */
         @media (max-width: 768px) {
@@ -2230,11 +1619,6 @@
                 display: none;
             }
 
-            .score-input {
-                width: 60px;
-                font-size: 1.2rem;
-            }
-
             .tabs {
                 flex-wrap: wrap;
                 gap: 0.5rem;
@@ -2248,15 +1632,9 @@
                 letter-spacing: 0.02em;
             }
             
-            .app-header {
-                flex-direction: column;
-                gap: 0.75rem;
-                align-items: stretch;
-            }
+
             
-            .user-info {
-                justify-content: center;
-            }
+
             
             .filter-toggle {
                 flex-direction: column;
@@ -2284,18 +1662,6 @@
             #roundSelectLabel {
                 width: 100%;
                 text-align: left;
-            }
-
-            .summary-filters {
-                gap: 0.5rem;
-            }
-
-            .export-btn {
-                padding: 0.6rem 1rem;
-                font-size: 0.8rem;
-                margin-left: 0;
-                flex: 1 1 100%;
-                justify-content: center;
             }
 
             .round-select {
@@ -2370,9 +1736,7 @@
                 font-size: 1rem;
             }
             
-            .team-name {
-                font-size: 0.9rem;
-            }
+
             
             .team-flag {
                 font-size: 1.75rem;
@@ -2391,13 +1755,9 @@
                 font-size: 1.5rem;
             }
             
-            .admin-tabs-section {
-                padding: 0.75rem;
-            }
+
             
-            .admin-tabs-label {
-                font-size: 0.75rem;
-            }
+
             
             .lock-banner, .unlock-banner {
                 font-size: 0.85rem;
@@ -2497,11 +1857,6 @@
                 font-size: 0.68rem;
             }
 
-            .joker-eligible-badge {
-                font-size: 0.66rem;
-                padding: 0.16rem 0.35rem;
-            }
-
             .match-header-cell-inner {
                 min-height: 90px;
             }
@@ -2510,44 +1865,29 @@
                 font-size: 0.9rem;
             }
             
-            .team-name {
-                font-size: 0.8rem;
-            }
+
             
             .team-flag {
                 font-size: 1.5rem;
             }
             
-            .score-input {
-                width: 55px;
-                font-size: 1rem;
-                padding: 0.4rem;
-            }
+
             
-            .logout-btn {
-                font-size: 0.65rem;
-                padding: 0.3rem 0.75rem;
-            }
+
             
-            .user-info .username {
-                font-size: 0.8rem;
-            }
+
             
             .outstanding-banner {
                 font-size: 0.85rem;
             }
             
-            .outstanding-banner-icon {
-                font-size: 1.2rem;
-            }
+
             
             .login-section {
                 padding: 1.5rem;
             }
             
-            .login-toggle {
-                flex-direction: column;
-            }
+
             
             .toggle-btn {
                 width: 100%;
@@ -2644,71 +1984,6 @@
         }
 
         /* Admin tabs section */
-        .admin-tabs-section {
-            position: relative;
-            margin-top: 1.5rem;
-            padding: 1rem;
-            background: rgba(231, 76, 60, 0.1);
-            border: 2px solid var(--red);
-            border-radius: 10px;
-        }
-
-        .admin-tabs-label {
-            color: var(--red);
-            font-size: 0.85rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            text-align: center;
-        }
-
-        .admin-tabs-content {
-            margin-top: 0.25rem;
-        }
-
-        .admin-quick-action-row {
-            display: flex;
-            justify-content: center;
-            margin-top: 0.55rem;
-            margin-bottom: 0.95rem;
-        }
-
-        .admin-quick-action-row.hidden {
-            display: none !important;
-        }
-
-        .admin-quick-action-btn {
-            margin: 0;
-            border-color: var(--red);
-            background: rgba(231, 76, 60, 0.1);
-            width: min(100%, 360px);
-            min-height: 44px;
-            padding: 0.45rem 0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            text-transform: none;
-            letter-spacing: 0.02em;
-            line-height: 1.15;
-            white-space: normal;
-            overflow-wrap: anywhere;
-            word-break: break-word;
-            font-size: 0.8rem;
-            color: var(--bad-text);
-        }
-
-        .admin-quick-action-btn:hover {
-            background: rgba(231, 76, 60, 0.2);
-            border-color: var(--red);
-        }
-
-        .admin-quick-action-btn:disabled {
-            opacity: 0.55;
-            cursor: not-allowed;
-            transform: none !important;
-            box-shadow: none !important;
-        }
 
         .admin-panel-help-btn {
             width: 24px;
@@ -2969,45 +2244,6 @@
         .admin-prediction-audit-box.complete {
             border-color: #2ecc71;
             background: rgba(46, 204, 113, 0.12);
-        }
-
-        .admin-prediction-audit-title {
-            font-family: 'Bebas Neue', cursive;
-            letter-spacing: 0.08em;
-            color: var(--bright-gold);
-            font-size: 1.05rem;
-            margin-bottom: 0.35rem;
-        }
-
-        .admin-prediction-audit-subtitle,
-        .admin-prediction-audit-empty {
-            font-size: 0.9rem;
-            opacity: 0.9;
-            margin-bottom: 0.45rem;
-        }
-
-        .admin-prediction-audit-list {
-            display: grid;
-            gap: 0.3rem;
-        }
-
-        .admin-prediction-audit-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 0.6rem;
-            border-top: 1px solid rgb(var(--ink) / 0.18);
-            padding-top: 0.35rem;
-            font-size: 0.85rem;
-        }
-
-        .admin-prediction-audit-user {
-            font-weight: 700;
-            color: var(--text);
-        }
-
-        .admin-prediction-audit-missing {
-            color: var(--bad-text);
-            text-align: right;
         }
 
         .rules-layout {
@@ -3278,11 +2514,6 @@
             color: rgb(var(--ink) / 0.9);
         }
 
-        .recovery-danger {
-            border-color: rgba(231, 76, 60, 0.5);
-            background: rgba(231, 76, 60, 0.1);
-        }
-
         .sql-preview {
             background: rgba(0, 0, 0, 0.4);
             border: 1px solid rgb(var(--accent-rgb) / 0.3);
@@ -3346,19 +2577,8 @@
         }
 
         /* Tries input in admin */
-        .tries-input-small {
-            width: 70px;
-            text-align: center;
-            padding: 0.5rem;
-            font-size: 1rem;
-        }
 
         /* Login toggle buttons */
-        .login-toggle {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
 
         .toggle-btn {
             flex: 1;
@@ -3563,23 +2783,6 @@
             border-color: var(--gold);
         }
 
-        .results-table .vs-cell {
-            font-weight: 700;
-            color: var(--gold);
-            font-size: 0.8rem;
-        }
-
-        .results-table .round-cell {
-            font-weight: 700;
-            color: var(--bright-gold);
-        }
-
-        .results-table .saved-cell {
-            color: #2ecc71;
-            font-weight: bold;
-            font-size: 1.1rem;
-        }
-
         @media (max-width: 900px) {
             .rules-grid-two,
             .rules-grid-three,
@@ -3700,13 +2903,6 @@
     border-radius: 6px;
 }
 
-.readiness-chevron {
-    flex: none;
-    font-size: 1.3rem;
-    line-height: 1.2;
-    color: var(--gold);
-}
-
 .readiness-checklist.collapsed .readiness-summary {
     margin-bottom: 0;
 }
@@ -3791,7 +2987,6 @@
     font-size: 1.3rem;
     text-align: center;
 }
-
 
 /* Competitors screen: one expandable card per competitor, fields stacked */
 .competitor-cards {
@@ -4091,10 +3286,6 @@
 .app-version:empty { display: none; }
 
 /* Refresh sits beside Logout, same size, in a neutral colour */
-.logout-btn.refresh-btn { background: rgb(var(--ink) / 0.18); color: var(--text); min-width: 5.5rem; }
-.logout-btn.refresh-btn:hover:not(:disabled) { background: rgb(var(--ink) / 0.3); }
-.logout-btn.refresh-btn:disabled { opacity: 0.6; cursor: default; }
-.logout-btn.refresh-btn.hidden { display: none; }
 
 /* ---- Match Summary chat ---- */
 .chat-chip { all: unset; box-sizing: border-box; display: inline-flex; gap: 0.3rem; align-items: center; margin-top: 0.35rem; padding: 0.2rem 0.55rem; min-height: 28px; border-radius: 999px; font-family: var(--body-font); font-size: 0.75rem; cursor: pointer; border: 1px solid rgb(var(--ink) / 0.2); background: rgba(0, 0, 0, 0.2); color: rgba(250, 250, 250, 0.75); white-space: nowrap; }
@@ -4255,12 +3446,8 @@ body.tour-open .tour-scrim { animation: tourScrimIn 0.28s ease-out; }
 }
 
 /* Refresh is an icon, the same height as Logout */
-.logout-btn.refresh-btn { min-width: 0; display: inline-flex; align-items: center; justify-content: center; padding: 0.4rem 0.8rem; }
-.logout-btn.refresh-btn .refresh-icon { display: block; }
-.logout-btn.refresh-btn.refreshing .refresh-icon { animation: refreshSpin 0.8s linear infinite; }
+
 @keyframes refreshSpin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .logout-btn.refresh-btn.refreshing .refresh-icon { animation: none; } }
-@media (max-width: 480px) { .logout-btn.refresh-btn { padding: 0.3rem 0.7rem; } .logout-btn.refresh-btn .refresh-icon { width: 11px; height: 11px; } }
 
 /* =========================================================================
    Slim top bar (title, year, account menu), one-row tabs, one summary toolbar
@@ -4446,7 +3633,7 @@ body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-wi
 #appView .app-bar > .tabs .tab { border-radius: 0; border-bottom: 3px solid transparent; color: var(--muted); padding-bottom: 0.7rem; }
 #appView .app-bar > .tabs .tab:hover { background: transparent; color: var(--text); }
 #appView .app-bar > .tabs .tab.active, #appView .app-bar > .tabs .tab.admin-top-tab.active { background: transparent; color: var(--text); border-bottom-color: var(--tab-underline); }
-.summary-table thead .match-teams, .summary-table thead .match-date, .summary-table thead .joker-eligible-badge, .summary-table thead .match-tries, .summary-table thead .no-result { color: var(--on-accent); }
+.summary-table thead .match-teams,.summary-table thead .match-date,.summary-table thead .match-tries,.summary-table thead .no-result { color: var(--on-accent); }
 
 /* The pinned first three header cells sit above the header cells that scroll under them */
 .summary-table thead th.rank-col { z-index: 36 !important; }
@@ -4489,7 +3676,6 @@ body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-wi
 .match-header-cell .match-header-bottom .match-tries { height: 1.2rem; display: flex; align-items: center; justify-content: center; margin: 0.2rem 0 0; }
 .match-header-cell .match-header-bottom .match-tries-empty { visibility: hidden; }
 .match-header-cell .match-header-bottom .chat-chip { margin-top: 0.3rem; height: 2rem; }
-
 
 .chat-chip .chat-add { font-size: 0.8rem; opacity: 0.75; letter-spacing: 0; }
 

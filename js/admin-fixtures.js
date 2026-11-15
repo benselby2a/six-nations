@@ -85,10 +85,6 @@
                 match.actualScore2 !== null;
         }
 
-        function getNextMatchWithoutScore() {
-            return matches.find(match => !hasMatchScore(match)) || null;
-        }
-
         function getMatchKickoffDate(match) {
             if (!match || !match.date) return null;
 
@@ -658,74 +654,6 @@
             if (normalized.includes('scotland') || normalized === 'sco') return 'Scotland';
             if (normalized.includes('wales') || normalized === 'wal') return 'Wales';
             return null;
-        }
-
-        // Auto-save match results on blur
-        async function autoSaveResults() {
-            matches.forEach(match => {
-                // Get all editable fields
-                const team1SelectEl = document.getElementById(`team1-select-${match.id}`);
-                const team2SelectEl = document.getElementById(`team2-select-${match.id}`);
-                const dateEl = document.getElementById(`date-${match.id}`);
-                const timeEl = document.getElementById(`time-${match.id}`);
-                const team1ScoreEl = document.getElementById(`actual-team1-${match.id}`);
-                const team2ScoreEl = document.getElementById(`actual-team2-${match.id}`);
-                const team1TriesEl = document.getElementById(`actual-tries1-${match.id}`);
-                const team2TriesEl = document.getElementById(`actual-tries2-${match.id}`);
-                const jokerEligibleEl = document.getElementById(`joker-eligible-${match.id}`);
-
-                // Update fixture details
-                if (jokerEligibleEl) match.jokerEligible = jokerEligibleEl.checked;
-                if (team1SelectEl) match.team1 = team1SelectEl.value;
-                if (team2SelectEl) match.team2 = team2SelectEl.value;
-                
-                // Convert date input to display format
-                if (dateEl) {
-                    if (dateEl.value) {
-                        match.date = formatDateForDisplay(dateEl.value);
-                    } else if (!match.date) {
-                        match.date = 'TBD';
-                    }
-                }
-                
-                // Store time in HH:MM format
-                if (timeEl && timeEl.value) {
-                    match.time = timeEl.value;
-                } else if (timeEl && !match.time) {
-                    match.time = 'TBD';
-                }
-                
-                if (!team1ScoreEl || !team2ScoreEl) return;
-                
-                const team1Score = team1ScoreEl.value;
-                const team2Score = team2ScoreEl.value;
-                const team1Tries = team1TriesEl ? team1TriesEl.value : '';
-                const team2Tries = team2TriesEl ? team2TriesEl.value : '';
-                
-                // Only save scores if both scores AND both tries are entered
-                if (team1Score !== '' && team2Score !== '' && team1Tries !== '' && team2Tries !== '') {
-                    match.actualScore1 = parseInt(team1Score);
-                    match.actualScore2 = parseInt(team2Score);
-                    match.actualTries1 = parseInt(team1Tries);
-                    match.actualTries2 = parseInt(team2Tries);
-                } else {
-                    // Clear the result if incomplete
-                    match.actualScore1 = null;
-                    match.actualScore2 = null;
-                    match.actualTries1 = null;
-                    match.actualTries2 = null;
-                }
-            });
-
-            // Save to storage
-            await Storage.saveMatches(matches);
-            updateChallengeSubtitleYear();
-            
-            // Update saved indicators
-            updateResultSavedIndicators();
-
-            // Recalculate all points
-            updateLeaderboard();
         }
 
         // Update the saved tick indicators for match results
