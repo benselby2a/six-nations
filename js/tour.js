@@ -85,7 +85,7 @@ function tourBuildAdminSteps() {
         tourStep('admin-fixtures', 'Fixtures and Scores', [
             'Admin Functions, then <strong>Fixtures and Scores</strong>.',
             'Tap a row to edit a fixture, set it Joker eligible, or enter the actual score and tries once the match is played.'
-        ], '<p><strong>Bulk Import</strong> is the quickest way to set up a year: paste every fixture in one go, one per line as <em>DD/MM/YYYY, HH:MM, Home, Away</em>. Tip: ask Google AI (Gemini) to \"list the Six Nations fixtures for this year as DD/MM/YYYY, HH:MM, Home Team, Away Team, one per line\", then copy its answer straight in (check it against the official fixtures first). Add New Fixture adds a single match. Rounds are worked out from the dates: matches in the same Thursday to Sunday weekend are one round. the red <strong>+ score</strong> button above the table on the Match Summary is the quick way to enter a result.</p>'),
+        ], '<p><strong>Bulk Import</strong> adds a whole year in one go: one fixture per line as <em>DD/MM/YYYY, HH:MM, Home, Away</em>. Tip: ask Google AI to write the fixtures in that format, then check them against the official list. Rounds are worked out from the dates. The red <strong>+ score</strong> button on the Match Summary is the quick way to enter a result.</p>'),
         tourStep('admin-lock', 'Predictions and the lock', [
             'Admin Functions, then <strong>Predictions</strong>.',
             'Switch on <strong>Lock Predictions</strong> when the tournament starts. Each year has its own lock.',
@@ -160,9 +160,11 @@ function tourFitSoon() {
     if (tourSizeAnimating) return;   // sizes are measured once the card has finished changing size (then this runs again)
     requestAnimationFrame(() => {
         tourFitContent(true);
-        const f = document.querySelector('#tourBody .tour-figure');
-        if (f) f.style.visibility = '';
-        setTimeout(() => tourFitContent(true), 120);
+        setTimeout(() => {
+            tourFitContent(true);
+            const f = document.querySelector('#tourBody .tour-figure');
+            if (f) f.style.visibility = '';
+        }, 120);
     });
 }
 

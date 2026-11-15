@@ -506,3 +506,5 @@ This is the main browser-to-Supabase boundary.
 
 ## Last year's guess in the edit-prediction modal
 `loadLastYearNote` (predictions.js) finds last year's fixture with the same two teams (either order), fetches that player's prediction for it, and shows "Last year (YYYY) You predicted a-b, the result was c-d." under the scores (`#edit-prediction-lastyear`), in this year's home/away order. Hidden when there is no such fixture or prediction. Test: `dev/test.sh last-year-note`. The admin tour's Fixtures step now promotes Bulk Import and suggests Google AI for generating the lines.
+
+Tour pictures: the picture stays hidden until the 120ms refit has sized it (no tiny flash on first open), and step text must stay short or the picture shrinks (the admin Fixtures step is the longest). Test: `dev/test.sh tour-picture-size`.
