@@ -31,6 +31,8 @@
     --warn-text: #8a5300;
     --good-text: #0f6b3a;
     --tab-underline: #e8b02a;
+    --field-bg: #fdf6df;         /* form fields: a pale yellow, in line with the yellow round drop down */
+    --field-border: #e0bd5c;
     color-scheme: light;
 }
 
@@ -58,6 +60,8 @@
     --warn-text: #ffe7b8;
     --good-text: #7ef5a8;
     --tab-underline: #f0bd3e;
+    --field-bg: var(--surface-2);
+    --field-border: rgb(var(--accent-rgb) / 0.5);
     color-scheme: dark;
 }
 
@@ -4644,3 +4648,19 @@ body.summary-compact .match-header-cell .match-header-top .match-teams { margin-
 .link-account-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: nowrap; }
 .link-account-row select { flex: 1 1 auto; min-width: 0; width: auto; max-width: none; margin: 0; font-size: 0.85rem; }
 .link-account-row .btn-small { flex: none; width: auto; margin: 0; }
+
+/* Form fields across the app (rules, prize fund, years, fixtures, competitors, predictions): yellow-tinted, not grey */
+:is(#appView, #loginView, #setupView) input[type="text"], :is(#appView, #loginView, #setupView) input[type="email"], :is(#appView, #loginView, #setupView) input[type="number"], :is(#appView, #loginView, #setupView) input[type="password"],
+:is(#appView, #loginView, #setupView) input[type="date"], :is(#appView, #loginView, #setupView) input[type="time"], :is(#appView, #loginView, #setupView) textarea,
+:is(#appView, #loginView, #setupView) select:not(#yearSelect):not(.round-select):not(#themeSelect) {
+    background-color: var(--field-bg);
+    border: 2px solid var(--field-border);
+    color: var(--text);
+}
+:is(#appView, #loginView, #setupView) input[type="text"]:focus, :is(#appView, #loginView, #setupView) input[type="email"]:focus, :is(#appView, #loginView, #setupView) input[type="number"]:focus, :is(#appView, #loginView, #setupView) input[type="password"]:focus,
+:is(#appView, #loginView, #setupView) input[type="date"]:focus, :is(#appView, #loginView, #setupView) input[type="time"]:focus, :is(#appView, #loginView, #setupView) textarea:focus,
+:is(#appView, #loginView, #setupView) select:not(#yearSelect):not(.round-select):focus { background-color: var(--field-bg); border-color: var(--gold); }
+:is(#appView, #loginView, #setupView) .admin-only select:not(#yearSelect):not(.round-select) { padding: 0.45rem 0.6rem; border-radius: 5px; font-family: var(--body-font); }
+:is(#appView, #loginView, #setupView) input:disabled, :is(#appView, #loginView, #setupView) select:disabled { opacity: 0.65; }
+
+:is(#appView, #loginView, #setupView) input[type="checkbox"], :is(#appView, #loginView, #setupView) input[type="radio"] { accent-color: var(--gold); }
