@@ -147,7 +147,6 @@ This is the main browser-to-Supabase boundary.
 - `renderMatches`
 - `loadPredictions`
 - `autoSavePredictions`
-- `saveTournamentTries`
 - `getPredictionChecklistStatus`
 
 ### Admin workflows
@@ -496,5 +495,5 @@ This is the main browser-to-Supabase boundary.
 
 ## Unsaved changes
 
-- `js/unsaved-changes.js`: a toast at the top ("Unsaved changes: <area>") and an outline on edited fields. `UNSAVED_AREAS` lists the in-page forms covered (tournament tries on My Predictions, admin tournament tries, rules, prize fund, competitor cards, add-a-year). Pop-ups (Edit Prediction, Edit Fixture, quick score, Profile) are deliberately not tracked: they ask for Save or Cancel in front of you. A field's baseline is its value when first focused; the save functions are wrapped (at DOMContentLoaded) and re-baseline their area when they finish without an error alert; screens that re-draw drop their old fields. Instant-save toggles and chooser drop downs are ignored (`UNSAVED_IGNORE`). It also asks the browser to confirm leaving the page while something is unsaved. Add new forms to `UNSAVED_AREAS`. Test: `unsaved-toast`.
+- `js/unsaved-changes.js`: a toast at the top ("Unsaved changes: <area>") and an outline on edited fields. `UNSAVED_AREAS` lists the in-page forms covered (rules, prize fund, competitor cards, add-a-year). The tournament tries boxes (My Predictions and admin) are not covered because they save themselves: `scheduleTriesAutosave` / `flushTriesAutosave` in `js/predictions.js` save 800ms after typing stops, on blur, and when the page is hidden, with a small status line (`#triesSaveStatus`) and no Save button. Pop-ups (Edit Prediction, Edit Fixture, quick score, Profile) are deliberately not tracked: they ask for Save or Cancel in front of you. A field's baseline is its value when first focused; the save functions are wrapped (at DOMContentLoaded) and re-baseline their area when they finish without an error alert; screens that re-draw drop their old fields. Instant-save toggles and chooser drop downs are ignored (`UNSAVED_IGNORE`). It also asks the browser to confirm leaving the page while something is unsaved. Add new forms to `UNSAVED_AREAS`. Test: `unsaved-toast`.
 - Points Progression has a phone layout (`wormChartIsPhone()`, width 600px or less): a narrower, taller plot (420 units high) with bigger labels, points and lines (`.worm-chart-svg.phone` in `styles.css`); it redraws when the screen crosses that size (`refreshWormChartLayout`). Test: `worm-phone`.

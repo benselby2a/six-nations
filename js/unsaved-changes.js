@@ -5,8 +5,6 @@
 
 // Each area is an in-page form with its own Save / Add button. `saves` are the global functions that save it.
 const UNSAVED_AREAS = [
-    { id: 'triesSection', label: 'Tournament tries', saves: { saveTournamentTries: () => 'triesSection' } },
-    { id: 'scoreCorrectionsTab', label: 'Predictions', saves: { saveAdminTournamentTries: () => 'scoreCorrectionsTab' } },
     { id: 'rulesTab', label: 'Guesser rules', saves: {} },
     { id: 'prizeFundTab', label: 'Prize fund', saves: {} },
     { id: 'competitorsTab', label: 'Competitors', saves: { addCompetitor: () => 'new-competitor-card' } },
@@ -109,18 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
     UNSAVED_AREAS.forEach(area => Object.keys(area.saves).forEach(name => wrapUnsavedSave(name, area.saves[name])));
     wrapUnsavedSave('saveUpdatedRules', (kind) => (kind === 'prize' ? 'prizeFundTab' : 'rulesTab'));
     wrapUnsavedSave('saveUserChanges', (username) => `user-row-${username}`);
-    // The predictions screen refills the tries box after loading: that is not an edit
-    ['loadPredictions', 'renderMatches'].forEach(name => {
-        const original = window[name];
-        if (typeof original !== 'function' || original.__unsavedWrapped) return;
-        const wrapped = function (...args) {
-            const result = original.apply(this, args);
-            clearUnsavedBaselines(document.getElementById('triesSection'));
-            return result;
-        };
-        wrapped.__unsavedWrapped = true;
-        window[name] = wrapped;
-    });
 
     window.addEventListener('beforeunload', (event) => {
         if (window.__hasUnsavedChanges) { event.preventDefault(); event.returnValue = ''; }

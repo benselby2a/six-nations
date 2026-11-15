@@ -4682,3 +4682,7 @@ body.summary-compact .match-header-cell .match-header-top .match-teams { margin-
 .worm-chart-svg.phone .worm-point { r: 10; }
 .worm-chart-svg.phone .worm-series.is-active .worm-point { r: 13; }
 .worm-chart-svg.phone .worm-grid-line { stroke-width: 1.5; }
+
+/* Tournament tries save themselves: a small status line instead of a Save button */
+.tries-save-status { display: block; min-height: 1.3em; margin-top: 0.5rem; font-size: 0.85rem; font-weight: 700; color: var(--good-text); }
+.tries-save-status.error { color: var(--bad-text); }

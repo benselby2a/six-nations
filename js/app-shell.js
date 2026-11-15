@@ -94,6 +94,11 @@
                 event.target.classList.add('active');
             }
 
+            // Inside any admin screen the top bar's Admin Functions tab stays the highlighted one
+            if (['adminHome', 'results', 'scoreCorrections', 'competitors', 'rules', 'prizeFund', 'years', 'recovery', 'usageReport', 'checklist'].includes(tabName)) {
+                const adminTop = document.querySelector('#appView .app-bar > .tabs .admin-top-tab');
+                if (adminTop) adminTop.classList.add('active');
+            }
             if (['predictions', 'summary', 'adminHome'].includes(tabName)) {
                 try { localStorage.setItem(LAST_TAB_KEY, tabName); } catch (error) { /* not remembered */ }
             }

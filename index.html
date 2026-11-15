@@ -20,7 +20,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-    <link rel="stylesheet" href="styles.css?v=40261025-218">
+    <link rel="stylesheet" href="styles.css?v=40261025-222">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -231,9 +231,9 @@
 
                 <div class="tries-section" id="triesSection">
                     <h3>Tournament Stats</h3>
-                    <p style="margin-bottom: 0.75rem; font-size: 0.95rem; opacity: 0.8;">Predict the total tries scored across all matches.</p>
+                    <p style="margin-bottom: 0.75rem; font-size: 0.95rem; opacity: 0.8;">Predict the total tries scored across all matches. It saves by itself as you type.</p>
                     <input type="number" class="tries-input" id="totalTries" min="0" placeholder="000">
-                    <button id="saveTriesBtn" class="btn-small btn-success tries-save-btn" onclick="saveTournamentTries()">Save Tournament Tries</button>
+                    <span id="triesSaveStatus" class="tries-save-status" role="status" aria-live="polite"></span>
                 </div>
             </div>
 
@@ -263,9 +263,9 @@
 
                 <div class="tries-section hidden" id="adminTriesSection">
                     <h3>Tournament Stats</h3>
-                    <p style="margin-bottom: 0.75rem; font-size: 0.95rem; opacity: 0.8;">Edit the selected competitor's total tries prediction.</p>
+                    <p style="margin-bottom: 0.75rem; font-size: 0.95rem; opacity: 0.8;">Edit the selected competitor's total tries prediction. It saves by itself as you type.</p>
                     <input type="number" class="tries-input" id="adminTotalTries" min="0" placeholder="000">
-                    <button class="btn-small btn-success tries-save-btn" onclick="saveAdminTournamentTries()">Save Tournament Tries</button>
+                    <span id="adminTriesSaveStatus" class="tries-save-status" role="status" aria-live="polite"></span>
                 </div>
             </div>
 
@@ -836,29 +836,29 @@
         <button type="button" class="install-tip-close" aria-label="Dismiss" onclick="dismissInstallTip()">&#10005;</button>
     </div>
 
-    <script src="js/constants.js?v=40261025-218"></script>
-    <script src="js/storage.js?v=40261025-218"></script>
-    <script src="js/state.js?v=40261025-218"></script>
-    <script src="js/years-admin.js?v=40261025-218"></script>
-    <script src="js/init.js?v=40261025-218"></script>
-    <script src="js/admin-fixtures.js?v=40261025-218"></script>
-    <script src="js/admin-competitors.js?v=40261025-218"></script>
-    <script src="js/profile.js?v=40261025-218"></script>
-    <script src="js/auth.js?v=40261025-218"></script>
-    <script src="js/predictions.js?v=40261025-218"></script>
-    <script src="js/scoring.js?v=40261025-218"></script>
-    <script src="js/trevs-tips.js?v=40261025-218"></script>
-    <script src="js/leaderboard.js?v=40261025-218"></script>
-    <script src="js/worm-chart.js?v=40261025-218"></script>
-    <script src="js/summary.js?v=40261025-218"></script>
-    <script src="js/fixture-chat.js?v=40261025-218"></script>
-    <script src="js/tour-images.js?v=40261025-218"></script>
-    <script src="js/tour.js?v=40261025-218"></script>
-    <script src="js/app-bar.js?v=40261025-218"></script>
-    <script src="js/export-pdf.js?v=40261025-218"></script>
-    <script src="js/rules-admin.js?v=40261025-218"></script>
-    <script src="js/recovery-usage.js?v=40261025-218"></script>
-    <script src="js/unsaved-changes.js?v=40261025-218"></script>
-    <script src="js/app-shell.js?v=40261025-218"></script>
+    <script src="js/constants.js?v=40261025-222"></script>
+    <script src="js/storage.js?v=40261025-222"></script>
+    <script src="js/state.js?v=40261025-222"></script>
+    <script src="js/years-admin.js?v=40261025-222"></script>
+    <script src="js/init.js?v=40261025-222"></script>
+    <script src="js/admin-fixtures.js?v=40261025-222"></script>
+    <script src="js/admin-competitors.js?v=40261025-222"></script>
+    <script src="js/profile.js?v=40261025-222"></script>
+    <script src="js/auth.js?v=40261025-222"></script>
+    <script src="js/predictions.js?v=40261025-222"></script>
+    <script src="js/scoring.js?v=40261025-222"></script>
+    <script src="js/trevs-tips.js?v=40261025-222"></script>
+    <script src="js/leaderboard.js?v=40261025-222"></script>
+    <script src="js/worm-chart.js?v=40261025-222"></script>
+    <script src="js/summary.js?v=40261025-222"></script>
+    <script src="js/fixture-chat.js?v=40261025-222"></script>
+    <script src="js/tour-images.js?v=40261025-222"></script>
+    <script src="js/tour.js?v=40261025-222"></script>
+    <script src="js/app-bar.js?v=40261025-222"></script>
+    <script src="js/export-pdf.js?v=40261025-222"></script>
+    <script src="js/rules-admin.js?v=40261025-222"></script>
+    <script src="js/recovery-usage.js?v=40261025-222"></script>
+    <script src="js/unsaved-changes.js?v=40261025-222"></script>
+    <script src="js/app-shell.js?v=40261025-222"></script>
 </body>
 </html>

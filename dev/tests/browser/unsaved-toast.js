@@ -113,13 +113,19 @@ const mock = `
   await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(Math.min(1000, 40));
   await page.evaluate(() => switchYear(2027)); await page.waitForTimeout(600);
   const toast = () => page.evaluate(() => { const t = document.getElementById('unsavedToast'); return { shown: !t.classList.contains('hidden') && getComputedStyle(t).display !== 'none', text: document.getElementById('unsavedToastText').textContent, fields: document.querySelectorAll('.unsaved-field').length }; });
-  // 1. My Predictions: the tournament tries box
+  // 1. My Predictions: the tournament tries box saves itself a moment after typing stops (no toast, no Save button)
   await page.click('#appView .app-bar > .tabs .tab:has-text("My Predictions")'); await page.waitForTimeout(500);
-  console.log('1 fresh page:', JSON.stringify(await toast()));
-  await page.click('#totalTries'); await page.fill('#totalTries', '31'); await page.waitForTimeout(150);
-  const t1 = await toast(); console.log('1 after typing a tries guess:', JSON.stringify(t1), t1.shown && /Tournament tries/.test(t1.text) && t1.fields === 1);
-  await page.click('#saveTriesBtn'); await page.waitForTimeout(700);
-  const t1b = await toast(); console.log('1 after Save:', JSON.stringify(t1b), !t1b.shown);
+  console.log('1 no Save button:', await page.evaluate(() => !document.getElementById('saveTriesBtn') && !document.querySelector('#triesSection button')));
+  await page.evaluate(() => { window.__saveCalls = 0; const orig = Storage.savePredictions; Storage.savePredictions = async (...a) => { window.__saveCalls++; return orig.apply(Storage, a); }; });
+  await page.click('#totalTries'); await page.keyboard.type('31', { delay: 80 }); await page.waitForTimeout(250);
+  const t1 = await toast(); console.log('1 while typing: no toast and not saved yet:', JSON.stringify({ toast: t1.shown, saves: await page.evaluate(() => window.__saveCalls) }), !t1.shown);
+  await page.waitForTimeout(1300);
+  const t1b = await page.evaluate(() => ({ saves: window.__saveCalls, saved: users[currentUsername].totalTries, status: document.getElementById('triesSaveStatus').textContent, db: (__db.user_tries.find(r => r.user_id === 1 && r.year === 2027) || {}).total_tries }));
+  console.log('1 a moment after typing stops it is saved once:', JSON.stringify(t1b), t1b.saves === 1 && t1b.saved === 31 && /Saved/.test(t1b.status));
+  await page.fill('#totalTries', '-4'); await page.waitForTimeout(1300);
+  console.log('1 a bad value is not saved and says why:', JSON.stringify(await page.evaluate(() => ({ saves: window.__saveCalls, status: document.getElementById('triesSaveStatus').textContent }))));
+  await page.fill('#totalTries', '28'); await page.click('#appView .app-bar'); await page.waitForTimeout(400);
+  console.log('1 leaving the box saves straight away:', JSON.stringify(await page.evaluate(() => ({ saves: window.__saveCalls, saved: users[currentUsername].totalTries }))));
   // 2. Admin: Guesser Rules
   await page.click('#appView .app-bar > .tabs .tab:has-text("Admin Functions")'); await page.waitForTimeout(400);
   await page.click('.admin-tabs .tab:has-text("Guesser Rules")'); await page.waitForTimeout(700);
