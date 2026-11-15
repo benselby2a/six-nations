@@ -8,7 +8,7 @@
             
             if (matches.length === 0 || allUsers.length === 0) {
                 const emptyMessage = matches.length === 0
-                    ? `No fixtures have been added for ${selectedYear} yet.`
+                    ? `Predictions will be revealed after all guesses are in.`
                     : `No competitors have made predictions for ${selectedYear} yet.`;
                 container.innerHTML = `<p style="text-align: center; font-size: 1.2rem; opacity: 0.7;">${emptyMessage}</p>`;
                 renderPrizeMoneyPanel([]);
