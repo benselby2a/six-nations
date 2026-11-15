@@ -43,9 +43,14 @@
                 });
                 
                 // Fetch predictions for all users
-                const { data: predictions, error: predError } = await supabaseClient
-                    .from('predictions')
-                    .select('*');
+                // Only this year's fixtures: the download stays the same size however many years pile up
+                const yearIds = [...yearMatchIds];
+                const { data: predictions, error: predError } = yearIds.length === 0
+                    ? { data: [], error: null }
+                    : await supabaseClient
+                        .from('predictions')
+                        .select('user_id, match_id, team1_score, team2_score')
+                        .in('match_id', yearIds);
                 
                 if (!predError && predictions) {
                     // Map user_id to username
@@ -860,9 +865,13 @@
                 });
 
                 const yearMatchIds = new Set(matches.map(m => m.id));
-                const { data: selectionRows, error: selectionError } = await supabaseClient
-                    .from('user_joker_selections')
-                    .select('user_id, match_id');
+                const yearIdList = [...yearMatchIds];
+                const { data: selectionRows, error: selectionError } = yearIdList.length === 0
+                    ? { data: [], error: null }
+                    : await supabaseClient
+                        .from('user_joker_selections')
+                        .select('user_id, match_id')
+                        .in('match_id', yearIdList);
 
                 if (selectionError) {
                     console.error('Error fetching joker selections:', selectionError);
