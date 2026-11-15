@@ -112,6 +112,7 @@ const mock = `
     await page.goto('file://' + path); await page.waitForTimeout(500);
     await page.fill('#loginEmail', 'ben@example.com'); await page.click('#sendLoginCodeBtn'); await page.waitForTimeout(150);
     await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(1200);
+    await page.evaluate(() => { appSettings.predictionsLocked = true; showSummary(); }); await page.waitForTimeout(300);   // before the lock the summary is only the signed-up list
     const r = await page.evaluate(() => ({ pdfModalOnThisDevice: isDesktopPointer(), headerJokers: [...document.querySelectorAll('.summary-container thead .joker-eligible-icon, .summary-container thead .joker-inline')].filter(e => e.offsetParent).length, compact: document.body.classList.contains('summary-compact'), pressed: document.getElementById('summaryCompactBtn').getAttribute('aria-pressed'), pad: getComputedStyle(document.querySelector('.container')).paddingLeft, containerW: Math.round(document.querySelector('.container').getBoundingClientRect().width), vw: innerWidth }));
     console.log(label, JSON.stringify(r), errors.length ? errors : '');
     await ctx.close();
