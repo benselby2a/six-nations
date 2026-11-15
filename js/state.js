@@ -29,6 +29,8 @@
 
         // Loading state
         let isLoading = true;
+        // The loading screen stays up until we also know whether someone is signed in, so the login form never flashes first
+        let authSettled = false;
 
         function getUsageActor(actorOverride = null) {
             if (actorOverride) return String(actorOverride).trim().toLowerCase();

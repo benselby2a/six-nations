@@ -22,12 +22,12 @@
                 await loadYearData();
                 
                 isLoading = false;
-                hideLoadingScreen();
+                if (authSettled) hideLoadingScreen();   // otherwise handleAuthChange hides it once the sign-in state is known
                 
             } catch (error) {
                 console.error('Error initializing data:', error);
                 isLoading = false;
-                hideLoadingScreen();
+                if (typeof settleAuth === 'function') { showLoginScreen(); settleAuth(); } else hideLoadingScreen();
                 alert('Error connecting to database. Please check your connection and refresh.');
             }
         }

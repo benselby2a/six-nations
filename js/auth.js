@@ -244,10 +244,23 @@
             }, 1000);
         }
 
+        // The sign-in state is known (app, guest or login form is showing): take the loading screen away
+        function settleAuth() {
+            authSettled = true;
+            hideLoadingScreen();
+        }
+
+        // If the sign-in check never answers, do not leave people on the loading screen
+        const authWaitStartedAt = Date.now();
+        const authWaitTimer = setInterval(() => {
+            if (authSettled) { clearInterval(authWaitTimer); return; }
+            if (!isLoading && Date.now() - authWaitStartedAt > 8000) { showLoginScreen(); settleAuth(); clearInterval(authWaitTimer); }
+        }, 1000);
+
         // Auth state changes (initial session restore, sign-in, sign-out)
         async function handleAuthChange(event, session) {
             await appReady;
-            if (isPdfExportMode) return;
+            if (isPdfExportMode) { settleAuth(); return; }
 
             if (event === 'SIGNED_OUT') {
                 authHandledUserId = null;
@@ -270,7 +283,9 @@
                     } else {
                         // Remembered usernames from the pre-auth login system are no longer used.
                         clearRememberedUsername();
+                        showLoginScreen();
                     }
+                    settleAuth();
                 }
                 return;
             }
@@ -279,6 +294,7 @@
                 if (authHandledUserId === session.user.id) return;
                 authHandledUserId = session.user.id;
                 await resolveSignedInUser(session, event === 'INITIAL_SESSION' ? 'session_restore' : 'email_code');
+                settleAuth();
             }
         }
 
