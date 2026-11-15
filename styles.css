@@ -4702,3 +4702,10 @@ body.summary-compact .cell-score .joker-inline { width: 1.25rem; height: 1.25rem
 /* No-signal banner: fixed to the top, above the app, never in the way of taps below it */
 .connection-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 2800; padding: max(6px, env(safe-area-inset-top, 0px)) 12px 6px; background: var(--field-bg); color: var(--text); border-bottom: 2px solid var(--gold); font-size: 0.85rem; line-height: 1.3; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
 .connection-banner.hidden { display: none; }
+
+/* Summary before the lock: just who has signed up */
+.signed-up-panel { max-width: 420px; margin: 0.5rem auto 1rem; padding: 1rem 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.signed-up-panel h3 { margin: 0 0 0.35rem; font-family: var(--header-font); font-weight: 400; font-size: 1.6rem; letter-spacing: 0.05em; color: var(--gold); }
+.signed-up-note { margin: 0 0 0.6rem; font-size: 0.9rem; opacity: 0.8; }
+.signed-up-list { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.2rem; font-size: 1.05rem; }
+.signed-up-you { opacity: 0.7; font-size: 0.85em; }

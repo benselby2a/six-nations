@@ -518,3 +518,5 @@ Tour pictures: the picture stays hidden until the 120ms refit has sized it (no t
 The app remembers only My Predictions or Match Summary as the last tab (never Admin); an old saved Admin value is ignored. Test: `dev/test.sh last-tab`.
 
 A player's Joker pick on the summary has a small gold circle behind the card (`td.joker-cell .joker-indicator` in the full view, `body.summary-compact .cell-score .joker-inline` in compact); the header card has none. Look: `dev/test.sh joker-circle`.
+
+Before predictions lock (and with no result in), the Match Summary shows only a bulleted "Signed up for <year>" list (`getActiveUsernames()`), not the table. The table (with 🔒 cells for others, for the odd case) appears once locked or any result exists.
