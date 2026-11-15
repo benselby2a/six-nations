@@ -503,3 +503,6 @@ This is the main browser-to-Supabase boundary.
 - `predictionsRevealed()` (scoring.js) is true when the year is locked (`appSettings.predictionsLocked`) or any result exists. Until then `canSeePredictionsOf(username)` only allows your own row; `getViewablePrediction()` is the safe accessor.
 - Summary cells for other players show 🔒 (`td.hidden-prediction`), the Predicted Tries column shows 🔒, a `.predictions-hidden-note` banner explains it, the prize panel shows "Shown when predictions lock" for closest tries, and the PDF export uses the same helpers. The admin Predictions screen is unchanged.
 - Test: `dev/test.sh hidden-predictions`.
+
+## Last year's guess in the edit-prediction modal
+`loadLastYearNote` (predictions.js) finds last year's fixture with the same two teams (either order), fetches that player's prediction for it, and shows "Last year (YYYY) You predicted a-b, the result was c-d." under the scores (`#edit-prediction-lastyear`), in this year's home/away order. Hidden when there is no such fixture or prediction. Test: `dev/test.sh last-year-note`. The admin tour's Fixtures step now promotes Bulk Import and suggests Google AI for generating the lines.

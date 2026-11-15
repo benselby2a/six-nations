@@ -129,6 +129,37 @@
             return `<span class="prediction-fixture-label"><span class="prediction-fixture-team">${getFlag(match.team1)} ${getTeamAbbr(match.team1)}</span><span class="prediction-fixture-v">v</span><span class="prediction-fixture-team">${getTeamAbbr(match.team2)} ${getFlag(match.team2)}</span></span>`;
         }
 
+        // Last year's guess and result for the same fixture, shown as small subtext in the edit modal
+        const lastYearPredictionCache = {};
+        async function loadLastYearNote(username, match) {
+            const note = document.getElementById('edit-prediction-lastyear');
+            if (!note) return;
+            note.classList.add('hidden');
+            note.textContent = '';
+            const prev = (allMatches || []).find(m => m.year === match.year - 1 &&
+                ((m.team1 === match.team1 && m.team2 === match.team2) || (m.team1 === match.team2 && m.team2 === match.team1)));
+            const userId = users[username] && users[username].id;
+            if (!prev || !userId) return;
+            const key = userId + ':' + prev.id;
+            if (!(key in lastYearPredictionCache)) {
+                try {
+                    const { data } = await supabaseClient.from('predictions').select('team1_score,team2_score').eq('user_id', userId).eq('match_id', prev.id).maybeSingle();
+                    lastYearPredictionCache[key] = data || null;
+                } catch (e) { lastYearPredictionCache[key] = null; }
+            }
+            const pred = lastYearPredictionCache[key];
+            if (!pred || pred.team1_score === null || pred.team2_score === null) return;
+            if (!editingPredictionContext || editingPredictionContext.matchId !== match.id || editingPredictionContext.username !== username) return;
+            // Show scores in this year's home/away order
+            const flip = prev.team1 !== match.team1;
+            const guess = flip ? `${pred.team2_score}-${pred.team1_score}` : `${pred.team1_score}-${pred.team2_score}`;
+            const played = prev.actualScore1 !== null && prev.actualScore2 !== null;
+            const actual = played ? (flip ? `${prev.actualScore2}-${prev.actualScore1}` : `${prev.actualScore1}-${prev.actualScore2}`) : null;
+            const who = (editingPredictionContext.mode === 'admin') ? `${getDisplayName(username)} predicted` : 'You predicted';
+            note.textContent = `Last year (${prev.year}) ${who} ${guess}${actual ? `, the result was ${actual}` : ''}.`;
+            note.classList.remove('hidden');
+        }
+
         function openEditPredictionModal(mode, matchId) {
             const match = matches.find(m => m.id === matchId);
             const modal = document.getElementById('editPredictionModal');
@@ -139,6 +170,7 @@
 
             const prediction = users[username].predictions ? users[username].predictions[matchId] : null;
             editingPredictionContext = { mode, matchId, username };
+            loadLastYearNote(username, match);
 
             const title = document.getElementById('edit-prediction-title');
             const subtitle = document.getElementById('edit-prediction-subtitle');
