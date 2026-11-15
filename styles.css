@@ -4713,10 +4713,10 @@ body.summary-compact .cell-score .joker-inline { width: 1.25rem; height: 1.25rem
 .signed-up-you { opacity: 0.7; font-size: 0.85em; }
 
 /* iPhone Home Screen app: iOS fades and blurs anything within about 35px of the top edge (under the status bar), which made the team names in the pinned header fuzzy.
-   The pinned copy gets an empty strip of header colour there, so the names sit below the blurred band. (Not applied in a browser or on desktop.) */
+   The header (real and pinned copy alike, so nothing jumps when it pins) gets an empty strip of header colour there, so the names sit below the blurred band. (Not applied in a browser or on desktop.) */
 @media (display-mode: standalone) {
     @supports (-webkit-touch-callout: none) {
-        .summary-table-clone thead th { border-top: 34px solid transparent; }
+        .summary-table thead th { border-top: 24px solid transparent; }   /* on the real header too, so the pinned copy is exactly the same height and the header does not jump when it pins */
     }
 }
 
