@@ -1,19 +1,16 @@
-// Unsaved changes: a toast at the top of the screen while a form has been edited but not saved,
-// with the edited fields outlined. Covers My Predictions and the admin screens.
+// Unsaved changes: a toast at the top of the screen while a form on the page itself has been edited but not saved,
+// with the edited fields outlined. Covers My Predictions and the admin screens. Pop-ups (modals) are not tracked:
+// they ask for an explicit Save or Cancel in front of you, so there is nothing to forget.
 // Classic script (shared global scope); load order is set in index.html.
 
-// Each area is a form (or a modal) with a Save button. `saves` are the global functions that save it.
+// Each area is an in-page form with its own Save / Add button. `saves` are the global functions that save it.
 const UNSAVED_AREAS = [
     { id: 'triesSection', label: 'Tournament tries', saves: { saveTournamentTries: () => 'triesSection' } },
-    { id: 'editPredictionModal', label: 'Prediction', modal: true, saves: { savePredictionEdits: () => 'editPredictionModal' } },
     { id: 'scoreCorrectionsTab', label: 'Predictions', saves: { saveAdminTournamentTries: () => 'scoreCorrectionsTab' } },
     { id: 'rulesTab', label: 'Guesser rules', saves: {} },
     { id: 'prizeFundTab', label: 'Prize fund', saves: {} },
     { id: 'competitorsTab', label: 'Competitors', saves: { addCompetitor: () => 'new-competitor-card' } },
-    { id: 'yearsTab', label: 'Years', saves: { addYearFromAdmin: () => 'yearsTab' } },
-    { id: 'editFixtureModal', label: 'Fixture', modal: true, saves: { saveFixtureEdits: () => 'editFixtureModal' } },
-    { id: 'nextMatchScoreModal', label: 'Score', modal: true, saves: { saveNextMatchScore: () => 'nextMatchScoreModal' } },
-    { id: 'profileModal', label: 'Profile', modal: true, saves: { saveProfile: () => 'profileModal' } }
+    { id: 'yearsTab', label: 'Years', saves: { addYearFromAdmin: () => 'yearsTab' } }
 ];
 
 // Fields that are not "edits waiting for Save": chooser drop downs and toggles that save as soon as they change
@@ -43,7 +40,6 @@ function unsavedDirtyAreas() {
     UNSAVED_AREAS.forEach(area => {
         const root = document.getElementById(area.id);
         if (!root) return;
-        if (area.modal && root.classList.contains('hidden')) return;
         let any = false;
         root.querySelectorAll('[data-unsaved-base]').forEach(el => {
             const changed = unsavedFieldValue(el) !== el.dataset.unsavedBase;
@@ -103,14 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
         updateUnsavedToast();
     }, true));
 
-    // Modals: a fresh start whenever one opens or closes
-    UNSAVED_AREAS.filter(a => a.modal).forEach(area => {
-        const root = document.getElementById(area.id);
-        if (root) new MutationObserver(() => clearUnsavedBaselines(root)).observe(root, { attributes: true, attributeFilter: ['class'] });
-    });
     // Screens that re-draw themselves after a save drop their old fields
     let redrawTimer = null;
-    UNSAVED_AREAS.filter(a => !a.modal).forEach(area => {
+    UNSAVED_AREAS.forEach(area => {
         const root = document.getElementById(area.id);
         if (root) new MutationObserver(() => { clearTimeout(redrawTimer); redrawTimer = setTimeout(updateUnsavedToast, 50); }).observe(root, { childList: true, subtree: true });
     });
