@@ -1321,8 +1321,7 @@
 
         .summary-table {
             width: 100%;
-            background: var(--grid-bg);
-            backdrop-filter: blur(10px);
+            background: var(--grid-bg);   /* solid: a backdrop blur here made the pinned header text blurry on iPhone while scrolling */
             border-collapse: separate;
             border-spacing: 0;
             table-layout: auto;
