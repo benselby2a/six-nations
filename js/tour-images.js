@@ -24,7 +24,7 @@ const TOUR_IMAGES = {
  },
  "score": {
   "src": "tour-images/score.jpg",
-  "v": "612bd9e1",
+  "v": "e376ed14",
   "w": 780,
   "h": 1520,
   "marks": [
@@ -51,31 +51,9 @@ const TOUR_IMAGES = {
    }
   ]
  },
- "compact": {
-  "src": "tour-images/compact.jpg",
-  "v": "7cec3100",
-  "w": 780,
-  "h": 1120,
-  "marks": [
-   {
-    "n": 1,
-    "x": 87.8,
-    "y": 1.9,
-    "w": 9.7,
-    "h": 6.1
-   },
-   {
-    "n": 2,
-    "x": 2.5,
-    "y": 25.9,
-    "w": 95.1,
-    "h": 74.1
-   }
-  ]
- },
  "pdf": {
   "src": "tour-images/pdf.jpg",
-  "v": "d66e2c95",
+  "v": "9674f592",
   "w": 780,
   "h": 458,
   "marks": [
@@ -90,7 +68,7 @@ const TOUR_IMAGES = {
  },
  "chips": {
   "src": "tour-images/chips.jpg",
-  "v": "fe9e6e3e",
+  "v": "81246691",
   "w": 780,
   "h": 1120,
   "marks": [
@@ -112,7 +90,7 @@ const TOUR_IMAGES = {
  },
  "stats": {
   "src": "tour-images/stats.jpg",
-  "v": "3661afd5",
+  "v": "96983ff9",
   "w": 780,
   "h": 1520,
   "marks": [
@@ -134,7 +112,7 @@ const TOUR_IMAGES = {
  },
  "admin-menu": {
   "src": "tour-images/admin-menu.jpg",
-  "v": "9da685af",
+  "v": "6548b590",
   "w": 780,
   "h": 940,
   "marks": [
@@ -156,7 +134,7 @@ const TOUR_IMAGES = {
  },
  "admin-fixtures": {
   "src": "tour-images/admin-fixtures.jpg",
-  "v": "c369d580",
+  "v": "ce3053a6",
   "w": 780,
   "h": 1246,
   "marks": [
@@ -178,7 +156,7 @@ const TOUR_IMAGES = {
  },
  "admin-lock": {
   "src": "tour-images/admin-lock.jpg",
-  "v": "d466f491",
+  "v": "0cf69d9e",
   "w": 780,
   "h": 584,
   "marks": [
@@ -200,7 +178,7 @@ const TOUR_IMAGES = {
  },
  "admin-competitors": {
   "src": "tour-images/admin-competitors.jpg",
-  "v": "20463c83",
+  "v": "f711802d",
   "w": 780,
   "h": 376,
   "marks": [
@@ -222,7 +200,7 @@ const TOUR_IMAGES = {
  },
  "admin-rules": {
   "src": "tour-images/admin-rules.jpg",
-  "v": "febea4e3",
+  "v": "8ae57744",
   "w": 780,
   "h": 1280,
   "marks": [
@@ -237,7 +215,7 @@ const TOUR_IMAGES = {
  },
  "admin-prize": {
   "src": "tour-images/admin-prize.jpg",
-  "v": "067c6c67",
+  "v": "a292c02c",
   "w": 780,
   "h": 1280,
   "marks": [
@@ -252,7 +230,7 @@ const TOUR_IMAGES = {
  },
  "admin-years": {
   "src": "tour-images/admin-years.jpg",
-  "v": "f6e99d6a",
+  "v": "6fc1d40b",
   "w": 780,
   "h": 1280,
   "marks": [
