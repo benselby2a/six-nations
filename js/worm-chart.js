@@ -21,9 +21,22 @@
             return `hsl(${hue} 70% 58%)`;
         }
 
+        // Phones get a narrower, taller chart with bigger text, so it can be read without zooming
+        function wormChartIsPhone() { return window.innerWidth <= 600; }
+        let wormChartLastUsers = null;
+        let wormChartRenderedPhone = null;
+
+        // Called when the screen is rotated or resized: redraw if it crossed the phone/desktop size
+        function refreshWormChartLayout() {
+            if (wormChartLastUsers && wormChartRenderedPhone !== null && wormChartRenderedPhone !== wormChartIsPhone()) renderWormChart(wormChartLastUsers);
+        }
+
         function renderWormChart(sortedUsers) {
             const container = document.getElementById('wormChartContainer');
             if (!container) return;
+            const phone = wormChartIsPhone();
+            wormChartRenderedPhone = phone;
+            wormChartLastUsers = sortedUsers;
 
             const usersForChart = Array.isArray(sortedUsers) ? sortedUsers : [];
             const allCompletedMatches = matches
@@ -85,12 +98,13 @@
             const yMax = maxPoints <= 10 ? 10 : Math.ceil(maxPoints / 5) * 5;
             const tickCount = 5;
 
-            const marginLeft = 56;
-            const marginRight = 24;
+            const marginLeft = phone ? 52 : 56;
+            const marginRight = phone ? 16 : 24;
             const marginTop = 16;
-            const marginBottom = 88;
-            const plotWidth = Math.max(980, completedMatches.length * 86);
-            const plotHeight = 280;
+            const marginBottom = phone ? 110 : 88;
+            const plotWidth = phone ? Math.max(420, completedMatches.length * 64) : Math.max(980, completedMatches.length * 86);
+            const plotHeight = phone ? 420 : 280;
+            const labelDrop = phone ? 36 : 28;
             const svgWidth = marginLeft + plotWidth + marginRight;
             const svgHeight = marginTop + plotHeight + marginBottom;
 
@@ -116,7 +130,7 @@
                 const matchLabel = `${getTeamAbbr(match.team1)} v ${getTeamAbbr(match.team2)}`;
                 xAxisLabels += `
                     <line class="worm-tick-line" x1="${x}" y1="${marginTop + plotHeight}" x2="${x}" y2="${marginTop + plotHeight + 6}"></line>
-                    <text class="worm-axis-label worm-axis-match-label" x="${x}" y="${marginTop + plotHeight + 28}" text-anchor="end" transform="rotate(-32 ${x} ${marginTop + plotHeight + 28})">${escapeHtml(matchLabel)}</text>
+                    <text class="worm-axis-label worm-axis-match-label" x="${x}" y="${marginTop + plotHeight + labelDrop}" text-anchor="end" transform="rotate(-32 ${x} ${marginTop + plotHeight + labelDrop})">${escapeHtml(matchLabel)}</text>
                 `;
             });
 
@@ -161,7 +175,7 @@
                 <div class="worm-chart-title">Points Progression${roundOnly ? ` (Round ${selectedRound})` : ''}</div>
                 <div class="worm-chart-hover-hint">Hover or tap a player or line to highlight them; click or tap a point for that game's details.</div>
                 <div class="worm-chart-wrap">
-                    <svg class="worm-chart-svg" width="100%" viewBox="0 0 ${svgWidth} ${svgHeight}" role="img" aria-label="Line chart showing each player's cumulative points per game">
+                    <svg class="worm-chart-svg${phone ? ' phone' : ''}" width="100%" viewBox="0 0 ${svgWidth} ${svgHeight}" role="img" aria-label="Line chart showing each player's cumulative points per game">
                         <line class="worm-axis-line" x1="${marginLeft}" y1="${marginTop}" x2="${marginLeft}" y2="${marginTop + plotHeight}"></line>
                         <line class="worm-axis-line" x1="${marginLeft}" y1="${marginTop + plotHeight}" x2="${marginLeft + plotWidth}" y2="${marginTop + plotHeight}"></line>
                         ${gridAndLabels}
