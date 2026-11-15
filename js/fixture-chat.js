@@ -217,6 +217,17 @@ function renderFixtureChat() {
         }
     }
 
+    // Tapping a match header (not a prediction): the match's facts above the reactions
+    let matchCard = '';
+    if (!isPred) {
+        const played = match.actualScore1 !== null && match.actualScore2 !== null;
+        const triesIn = match.actualTries1 !== null && match.actualTries2 !== null;
+        let lines = `<dt>Result</dt><dd>${played ? `${getFlag(match.team1)} ${match.actualScore1} - ${match.actualScore2} ${getFlag(match.team2)}` : 'Not played yet'}</dd>`;
+        lines += `<dt>Total tries</dt><dd>${triesIn ? `<strong>${match.actualTries1 + match.actualTries2}</strong> (${getTeamAbbr(match.team1)} ${match.actualTries1}, ${getTeamAbbr(match.team2)} ${match.actualTries2})` : 'Not entered yet'}</dd>`;
+        lines += `<dt>Joker</dt><dd>${match.jokerEligible ? '🃏 Joker eligible: points are doubled for anyone who plays their Joker here' : 'Not a Joker match'}</dd>`;
+        matchCard = `<div class="fc-pred-card"><dl class="fc-pred-lines">${lines}</dl></div>`;
+    }
+
     const options = chatEmojiOptions(match.id);
     const reactButtons = options.map(emoji => {
         const who = thread.reactions[emoji] || [];
@@ -228,7 +239,7 @@ function renderFixtureChat() {
     const whoRows = options.filter(e => (thread.reactions[e] || []).length).map(emoji =>
         `<li><span aria-hidden="true">${emoji}</span><span>${thread.reactions[emoji].map(w => w.username === currentUsername ? '<span class="fc-you">You</span>' : escapeHtml(chatDisplayName(w.username))).join(', ')}</span></li>`);
 
-    document.getElementById('fixtureChatBody').innerHTML = `${predCard}
+    document.getElementById('fixtureChatBody').innerHTML = `${predCard}${matchCard}
         <div class="fc-reacts" role="group" aria-label="Reactions">${reactButtons}</div>
         ${whoRows.length ? `<div><p class="fc-who-title">Who reacted</p><ul class="fc-who">${whoRows.join('')}</ul></div>` : '<p class="fc-empty">No reactions yet.</p>'}
         ${canPost ? '' : '<p class="fc-guest-note">Sign in to react. Guests can see the reactions.</p>'}`;
