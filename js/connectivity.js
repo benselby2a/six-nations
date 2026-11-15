@@ -130,3 +130,51 @@ function liveRefreshTick() {
     refreshKeepingPlace();
 }
 setInterval(liveRefreshTick, 30 * 1000);
+
+// ---- New version check: a Home Screen app can keep an old copy of the page for a long time ----
+// On start (and when coming back after a while) ask the server for a fresh index.html and compare version tags.
+// At start-up a newer version is loaded straight away (nothing to lose yet); later a banner offers a tap to reload.
+const APP_VERSION_TAG = (() => {
+    const el = document.querySelector('script[src*="connectivity.js"]');
+    const m = el && /[?&]v=([\w-]+)/.exec(el.getAttribute('src') || '');
+    return m ? m[1] : null;
+})();
+const APP_LOADED_AT = Date.now();
+let lastVersionCheckAt = 0;
+let newVersionBannerShown = false;
+
+async function checkForNewVersion() {
+    if (!APP_VERSION_TAG || NET.offline || navigator.onLine === false || location.protocol === 'file:') return;
+    if (Date.now() - lastVersionCheckAt < 60 * 1000) return;
+    lastVersionCheckAt = Date.now();
+    try {
+        const response = await fetch(location.pathname + '?_=' + Date.now(), { cache: 'no-store' });
+        if (!response.ok) return;
+        const html = await response.text();
+        const m = /src="js\/connectivity\.js\?v=([\w-]+)"/.exec(html);
+        if (!m || m[1] === APP_VERSION_TAG) return;
+        let tried = null;
+        try { tried = sessionStorage.getItem('rugbyPredictorReloadedFor'); } catch (e) { /* ignore */ }
+        const early = Date.now() - APP_LOADED_AT < 15000;
+        if (early && tried !== m[1]) {
+            try { sessionStorage.setItem('rugbyPredictorReloadedFor', m[1]); } catch (e) { /* ignore */ }
+            location.reload();
+            return;
+        }
+        showNewVersionBanner();
+    } catch (e) { /* no signal or blocked: try again next time */ }
+}
+
+function showNewVersionBanner() {
+    if (newVersionBannerShown) return;
+    newVersionBannerShown = true;
+    const bar = document.createElement('div');
+    bar.className = 'new-version-banner';
+    bar.setAttribute('role', 'status');
+    bar.innerHTML = '<span>A new version is available.</span> <button type="button">Reload</button>';
+    bar.querySelector('button').addEventListener('click', () => location.reload());
+    document.body.appendChild(bar);
+}
+
+setTimeout(checkForNewVersion, 1500);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkForNewVersion(); });
