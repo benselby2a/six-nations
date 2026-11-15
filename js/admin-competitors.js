@@ -52,11 +52,12 @@
                 html += '<div class="profile-hint" style="margin-bottom: 0.4rem;">Links automatically when they first sign in</div>';
             }
             if (unlinked.length === 0) return `${html}<span class="profile-hint">No unlinked accounts</span>`;
-            return `${html}<select id="link-account-${username}" style="font-size: 0.85rem; max-width: 220px;">
+            return `${html}<div class="link-account-row">
+                <select id="link-account-${username}">
                     <option value="">Choose account...</option>
                     ${unlinked.map(a => `<option value="${a.auth_user_id}">${escapeHtml(a.email || a.auth_user_id)}</option>`).join('')}
                 </select>
-                <div class="competitor-actions"><button class="btn-small btn-success" onclick="linkCompetitorAccount('${safeUsername}')">Link</button></div>`;
+                <button type="button" class="btn-small btn-success" onclick="linkCompetitorAccount('${safeUsername}')">Link</button></div>`;
         }
 
         async function linkCompetitorAccount(username) {
@@ -529,7 +530,9 @@
                 document.getElementById('currentUser').textContent = toTitleCase(nickname);
             }
 
-            // Re-render to update row IDs and input IDs
+            // The save is done: fold the card away, then re-render to update row IDs and input IDs
+            const savedCard = document.getElementById(`user-row-${username}`);
+            if (savedCard) savedCard.open = false;
             renderCompetitorManagement();
         }
 
