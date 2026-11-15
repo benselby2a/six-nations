@@ -123,7 +123,7 @@ const IPHONE_CHROME = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) Ap
   // ---- install tip
   let page = await open({ userAgent: IPHONE_SAFARI, viewport: { width: 390, height: 800 } });
   console.log('1 iPhone Safari, first visit -> tip shown:', await tipShown(page));
-  await page.screenshot({ path: 'install-tip.png' });
+  await page.screenshot({ path: '/tmp/install-tip.png' });
   await page.click('.install-tip-close');
   console.log('  after dismiss -> shown:', await tipShown(page));
   await page.reload(); await page.waitForTimeout(Math.min(600, 40));

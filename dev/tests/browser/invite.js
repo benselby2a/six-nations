@@ -183,7 +183,7 @@ const mock = `
   await page.evaluate((u) => { document.getElementById('user-row-' + u).open = true; }, goneUser);
   await page.evaluate((u) => deleteUser(u), goneUser); await page.waitForTimeout(Math.min(700, 40));
   console.log('   deleting the card removes the invitation:', await page.evaluate(() => !__db.users.some(u => !u.nickname && __db.competitor_emails.some(e => e.user_id === u.id && /gone/.test(e.email)))), '| login check:', await page.evaluate(async () => (await supabase_check('gone.fixed@x.com'))).catch(() => 'n/a'));
-  await page.screenshot({ path: 'invite-admin2.png' });
+  await page.screenshot({ path: '/tmp/invite-admin2.png' });
   // pending invitations are not players
   console.log('5 prediction dropdown lists only real players:', await page.evaluate(() => { populateAdminPredictionUserSelect(); return [...document.querySelectorAll('#adminPredictionUserSelect option')].map(o => o.textContent); }));
   await page.evaluate(() => logout()); await page.waitForTimeout(Math.min(400, 40));
