@@ -382,7 +382,8 @@
                 `;
             };
 
-            const closestNames = projection.closestTriesWinners.length > 0
+            const triesHidden = !predictionsRevealed();   // tries guesses are other people's predictions too
+            const closestNames = triesHidden ? 'Shown when predictions lock' : projection.closestTriesWinners.length > 0
                 ? projection.closestTriesWinners.map(w => `${toTitleCase(users[w.username].nickname || w.username)} (${w.predicted} tries)`).join(', ')
                 : 'TBD';
 
@@ -391,10 +392,10 @@
                 : `Provisional tries target: ${projection.triesTarget ?? '-'} (based on current completed matches)`;
             const footnotes = [triesStatus, projection.exemptPrizeFootnote].filter(Boolean);
             const closestSuffix = projection.closestTriesWinners.length > 1 ? ' each' : '';
-            const secondClosestText = projection.provisionalSecondClosest
+            const secondClosestText = triesHidden ? 'Shown when predictions lock' : projection.provisionalSecondClosest
                 ? `${toTitleCase(users[projection.provisionalSecondClosest.username].nickname || projection.provisionalSecondClosest.username)} (${projection.provisionalSecondClosest.predicted} tries, off by ${projection.provisionalSecondClosest.diff})`
                 : 'TBD';
-            const thirdClosestText = projection.provisionalThirdClosest
+            const thirdClosestText = triesHidden ? 'Shown when predictions lock' : projection.provisionalThirdClosest
                 ? `${toTitleCase(users[projection.provisionalThirdClosest.username].nickname || projection.provisionalThirdClosest.username)} (${projection.provisionalThirdClosest.predicted} tries, off by ${projection.provisionalThirdClosest.diff})`
                 : 'TBD';
             const prizeStatusLabel = matches.some(match => match.actualScore1 === null || match.actualScore2 === null)
