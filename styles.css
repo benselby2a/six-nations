@@ -4664,3 +4664,11 @@ body.summary-compact .match-header-cell .match-header-top .match-teams { margin-
 :is(#appView, #loginView, #setupView) input:disabled, :is(#appView, #loginView, #setupView) select:disabled { opacity: 0.65; }
 
 :is(#appView, #loginView, #setupView) input[type="checkbox"], :is(#appView, #loginView, #setupView) input[type="radio"] { accent-color: var(--gold); }
+
+/* Unsaved changes: a toast at the top and outlined fields */
+.unsaved-toast { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px); left: 50%; transform: translateX(-50%); z-index: 2500; max-width: min(94vw, 640px); display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.85rem; border-radius: 999px; white-space: nowrap; font-size: 0.85rem; background: #e8b02a; color: #2a1d00; font-weight: 700; line-height: 1.25; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); animation: unsavedIn 0.2s ease-out; }
+.unsaved-toast.hidden { display: none; }
+.unsaved-dot { flex: none; width: 0.7rem; height: 0.7rem; border-radius: 50%; background: #c8102e; box-shadow: 0 0 0 3px rgba(200, 16, 46, 0.25); }
+@keyframes unsavedIn { from { opacity: 0; transform: translate(-50%, -8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.unsaved-field { outline: 3px solid rgba(232, 176, 42, 0.75); outline-offset: 1px; }
+@media (prefers-reduced-motion: reduce) { .unsaved-toast { animation: none; } }
