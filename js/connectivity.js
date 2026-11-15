@@ -122,12 +122,44 @@ async function refreshKeepingPlace() {
     window.scrollTo(window.scrollX, top);
 }
 
+// During a match only the fixtures (scores, tries) and the reactions change, so the live refresh fetches just those
+async function refreshLiveScores() {
+    const year = selectedYear;
+    const fresh = await Storage.getYearMatches(year);
+    if (!fresh || year !== selectedYear) return false;   // no signal, or the year was switched meanwhile
+    const chat = await Storage.getFixtureChat(fresh.map(m => m.id));
+    if (year !== selectedYear) return false;
+    allMatches = allMatches.filter(m => m.year !== year).concat(fresh);
+    applySelectedYearMatches();
+    fixtureChat = chat;
+    lastDataRefreshAt = Date.now();
+    updateSummaryUpdatedAt();
+    showSummaryIfChanged();
+    return true;
+}
+
+async function refreshLiveScoresKeepingPlace() {
+    if (summaryRefreshInFlight) return;
+    summaryRefreshInFlight = true;
+    const box = document.querySelector('.summary-container');
+    const left = box ? box.scrollLeft : 0;
+    const top = window.scrollY;
+    try {
+        await refreshLiveScores();
+    } finally {
+        summaryRefreshInFlight = false;
+    }
+    const newBox = document.querySelector('.summary-container');
+    if (newBox) newBox.scrollLeft = left;
+    window.scrollTo(window.scrollX, top);
+}
+
 function liveRefreshTick() {
     if (document.visibilityState !== 'visible' || (typeof isLoading !== 'undefined' && isLoading)) return;
     if (typeof summaryRefreshInFlight !== 'undefined' && summaryRefreshInFlight) return;
     if (!summaryTabIsShowing() || !isLiveMatchWindow()) return;
     if (Date.now() - lastDataRefreshAt < LIVE_REFRESH_EVERY_MS - 5000) return;
-    refreshKeepingPlace();
+    refreshLiveScoresKeepingPlace();
 }
 setInterval(liveRefreshTick, 30 * 1000);
 
