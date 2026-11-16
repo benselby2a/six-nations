@@ -3919,3 +3919,7 @@ body.summary-compact .cell-score .joker-inline { width: 1.25rem; height: 1.25rem
 :root[data-theme="dark"] .summary-table thead .match-teams, :root[data-theme="dark"] .summary-table thead .match-date, :root[data-theme="dark"] .summary-table thead .match-tries, :root[data-theme="dark"] .summary-table thead .no-result { color: var(--text); }
 :root[data-theme="dark"] .summary-table thead th.rank-col, :root[data-theme="dark"] .summary-table thead th.pts-col { color: var(--gold); }
 :root[data-theme="dark"] .summary-table thead .match-result { background: var(--surface-2); color: var(--bright-gold); }
+
+/* The close X on the tour and the reactions pop-up: a clear gold-edged button, not a faint glyph */
+.tour-skip, .fc-close { box-sizing: border-box; width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--bright-gold); background: rgba(255, 255, 255, 0.08); color: var(--bright-gold); font-size: 1.25rem; font-weight: 700; line-height: 1; transition: background 0.15s, color 0.15s; }
+.tour-skip:hover, .fc-close:hover, .tour-skip:active, .fc-close:active { background: var(--bright-gold); color: var(--on-accent); }
