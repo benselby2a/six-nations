@@ -115,17 +115,19 @@ const mock = `
   await page.evaluate(() => switchYear(2026)); await page.waitForTimeout(600);
   await page.click('#appView .app-bar > .tabs .tab:has-text("Match Summary")'); await page.waitForTimeout(500);
   await page.evaluate(() => { const tb = document.querySelector('.summary-table tbody'); [...tb.querySelectorAll('tr')].forEach(r => { for (let i = 0; i < 6; i++) tb.appendChild(r.cloneNode(true)); }); buildSummaryStickyHead(); });
-  const state = () => page.evaluate(() => { const t = document.querySelector('.summary-table:not(.summary-table-clone)').getBoundingClientRect(), i = document.querySelector('.summary-sticky-inner'), r = i.getBoundingClientRect(); return { show: i.classList.contains('show'), pinnedTop: Math.round(r.top), pinnedBottom: Math.round(r.bottom), tableBottom: Math.round(t.bottom), tr: i.style.transform }; });
+  const state = () => page.evaluate(() => { const tbl = document.querySelector('.summary-table:not(.summary-table-clone)'), t = tbl.getBoundingClientRect(), lastRowH = Math.round(tbl.tBodies[0].lastElementChild.getBoundingClientRect().height), i = document.querySelector('.summary-sticky-inner'), r = i.getBoundingClientRect(); return { show: i.classList.contains('show'), pinnedTop: Math.round(r.top), pinnedBottom: Math.round(r.bottom), tableBottom: Math.round(t.bottom), lastRowH, tr: i.style.transform }; });
   await page.mouse.move(200, 400);
   const log = [];
-  for (const want of [400, 250, 164, 120, 80, 40, 10, -10]) {
+  for (const want of [500, 400, 300, 250, 200, 150, 110, 60, 10]) {
     for (let k = 0; k < 4; k++) { const cur = (await state()).tableBottom; if (Math.abs(cur - want) < 3) break; await page.mouse.wheel(0, cur - want); await page.waitForTimeout(250); }
     log.push('want bottom ' + want + ': ' + JSON.stringify(await state()));
   }
   console.log(log.join('\n'));
   const parsed = log.map(l => JSON.parse(l.slice(l.indexOf('{'))));
-  console.log('while the table is taller than the header the pinned header stays put:', parsed.slice(0, 3).every(p => p.pinnedTop === 0));
-  console.log('at the end of the table it slides up with the last row (its bottom edge follows the table bottom):', parsed.slice(3, 7).every(p => p.pinnedBottom === p.tableBottom));
+  const shown = parsed.filter(p => p.show);
+  console.log('while there is room the pinned header stays put:', parsed.filter(p => p.tableBottom - p.lastRowH >= 164).every(p => p.pinnedTop === 0));
+  console.log('near the end it slides up and never covers the last row (its bottom edge stays above that row):', shown.length > 0 && shown.every(p => p.pinnedBottom <= p.tableBottom - p.lastRowH + 1));
+  console.log('and it slides smoothly (it is positioned exactly at the last row\'s top while sliding):', shown.filter(p => p.pinnedTop < 0).every(p => p.pinnedBottom === p.tableBottom - p.lastRowH));
   console.log('errors', errors);
   await browser.close();
 })();

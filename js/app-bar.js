@@ -171,10 +171,13 @@ function updateSummaryStickyVisibility() {
     if (!table || !table.tHead || !inner) return;
     const rect = table.getBoundingClientRect();
     const top = summaryPinTop();
-    // Pinned while the table is on screen; at the end of the table it slides up with the last row instead of vanishing
+    // Pinned while the table is on screen; at the end of the table it slides up above the last row instead of vanishing
     const pinnedH = inner.offsetHeight || table.tHead.offsetHeight;
-    inner.classList.toggle('show', rect.top < top && rect.bottom > top);
-    const slide = Math.min(0, rect.bottom - (top + pinnedH));
+    // The header never covers the last row: it slides up so that its bottom edge stays above that row
+    const lastRow = table.tBodies.length ? table.tBodies[table.tBodies.length - 1].lastElementChild : null;
+    const end = rect.bottom - (lastRow ? lastRow.getBoundingClientRect().height : 0);
+    inner.classList.toggle('show', rect.top < top && end > top);
+    const slide = Math.min(0, end - (top + pinnedH));
     inner.style.transform = slide < 0 ? `translate3d(0, ${Math.round(slide)}px, 0)` : '';
 }
 let pinQueued = false;
