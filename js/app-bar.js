@@ -118,6 +118,14 @@ document.addEventListener('visibilitychange', () => {
 // The table sits in a box that scrolls sideways, and a box like that cannot "stick" to the page. So a copy of the header sits in a
 // sticky strip outside the box (the browser keeps that smooth), is scrolled sideways in step with the table, and is shown only once the real
 // header has scrolled out of view. The two look identical, so the hand-over is not visible.
+const PINNED_COLS = '.rank-col, .competitor-col, .pts-col';
+let stickyScrollEl = null;   // the sideways-moving part of the pinned header
+function syncSummaryStickyScroll() {
+    const box = document.querySelector('.summary-table-wrap .summary-container');
+    if (stickyScrollEl && box) stickyScrollEl.style.transform = `translate3d(${-box.scrollLeft}px, 0, 0)`;
+}
+// Two layers: the first three columns (#, Competitor, Score) stay put; everything else is one layer that is moved sideways with a
+// single transform (smooth, done by the graphics chip) in step with the table, and slides under the fixed columns like the real table.
 function buildSummaryStickyHead() {
     const wrap = document.querySelector('.summary-table-wrap');
     if (!wrap) return;
@@ -126,13 +134,29 @@ function buildSummaryStickyHead() {
     const inner = wrap.querySelector('.summary-sticky-inner');
     if (!table || !table.tHead || !inner) return;
     inner.innerHTML = '';
-    const copy = document.createElement('table');
-    copy.className = 'summary-table summary-table-clone';
-    copy.setAttribute('aria-hidden', 'true');
-    copy.appendChild(table.tHead.cloneNode(true));
-    copy.querySelectorAll('[id]').forEach(e => e.removeAttribute('id'));
-    inner.appendChild(copy);
-    box.addEventListener('scroll', () => { inner.scrollLeft = box.scrollLeft; }, { passive: true });
+    const makeTable = (head, extraClass) => {
+        const t = document.createElement('table');
+        t.className = 'summary-table summary-table-clone' + (extraClass ? ' ' + extraClass : '');
+        t.setAttribute('aria-hidden', 'true');
+        t.appendChild(head);
+        t.querySelectorAll('[id]').forEach(e => e.removeAttribute('id'));
+        return t;
+    };
+    const scrolling = document.createElement('div');
+    scrolling.className = 'summary-sticky-scroll';
+    scrolling.appendChild(makeTable(table.tHead.cloneNode(true)));
+    const pinHead = table.tHead.cloneNode(true);
+    pinHead.querySelectorAll('th').forEach(th => { if (!th.matches(PINNED_COLS)) th.remove(); });
+    const pinned = document.createElement('div');
+    pinned.className = 'summary-sticky-pinned';
+    pinned.appendChild(makeTable(pinHead, 'summary-table-clone-pinned'));
+    inner.appendChild(scrolling);
+    inner.appendChild(pinned);
+    stickyScrollEl = scrolling;
+    if (!box.dataset.pinSync) {   // one listener per box (the box is replaced whenever the summary is redrawn)
+        box.dataset.pinSync = '1';
+        box.addEventListener('scroll', syncSummaryStickyScroll, { passive: true });
+    }
     sizeSummaryStickyHead();
     updateSummaryStickyVisibility();
 }
@@ -142,19 +166,23 @@ function sizeSummaryStickyHead() {
     const box = wrap.querySelector('.summary-container');
     const table = box.querySelector('table.summary-table');
     const inner = wrap.querySelector('.summary-sticky-inner');
-    const copy = inner.querySelector('table');
-    if (!table || !copy) return;
-    const real = table.tHead.querySelectorAll('th');
-    const mine = copy.tHead.querySelectorAll('th');
+    const copy = inner.querySelector('.summary-sticky-scroll table');
+    const pinCopy = inner.querySelector('.summary-sticky-pinned table');
+    if (!table || !copy || !pinCopy) return;
+    const real = [...table.tHead.querySelectorAll('th')];
+    const setWidth = (el, w) => { el.style.width = w + 'px'; el.style.minWidth = w + 'px'; el.style.maxWidth = w + 'px'; };
     inner.style.left = box.clientLeft + 'px';
     inner.style.width = box.clientWidth + 'px';
     copy.style.width = table.offsetWidth + 'px';
-    real.forEach((th, i) => {
-        if (!mine[i]) return;
-        const w = th.getBoundingClientRect().width + 'px';
-        mine[i].style.width = w; mine[i].style.minWidth = w; mine[i].style.maxWidth = w;
-    });
-    inner.scrollLeft = box.scrollLeft;
+    const mine = copy.tHead.querySelectorAll('th');
+    real.forEach((th, i) => { if (mine[i]) setWidth(mine[i], th.getBoundingClientRect().width); });
+    const pinReal = real.filter(th => th.matches(PINNED_COLS));
+    const pinMine = pinCopy.tHead.querySelectorAll('th');
+    let pinW = 0;
+    pinReal.forEach((th, i) => { const w = th.getBoundingClientRect().width; pinW += w; if (pinMine[i]) setWidth(pinMine[i], w); });
+    pinCopy.style.width = pinW + 'px';
+    pinCopy.style.height = copy.offsetHeight + 'px';
+    syncSummaryStickyScroll();
 }
 let pinProbe = null;
 function summaryPinTop() {

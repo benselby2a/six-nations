@@ -3934,3 +3934,8 @@ body.summary-compact .cell-score .joker-inline { width: 1.25rem; height: 1.25rem
 .install-tip-share { vertical-align: -3px; color: var(--bright-gold); }
 .install-tip-close { flex: none; box-sizing: border-box; width: 34px; height: 34px; min-height: 0; margin: 0; padding: 0; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--bright-gold); background: rgba(255, 255, 255, 0.08); color: var(--bright-gold); font-size: 1rem; font-weight: 700; line-height: 1; letter-spacing: 0; text-transform: none; box-shadow: none; }
 .install-tip-close:hover, .install-tip-close:active { background: var(--bright-gold); color: var(--on-accent); transform: none; box-shadow: none; }
+
+/* The pinned header's two layers: the fixed first columns sit on top of the layer that is moved sideways (one transform: smooth) */
+.summary-sticky-scroll { position: relative; will-change: transform; }
+.summary-sticky-pinned { position: absolute; top: 0; left: 0; z-index: 5; }
+.summary-table-clone-pinned { width: auto; }
