@@ -170,9 +170,12 @@ function updateSummaryStickyVisibility() {
     const inner = document.querySelector('.summary-sticky-inner');
     if (!table || !table.tHead || !inner) return;
     const rect = table.getBoundingClientRect();
-    const headH = table.tHead.offsetHeight;
     const top = summaryPinTop();
-    inner.classList.toggle('show', rect.top < top && rect.bottom > top + headH);
+    // Pinned while the table is on screen; at the end of the table it slides up with the last row instead of vanishing
+    const pinnedH = inner.offsetHeight || table.tHead.offsetHeight;
+    inner.classList.toggle('show', rect.top < top && rect.bottom > top);
+    const slide = Math.min(0, rect.bottom - (top + pinnedH));
+    inner.style.transform = slide < 0 ? `translate3d(0, ${Math.round(slide)}px, 0)` : '';
 }
 let pinQueued = false;
 function queueSummaryStickyVisibility() {
