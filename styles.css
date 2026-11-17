@@ -72,6 +72,7 @@
 :root:not([data-theme="dark"]) .install-tip,
 :root:not([data-theme="dark"]) .fixture-chat-sheet,
 :root:not([data-theme="dark"]) .tries-stats-box,
+:root:not([data-theme="dark"]) .signed-up-panel,
 :root:not([data-theme="dark"]) .prize-money-box {
     --text: #fafafa;
     --white: #fafafa;
@@ -3656,7 +3657,7 @@ body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-wi
 .summary-sticky-inner.show { visibility: visible; pointer-events: auto; }
 /* iPhone: give the pinned header its own solid, composited layer so it is painted crisply (and never see-through) while the page scrolls under it */
 .summary-sticky-inner { background: var(--grid-bg); -webkit-transform: translateZ(0); transform: translateZ(0); -webkit-backface-visibility: hidden; backface-visibility: hidden; -webkit-font-smoothing: antialiased; }
-.summary-sticky-head { -webkit-transform: translateZ(0); transform: translateZ(0); }
+/* (no transform on .summary-sticky-head itself: a transformed sticky element is positioned by the page's main thread on iPhone, which judders) */
 .summary-table-clone { table-layout: fixed; border-collapse: separate; border-spacing: 0; width: auto; }
 
 /* Joker picks: the card itself stands out (a gold badge behind the card emoji), the cell stays as it is */
@@ -3664,6 +3665,7 @@ body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-wi
 
 /* Tournament Stats and Prize Money: solid emerald panels in light mode (gold numbers, light text), as on the header */
 :root:not([data-theme="dark"]) .tries-stats-box,
+:root:not([data-theme="dark"]) .signed-up-panel,
 :root:not([data-theme="dark"]) .prize-money-box { background: var(--bar-bg); border-color: var(--bar-bg); color: var(--text); }
 
 /* Summary header cells: a fixed slot for each part, so everything lines up whatever a match has (joker, result, tries, chat) */
@@ -3893,11 +3895,15 @@ body.summary-compact .cell-score .joker-inline { width: 1.25rem; height: 1.25rem
 .connection-banner.hidden { display: none; }
 
 /* Summary before the lock: just who has signed up */
-.signed-up-panel { box-sizing: border-box; width: 100%; margin: 0.5rem 0 1rem; padding: 1rem 1.25rem; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
-.signed-up-panel h3 { margin: 0 0 0.35rem; font-family: var(--header-font); font-weight: 400; font-size: 1.6rem; letter-spacing: 0.05em; color: var(--gold); }
-.signed-up-note { margin: 0 0 0.6rem; font-size: 0.9rem; opacity: 0.8; }
-.signed-up-list { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.2rem; font-size: 1.05rem; }
-.signed-up-you { opacity: 0.7; font-size: 0.85em; }
+.signed-up-panel { box-sizing: border-box; width: 100%; margin: 0 0 1.5rem; padding: 1.5rem; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px; text-align: center; }
+.signed-up-panel h3 { margin: 0 0 0.4rem; font-family: 'Bebas Neue', cursive; font-weight: 400; font-size: 1.5rem; letter-spacing: 0.1em; color: var(--bright-gold); text-transform: none; }
+.signed-up-note { margin: 0 0 1rem; font-size: 0.9rem; color: var(--muted); }
+.signed-up-list { list-style: none; margin: 0 auto; padding: 0; max-width: 560px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem 0.6rem; text-align: left; }
+.signed-up-list li { display: flex; align-items: center; gap: 0.5rem; padding: 0.55rem 0.8rem; background: rgb(var(--ink) / 0.07); border: 1px solid var(--line-strong); border-radius: 8px; font-size: 1.02rem; min-width: 0; overflow-wrap: anywhere; }
+.signed-up-list li::before { content: ''; flex: none; width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--gold); }
+@media (min-width: 700px) { .signed-up-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.signed-up-you { color: var(--bright-gold); font-size: 0.85em; }
+.signed-up-empty { margin: 0; color: var(--muted); }
 
 /* iPhone Home Screen app: iOS fades and blurs anything within about 35px of the top edge (under the status bar), which made the team names in the pinned header fuzzy.
    The header (real and pinned copy alike, so nothing jumps when it pins) gets an empty strip of header colour there, so the names sit below the blurred band. (iPhone and iPad only, in the Home Screen app and in Safari; not on desktop.) */
