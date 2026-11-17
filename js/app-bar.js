@@ -183,7 +183,9 @@ function sizeSummaryStickyHead() {
     pinCopy.style.width = pinW + 'px';
     pinCopy.style.height = copy.offsetHeight + 'px';
     syncSummaryStickyScroll();
+    measureSummarySticky();
 }
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (document.querySelector('.summary-sticky-inner')) sizeSummaryStickyHead(); });   // web fonts change row heights
 let pinProbe = null;
 function summaryPinTop() {
     if (!pinProbe) {
@@ -193,20 +195,30 @@ function summaryPinTop() {
     }
     return parseFloat(getComputedStyle(pinProbe).paddingTop) || 0;
 }
+// Measured once (and again on resize / rebuild), not on every scroll frame: layout reads while scrolling cause judder on iPhone
+let stickyMeasure = { pinnedH: 0, lastRowH: 0, pinTop: null };
+let stickyShown = null, stickySlide = null;
+function measureSummarySticky() {
+    const table = document.querySelector('.summary-table:not(.summary-table-clone)');
+    const inner = document.querySelector('.summary-sticky-inner');
+    if (!table || !table.tHead || !inner) return;
+    const lastRow = table.tBodies.length ? table.tBodies[table.tBodies.length - 1].lastElementChild : null;
+    stickyMeasure = { pinnedH: inner.offsetHeight || table.tHead.offsetHeight, lastRowH: lastRow ? lastRow.getBoundingClientRect().height : 0, pinTop: summaryPinTop() };
+    stickyShown = null; stickySlide = null;
+}
 function updateSummaryStickyVisibility() {
     const table = document.querySelector('.summary-table:not(.summary-table-clone)');
     const inner = document.querySelector('.summary-sticky-inner');
     if (!table || !table.tHead || !inner) return;
+    if (!stickyMeasure.pinnedH) measureSummarySticky();
+    const { pinnedH, lastRowH, pinTop: top } = stickyMeasure;
     const rect = table.getBoundingClientRect();
-    const top = summaryPinTop();
-    // Pinned while the table is on screen; at the end of the table it slides up above the last row instead of vanishing
-    const pinnedH = inner.offsetHeight || table.tHead.offsetHeight;
-    // The header never covers the last row: it slides up so that its bottom edge stays above that row
-    const lastRow = table.tBodies.length ? table.tBodies[table.tBodies.length - 1].lastElementChild : null;
-    const end = rect.bottom - (lastRow ? lastRow.getBoundingClientRect().height : 0);
-    inner.classList.toggle('show', rect.top < top && end > top);
-    const slide = Math.min(0, end - (top + pinnedH));
-    inner.style.transform = slide < 0 ? `translate3d(0, ${Math.round(slide)}px, 0)` : '';
+    // Pinned while the table is on screen; at the end it slides up so its bottom edge stays above the last row (which stays visible)
+    const end = rect.bottom - lastRowH;
+    const show = rect.top < top && end > top;
+    if (show !== stickyShown) { inner.classList.toggle('show', show); stickyShown = show; }
+    const slide = Math.min(0, Math.round(end - (top + pinnedH)));
+    if (slide !== stickySlide) { inner.style.transform = slide < 0 ? `translate3d(0, ${slide}px, 0)` : ''; stickySlide = slide; }
 }
 let pinQueued = false;
 function queueSummaryStickyVisibility() {
