@@ -4069,3 +4069,14 @@ body.summary-compact .summary-table td.competitor-name .comp-score { display: in
 .pdfv-pin-inner { position: absolute; transform-origin: top left; }
 .pdfv-pin-table { table-layout: fixed; width: 100%; }
 :root[data-theme="dark"] .pdfv-pin { background: #0b1a14; }
+
+/* Compact: the scores line up in one column (right edge of the Competitor column), whatever flags a person has */
+.summary-table td.competitor-name .comp-sub { width: 100%; }
+.summary-table td.competitor-name .comp-score { margin-left: auto; text-align: right; }
+
+/* A match header's result box (with the Joker card beside it) must never spill out of its own column: on a narrow column it slid under the
+   pinned Competitor column and showed through there */
+.summary-table th.match-header-cell { overflow: hidden; }
+.match-header-cell .match-header-bottom .match-result-row { max-width: 100%; min-width: 0; gap: 0.2rem; }
+.match-header-cell .match-header-bottom .match-result-row .match-result { min-width: 0; flex: 0 1 auto; padding-left: 0.3rem; padding-right: 0.3rem; overflow: hidden; text-overflow: clip; }
+.match-header-cell .match-header-bottom .match-result-row .joker-inline { flex: none; }
