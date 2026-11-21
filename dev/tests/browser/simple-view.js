@@ -129,7 +129,7 @@ const mock = `
       mode: summaryViewMode, simpleClass: document.body.classList.contains('summary-simple'),
       emoji, flagsEl: !!tbl.querySelector('.supported-team-flags'), jokerIcons: tbl.querySelectorAll('.joker-indicator, .joker-inline').length,
       heads, hasAbbr: heads.some(h => /FRA/.test(h) && /IRE/.test(h)),
-      jokerCells: jokerCells.length, jokerClass: jokerCells.every(c => c.classList.contains('simple-joker')), jokerBg: jokerCells[0] && getComputedStyle(jokerCells[0]).backgroundColor,
+      jokerCells: jokerCells.length, jokerClass: jokerCells.every(c => c.classList.contains('simple-joker')), jokerBg: jokerCells[0] && getComputedStyle(jokerCells[0]).backgroundColor, jokerShadow: jokerCells[0] && getComputedStyle(jokerCells[0]).boxShadow,
       jokerText: jokerCells.every(c => /Joker/.test(c.textContent) && c.querySelector('.sr-only')),
       hdrAccent: !!hdr && /Joker/.test(hdr.textContent) && getComputedStyle(hdr).boxShadow !== 'none',
       legend: /Joker/.test(legend.textContent),
@@ -139,14 +139,14 @@ const mock = `
   console.log(JSON.stringify(r));
   console.log('no emoji / flags / card icons in the table:', !r.emoji && !r.flagsEl && r.jokerIcons === 0);
   console.log('text abbreviations in headers:', r.hasAbbr);
-  console.log('joker cell has colour class, tint and hidden Joker text:', r.jokerCells >= 1 && r.jokerClass && r.jokerText && r.jokerBg !== 'rgba(0, 0, 0, 0)');
+  console.log('joker cell has colour class, bottom accent (no amber fill) and hidden Joker text:', r.jokerCells >= 1 && r.jokerClass && r.jokerText && r.jokerBg !== 'rgb(255, 212, 94)' && /0px -6px/.test(r.jokerShadow));
   console.log('header accent and legend present:', r.hdrAccent && r.legend);
   console.log('competitor header horizontal and header pinned:', r.angled.every(t => t === 'none') && r.pinned);
   await page.screenshot({path:'/tmp/claude-0/-home-user-six-nations/55e70b8c-24a4-53e8-973b-d120bef1189e/scratchpad/simple-light.png', clip:{x:0,y:150,width:390,height:520}});
   await page.evaluate(() => { document.documentElement.setAttribute('data-theme', 'dark'); }); await page.waitForTimeout(300);
   const d = await page.evaluate(() => { const c = document.querySelector('td.simple-joker'); const s = getComputedStyle(c); return { bg: s.backgroundColor, fg: getComputedStyle(c.querySelector('.pred-score')).color, bar: s.boxShadow }; });
   console.log('dark joker cell:', JSON.stringify(d));
-  console.log('dark works (dark amber fill, bar kept):', d.bg !== 'rgb(255, 212, 94)' && d.bar !== 'none');
+  console.log('dark works (no amber fill, bright accent kept):', d.bg !== 'rgb(92, 67, 0)' && /255, 212, 94/.test(d.bar));
   await page.screenshot({path:'/tmp/claude-0/-home-user-six-nations/55e70b8c-24a4-53e8-973b-d120bef1189e/scratchpad/simple-dark.png', clip:{x:0,y:150,width:390,height:520}});
   await page.evaluate(() => document.documentElement.removeAttribute('data-theme'));
   await page.reload(); await page.waitForTimeout(1500);

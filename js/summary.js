@@ -100,7 +100,7 @@
             // Simple view: plain words only (no flags, cards, padlocks); a Joker is shown by colour, explained by the legend line
             const simple = summaryViewMode === 'simple';
             let html = predictionsRevealed() ? '' : `<div class="predictions-hidden-note" role="status">${simple ? '' : '🔒 '}Other players' predictions are hidden until predictions are locked, so nobody is influenced by them. You can still see your own.</div>`;
-            if (simple) html += '<p class="simple-legend" role="note"><span class="simple-legend-swatch" aria-hidden="true"></span>Amber cells = Joker played (points doubled).</p>';
+            if (simple) html += '<p class="simple-legend" role="note"><span class="simple-legend-swatch" aria-hidden="true"></span>Amber underline = Joker played (points doubled).</p>';
             html += scrollHintMarkup;
             html += '<div class="summary-table-wrap"><div class="summary-sticky-zone"><div class="summary-sticky-head"><div class="summary-sticky-inner"></div></div></div>';
             html += '<div class="summary-container">';
