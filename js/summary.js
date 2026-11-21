@@ -67,10 +67,10 @@
                 return;
             }
 
-            // PDF view: the same table, drawn like the PDF export
-            if (summaryViewMode === 'pdf') {
+            // Classic view: the same table, drawn like the PDF export (always the whole tournament; no match filter)
+            if (summaryViewMode === 'classic') {
                 const sortedForPdf = pdfvSortedUsers();
-                container.innerHTML = buildPdfStyleViewHtml(filteredMatches, sortedForPdf);
+                container.innerHTML = buildPdfStyleViewHtml(matches, sortedForPdf);
                 fitPdfView();
                 renderPrizeMoneyPanel(sortedForPdf);
                 renderWormChart(sortedForPdf);

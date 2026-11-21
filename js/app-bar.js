@@ -226,16 +226,16 @@ function layoutSummarySticky() {
 }
 window.addEventListener('resize', () => { sizeSummaryStickyHead(); const hint = document.getElementById('scrollHint'); const box = document.querySelector('.summary-container'); if (hint && box) hint.classList.toggle('hidden', box.scrollWidth <= box.clientWidth); if (typeof syncSummaryScrollLock === 'function') syncSummaryScrollLock(); if (typeof refreshWormChartLayout === 'function') refreshWormChartLayout(); });
 
-// Table view: Full, Compact (hides the emoji rows and, in the headers, the date and tries, to save space) or PDF (the table drawn
+// Table view: Full, Compact (hides the emoji rows and, in the headers, the date and tries, to save space) or Classic (the table drawn
 // like the PDF export, see js/pdf-view.js). Remembered on this device.
 const SUMMARY_COMPACT_KEY = 'summaryCompact';        // the older two-way choice (still read, so nobody's choice is lost)
 const SUMMARY_VIEW_MODE_KEY = 'summaryViewMode';
 let summaryViewMode = 'full';
 function applySummaryViewMode(mode, redraw) {
-    if (!['full', 'compact', 'pdf'].includes(mode)) mode = 'full';
+    if (!['full', 'compact', 'classic'].includes(mode)) mode = 'full';
     summaryViewMode = mode;
     document.body.classList.toggle('summary-compact', mode === 'compact');
-    document.body.classList.toggle('summary-pdf', mode === 'pdf');
+    document.body.classList.toggle('summary-classic', mode === 'classic');
     document.querySelectorAll('#summaryViewSwitch .view-switch-btn').forEach(btn => {
         const on = btn.dataset.view === mode;
         btn.classList.toggle('active', on);
@@ -259,6 +259,7 @@ function isPhoneScreen() {
 document.addEventListener('DOMContentLoaded', () => {
     let mode = null, legacy = null;
     try { mode = localStorage.getItem(SUMMARY_VIEW_MODE_KEY); legacy = localStorage.getItem(SUMMARY_COMPACT_KEY); } catch (error) { /* ignore */ }
-    if (!['full', 'compact', 'pdf'].includes(mode)) mode = legacy === '1' ? 'compact' : (legacy === '0' ? 'full' : (isPhoneScreen() ? 'compact' : 'full'));
+    if (mode === 'pdf') mode = 'classic';   // this view was first called PDF
+    if (!['full', 'compact', 'classic'].includes(mode)) mode = legacy === '1' ? 'compact' : (legacy === '0' ? 'full' : (isPhoneScreen() ? 'compact' : 'full'));
     applySummaryViewMode(mode, false);
 });

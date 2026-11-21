@@ -88,7 +88,7 @@
         // When the data on screen was last fetched (the full-screen app has no reload button)
         let lastDataRefreshAt = Date.now();
         let summaryRefreshInFlight = false;
-        const FOREGROUND_REFRESH_AFTER_MS = 5 * 60 * 1000;
+        const FOREGROUND_REFRESH_AFTER_MS = 15 * 1000;   // every time the app comes back on screen (not twice within 15 seconds)
 
         function updateSummaryUpdatedAt() {
             const el = document.getElementById('summaryUpdatedAt');
@@ -112,7 +112,7 @@
         // nobody's half-typed predictions are disturbed. Other tabs refresh when you open the summary.
         function refreshWhenReturning() {
             if (document.visibilityState !== 'visible' || isLoading || summaryRefreshInFlight) return;
-            const refreshAfter = (typeof isLiveMatchWindow === 'function' && isLiveMatchWindow()) ? 60 * 1000 : FOREGROUND_REFRESH_AFTER_MS;   // keener while a match is on
+            const refreshAfter = FOREGROUND_REFRESH_AFTER_MS;
             if (Date.now() - lastDataRefreshAt < refreshAfter) return;
             const appView = document.getElementById('appView');
             const summaryTab = document.getElementById('summaryTab');

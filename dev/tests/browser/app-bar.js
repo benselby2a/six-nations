@@ -139,7 +139,7 @@ const mock = `
   await page.click('#avatarBtn'); await page.click('#currentUser'); await page.waitForTimeout(150);
   console.log('name opens the profile:', await page.evaluate(() => !document.getElementById('profileModal').classList.contains('hidden')), !(await menuOpen()));
   await page.evaluate(() => closeProfile());
-  console.log('toolbar:', JSON.stringify(await page.evaluate(() => ({ filters: [...document.querySelectorAll('.summary-toolbar .filter-toggle-btn')].map(b => b.textContent.trim()), pdf: !!document.getElementById('exportPdfBtn').offsetParent, refresh: !!document.getElementById('summaryRefreshBtn').offsetParent, headingCardGone: !document.querySelector('.summary-heading-row'), nextScore: (() => { const b = document.getElementById('nextMatchScoreMainBtn'); return b.classList.contains('hidden') ? 'hidden' : b.textContent.trim(); })() }))));
+  console.log('toolbar:', JSON.stringify(await page.evaluate(() => ({ filters: [...document.querySelectorAll('.summary-toolbar .filter-toggle-btn')].map(b => b.textContent.trim()), pdf: !!document.getElementById('exportPdfBtn').offsetParent, refreshGone: !document.getElementById('summaryRefreshBtn'), headingCardGone: !document.querySelector('.summary-heading-row'), nextScore: (() => { const b = document.getElementById('nextMatchScoreMainBtn'); return b.classList.contains('hidden') ? 'hidden' : b.textContent.trim(); })() }))));
   console.log('leaderboard starts on the first screen (phone):', await (async () => { await page.setViewportSize({ width: 390, height: 844 }); await page.waitForTimeout(250); return page.evaluate(() => { const r = document.querySelector('.summary-table tbody tr').getBoundingClientRect(); return { rowTop: Math.round(r.top), screen: innerHeight }; }); })());
   for (const w of [390, 360, 320]) {
     await page.setViewportSize({ width: w, height: 800 }); await page.waitForTimeout(200);
@@ -161,14 +161,12 @@ const mock = `
   // the PDF and refresh buttons are as tall as the filter buttons, and have tooltips
   for (const w of [390, 1280]) {
     await page.setViewportSize({ width: w, height: 800 }); await page.waitForTimeout(200);
-    console.log(`toolbar heights at ${w}px:`, JSON.stringify(await page.evaluate(() => ({ filter: Math.round(document.querySelector('.summary-toolbar .filter-toggle').getBoundingClientRect().height), pdf: Math.round(document.getElementById('exportPdfBtn').getBoundingClientRect().height), refresh: Math.round(document.getElementById('summaryRefreshBtn').getBoundingClientRect().height) }))));
+    console.log(`toolbar heights at ${w}px:`, JSON.stringify(await page.evaluate(() => ({ filter: Math.round(document.querySelector('.summary-toolbar .filter-toggle').getBoundingClientRect().height), pdf: Math.round(document.getElementById('exportPdfBtn').getBoundingClientRect().height) }))));
   }
   const tip = (id) => page.evaluate((i) => { const e = document.getElementById(i), a = getComputedStyle(e, '::after'); return { text: JSON.parse(a.content.replace(/^"(.*)"$/, '"$1"')), opacity: a.opacity }; }, id);
-  console.log('tooltips hidden at rest:', JSON.stringify(await tip('exportPdfBtn')), JSON.stringify(await tip('summaryRefreshBtn')));
+  console.log('tooltips hidden at rest:', JSON.stringify(await tip('exportPdfBtn')));
   await page.hover('#exportPdfBtn'); await page.waitForTimeout(300);
   console.log('PDF tooltip on hover:', JSON.stringify(await tip('exportPdfBtn')));
-  await page.hover('#summaryRefreshBtn'); await page.waitForTimeout(300);
-  console.log('refresh tooltip on hover:', JSON.stringify(await tip('summaryRefreshBtn')), '| PDF tooltip gone:', (await tip('exportPdfBtn')).opacity);
   await page.mouse.move(2, 2);
   await page.evaluate(() => document.getElementById('exportPdfBtn').dispatchEvent(new PointerEvent('pointerdown', { pointerType: 'touch', bubbles: true }))); await page.waitForTimeout(300);
   console.log('a tap on a touch screen flashes it:', (await tip('exportPdfBtn')).opacity);

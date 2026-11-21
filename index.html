@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=ece68fe8" -->
+    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=c7761f81" -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Six Nations Predictor</title>
@@ -25,7 +25,7 @@
     <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- jsPDF and its table plugin are loaded on demand (see loadPdfLibs in js/export-pdf.js), not on every visit -->
-    <link rel="stylesheet" href="dist/app.min.css?v=ece68fe8">
+    <link rel="stylesheet" href="dist/app.min.css?v=c7761f81">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -279,16 +279,15 @@
             <div id="summaryTab" style="margin-top: 0.8rem;">
                 <h2 class="sr-only">Match Summary</h2>
                 <div class="summary-toolbar">
-                    <div class="filter-toggle">
-                        <button class="filter-toggle-btn active" onclick="filterMatches('default')">All matches</button>
-                        <button class="filter-toggle-btn" onclick="filterMatches('round')">Current round</button>
-                    </div>
-                    <button type="button" class="toolbar-icon-btn export-pdf-btn" id="exportPdfBtn" onclick="exportToPDF()" data-tip="Download the PDF" aria-label="Download the PDF"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15h6M9 18h4"/></svg></button>
-                    <button type="button" class="toolbar-icon-btn" id="summaryRefreshBtn" onclick="manualRefreshSummary()" data-tip="Refresh scores" aria-label="Refresh"><svg class="refresh-icon" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                     <div class="view-switch" id="summaryViewSwitch" role="group" aria-label="Table view">
                         <button type="button" class="view-switch-btn" data-view="full" aria-pressed="false" onclick="setSummaryView('full')">Full</button>
                         <button type="button" class="view-switch-btn" data-view="compact" aria-pressed="false" onclick="setSummaryView('compact')">Compact</button>
-                        <button type="button" class="view-switch-btn" data-view="pdf" aria-pressed="false" onclick="setSummaryView('pdf')">PDF</button>
+                        <button type="button" class="view-switch-btn" data-view="classic" aria-pressed="false" onclick="setSummaryView('classic')">Classic</button>
+                    </div>
+                    <button type="button" class="toolbar-icon-btn export-pdf-btn" id="exportPdfBtn" onclick="exportToPDF()" data-tip="Download the PDF" aria-label="Download the PDF"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 11l5 5 5-5M5 20h14"/></svg></button>
+                    <div class="filter-toggle" id="summaryFilterToggle">
+                        <button class="filter-toggle-btn active" onclick="filterMatches('default')">All matches</button>
+                        <button class="filter-toggle-btn" onclick="filterMatches('round')">Current round</button>
                     </div>
                     <div class="summary-updated-row">
                         <span id="summaryUpdatedAt" class="profile-hint"></span>
@@ -843,6 +842,6 @@
         <button type="button" class="install-tip-close" aria-label="Dismiss" onclick="dismissInstallTip()">&#10005;</button>
     </div>
 
-    <script src="dist/app.min.js?v=ece68fe8"></script>
+    <script src="dist/app.min.js?v=c7761f81"></script>
 </body>
 </html>
