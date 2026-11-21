@@ -120,8 +120,7 @@ const mock = `
   console.log('menu order compact,full,classic,simple:', order === 'compact,full,classic,simple');
   const r = await page.evaluate(() => {
     const tbl = document.querySelector('.summary-container .summary-table');
-    const legend = document.querySelector('.simple-legend');
-    const emoji = /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]/u.test(tbl.textContent + legend.textContent);
+    const emoji = /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]/u.test(tbl.textContent);
     const heads = [...tbl.querySelectorAll('thead .match-teams')].map(e => e.textContent.replace(/\s+/g, ' ').trim());
     const jokerCells = [...tbl.querySelectorAll('td.joker-cell')];
     const hdr = tbl.querySelector('th.joker-eligible-header');
@@ -132,7 +131,7 @@ const mock = `
       jokerCells: jokerCells.length, jokerClass: jokerCells.every(c => c.classList.contains('simple-joker')), jokerBg: jokerCells[0] && getComputedStyle(jokerCells[0]).backgroundColor, jokerShadow: jokerCells[0] && getComputedStyle(jokerCells[0]).boxShadow,
       jokerText: jokerCells.every(c => /Joker/.test(c.textContent) && c.querySelector('.sr-only')),
       hdrAccent: !!hdr && /Joker/.test(hdr.textContent) && getComputedStyle(hdr).boxShadow !== 'none',
-      legend: /Joker/.test(legend.textContent),
+      legend: !!document.querySelector('.simple-legend'),
       angled: [...tbl.querySelectorAll('th.competitor-col .th-angled')].map(e => getComputedStyle(e).transform),
       pinned: !!document.querySelector('.summary-sticky-pinned') };
   });
@@ -140,7 +139,7 @@ const mock = `
   console.log('no emoji / flags / card icons in the table:', !r.emoji && !r.flagsEl && r.jokerIcons === 0);
   console.log('text abbreviations in headers:', r.hasAbbr);
   console.log('joker cell has colour class, bottom accent (no amber fill) and hidden Joker text:', r.jokerCells >= 1 && r.jokerClass && r.jokerText && r.jokerBg !== 'rgb(255, 212, 94)' && /0px -6px/.test(r.jokerShadow));
-  console.log('header accent and legend present:', r.hdrAccent && r.legend);
+  console.log('header accent present and no legend line:', r.hdrAccent && !r.legend);
   console.log('competitor header horizontal and header pinned:', r.angled.every(t => t === 'none') && r.pinned);
   await page.screenshot({path:'/tmp/claude-0/-home-user-six-nations/55e70b8c-24a4-53e8-973b-d120bef1189e/scratchpad/simple-light.png', clip:{x:0,y:150,width:390,height:520}});
   await page.evaluate(() => { document.documentElement.setAttribute('data-theme', 'dark'); }); await page.waitForTimeout(300);
