@@ -110,9 +110,10 @@ function tourViewsHtml() {
     }).join('');
     const points = TOUR_VIEW_OPTIONS.map(([mode, label, list]) =>
         `<ul class="tour-view-points" data-view="${mode}"${mode === current ? '' : ' hidden'}>${list.map(t => `<li>${t}</li>`).join('')}</ul>`).join('');
-    return `<p class="tour-views-intro">Tap a view to make it your default. You can change it any time from your player menu (next screen).</p>`
+    // A column: the picture takes whatever room is left above, so the choices and their highlights keep their place at the bottom
+    return `<div class="tour-views-wrap"><p class="tour-views-intro">Tap a view to make it your default. You can change it any time from your player menu (next screen).</p>`
         + `<div class="tour-view-pics">${pictures}</div><div class="tour-view-tabs" role="group" aria-label="Table view">${tabs}</div>`
-        + `<p class="tour-views-need"${chosen ? ' hidden' : ''}>Choose a view to continue.</p>${points}`;
+        + `<p class="tour-views-need"${chosen ? ' hidden' : ''}>Choose a view to continue.</p><div class="tour-view-points-stack">${points}</div></div>`;
 }
 function tourPickView(mode) {
     if (typeof setSummaryView === 'function') setSummaryView(mode);
@@ -232,19 +233,19 @@ function tourFitContent(allowHide) {
     const body = document.getElementById('tourBody');
     const card = document.getElementById('tourCard');
     if (!body || !card || !tourState) return;
-    // The view-choice step: one big picture above the choices; shrink it only as far as needed to fit without scrolling
+    // The view-choice step: the picture area absorbs the difference between the three pictures (it is a flexible region above the
+    // choices); here it is only made smaller if the text under it would otherwise not fit without scrolling
     if (body.querySelector('.tour-view-pics')) {
         card.classList.remove('tour-compact');
-        const pics = [...body.querySelectorAll('.tour-view-pic img')];
+        const pics = body.querySelector('.tour-view-pics');
         const overflows = () => body.scrollHeight > body.clientHeight + 1;
-        const setMax = (px) => pics.forEach(i => { i.style.maxHeight = px + 'px'; });
         const screenH = (window.visualViewport && window.visualViewport.height) || innerHeight;
-        let max = Math.round(screenH * 0.42);
-        setMax(max);
-        while (overflows() && max > 50) { max -= 8; setMax(max); }
-        if (overflows()) {   // still too tall: drop the intro and the third highlight, then shrink the picture some more
+        let min = Math.round(screenH * 0.3);
+        pics.style.minHeight = min + 'px';
+        while (overflows() && min > 50) { min -= 8; pics.style.minHeight = min + 'px'; }
+        if (overflows()) {   // still too tall: drop the intro and the third highlight, then shrink the picture area some more
             card.classList.add('tour-compact');
-            while (overflows() && max > 30) { max -= 8; setMax(max); }
+            while (overflows() && min > 30) { min -= 8; pics.style.minHeight = min + 'px'; }
         }
         return;
     }
@@ -333,6 +334,7 @@ function showTourStep(index) {
         ? step.raw()
         : `<ol class="tour-items">${step.items.map(i => `<li>${i}</li>`).join('')}</ol>${step.extra ? `<div class="tour-extra">${step.extra}</div>` : ''}`;
     document.getElementById('tourBody').innerHTML = (step.id ? tourFigureHtml(step.id) : '') + text;
+    document.getElementById('tourBody').classList.toggle('tour-body-views', !!step.needsViewChoice);   // this step is a column that fills the card
     document.getElementById('tourBody').scrollTop = 0;
     document.getElementById('tourBack').disabled = index === 0;
     document.getElementById('tourNext').textContent = index === total - 1 ? 'Done' : 'Next';
