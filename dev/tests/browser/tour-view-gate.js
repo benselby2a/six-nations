@@ -127,6 +127,14 @@ const mock = `
   console.log('coming back, the choice stays and Next is open:', JSON.stringify(await st()));
   const h = await page.evaluate(() => { const t = document.querySelector('.tour-view-tabs'), b = t.querySelector('.tour-view-tab.on'); const tr = t.getBoundingClientRect(), br = b.getBoundingClientRect(), cr = b.parentElement.getBoundingClientRect(); return { top: Math.round(br.top - tr.top), bottom: Math.round(tr.bottom - br.bottom), cellFilled: Math.abs(br.height - cr.height) < 1 && Math.abs(br.width - cr.width) <= 3 }; });
   console.log('the chosen tab fills the control top to bottom (only the border shows):', JSON.stringify(h), h.top <= 3 && h.bottom <= 3 && h.cellFilled);
+  // a tapped button stays "hovered" on a phone: that must not lift it or add a glow
+  const look = () => page.evaluate(() => { const b = document.querySelector('.tour-view-tab.on'); const c = b.parentElement.getBoundingClientRect(), r = b.getBoundingClientRect(), cs = getComputedStyle(b); return { transform: cs.transform, shadow: cs.boxShadow, top: Math.round(r.top - c.top), bottom: Math.round(c.bottom - r.bottom) }; });
+  const rest = await look();
+  await page.hover('.tour-view-tab.on'); await page.waitForTimeout(300);
+  const hov = await look();
+  console.log('hovering or tapping the chosen tab does not lift it or add a glow:', JSON.stringify(hov), hov.transform === 'none' && hov.shadow === 'none' && hov.top === rest.top && hov.bottom === rest.bottom);
+  await page.hover('.tour-view-tab:not(.on)'); await page.waitForTimeout(300);
+  console.log('and a hovered, unchosen tab is not turned gold:', await page.evaluate(() => { const b = document.querySelector('.tour-view-tab:not(.on):hover'); return b ? getComputedStyle(b).backgroundColor : 'n/a'; }));
   console.log('errors', errors);
   await browser.close();
 })();
