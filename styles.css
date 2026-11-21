@@ -3466,7 +3466,7 @@ body.in-app .container { padding-top: 0.8rem; }
 .pill-add.hidden { display: none; }
 #appView .round-select-row { margin: 0 0 0.5rem; }
 #appView .round-select-row:not(:has(.round-select:not(.hidden))) { display: none; }
-#appView .round-select { min-width: 0; flex: 1; padding: 0.5rem 2rem 0.5rem 0.8rem; }
+#appView .round-select { min-width: 0; flex: 1; padding: 0.5rem 3.2rem 0.5rem 0.8rem; }
 .avatar-btn:hover, .avatar-btn[aria-expanded="true"] { background: rgb(var(--accent-rgb) / 0.32); transform: none; box-shadow: none; color: var(--bright-gold); }
 .toolbar-icon-btn:hover, .pill-add:hover { transform: none; box-shadow: none; }
 .account-row select { background-color: rgb(var(--ink) / 0.1); border: 2px solid rgb(var(--accent-rgb) / 0.4); color: var(--text); border-radius: 6px; }
@@ -3753,13 +3753,17 @@ body.summary-compact .cell-score .joker-inline { width: 1.25rem; height: 1.25rem
     .container { max-width: none; padding-left: 0.5rem; padding-right: 0.5rem; }
 }
 
-/* Round drop down: yellow rather than grey */
+/* Round drop down: yellow rather than grey, with a clear arrow on a dark end cap */
 #appView .round-select, .round-select {
     background-color: #e8b02a;
     color: #2a1d00;
     border-color: #c99a1f;
     font-weight: 700;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%232a1d00' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+    padding-right: 3.2rem;
+    background-repeat: no-repeat, no-repeat;
+    background-position: right 0.9rem center, right center;
+    background-size: 16px 16px, 2.8rem 100%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23f3c85a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' d='M3 5.5l5 5 5-5'/%3E%3C/svg%3E"), linear-gradient(#2a1d00, #2a1d00);
 }
 .round-select:hover { background-color: #f0bc3c; }
 .round-select option { background: #ffffff; color: #10241a; }

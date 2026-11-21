@@ -80,15 +80,12 @@
                 btn.classList.toggle('active', wantsRound === (currentFilter === 'round'));
             });
             const roundSelect = document.getElementById('roundSelect');
-            const roundSelectLabel = document.getElementById('roundSelectLabel');
             if (!roundSelect) return;
             if (currentFilter === 'round') {
                 roundSelect.value = selectedRound;
                 roundSelect.classList.remove('hidden');
-                if (roundSelectLabel) roundSelectLabel.classList.remove('hidden');
             } else {
                 roundSelect.classList.add('hidden');
-                if (roundSelectLabel) roundSelectLabel.classList.add('hidden');
             }
         }
 
