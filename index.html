@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <script>try { if (sessionStorage.getItem('rugbyPredictorFadeIn')) { document.documentElement.classList.add('app-reloaded'); sessionStorage.removeItem('rugbyPredictorFadeIn'); } } catch (e) { /* ignore */ }</script>
-    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=59a06fae" -->
+    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=0d15a9e0" -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Six Nations Predictor</title>
@@ -26,7 +26,7 @@
     <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- jsPDF and its table plugin are loaded on demand (see loadPdfLibs in js/export-pdf.js), not on every visit -->
-    <link rel="stylesheet" href="dist/app.min.css?v=59a06fae">
+    <link rel="stylesheet" href="dist/app.min.css?v=0d15a9e0">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -197,7 +197,7 @@
                             <span class="view-switch-cell"><button type="button" class="view-switch-btn" data-view="compact" aria-pressed="false" onclick="setSummaryView('compact')">Compact</button></span>
                             <span class="view-switch-cell"><button type="button" class="view-switch-btn" data-view="full" aria-pressed="false" onclick="setSummaryView('full')">Full</button></span>
                             <span class="view-switch-cell"><button type="button" class="view-switch-btn" data-view="classic" aria-pressed="false" onclick="setSummaryView('classic')">Classic</button></span>
-                            <span class="view-switch-cell"><button type="button" class="view-switch-btn" data-view="simple" aria-pressed="false" onclick="setSummaryView('simple')">Simple</button></span>
+                            <span class="view-switch-cell"><button type="button" class="view-switch-btn" data-view="simple" aria-pressed="false" onclick="setSummaryView('simple')">Plain</button></span>
                         </div>
                     </div>
                     <button type="button" class="account-item" id="menuTourBtn" role="menuitem" onclick="closeAccountMenu(); startTour()">Take a tour</button>
@@ -835,6 +835,6 @@
     </div>
 
     <div class="app-footer"><span id="summaryUpdatedAt" class="app-footer-updated" aria-label="When the scores were last fetched"></span><span id="appVersion" class="app-version" aria-label="App version"></span></div>
-    <script src="dist/app.min.js?v=59a06fae"></script>
+    <script src="dist/app.min.js?v=0d15a9e0"></script>
 </body>
 </html>
