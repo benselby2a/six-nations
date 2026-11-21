@@ -173,7 +173,7 @@ const mock = `
   // wide screens: tabs sit in the bar beside the title; the toolbar is one row
   await page.setViewportSize({ width: 1280, height: 800 }); await page.waitForTimeout(300);
   console.log('wide screen layout:', JSON.stringify(await page.evaluate(() => { const top = (sel) => Math.round(document.querySelector(sel).getBoundingClientRect().top); const left = (sel) => Math.round(document.querySelector(sel).getBoundingClientRect().left);
-    return { tabsInBarRow: Math.abs(top('#appView .app-bar > .tabs') - top('.app-bar-title')) < 20, avatarFarRight: left('#avatarBtn') > 1100, tabsNextToTitle: left('#appView .app-bar > .tabs') < 400, toolbarOneRow: Math.abs(top('.summary-toolbar .filter-toggle') - top('#nextMatchScoreMainBtn')) < 20, filterWidth: Math.round(document.querySelector('.summary-toolbar .filter-toggle').getBoundingClientRect().width) }; })));
+    return { tabsInBarRow: Math.abs(top('#appView .app-bar > .tabs') - top('.app-bar-title')) < 20, avatarFarRight: left('#avatarBtn') > 1100, tabsNextToTitle: left('#appView .app-bar > .tabs') < 400, toolbarOneRow: Math.abs(top('.summary-toolbar .filter-toggle') - top('#exportPdfBtn')) < 20, filterWidth: Math.round(document.querySelector('.summary-toolbar .filter-toggle').getBoundingClientRect().width) }; })));
   await page.click('#avatarBtn'); await page.click('#logoutBtn'); await page.waitForTimeout(500);
   console.log('log out from the menu: big title back on the login screen:', await page.evaluate(() => ({ title: getComputedStyle(document.querySelector('.container > header')).display !== 'none', inApp: document.body.classList.contains('in-app') })));
   console.log('errors', errors);

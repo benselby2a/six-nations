@@ -2820,8 +2820,13 @@
             z-index: 9999;
         }
 
+        .loading-screen { transition: opacity 0.4s ease; }
         .loading-screen.hidden {
-            display: none;
+            display: flex;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.4s ease, visibility 0s linear 0.4s;
         }
 
         .loading-content {
@@ -3985,3 +3990,17 @@ body.summary-classic .classic-tools { display: flex; }
 /* Classic zoom controls: exactly as tall as the download button beside them */
 .classic-tools .pdfv-zoom { box-sizing: border-box; height: var(--toolbar-btn-h, 34px); }
 .classic-tools .pdfv-zoom button { height: 100%; padding: 0 0.6rem; display: grid; place-items: center; }
+
+/* Updating itself: the old page fades out, the new one fades in (instead of a flash) */
+html.app-updating body { opacity: 0; transition: opacity 0.25s ease; }
+html.app-reloaded body { animation: appFadeIn 0.45s ease both; }
+@keyframes appFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { html.app-updating body { transition: none; } html.app-reloaded body { animation: none; } .loading-screen, .loading-screen.hidden { transition: none; } }
+
+/* The quick add score button sits in the middle of its row */
+.summary-toolbar .summary-updated-row, .summary-updated-row { justify-content: center; }
+@media (min-width: 900px) {
+    .summary-toolbar { flex-wrap: wrap; }
+    .summary-toolbar .summary-updated-row { flex: 0 0 100%; order: 5; }
+}
+.summary-updated-row:not(:has(.pill-add:not(.hidden))) { display: none; }   /* no score button to show: no empty row */
