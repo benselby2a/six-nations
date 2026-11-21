@@ -24,7 +24,7 @@ const TOUR_IMAGES = {
  },
  "score": {
   "src": "tour-images/score.webp",
-  "v": "634c2b57",
+  "v": "47e8f0ac",
   "w": 780,
   "h": 1520,
   "marks": [
@@ -38,65 +38,87 @@ const TOUR_IMAGES = {
    {
     "n": 2,
     "x": 2.5,
-    "y": 26.9,
+    "y": 21.8,
     "w": 95.1,
-    "h": 73.1
-   },
-   {
-    "n": 3,
-    "x": 2.5,
-    "y": 7.8,
-    "w": 83.5,
-    "h": 4.5
+    "h": 78.2
    }
   ]
  },
  "view-full": {
   "src": "tour-images/view-full.webp",
-  "v": "839c53a7",
+  "v": "830ee1bb",
   "w": 780,
   "h": 660,
   "marks": []
  },
  "view-compact": {
   "src": "tour-images/view-compact.webp",
-  "v": "fc0530fc",
+  "v": "b01bad0c",
   "w": 780,
   "h": 660,
   "marks": []
  },
  "view-classic": {
   "src": "tour-images/view-classic.webp",
-  "v": "31341561",
+  "v": "594a5f9c",
   "w": 780,
   "h": 296,
   "marks": []
  },
+ "menu-view": {
+  "src": "tour-images/menu-view.webp",
+  "v": "f5701dac",
+  "w": 580,
+  "h": 792,
+  "marks": [
+   {
+    "n": 1,
+    "x": 83.6,
+    "y": 2.5,
+    "w": 13.1,
+    "h": 9.6
+   },
+   {
+    "n": 2,
+    "x": 6.7,
+    "y": 37.8,
+    "w": 86.9,
+    "h": 17.2
+   },
+   {
+    "n": 3,
+    "x": 6.7,
+    "y": 27.8,
+    "w": 86.9,
+    "h": 10
+   }
+  ]
+ },
  "pdf": {
   "src": "tour-images/pdf.webp",
-  "v": "e61cad27",
+  "v": "ab01c2e6",
   "w": 780,
-  "h": 480,
+  "h": 402,
   "marks": [
    {
     "n": 1,
     "x": 87.8,
-    "y": 4.3,
+    "y": 5.2,
     "w": 9.7,
-    "h": 14.1
+    "h": 16.9
    }
   ]
  },
  "chips": {
   "src": "tour-images/chips.webp",
-  "v": "9281691a",
+  "v": "3d56999e",
   "w": 780,
   "h": 1120,
   "marks": [
    {
     "n": 1,
     "x": 40.3,
-    "y": 25.1,
+    "y": 25,
     "w": 12.4,
     "h": 5.7
    },
@@ -111,29 +133,29 @@ const TOUR_IMAGES = {
  },
  "stats": {
   "src": "tour-images/stats.webp",
-  "v": "28f1cc80",
+  "v": "234a3c42",
   "w": 780,
   "h": 1520,
   "marks": [
    {
     "n": 1,
     "x": 2.5,
-    "y": 0,
+    "y": 0.1,
     "w": 95.1,
-    "h": 48.7
+    "h": 48.8
    },
    {
     "n": 2,
     "x": 2.5,
-    "y": 51.9,
+    "y": 52,
     "w": 95.1,
-    "h": 48.1
+    "h": 48
    }
   ]
  },
  "admin-menu": {
   "src": "tour-images/admin-menu.webp",
-  "v": "bd7c3947",
+  "v": "f55b9008",
   "w": 780,
   "h": 940,
   "marks": [

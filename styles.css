@@ -3970,13 +3970,12 @@ body.summary-compact .cell-score .joker-inline { width: 1.25rem; height: 1.25rem
 :root[data-theme="dark"] .pdfv-title { color: #eaf3ee; }
 :root[data-theme="dark"] .pdfv-sub { color: #9db4a7; }
 :root[data-theme="dark"] .pdfv-c { border-color: #4a6858; background: var(--bg-d); color: var(--fg-d); }
-/* Toolbar order: the view switch (and the download icon) first, then All matches / Current round (hidden in the Classic view) */
-.summary-toolbar .view-switch { order: 1; flex: 1 1 0; grid-template-columns: repeat(3, 1fr); min-width: 0; }
+/* Toolbar: All matches / Current round, then the download icon (the view switch lives in the player menu). Classic hides the filter. */
+.summary-toolbar .filter-toggle { order: 1; flex: 1 1 0; }
 .summary-toolbar .export-pdf-btn { order: 2; }
-.summary-toolbar .filter-toggle { order: 3; flex: 1 1 100%; }
 body.summary-classic .summary-toolbar .filter-toggle, body.summary-classic .round-select-row { display: none !important; }
+body.summary-classic .summary-toolbar .export-pdf-btn { margin-left: auto; }
 @media (min-width: 900px) {
-    .summary-toolbar .view-switch { flex: 0 0 auto; grid-template-columns: repeat(3, auto); }
     .summary-toolbar .filter-toggle { flex: 0 0 340px; }
     .summary-toolbar .summary-updated-row { order: 5; }
 }
@@ -4012,3 +4011,10 @@ body.summary-classic .summary-toolbar .filter-toggle, body.summary-classic .roun
     .summary-sticky-scroll { animation: summary-slide linear both; animation-timeline: --sumx; }
     @keyframes summary-slide { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(calc(var(--sum-range, 0) * -1px), 0, 0); } }
 }
+
+/* Player menu: the Table view choice, under Appearance */
+.account-view { padding: 0.35rem 0.5rem 0.55rem; }
+.account-view-label { display: block; margin: 0 0 0.3rem; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.account-view .view-switch { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.account-view .view-switch-btn { padding: 0.5rem 0.2rem; }
+.tour-card.tour-compact .tour-view-points li:nth-child(n+3), .tour-card.tour-compact .tour-views-intro { display: none; }
