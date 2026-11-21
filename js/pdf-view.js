@@ -197,8 +197,9 @@ function buildPdfStyleViewHtml(matchList, sortedUsers) {
     }).join('');
 
     const colgroup = `<col style="width:${mm(22)}">` + matchSchemas.map(({ cols }) => cols.map(() => `<col style="width:${mm(matchColWidth)}">`).join('')).join('') + `<col style="width:${mm(9)}"><col style="width:${mm(9)}"><col style="width:${mm(9)}">`;
-    const stamp = new Date();
-    const updated = stamp.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    // "Updated Sat, 21 Nov 2026 at 07:26": the day and time the data was last fetched, worded like the export's "Exported ... at ..."
+    const stamp = new Date(typeof lastDataRefreshAt === 'number' ? lastDataRefreshAt : Date.now());
+    const updated = `${stamp.toLocaleDateString('en-GB', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })} at ${stamp.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
     return `<div class="pdfv-wrap" id="pdfViewWrap"><div class="pdfv-stage" id="pdfViewStage"><div class="pdfv-sheet" id="pdfViewSheet" style="width:${PDFV_SHEET_W.toFixed(0)}px;padding:${mm(3)}">`
         + `<div class="pdfv-title">${escapeHtml(String(selectedYear || stamp.getFullYear()))} Six Nations Guesser</div>`
         + `<div class="pdfv-sub">Updated ${updated}</div>`

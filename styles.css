@@ -1360,7 +1360,9 @@
         }
 
         .worm-chart-wrap {
-            overflow: hidden;
+            overflow-x: auto;
+            overflow-y: hidden;
+            touch-action: pan-x pan-y;
             border: 1px solid var(--line);
             border-radius: 8px;
             background: var(--grid-bg);
@@ -4049,3 +4051,15 @@ html.app-reloaded body { animation: appFadeIn 0.45s ease both; }
 .tour-card.tour-compact .tour-view-tab small { display: none; }
 .tour-card.tour-compact .tour-view-tab { flex-direction: row; gap: 0.4rem; }
 .tour-card.tour-compact .tour-radio { margin: 0; width: 1rem; height: 1rem; }
+
+/* Compact: the score sits beside the competitor's flags, so the Score column goes and more matches fit */
+.summary-table td.competitor-name .comp-sub { display: flex; align-items: center; gap: 0.4rem; min-height: 1.1em; }
+.summary-table td.competitor-name .comp-score { display: none; }
+body.summary-compact .summary-table th.pts-col, body.summary-compact .summary-table td.pts-col { display: none; }
+body.summary-compact .summary-table td.competitor-name .comp-score { display: inline; font-weight: 800; font-size: 1.02rem; line-height: 1.1; color: var(--bright-gold); }
+
+/* Points Progression: the hint on the left, the zoom controls (as in the Classic view) on the right */
+.worm-chart-tools { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin: 0 0 0.4rem; }
+.worm-chart-tools .worm-chart-hover-hint { margin: 0; flex: 1 1 auto; }
+.worm-chart-tools .worm-zoom { flex: none; box-sizing: border-box; height: 34px; margin-left: auto; }
+.worm-chart-tools .worm-zoom button { height: 100%; padding: 0 0.6rem; display: grid; place-items: center; }

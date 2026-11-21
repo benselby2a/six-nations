@@ -164,7 +164,7 @@
                 
                 html += `<tr class="${rowClass}" data-player="${escapeHtml(user.username)}">`;
                 html += `<td class="rank-col">${rank}</td>`;
-                html += `<td class="competitor-name"><div class="comp-name"><span class="comp-nick">${user.nickname}</span>${getUserFlags(user.username)}</div></td>`;
+                html += `<td class="competitor-name"><div class="comp-name"><span class="comp-nick">${user.nickname}</span><div class="comp-sub">${getUserFlags(user.username)}<span class="comp-score">${user.totalPoints}</span></div></div></td>`;
                 html += `<td class="pts-col">${user.totalPoints}</td>`;
 
                 // Column for each match
@@ -291,8 +291,9 @@
 
             // Scroll so the target cell is at the left edge (after the sticky columns)
             // Use offsetLeft relative to the table, minus the sticky columns width
-            const stickyWidth = targetCell.closest('table').querySelector('.pts-col').offsetLeft +
-                                targetCell.closest('table').querySelector('.pts-col').offsetWidth;
+            // the right edge of the pinned columns (the Score column is hidden in Compact, where the score sits beside the flags)
+            const pinnedEdge = ['.pts-col', '.competitor-name'].map(sel => targetCell.closest('table').querySelector(sel)).find(el => el && el.offsetParent !== null);
+            const stickyWidth = pinnedEdge ? pinnedEdge.offsetLeft + pinnedEdge.offsetWidth : 0;
             const scrollTarget = targetCell.offsetLeft - stickyWidth;
             container.scrollLeft = Math.max(0, scrollTarget);
         }
