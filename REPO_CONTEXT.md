@@ -551,3 +551,5 @@ Pinned summary header is positioned by the browser alone (no scroll script): `.s
 Tour pictures: `tourPreload(kind, true)` fetches every picture the moment the tour opens (high priority). Any step with pictures (`.tour-figure` or the view chooser `.tour-view-pics`) stays hidden until its images have loaded, then is fitted; the view chooser only shrinks its picture when the body really overflows. Tests: `tour-late-picture`, `tour-picture-heights`, `tour-fixed-size`.
 
 Compact view: the Score column is hidden and `.comp-score` (inside `.comp-sub`, beside the flags) shows the score. The Points Progression chart zooms like the Classic view (`zoomWormChart`, `enableWormPinch`, controls in `.worm-chart-tools`). The Classic sheet says "Updated <weekday, date> at <time>". Test: `dev/test.sh zoom-and-score`.
+
+Classic zoomed in: a sticky layer (`.pdfv-pin`, outside the scaled sheet, built by `syncPdfvPin`) holds a copy of the Name column with row heights matched to the real rows, so the first column stays at the left edge while scrolling sideways (shown only when zoomed). Test: `dev/test.sh classic-pin`.

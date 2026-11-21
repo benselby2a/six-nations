@@ -163,10 +163,10 @@ const mock = `
   // the pulsing glow (up to 5px) has room on both sides: nothing is cut off by the scrolling area
   const room = await page.evaluate(() => { const b = document.getElementById('tourBody').getBoundingClientRect(); const cells = [...document.querySelectorAll('.tour-view-cell')].map(c => c.getBoundingClientRect()); return { left: Math.round(cells[0].left - b.left), right: Math.round(b.right - cells[cells.length - 1].right) }; });
   console.log('the glow has room on both sides:', JSON.stringify(room), room.left >= 6 && room.right >= 6);
-  // order and message: Compact, Full, Classic; Compact and Full are for small screens
-  const order = await page.evaluate(() => ({ tour: [...document.querySelectorAll('.tour-view-tab')].map(b => b.dataset.view), menu: [...document.querySelectorAll('#summaryViewSwitch .view-switch-btn')].map(b => b.dataset.view), captions: [...document.querySelectorAll('.tour-view-tab small')].map(e => e.textContent), compactFirst: document.querySelector('.tour-view-points[data-view="compact"] li').textContent, fullFirst: document.querySelector('.tour-view-points[data-view="full"] li').textContent }));
+  // order, and no small/big screen labels on the cards themselves
+  const order = await page.evaluate(() => ({ tour: [...document.querySelectorAll('.tour-view-tab')].map(b => b.dataset.view), menu: [...document.querySelectorAll('#summaryViewSwitch .view-switch-btn')].map(b => b.dataset.view), captions: document.querySelectorAll('.tour-view-tab small').length, labels: [...document.querySelectorAll('.tour-view-tab')].map(b => b.textContent.trim()) }));
   console.log('the views are ordered Compact, Full, Classic (tour and menu):', JSON.stringify(order.tour), JSON.stringify(order.menu), order.tour.join() === 'compact,full,classic' && order.menu.join() === 'compact,full,classic');
-  console.log('Compact and Full say they are designed for small screens:', JSON.stringify(order.captions), /small screens/i.test(order.compactFirst) && /small screens/i.test(order.fullFirst) && order.captions.join() === 'Small screens,Small screens,Big screens');
+  console.log('the cards carry just the name (no small / big screen labels):', JSON.stringify(order.labels), order.captions === 0 && order.labels.join() === 'Compact,Full,Classic');
   console.log('errors', errors);
   await browser.close();
 })();

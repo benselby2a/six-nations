@@ -120,10 +120,10 @@ const mock = `
   console.log('PDF button in the switch is on and remembered:', await page.evaluate(() => ({ on: document.querySelector('#summaryViewSwitch [data-view=classic]').getAttribute('aria-pressed'), saved: localStorage.getItem('summaryViewMode'), sheet: !!document.getElementById('pdfViewSheet'), table: !!document.querySelector('.summary-table') })));
   const bg = (sel) => page.evaluate(s => { const e = document.querySelector(s); return e ? getComputedStyle(e).backgroundColor : null; }, sel);
   // Ben's row (first player row): home 25 v away 20 -> home wins; points 10; joker 'x'; rank 1
-  const rows = () => page.evaluate(() => [...document.querySelectorAll('.pdfv-table tbody tr')].map(tr => [...tr.cells].map(td => td.textContent.trim())));
+  const rows = () => page.evaluate(() => [...document.querySelectorAll('.pdfv-sheet .pdfv-table tbody tr')].map(tr => [...tr.cells].map(td => td.textContent.trim())));
   const r = await rows();
   console.log('rows:', JSON.stringify(r.slice(0, 3)));
-  const cellBg = (row, col) => page.evaluate(([ro, co]) => getComputedStyle(document.querySelectorAll('.pdfv-table tbody tr')[ro].cells[co]).backgroundColor, [row, col]);
+  const cellBg = (row, col) => page.evaluate(([ro, co]) => getComputedStyle(document.querySelectorAll('.pdfv-sheet .pdfv-table tbody tr')[ro].cells[co]).backgroundColor, [row, col]);
   const light = { win: await cellBg(2, 1), lose: await cellBg(2, 2), pts: await cellBg(2, 3), joker: await cellBg(2, 4), rank: await cellBg(2, 10), name: await cellBg(2, 0), nameAlt: await cellBg(3, 0) };
   console.log('light colours are the PDF colours:', JSON.stringify(light));
   console.log('  win (198,230,206), lose (244,199,199), points (236,228,202), joker (157,190,221), rank 1 (40,176,96), plain white, alternate row grey 220:',
@@ -166,10 +166,10 @@ const mock = `
     console.log(`the zoom controls are as tall as the download button at ${w}px:`, JSON.stringify(hs), hs.download === hs.zoom);
   }
   // the round filter narrows the columns; Full returns the normal table
-  const colsAll = await page.evaluate(() => document.querySelectorAll('.pdfv-table colgroup col').length);
+  const colsAll = await page.evaluate(() => document.querySelectorAll('.pdfv-sheet .pdfv-table colgroup col').length);
   await page.evaluate(() => { matches[1].round = 2; selectedRound = 1; filterMatches('round'); }); await page.waitForTimeout(500);
   console.log('the All matches / Current round controls are hidden in Classic:', await page.evaluate(() => getComputedStyle(document.getElementById('summaryFilterToggle')).display === 'none'));
-  const colsRound = await page.evaluate(() => document.querySelectorAll('.pdfv-table colgroup col').length);
+  const colsRound = await page.evaluate(() => document.querySelectorAll('.pdfv-sheet .pdfv-table colgroup col').length);
   console.log('the Classic view ignores the match filter (always the whole tournament):', colsAll, '->', colsRound, colsRound === colsAll);
   await page.evaluate(() => filterMatches('default'));
   await pickView('full'); await page.waitForTimeout(500);

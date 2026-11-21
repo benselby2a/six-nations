@@ -221,6 +221,49 @@ function applyPdfvScale(k) {
     stage.style.width = Math.ceil(PDFV_SHEET_W * k) + 'px';
     stage.style.height = Math.ceil(sheet.offsetHeight * k) + 'px';
     wrap.dataset.zoomed = k > pdfvFitScale(wrap) + 0.01 ? '1' : '';
+    syncPdfvPin(k);
+}
+// The Name column stays at the left edge while the sheet is scrolled sideways (zoomed in). A sticky layer outside the scaled sheet holds a
+// copy of that column, with each row exactly as tall as the real row; it only shows once the sheet is wider than the screen.
+function syncPdfvPin(k) {
+    const stage = document.getElementById('pdfViewStage');
+    const sheet = document.getElementById('pdfViewSheet');
+    const table = sheet && sheet.querySelector('.pdfv-table');
+    if (!stage || !table) return;
+    let pin = stage.querySelector('.pdfv-pin');
+    if (!pin) {
+        pin = document.createElement('div');
+        pin.className = 'pdfv-pin';
+        pin.setAttribute('aria-hidden', 'true');
+        pin.innerHTML = '<div class="pdfv-pin-inner"><table class="pdfv-table pdfv-pin-table"><colgroup></colgroup><tbody></tbody></table></div>';
+        stage.insertBefore(pin, stage.firstChild);
+        const pinTable = pin.querySelector('table');
+        pinTable.querySelector('colgroup').appendChild(table.querySelector('colgroup col').cloneNode());
+        const body = pinTable.querySelector('tbody');
+        table.querySelectorAll('tr').forEach(tr => {
+            const row = document.createElement('tr');
+            row.appendChild(tr.cells[0].cloneNode(true));
+            body.appendChild(row);
+        });
+    }
+    const zoomed = stage.parentElement.dataset.zoomed === '1';
+    pin.style.display = zoomed ? 'block' : 'none';
+    if (!zoomed) return;
+    // Sizes of the sheet, in its own (unscaled) pixels
+    const padLeft = table.getBoundingClientRect().left - sheet.getBoundingClientRect().left;
+    const rows = [...table.querySelectorAll('tr')];
+    const pinRows = pin.querySelectorAll('tr');
+    const cur = Number((sheet.style.transform.match(/scale\(([\d.]+)\)/) || [0, k])[1]) || k;
+    rows.forEach((tr, i) => { if (pinRows[i]) pinRows[i].style.height = (tr.getBoundingClientRect().height / cur) + 'px'; });
+    const colW = table.querySelector('colgroup col').getBoundingClientRect().width / cur;
+    const top = (table.getBoundingClientRect().top - sheet.getBoundingClientRect().top) / cur;
+    pin.style.width = Math.ceil((padLeft / cur + colW) * k + 1) + 'px';
+    pin.style.height = stage.style.height;
+    const inner = pin.querySelector('.pdfv-pin-inner');
+    inner.style.transform = `scale(${k})`;
+    inner.style.left = (padLeft / cur * k) + 'px';
+    inner.style.top = (top * k) + 'px';
+    inner.style.width = colW + 'px';
 }
 function currentPdfvScale() {
     const wrap = document.getElementById('pdfViewWrap');

@@ -3961,7 +3961,7 @@ body.summary-classic .summary-toolbar .export-pdf-btn { margin-left: auto; }
 /* Each choice is a cell (a plain box, which always stretches) with the button filling it exactly: no gap, in every browser */
 .tour-view-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin: 0 0 0.6rem; padding: 0 0.45rem; }   /* side room, so the pulsing glow is not cut off by the edge of the scrolling area */
 /* The choices are big radio cards: a ring, the name and a few words; the chosen one fills with gold */
-.tour-view-cell { position: relative; display: block; min-height: 4.7rem; border-radius: 12px; }
+.tour-view-cell { position: relative; display: block; min-height: 3.8rem; border-radius: 12px; }
 .tour-view-tab { all: unset; box-sizing: border-box; cursor: pointer; position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.15rem; padding: 0.3rem 0.25rem; text-align: center; color: var(--text); background: rgba(255, 255, 255, 0.07); border: 2px solid rgba(255, 215, 0, 0.55); border-radius: 12px; -webkit-tap-highlight-color: transparent; }
 .tour-view-tab b { font-size: 0.82rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; line-height: 1.1; }
 .tour-view-tab small { font-size: 0.7rem; line-height: 1.15; opacity: 0.85; }
@@ -4063,3 +4063,9 @@ body.summary-compact .summary-table td.competitor-name .comp-score { display: in
 .worm-chart-tools .worm-chart-hover-hint { margin: 0; flex: 1 1 auto; }
 .worm-chart-tools .worm-zoom { flex: none; box-sizing: border-box; height: 34px; margin-left: auto; }
 .worm-chart-tools .worm-zoom button { height: 100%; padding: 0 0.6rem; display: grid; place-items: center; }
+
+/* Classic, zoomed in: the Name column is pinned at the left edge (a sticky layer outside the scaled sheet) */
+.pdfv-pin { position: sticky; left: 0; top: 0; z-index: 3; display: none; background: #fff; box-shadow: 3px 0 5px -2px rgba(0, 0, 0, 0.3); overflow: hidden; }
+.pdfv-pin-inner { position: absolute; transform-origin: top left; }
+.pdfv-pin-table { table-layout: fixed; width: 100%; }
+:root[data-theme="dark"] .pdfv-pin { background: #0b1a14; }
