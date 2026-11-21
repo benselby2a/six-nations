@@ -171,7 +171,7 @@ function tourBuildAdminSteps() {
 
 // Load the tour pictures ahead of time so each one is already there when its step opens
 const tourPreloaded = [];
-function tourPreload(kind) {
+function tourPreload(kind, urgent) {
     if (typeof TOUR_IMAGES === 'undefined') return;
     Object.keys(TOUR_IMAGES).filter(id => (kind === 'admin') === id.startsWith('admin-')).forEach(id => {
         const info = TOUR_IMAGES[id];
@@ -180,7 +180,7 @@ function tourPreload(kind) {
         const img = new Image();
         img.dataset.src = src;
         img.decoding = 'sync';
-        img.fetchPriority = 'low';   // never compete with the app's own loading
+        img.fetchPriority = urgent ? 'high' : 'low';   // quietly in the background, but at once when the tour has been opened
         img.src = src;
         tourPreloaded.push(img);   // keep a reference so the download is not dropped
     });
@@ -212,18 +212,17 @@ function tourAnimateSize(before) {
 }
 
 function tourFitSoon() {
-    // The picture stays invisible until it has been sized (no flash of a wrong size)
-    const fig = document.querySelector('#tourBody .tour-figure');
-    if (fig) fig.style.visibility = 'hidden';
+    // Pictures stay invisible until they have loaded and been sized (no flash of a wrong size, never shown tiny)
+    const hideable = () => [document.querySelector('#tourBody .tour-figure'), document.querySelector('#tourBody .tour-view-pics')].filter(Boolean);
+    hideable().forEach(el => { el.style.visibility = 'hidden'; });
     if (tourSizeAnimating) return;   // sizes are measured once the card has finished changing size (then this runs again)
     requestAnimationFrame(() => {
         tourFitContent(true);
         setTimeout(() => {
             tourFitContent(true);
-            const f = document.querySelector('#tourBody .tour-figure');
             // A picture that has not arrived yet has no size to fit: keep it hidden, and fit again the moment it loads
-            const waiting = f ? [...f.querySelectorAll('img')].filter(i => !i.complete) : [];
-            if (f && !waiting.length) f.style.visibility = '';
+            const waiting = [...document.querySelectorAll('#tourBody img')].filter(i => !i.complete);
+            if (!waiting.length) hideable().forEach(el => { el.style.visibility = ''; });
             waiting.forEach(i => i.addEventListener('load', () => { if (tourState) tourFitSoon(); }, { once: true }));
         }, 120);
     });
@@ -233,20 +232,19 @@ function tourFitContent(allowHide) {
     const body = document.getElementById('tourBody');
     const card = document.getElementById('tourCard');
     if (!body || !card || !tourState) return;
-    // The view-choice step: one big picture above the choices; shrink it until everything fits without scrolling
+    // The view-choice step: one big picture above the choices; shrink it only as far as needed to fit without scrolling
     if (body.querySelector('.tour-view-pics')) {
         card.classList.remove('tour-compact');
-        const pic = body.querySelector('.tour-view-pic:not([hidden]) img');
-        const layer = document.getElementById('tourLayer');
-        const ls = getComputedStyle(layer);
+        const pics = [...body.querySelectorAll('.tour-view-pic img')];
+        const overflows = () => body.scrollHeight > body.clientHeight + 1;
+        const setMax = (px) => pics.forEach(i => { i.style.maxHeight = px + 'px'; });
         const screenH = (window.visualViewport && window.visualViewport.height) || innerHeight;
-        const allowed = () => screenH - parseFloat(ls.paddingTop) - parseFloat(ls.paddingBottom) - (card.offsetHeight - body.offsetHeight) - 6;   // a little slack
         let max = Math.round(screenH * 0.42);
-        body.querySelectorAll('.tour-view-pic img').forEach(i => { i.style.maxHeight = max + 'px'; });
-        while (pic && body.scrollHeight > allowed() && max > 50) { max -= 8; body.querySelectorAll('.tour-view-pic img').forEach(i => { i.style.maxHeight = max + 'px'; }); }
-        if (body.scrollHeight > allowed()) {   // still too tall: drop the intro and the third highlight, then shrink the picture some more
+        setMax(max);
+        while (overflows() && max > 50) { max -= 8; setMax(max); }
+        if (overflows()) {   // still too tall: drop the intro and the third highlight, then shrink the picture some more
             card.classList.add('tour-compact');
-            while (pic && body.scrollHeight > allowed() && max > 30) { max -= 8; body.querySelectorAll('.tour-view-pic img').forEach(i => { i.style.maxHeight = max + 'px'; }); }
+            while (overflows() && max > 30) { max -= 8; setMax(max); }
         }
         return;
     }
@@ -294,7 +292,7 @@ function startTour(kind) {
     if (kind === 'admin' && !isCurrentUserAdmin()) return;
     closeGlobalHelpModal();
     closeAdminHelpModal();
-    tourPreload(kind);
+    tourPreload(kind, true);   // the tour is open: fetch every picture now
     const steps = kind === 'admin' ? tourBuildAdminSteps() : tourBuildSteps(tourRulesHtml());
     tourState = { index: 0, steps, kind };
     tourFitScreen();

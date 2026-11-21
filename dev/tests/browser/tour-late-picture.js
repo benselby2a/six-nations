@@ -123,6 +123,16 @@ const mock = `
   const late = await h();
   console.log('while the picture is still loading it stays hidden (not shown tiny):', JSON.stringify(early), early && (early.hidden || early.h > 150));
   console.log('once it has loaded it is the proper size:', JSON.stringify(late), late.h >= 200 && !late.hidden);
+  // the same for the "Choose your view" pictures, with every picture held back
+  await page.evaluate(() => endTour());
+  await page.route('**/tour-images/view-*.webp*', async r => { await new Promise(res => setTimeout(res, 900)); r.continue(); });
+  await page.evaluate(() => { tourPreloaded.length = 0; localStorage.removeItem('summaryViewMode'); startTour(); showTourStep(3); }); await page.waitForTimeout(300);
+  const vh = () => page.evaluate(() => { const pics = document.querySelector('.tour-view-pics'); const img = document.querySelector('.tour-view-pic:not([hidden]) img'); return img ? { h: Math.round(img.getBoundingClientRect().height), hidden: pics.style.visibility === 'hidden', complete: img.complete } : null; });
+  const vEarly = await vh();
+  await page.waitForTimeout(2200);
+  const vLate = await vh();
+  console.log('view pictures: hidden while loading, not shown tiny:', JSON.stringify(vEarly), vEarly && (vEarly.hidden || vEarly.h > 100));
+  console.log('view pictures: proper size once loaded:', JSON.stringify(vLate), vLate.h >= 100 && !vLate.hidden);
   console.log('errors', errors);
   await browser.close();
 })();
