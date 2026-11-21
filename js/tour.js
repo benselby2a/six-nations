@@ -106,7 +106,7 @@ function tourViewsHtml() {
     // Nothing is highlighted until the person taps a view: that tap is their choice of default, and it unlocks Next
     const tabs = TOUR_VIEW_OPTIONS.map(([mode, label]) => {
         const on = chosen && mode === current;
-        return `<button type="button" class="tour-view-tab${on ? ' on' : ''}" data-view="${mode}" aria-pressed="${on}" onclick="tourPickView('${mode}')">${label}</button>`;
+        return `<span class="tour-view-cell"><button type="button" class="tour-view-tab${on ? ' on' : ''}" data-view="${mode}" aria-pressed="${on}" onclick="tourPickView('${mode}')">${label}</button></span>`;
     }).join('');
     const points = TOUR_VIEW_OPTIONS.map(([mode, label, list]) =>
         `<ul class="tour-view-points" data-view="${mode}"${mode === current ? '' : ' hidden'}>${list.map(t => `<li>${t}</li>`).join('')}</ul>`).join('');

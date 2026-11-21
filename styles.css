@@ -3957,11 +3957,13 @@ body.summary-classic .summary-toolbar .export-pdf-btn { margin-left: auto; }
 .tour-view-pic { display: flex; justify-content: center; }
 .tour-view-pic[hidden], .tour-view-points[hidden] { display: none; }
 .tour-view-pic img { display: block; max-width: 100%; width: auto; height: auto; max-height: 42vh; border-radius: 6px; border: 2px solid var(--line-strong); background: #fff; object-fit: contain; }
-.tour-view-tabs { display: grid; grid-template-columns: repeat(3, 1fr); align-items: stretch; border: 2px solid var(--bright-gold); border-radius: 8px; overflow: hidden; margin: 0 0 0.6rem; }
-.tour-view-tab { all: unset; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; justify-content: center; min-height: 2.7rem; padding: 0.4rem 0.3rem; text-align: center; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); }
-.tour-view-tab + .tour-view-tab { border-left: 2px solid var(--bright-gold); }
+/* Each choice is a cell (a plain box, which always stretches) with the button filling it exactly: no gap, in every browser */
+.tour-view-tabs { display: grid; grid-template-columns: repeat(3, 1fr); border: 2px solid var(--bright-gold); border-radius: 8px; overflow: hidden; margin: 0 0 0.6rem; }
+.tour-view-cell { position: relative; display: block; min-height: 2.9rem; }
+.tour-view-cell + .tour-view-cell { border-left: 2px solid var(--bright-gold); }
+.tour-view-tab { all: unset; box-sizing: border-box; cursor: pointer; position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; padding: 0 0.3rem; text-align: center; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text); }
 .tour-view-tab.on { background: var(--bright-gold); color: var(--on-accent); }
-.tour-view-tab:focus-visible { outline: 2px solid var(--bright-gold); outline-offset: -3px; }
+.tour-view-tab:focus-visible { outline: 2px solid var(--on-accent); outline-offset: -4px; }
 .tour-view-points { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.25rem; font-size: 0.98rem; line-height: 1.35; }
 .tour-view-points li::marker { color: var(--bright-gold); }
 @media (max-height: 500px) { .tour-view-points li:nth-child(n+3), .tour-views-intro { display: none; } }
