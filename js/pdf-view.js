@@ -199,26 +199,78 @@ function buildPdfStyleViewHtml(matchList, sortedUsers) {
     const colgroup = `<col style="width:${mm(22)}">` + matchSchemas.map(({ cols }) => cols.map(() => `<col style="width:${mm(matchColWidth)}">`).join('')).join('') + `<col style="width:${mm(9)}"><col style="width:${mm(9)}"><col style="width:${mm(9)}">`;
     const stamp = new Date();
     const updated = stamp.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    return `<p class="pdfv-hint">Pinch to zoom in, or turn your phone sideways for a larger view.</p><div class="pdfv-wrap" id="pdfViewWrap"><div class="pdfv-sheet" id="pdfViewSheet" style="width:${PDFV_SHEET_W.toFixed(0)}px;padding:${mm(3)}">`
+    return `<div class="pdfv-tools"><span class="pdfv-hint">Pinch to zoom, drag to move.</span><span class="pdfv-zoom"><button type="button" onclick="zoomPdfView(1 / 1.3)" aria-label="Zoom out">−</button><button type="button" onclick="zoomPdfView(0)" aria-label="Fit to screen">Fit</button><button type="button" onclick="zoomPdfView(1.3)" aria-label="Zoom in">+</button></span></div><div class="pdfv-wrap" id="pdfViewWrap"><div class="pdfv-stage" id="pdfViewStage"><div class="pdfv-sheet" id="pdfViewSheet" style="width:${PDFV_SHEET_W.toFixed(0)}px;padding:${mm(3)}">`
         + `<div class="pdfv-title">${escapeHtml(String(selectedYear || stamp.getFullYear()))} Six Nations Guesser</div>`
         + `<div class="pdfv-sub">Updated ${updated}</div>`
         + `<table class="pdfv-table" style="width:${mm(tableWidth)}"><colgroup>${colgroup}</colgroup>`
-        + `<thead><tr>${head1}</tr><tr>${head2}</tr></thead><tbody><tr>${resultRow}</tr><tr>${tryRow}</tr>${userHtml}</tbody></table></div></div>`;
+        + `<thead><tr>${head1}</tr><tr>${head2}</tr></thead><tbody><tr>${resultRow}</tr><tr>${tryRow}</tr>${userHtml}</tbody></table></div></div></div>`;
 }
 
-// Shrink (or grow) the A4 sheet to the width of its box, so the whole sheet is on screen; pinch to zoom on a phone
+// The sheet starts fitted to the width of its box. Pinch (two fingers) or the +/- buttons zoom it; drag to move around it.
+// The box scrolls sideways by itself when zoomed in (the browser's own page zoom cannot pan a transformed sheet reliably on iPhone).
+let pdfvZoom = null;   // null = fitted; otherwise the chosen scale
+const PDFV_MAX_ZOOM = 4;
+function pdfvFitScale(wrap) { return Math.min(1.6, wrap.clientWidth / PDFV_SHEET_W); }
+function applyPdfvScale(k) {
+    const wrap = document.getElementById('pdfViewWrap');
+    const stage = document.getElementById('pdfViewStage');
+    const sheet = document.getElementById('pdfViewSheet');
+    if (!wrap || !stage || !sheet) return;
+    sheet.style.transform = `scale(${k})`;
+    stage.style.width = Math.ceil(PDFV_SHEET_W * k) + 'px';
+    stage.style.height = Math.ceil(sheet.offsetHeight * k) + 'px';
+    wrap.dataset.zoomed = k > pdfvFitScale(wrap) + 0.01 ? '1' : '';
+}
+function currentPdfvScale() {
+    const wrap = document.getElementById('pdfViewWrap');
+    const fit = wrap && wrap.clientWidth ? pdfvFitScale(wrap) : 1;
+    return Math.max(fit, Math.min(PDFV_MAX_ZOOM, pdfvZoom || fit));
+}
 function fitPdfView() {
     const wrap = document.getElementById('pdfViewWrap');
     const sheet = document.getElementById('pdfViewSheet');
     if (!wrap || !sheet) return;
-    if (!wrap.dataset.watched && typeof ResizeObserver !== 'undefined') {   // also fits it when the tab is shown or the window changes
+    if (!wrap.dataset.watched) {
         wrap.dataset.watched = '1';
-        new ResizeObserver(() => fitPdfView()).observe(wrap);
+        if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => fitPdfView()).observe(wrap);   // also when the tab is shown or the window changes
+        enablePdfvPinch(wrap);
     }
     if (!wrap.clientWidth) return;   // not visible yet
-    const k = Math.min(1.6, wrap.clientWidth / PDFV_SHEET_W);
-    sheet.style.transform = `scale(${k})`;
-    const h = Math.ceil(sheet.offsetHeight * k) + 'px';
-    if (wrap.style.height !== h) wrap.style.height = h;
+    applyPdfvScale(currentPdfvScale());
+}
+// +/- buttons (factor), and Fit (0)
+function zoomPdfView(factor) {
+    const wrap = document.getElementById('pdfViewWrap');
+    if (!wrap || !wrap.clientWidth) return;
+    const before = currentPdfvScale();
+    pdfvZoom = factor === 0 ? null : Math.max(pdfvFitScale(wrap), Math.min(PDFV_MAX_ZOOM, before * factor));
+    const k = currentPdfvScale();
+    const centre = (wrap.scrollLeft + wrap.clientWidth / 2) / before;   // keep what is in the middle in the middle
+    applyPdfvScale(k);
+    wrap.scrollLeft = Math.max(0, centre * k - wrap.clientWidth / 2);
+}
+// Two-finger pinch on the sheet: zoom around the point between the fingers
+function enablePdfvPinch(wrap) {
+    let start = null;
+    const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    wrap.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 2) { start = null; return; }
+        const rect = wrap.getBoundingClientRect();
+        const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+        const k0 = currentPdfvScale();
+        start = { d0: dist(e.touches), k0, cx, contentX: (wrap.scrollLeft + cx) / k0 };
+    }, { passive: true });
+    wrap.addEventListener('touchmove', (e) => {
+        if (!start || e.touches.length !== 2) return;
+        e.preventDefault();   // our zoom, not the page's
+        const fit = pdfvFitScale(wrap);
+        const k = Math.max(fit, Math.min(PDFV_MAX_ZOOM, start.k0 * dist(e.touches) / start.d0));
+        pdfvZoom = k;
+        applyPdfvScale(k);
+        wrap.scrollLeft = Math.max(0, start.contentX * k - start.cx);
+    }, { passive: false });
+    const end = (e) => { if (e.touches.length < 2) start = null; };
+    wrap.addEventListener('touchend', end, { passive: true });
+    wrap.addEventListener('touchcancel', end, { passive: true });
 }
 window.addEventListener('resize', fitPdfView);

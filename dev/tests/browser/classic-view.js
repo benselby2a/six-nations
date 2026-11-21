@@ -133,6 +133,32 @@ const mock = `
   console.log('dark scheme:', JSON.stringify(dark), '| switched without redrawing:', await page.evaluate(() => window.__sheet === document.getElementById('pdfViewSheet')),
     '| dark, not the light colours:', dark.win !== light.win && dark.name !== light.name && dark.sheet === 'rgb(11, 26, 20)');
   await page.evaluate(() => changeTheme('light'));
+  // ---- zoom and sideways scrolling (phone width)
+  await page.setViewportSize({ width: 390, height: 800 }); await page.waitForTimeout(400);
+  const dims = () => page.evaluate(() => { const w = document.getElementById('pdfViewWrap'); return { client: w.clientWidth, scroll: w.scrollWidth, left: w.scrollLeft, zoomed: w.dataset.zoomed }; });
+  const fitted = await dims();
+  console.log('fitted to the screen: no sideways scrolling needed:', JSON.stringify(fitted), fitted.scroll <= fitted.client + 1);
+  await page.evaluate(() => { zoomPdfView(1.3); zoomPdfView(1.3); zoomPdfView(1.3); }); await page.waitForTimeout(300);
+  const zoomed = await dims();
+  console.log('zooming in with the buttons makes it scroll sideways:', JSON.stringify(zoomed), zoomed.scroll > zoomed.client * 1.5);
+  await page.evaluate(() => { document.getElementById('pdfViewWrap').scrollLeft = 150; }); await page.waitForTimeout(200);
+  console.log('and it can be scrolled side to side:', (await dims()).left === 150);
+  await page.evaluate(() => zoomPdfView(0)); await page.waitForTimeout(300);
+  const back = await dims();
+  console.log('Fit puts it back:', JSON.stringify(back), back.scroll <= back.client + 1);
+  // a two-finger pinch
+  const pinch = await page.evaluate(async () => {
+    const wrap = document.getElementById('pdfViewWrap');
+    const mk = (id, x, y) => new Touch({ identifier: id, target: wrap, clientX: x, clientY: y });
+    const fire = (type, touches) => wrap.dispatchEvent(new TouchEvent(type, { touches, targetTouches: touches, changedTouches: touches, bubbles: true, cancelable: true }));
+    const r = wrap.getBoundingClientRect(), cy = r.top + 40;
+    fire('touchstart', [mk(1, r.left + 150, cy), mk(2, r.left + 240, cy)]);
+    fire('touchmove', [mk(1, r.left + 100, cy), mk(2, r.left + 290, cy)]);
+    fire('touchend', []);
+    return { client: wrap.clientWidth, scroll: wrap.scrollWidth, left: wrap.scrollLeft };
+  });
+  console.log('pinching with two fingers zooms it, ready to scroll sideways:', JSON.stringify(pinch), pinch.scroll > pinch.client * 1.5);
+  await page.setViewportSize({ width: 1280, height: 900 }); await page.waitForTimeout(400);
   // the round filter narrows the columns; Full returns the normal table
   const colsAll = await page.evaluate(() => document.querySelectorAll('.pdfv-table colgroup col').length);
   await page.evaluate(() => { matches[1].round = 2; selectedRound = 1; filterMatches('round'); }); await page.waitForTimeout(500);

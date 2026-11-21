@@ -3957,7 +3957,9 @@ body.summary-compact .cell-score .joker-inline { width: 1.25rem; height: 1.25rem
 .view-switch-btn:focus-visible { outline: 2px solid var(--bright-gold); outline-offset: -2px; }
 
 /* PDF view: the A4 sheet drawn in HTML. Every cell carries its own light and dark colours as variables. */
-.pdfv-wrap { width: 100%; overflow: hidden; margin: 0 0 1.5rem; border-radius: 8px; border: 1px solid var(--line-strong); }
+.pdfv-wrap { width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; margin: 0 0 1.5rem; border-radius: 8px; border: 1px solid var(--line-strong); }
+.pdfv-stage { position: relative; }
+.pdfv-stage > .pdfv-sheet { position: absolute; top: 0; left: 0; }
 .pdfv-sheet { box-sizing: border-box; transform-origin: top left; font-family: Helvetica, Arial, sans-serif; background: #fff; color: #111; }
 .pdfv-title { font-weight: 700; font-size: 18.7px; line-height: 1.1; color: #111; }
 .pdfv-sub { font-size: 12px; color: #5f5f5f; margin: 2px 0 8px; }
@@ -3979,8 +3981,14 @@ body.summary-classic .summary-toolbar .filter-toggle, body.summary-classic .roun
     .summary-toolbar .summary-updated-row { order: 5; }
 }
 
-.pdfv-hint { display: none; margin: 0 0 0.4rem; font-size: 0.8rem; color: var(--muted); }
+.pdfv-tools { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin: 0 0 0.4rem; }
+.pdfv-hint { display: none; font-size: 0.8rem; color: var(--muted); }
 @media (max-width: 700px) { .pdfv-hint { display: block; } }
+.pdfv-zoom { display: inline-flex; margin-left: auto; border: 2px solid rgb(var(--accent-rgb) / 0.3); border-radius: 8px; overflow: hidden; }
+.pdfv-zoom button { all: unset; box-sizing: border-box; cursor: pointer; min-width: 2.2rem; padding: 0.3rem 0.6rem; text-align: center; font-size: 0.8rem; font-weight: 700; color: var(--text); }
+.pdfv-zoom button + button { border-left: 2px solid rgb(var(--accent-rgb) / 0.3); }
+.pdfv-zoom button:hover { background: rgb(var(--ink) / 0.1); }
+.pdfv-zoom button:focus-visible { outline: 2px solid var(--bright-gold); outline-offset: -2px; }
 
 
 /* Tour: choose your view. A big picture, the three choices, then what is good about the chosen one */
