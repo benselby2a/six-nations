@@ -4113,6 +4113,13 @@ body.summary-simple .summary-table td.competitor-name .comp-nick { font-size: 1.
 body.summary-simple .summary-table td.competitor-name .comp-score { font-size: 1.1rem; font-weight: 800; color: var(--text); }
 body.summary-simple .summary-table td.rank-col { font-size: 1.05rem; font-weight: 700; }
 body.summary-simple .summary-table th.competitor-col, body.summary-simple .summary-table th.rank-col { vertical-align: bottom; font-size: 0.95rem; }
+/* Plain: every column heading uses one text colour (white on the green bar; the normal text colour on the dark bar), so none is tinted gold, dark or white by column */
+body.summary-simple .summary-table thead th,
+body.summary-simple .summary-table thead th .th-angled,
+body.summary-simple .summary-table thead th .match-teams { color: #fff !important; }
+:root[data-theme="dark"] body.summary-simple .summary-table thead th,
+:root[data-theme="dark"] body.summary-simple .summary-table thead th .th-angled,
+:root[data-theme="dark"] body.summary-simple .summary-table thead th .match-teams { color: var(--text) !important; }
 body.summary-simple .summary-table th.competitor-col .th-angled { display: inline; width: auto; height: auto; transform: none; margin: 0; font-size: 0.95rem; white-space: nowrap; }
 body.summary-simple .summary-table td.competitor-name { min-width: 120px; width: 120px; max-width: 120px; }
 body.summary-simple .match-header-cell .match-header-top .match-teams { height: auto; font-size: 1.1rem; font-weight: 800; letter-spacing: 0.03em; line-height: 1.35; margin-bottom: 0.4rem; }
