@@ -137,7 +137,7 @@ const mock = `
   }, minutesAgo);
   const live = await tick(30);
   console.log('30 minutes after kick-off the scores refresh by themselves:', live.length > 0);
-  console.log('and only fixtures and reactions are fetched (not users or predictions):', JSON.stringify(live), live.every(t => ['matches', 'fixture_reactions'].includes(t)));
+  console.log('and only fixtures are fetched (not users or predictions):', JSON.stringify(live), live.every(t => ['matches'].includes(t)));
   console.log('5 hours after kick-off they do not:', (await tick(300)).length === 0);
   // no redraw when nothing changed, a redraw when a score arrives
   await page.evaluate(() => { showSummary(); document.querySelector('#summaryContainer').setAttribute('data-mark', 'x'); document.querySelector('#summaryContainer .summary-table').setAttribute('data-mark', 'x'); });

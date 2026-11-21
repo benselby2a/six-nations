@@ -1,5 +1,5 @@
 // Example data for taking the tour screenshots (dev only, see dev/tour-shots.sh). Injected into the page; it swaps the
-// app's state for made-up people, matches, predictions and chat and stubs the database client so nothing real is read or written.
+// app's state for made-up people, matches and predictions and stubs the database client so nothing real is read or written.
 // ---- Example data: the tour never shows real results or people ----
 let tourSaved = null;
 
@@ -29,22 +29,6 @@ function tourDemoData() {
     }
     const jokers = { demoalex: [9003], demobryn: [9005], democara: [9003], demodev: [9003], demoerin: [9005] };
     if (demoUsers[currentUsername]) jokers[currentUsername] = [9003];
-    const at = (mins) => new Date(Date.now() - mins * 60000).toISOString();
-    const chat = {
-        available: true,
-        comments: [
-            { id: 1, match_id: 9001, user_id: 9102, target_user_id: null, body: 'What a start for France. Nobody saw that coming!', created_at: at(180) },
-            { id: 2, match_id: 9001, user_id: 9104, target_user_id: null, body: 'Joker well spent. Thank you France.', created_at: at(95) },
-            { id: 3, match_id: 9001, user_id: 9103, target_user_id: 9102, body: 'Bold pick, Bryn. Ireland by 5?', created_at: at(60) },
-            { id: 4, match_id: 9002, user_id: 9105, target_user_id: null, body: 'Italy edge it. Table is wide open now.', created_at: at(1500) }
-        ],
-        reactions: [
-            { id: 1, match_id: 9001, user_id: 9102, target_user_id: null, emoji: '🔥' }, { id: 2, match_id: 9001, user_id: 9103, target_user_id: null, emoji: '🔥' },
-            { id: 3, match_id: 9001, user_id: 9104, target_user_id: null, emoji: '😱' }, { id: 4, match_id: 9002, user_id: 9101, target_user_id: null, emoji: '😱' },
-            { id: 5, match_id: 9002, user_id: 9103, target_user_id: null, emoji: '😭' }, { id: 6, match_id: 9001, user_id: 9101, target_user_id: 9102, emoji: '😂' },
-            { id: 7, match_id: 9003, user_id: 9105, target_user_id: 9104, emoji: '👏' }
-        ]
-    };
     // An invited person who has not signed in yet, and example sign-in accounts for the Competitors screen
     demoUsers.demoinvite = { id: 9106, nickname: null, totalTries: null, supportedTeams: [], predictions: {} };
     const emails = { demoalex: 'alex@example.com', demobryn: 'bryn@example.com', democara: 'cara@example.com', demodev: 'dev@example.com', demoerin: 'erin@example.com', demoinvite: 'newplayer@example.com' };
@@ -57,12 +41,12 @@ function tourDemoData() {
         { auth_user_id: 'demo-a5', email: 'dev.home@example.com', linked_username: 'demodev' },
         { auth_user_id: 'demo-a6', email: 'erin@example.com', linked_username: 'demoerin' }
     ];
-    return { demoMatches, demoUsers, jokers, chat, emails, emails2, accounts };
+    return { demoMatches, demoUsers, jokers, emails, emails2, accounts };
 }
 
 function enterTourDemo() {
     tourSaved = {
-        users, matches: matches.slice(), allMatches, appSettings, activeScoringRules, userJokerSelections, fixtureChat,
+        users, matches: matches.slice(), allMatches, appSettings, activeScoringRules, userJokerSelections,
         from: supabaseClient.from, rpc: supabaseClient.rpc,
         authAccounts, authAccountsLoaded, competitorEmails, competitorEmails2, adminUsernames,
         getSeasonCounts: Storage.getSeasonCounts
@@ -73,9 +57,8 @@ function enterTourDemo() {
     matches.splice(0, matches.length, ...demo.demoMatches);
     allMatches = demo.demoMatches.slice();
     appSettings = { ...appSettings, predictionsLocked: false, activeOverrides: {} };
-    // The scoring rules (and prize split) stay the real ones: only people, matches, predictions and chat are examples
+    // The scoring rules (and prize split) stay the real ones: only people, matches and predictions are examples
     userJokerSelections = demo.jokers;
-    fixtureChat = demo.chat;
     // Admin screens: example sign-in accounts, emails, admins, year counts (no real addresses)
     authAccounts = demo.accounts;
     authAccountsLoaded = true;
@@ -111,7 +94,6 @@ function leaveTourDemo() {
     appSettings = tourSaved.appSettings;
     activeScoringRules = tourSaved.activeScoringRules;
     userJokerSelections = tourSaved.userJokerSelections;
-    fixtureChat = tourSaved.fixtureChat;
     authAccounts = tourSaved.authAccounts;
     authAccountsLoaded = tourSaved.authAccountsLoaded;
     competitorEmails = tourSaved.competitorEmails;
@@ -128,5 +110,3 @@ function tourRerenderCurrentScreen() {
     if (summary && !summary.classList.contains('hidden')) showSummary();
     if (predictions && !predictions.classList.contains('hidden')) { renderMatches(); loadPredictions(); }
 }
-
-// The summary table scrolls sideways under its sticky rank, name and score columns. Pick a chat chip that is

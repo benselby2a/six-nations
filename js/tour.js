@@ -42,7 +42,7 @@ function tourStep(id, title, items, extra) {
     return { id, title, items, extra: extra || '' };
 }
 
-function tourBuildSteps(rulesHtml, chatLive) {
+function tourBuildSteps(rulesHtml) {
     const steps = [];
     steps.push({ id: null, title: 'Review the rules', raw: () => `<p>Here is how points are won in ${selectedYear}.</p>${rulesHtml}` });
     steps.push(tourStep('predictions', 'Add your predictions', [
@@ -65,12 +65,6 @@ function tourBuildSteps(rulesHtml, chatLive) {
     steps.push(tourStep('pdf', 'Download and print', [
         'Tap the <strong>download icon</strong> above the table to save the Classic page as a PDF, or to print it.'
     ], '<p>The Classic view is the same Excel-styled page, shown on screen. On a computer the icon opens the file in a pop-up with Print and Save buttons. The picture shows the page you get.</p>'));
-    if (chatLive) {
-        steps.push(tourStep('chips', 'React to matches and results', [
-            'Tap the <strong>😀＋ chip</strong> under a match (or anywhere on the match header) to react to the match with an emoji or one of the two team flags.',
-            'Or tap any <strong>prediction</strong> to react to that guess.'
-        ], '<p>The most popular emoji show right on the table, and the pop-up lists who reacted.</p>'));
-    }
     steps.push(tourStep('stats', 'Stats and insights', [
         'Scroll down on the Match Summary, under the table.',
         'Tournament Stats show tries so far and the projected total.',
@@ -132,9 +126,9 @@ function tourBuildAdminSteps() {
             'Each button opens a section, and the menu stays at the top so you can jump between sections.'
         ], '<p>The <strong>Setup Checklist</strong> button opens a screen showing which setup tasks for the year are done, including locking predictions once everyone is in and entering scores for finished matches.</p>'),
         tourStep('admin-fixtures', 'Fixtures and Scores', [
-            'Tap a row to edit a fixture, set it Joker eligible, or enter the actual score and tries once the match is played.',
-            '<strong>Bulk Import</strong> adds a whole year in one go: one fixture per line as <em>DD/MM/YYYY, HH:MM, Home, Away</em>. Tip: ask Google AI to write the fixtures in that format, then check them against the official list.'
-        ], '<p>Find it under Admin Functions, then <strong>Fixtures and Scores</strong>. <strong>Add New Fixture</strong> adds a single match. Rounds are worked out from the dates.</p>'),
+            'Admin Functions, then <strong>Fixtures and Scores</strong>. Tap a row to edit a fixture, set it Joker eligible, or enter its score and tries.',
+            '<strong>Bulk Import</strong> adds a whole year at once, one fixture per line. Tip: ask Google AI to write the lines as <em>DD/MM/YYYY, HH:MM, Home, Away</em>.'
+        ], '<p>Add New Fixture adds a single match. Rounds are worked out from the dates.</p>'),
         tourStep('admin-scores', 'Adding scores to matches', [
             'Quickest, on the day: tap the red <strong>+ score</strong> button above the Match Summary, enter the score and tries, and save. It offers the match that is on now (or the next one still without a score), and becomes <strong>Update</strong> once a score is in.',
             'Any other match, or to correct a mistake: Admin Functions, then <strong>Fixtures and Scores</strong>, tap <strong>Edit</strong> on the fixture and enter its score and tries.',
@@ -289,7 +283,7 @@ function startTour(kind) {
     closeGlobalHelpModal();
     closeAdminHelpModal();
     tourPreload(kind);
-    const steps = kind === 'admin' ? tourBuildAdminSteps() : tourBuildSteps(tourRulesHtml(), fixtureChat.available);
+    const steps = kind === 'admin' ? tourBuildAdminSteps() : tourBuildSteps(tourRulesHtml());
     tourState = { index: 0, steps, kind };
     tourFitScreen();
     window.addEventListener('resize', tourFitScreen);

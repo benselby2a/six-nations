@@ -6,7 +6,7 @@
 const READ_CACHE_PREFIX = 'rugbyPredictorReadCache:v1:';
 const CACHED_READS = {
     getSeasons: false, getMatches: false, getAdminUsernames: false,
-    getUsers: true, getSettings: true, getActiveScoringRules: true, getUserJokerSelections: true, getFixtureChat: true
+    getUsers: true, getSettings: true, getActiveScoringRules: true, getUserJokerSelections: true
 };
 let staleDataAt = null;   // when the copy being shown was saved, while the app is showing a saved copy
 
@@ -122,16 +122,13 @@ async function refreshKeepingPlace() {
     window.scrollTo(window.scrollX, top);
 }
 
-// During a match only the fixtures (scores, tries) and the reactions change, so the live refresh fetches just those
+// During a match only the fixtures (scores, tries) change, so the live refresh fetches just those
 async function refreshLiveScores() {
     const year = selectedYear;
     const fresh = await Storage.getYearMatches(year);
     if (!fresh || year !== selectedYear) return false;   // no signal, or the year was switched meanwhile
-    const chat = await Storage.getFixtureChat(fresh.map(m => m.id));
-    if (year !== selectedYear) return false;
     allMatches = allMatches.filter(m => m.year !== year).concat(fresh);
     applySelectedYearMatches();
-    fixtureChat = chat;
     lastDataRefreshAt = Date.now();
     updateSummaryUpdatedAt();
     showSummaryIfChanged();

@@ -24,7 +24,7 @@ const TOUR_IMAGES = {
  },
  "score": {
   "src": "tour-images/score.webp",
-  "v": "ff34b320",
+  "v": "50beb902",
   "w": 780,
   "h": 1520,
   "marks": [
@@ -46,7 +46,7 @@ const TOUR_IMAGES = {
  },
  "view-full": {
   "src": "tour-images/view-full.webp",
-  "v": "830ee1bb",
+  "v": "18faa3df",
   "w": 780,
   "h": 660,
   "marks": []
@@ -60,14 +60,14 @@ const TOUR_IMAGES = {
  },
  "view-classic": {
   "src": "tour-images/view-classic.webp",
-  "v": "47446593",
+  "v": "13031c5d",
   "w": 780,
   "h": 296,
   "marks": []
  },
  "menu-view": {
   "src": "tour-images/menu-view.webp",
-  "v": "f5701dac",
+  "v": "478d9049",
   "w": 580,
   "h": 792,
   "marks": [
@@ -96,7 +96,7 @@ const TOUR_IMAGES = {
  },
  "pdf": {
   "src": "tour-images/pdf.webp",
-  "v": "a67f9fa6",
+  "v": "1ba78ccf",
   "w": 780,
   "h": 402,
   "marks": [
@@ -124,28 +124,6 @@ const TOUR_IMAGES = {
    }
   ]
  },
- "chips": {
-  "src": "tour-images/chips.webp",
-  "v": "32d5f8d7",
-  "w": 780,
-  "h": 1120,
-  "marks": [
-   {
-    "n": 1,
-    "x": 40.3,
-    "y": 25.1,
-    "w": 12.4,
-    "h": 5.7
-   },
-   {
-    "n": 2,
-    "x": 52.9,
-    "y": 31.4,
-    "w": 17.8,
-    "h": 17.6
-   }
-  ]
- },
  "stats": {
   "src": "tour-images/stats.webp",
   "v": "ff55ff1a",
@@ -170,7 +148,7 @@ const TOUR_IMAGES = {
  },
  "admin-menu": {
   "src": "tour-images/admin-menu.webp",
-  "v": "bd7c3947",
+  "v": "f55b9008",
   "w": 780,
   "h": 940,
   "marks": [

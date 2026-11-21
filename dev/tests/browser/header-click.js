@@ -116,12 +116,11 @@ const mock = `
     await page.click('#appView .app-bar > .tabs .tab:has-text("Match Summary")'); await page.waitForTimeout(700);
     return { page, ctx, errors };
   };
-  // phone held sideways: the chip is hidden, so the header itself opens the match reactions
+  // phone held sideways: the header itself opens the match details
   let { page, ctx, errors } = await open({ viewport: {width:844,height:390}, isMobile: true, hasTouch: true });
-  console.log('chip hidden in landscape:', await page.evaluate(() => !document.querySelector('.summary-container .match-extras').offsetParent));
-  // the pinned copy sits over the real header (identical), so that is what a finger touches
+    // the pinned copy sits over the real header (identical), so that is what a finger touches
   await page.locator('.summary-sticky-inner th.match-header-cell').first().tap(); await page.waitForTimeout(400);
-  console.log('tapping the match header opens its reactions:', JSON.stringify(await page.evaluate(() => ({ open: document.body.classList.contains('fixture-chat-open'), title: document.getElementById('fixtureChatTitle').textContent }))));
+  console.log('tapping the match header opens its details:', JSON.stringify(await page.evaluate(() => ({ open: document.body.classList.contains('fixture-chat-open'), title: document.getElementById('fixtureChatTitle').textContent }))));
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   console.log('Predicted Tries column is there, with no tooltip:', await page.evaluate(() => !!document.querySelector('.summary-container th.tries-col') && document.querySelectorAll('.summary-container td.tries-col').length > 0 && document.querySelectorAll('.summary-container td.tries-col .tooltip').length === 0));
   await page.evaluate(() => document.querySelector('.worm-point').scrollIntoView({block:'center'})); await page.waitForTimeout(200);
