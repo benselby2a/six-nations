@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const path = require('path').resolve(__dirname, '../../../index.html');
+const path = '/home/user/six-nations/index.html';
 
 const mock = `
 (() => {
@@ -29,7 +29,7 @@ const mock = `
     settings: [{key:'predictions_locked:2026',value:'true'}],
     scoring_rules: [{id:1,year:2026,correct_result_points:3,perfect_score_bonus:3,draw_bonus:2,max_jokers_per_user:1,entry_fee_amount:10,payout_first_pct:100,payout_second_pct:0,payout_third_pct:0,payout_closest_tries_pct:0}],
     scoring_close_tiers: [{id:1,year:2026,tier_order:1,within_points:5,bonus_points:1}],
-    usage_events: [], competitor_emails: [], fixture_comments: [{id:1,match_id:1,user_id:2,target_user_id:null,body:'Great game <b>bold</b>',created_at:new Date(Date.now()-7200000).toISOString()},{id:3,match_id:2,user_id:2,target_user_id:1,body:'Brave Scotland pick',created_at:new Date().toISOString()},{id:2,match_id:1,user_id:1,target_user_id:2,body:'Bold pick Sam',created_at:new Date(Date.now()-3600000).toISOString()}], fixture_reactions: [{id:1,match_id:1,user_id:2,target_user_id:null,emoji:'🔥'},{id:2,match_id:1,user_id:1,target_user_id:2,emoji:'👏'},{id:3,match_id:1,user_id:2,target_user_id:2,emoji:'👏'},{id:4,match_id:1,user_id:1,target_user_id:2,emoji:'😂'},{id:5,match_id:1,user_id:1,target_user_id:1,emoji:'😭'},{id:6,match_id:2,user_id:2,target_user_id:1,emoji:'🔥'}]
+    usage_events: [], competitor_emails: []
   };
   window.__db = db; window.__log = [];
   const match = (row, f) => f.type==='eq' ? row[f.col]===f.val : f.type==='in' ? f.vals.includes(row[f.col]) : f.type==='neq' ? row[f.col]!==f.val : f.type==='gte' ? row[f.col]>=f.val : true;
@@ -111,37 +111,27 @@ const mock = `
   await page.goto('file://' + path); await page.waitForTimeout(Math.min(800, 40));
   await page.fill('#loginEmail', 'ben@example.com'); await page.click('#sendLoginCodeBtn'); await page.waitForTimeout(Math.min(150, 40));
   await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(Math.min(1000, 40));
-  const t = async (label, fn) => console.log(label, JSON.stringify(await page.evaluate(fn)));
-  const sheetOpen = () => page.evaluate(() => document.body.classList.contains('fixture-chat-open'));
-  const chip = async () => { await page.evaluate(() => scrollTo(0, 0)); await page.mouse.move(2, 2); await page.click('.summary-sticky-inner [data-chat-chip="1"]'); await page.waitForTimeout(300); };
-  await page.evaluate(() => switchYear(2026)); await page.waitForTimeout(500);
-  await page.click('button.tab:has-text("Match Summary")'); await page.waitForTimeout(200);
-  await t('1 chips and badges', () => ({ chips: [...document.querySelectorAll('.summary-container [data-chat-chip]')].map(c => c.textContent.trim()), badges: [...document.querySelectorAll('td[data-chat-user] .chat-badge')].map(b => b.parentElement.dataset.chatUser + ':' + b.textContent) }));
-  await t('1b no comment counts anywhere', () => ({ counts: document.querySelectorAll('.chat-count').length, cellTooltips: document.querySelectorAll('td[data-chat-user] .tooltip').length }));
-  await chip();
-  await t('2 match reactions open in a centred pop-up', () => { const r = document.getElementById('fixtureChatSheet').getBoundingClientRect(); return { open: document.body.classList.contains('fixture-chat-open'), title: document.getElementById('fixtureChatTitle').textContent, centredX: Math.abs((r.left + r.right) / 2 - innerWidth / 2) < 2, centredY: Math.abs((r.top + r.bottom) / 2 - innerHeight / 2) < 2, who: [...document.querySelectorAll('.fc-who li')].map(x => x.textContent), textarea: !!document.getElementById('fixtureChatInput') }; });
-  await t('2a the match pop-up shows the result, total tries and Joker status', () => ({ card: document.querySelector('.fc-pred-card').innerText.replace(/\\s+/g, ' ') }));
-  await t('2b the match offers the six emoji plus the home and away flags', () => ({ options: [...document.querySelectorAll('.fc-emoji')].map(b => b.textContent.trim().replace(/\\d+$/, '')) }));
-  await page.click('.fc-emoji:has-text("👏")'); await page.waitForTimeout(300);
-  await t('3 reacted', () => ({ rows: __db.fixture_reactions.filter(r => r.user_id === 1).map(r => r.emoji + ':' + r.target_user_id), pressed: document.querySelector('.fc-emoji[aria-pressed="true"]').textContent, headerChip: document.querySelector('.summary-container [data-chat-chip="1"]').textContent.trim() }));
-  await page.click('.fc-emoji:has-text("👏")'); await page.waitForTimeout(300);
-  await t('4 un-reacted', () => ({ mine: __db.fixture_reactions.filter(r => r.user_id === 1).length }));
-  await page.keyboard.press('Escape'); await page.waitForTimeout(100);
-  console.log('5 closed with Escape:', !(await sheetOpen()));
-  await chip(); await page.mouse.click(5, 5); await page.waitForTimeout(150);
-  console.log('5b closed by tapping outside the pop-up:', !(await sheetOpen()));
-  await page.click('td[data-chat-user="sam"][data-chat-match="1"]'); await page.waitForTimeout(250);
-  await t('6 prediction pop-up', () => ({ title: document.getElementById('fixtureChatTitle').textContent, tabs: document.querySelectorAll('.fc-tab').length, card: document.querySelector('.fc-pred-card') && document.querySelector('.fc-pred-card').textContent.replace(/\s+/g, ' ') }));
-  await page.click('.fc-emoji:has-text("🔥")'); await page.waitForTimeout(300);
-  await t('7 reacted to a prediction (the badge updates in place)', () => ({ row: __db.fixture_reactions.filter(r => r.user_id === 1 && r.target_user_id !== null).map(r => r.emoji), badge: document.querySelector('td[data-chat-user="sam"][data-chat-match="1"] .chat-badge').textContent, cellTooltips: document.querySelectorAll('td[data-chat-user] .tooltip').length }));
-  await page.keyboard.press('Escape');
-  await page.evaluate(() => { fixtureChat = { available: false, reactions: [] }; showSummary(); });
-  await t('9 feature hidden when the table does not exist', () => ({ chips: document.querySelectorAll('[data-chat-chip]').length, cells: document.querySelectorAll('td[data-chat-user]').length }));
-  await page.evaluate(async () => { await refreshSummaryData(); });
-  await page.evaluate(() => logout()); await page.waitForTimeout(300);
-  await page.evaluate(() => loginAsGuest()); await page.waitForTimeout(500);
-  await chip();
-  await t('10 guest is read only', () => ({ note: !!document.querySelector('.fc-guest-note'), emojiDisabled: [...document.querySelectorAll('.fc-emoji')].every(b => b.disabled) }));
+  await page.evaluate(() => switchYear(2026)); await page.waitForTimeout(600);
+  await page.click('#appView .app-bar > .tabs .tab:has-text("Match Summary")'); await page.waitForTimeout(500);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const sheet = () => page.evaluate(() => ({ open: document.body.classList.contains('fixture-chat-open'), title: document.getElementById('fixtureChatTitle').textContent, text: document.getElementById('fixtureChatBody').innerText.replace(/\s+/g, ' ').trim() }));
+  const ui = await page.evaluate(() => ({ chips: document.querySelectorAll('.chat-chip, .chat-add, .chat-badge, .chat-emoji').length, headerExtras: [...document.querySelectorAll('.match-extras')].map(e => e.querySelector('button')).filter(Boolean).length }));
+  console.log('no emoji chips, badges or add buttons on the table:', JSON.stringify(ui), ui.chips === 0 && ui.headerExtras === 0);
+  // a prediction opens the scoring detail
+  await page.locator('td[data-chat-user="ben"][data-chat-match="1"]').first().click(); await page.waitForTimeout(300);
+  const p1 = await sheet();
+  console.log('tapping a prediction shows how it was scored:', JSON.stringify(p1), p1.open && /Ben/.test(p1.title) && /Points|Result/.test(p1.text));
+  console.log('and offers no emoji or reactions:', await page.evaluate(() => !document.querySelector('.fc-emoji, .fc-reacts, .fc-who') && !/react/i.test(document.getElementById('fixtureChatBody').innerText)));
+  await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+  // a match header opens the match facts
+  await page.locator('th.match-header-cell').first().click(); await page.waitForTimeout(300);
+  const p2 = await sheet();
+  console.log('tapping a match header shows the match facts:', JSON.stringify(p2), p2.open && /Result/.test(p2.text) && /Joker/.test(p2.text) && !/react/i.test(p2.text));
+  await page.mouse.click(5, 5); await page.waitForTimeout(300);
+  console.log('tapping outside closes it:', !(await sheet()).open);
+  // nothing asks the database for reactions
+  const tables = await page.evaluate(async () => { const real = supabaseClient.from.bind(supabaseClient); const seen = []; supabaseClient.from = (t, ...a) => { seen.push(t); return real(t, ...a); }; await manualRefreshSummary(); await refreshLiveScores(); supabaseClient.from = real; return [...new Set(seen)]; });
+  console.log('the database is never asked for reactions:', JSON.stringify(tables), !tables.includes('fixture_reactions'));
   console.log('errors', errors);
   await browser.close();
 })();

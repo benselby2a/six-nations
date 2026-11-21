@@ -267,25 +267,6 @@
                 }), username);
             },
             
-            // Match Summary reactions (emoji on fixtures and predictions)
-            getFixtureChat: async (matchIds) => {
-                if (!matchIds || matchIds.length === 0) return { available: true, reactions: [] };
-                const reactions = await supabaseClient.from('fixture_reactions').select('*').in('match_id', matchIds);
-                if (reactions.error) {
-                    // Normally the table has not been created yet (fixture_chat_migration.sql): hide the feature
-                    return { available: false, reactions: [] };
-                }
-                return { available: true, reactions: reactions.data || [] };
-            },
-            addFixtureReaction: async (row) => {
-                const { error } = await supabaseClient.from('fixture_reactions').insert(row);
-                return error;
-            },
-            deleteFixtureReaction: async (id) => {
-                const { error } = await supabaseClient.from('fixture_reactions').delete().eq('id', id);
-                return error;
-            },
-
             // Delete a user
             deleteUser: async (username) => {
                 username = (username || '').trim().toLowerCase();

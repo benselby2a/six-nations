@@ -1,130 +1,20 @@
-// Match Summary reactions: emoji reactions on a fixture (column header) or on one competitor's prediction (cell), shown in a pop-up
-// Classic script (shared global scope); load order is set in index.html.
+// Match Summary pop-up: tap a match header for the match's facts, or a prediction for how it was scored (and a point on the Points
+// Progression chart for that player's game). (Emoji reactions were removed; the file keeps its old name.)
+// Classic script (shared global scope); load order is set in js/load-order.txt.
 
-let fixtureChat = { available: false, reactions: [] };   // filled by loadYearData; unavailable until fixture_chat_migration.sql is run
 let fixtureChatSelection = null;   // { matchId, username (or null for the match itself), tab: 'pred' | 'match' }
-let fixtureChatBusy = false;
-const FIXTURE_CHAT_EMOJIS = ['🔥', '😂', '😱', '👏', '😭', '🏉'];
-
-// The reactions offered on a match: the six standard ones plus the home and away team flags
-function chatEmojiOptions(matchId) {
-    const match = matches.find(m => m.id === matchId);
-    const flags = match ? [getFlag(match.team1), getFlag(match.team2)].filter(Boolean) : [];
-    return [...FIXTURE_CHAT_EMOJIS, ...flags];
-}
-
-function chatUsernameById(id) {
-    return Object.keys(users).find(u => users[u].id === id) || null;
-}
 
 function chatDisplayName(username) {
     return username ? toTitleCase((users[username] && users[username].nickname) || username) : '';
 }
 
-// One thread: reactions grouped by emoji for a match (username null) or one prediction
-function chatThread(matchId, username) {
-    const targetId = username ? (users[username] && users[username].id) : null;
-    const same = (row) => row.match_id === matchId && (row.target_user_id || null) === (targetId || null);
-    const reactions = {};
-    fixtureChat.reactions.filter(same).forEach(r => {
-        const name = chatUsernameById(r.user_id);
-        if (!name) return;
-        (reactions[r.emoji] = reactions[r.emoji] || []).push({ username: name, id: r.id });
-    });
-    return { reactions };
-}
-
-// The most used emoji (up to three, most popular first) as a short string
-function chatTopEmoji(reactions, max = 3) {
-    return Object.entries(reactions).filter(([, who]) => who.length).sort((a, b) => b[1].length - a[1].length).slice(0, max).map(([e]) => e).join('');
-}
-
-// Small summary shown in a column header or a prediction cell: the top emoji (the header chip shows a prompt when there are none)
-function chatBadgeInner(thread, showPrompt, max = 3) {
-    const top = chatTopEmoji(thread.reactions, max);
-    if (top) return `<span class="chat-emoji">${top}</span>`;
-    return showPrompt ? '<span class="chat-add" aria-hidden="true">😀＋</span>' : '';
-}
-
-function chatChipInner(matchId) {
-    return chatBadgeInner(chatThread(matchId, null), true);
-}
-
-function chatChipHasActivity(matchId) {
-    return Object.keys(chatThread(matchId, null).reactions).length > 0;
-}
-
-// Markup used by the Match Summary table
-function chatChipMarkup(matchId) {
-    if (!fixtureChat.available) return '';
-    const match = matches.find(m => m.id === matchId);
-    const label = match ? `React to ${match.team1} v ${match.team2}` : 'React to this match';
-    return `<button type="button" class="chat-chip ${chatChipHasActivity(matchId) ? 'has-activity' : ''}" data-chat-chip="${matchId}" aria-label="${escapeHtml(label)}" onclick="openFixtureChat(${matchId}, null, this)">${chatChipInner(matchId)}</button>`;
-}
-
-// A match header can be tapped or clicked anywhere to open that match's reactions (the chip is hidden in compact mode and on a phone held sideways)
+// A match header can be tapped or clicked anywhere to open that match's details
 function chatHeaderAttrs(match) {
-    if (!fixtureChat.available) return '';
-    return ` tabindex="0" role="button" aria-label="${escapeHtml(`React to ${match.team1} v ${match.team2}`)}"`;
+    return ` tabindex="0" role="button" aria-label="${escapeHtml(`Details for ${match.team1} v ${match.team2}`)}"`;
 }
 
 function chatCellAttrs(username, matchId) {
-    if (!fixtureChat.available) return '';
-    return ` data-chat-match="${matchId}" data-chat-user="${escapeHtml(username)}" tabindex="0" role="button" aria-label="${escapeHtml(chatDisplayName(username))}'s prediction: open reactions"`;
-}
-
-// A cell holding a Joker has less room, so it shows at most two emoji (otherwise three)
-function chatCellMaxEmoji(username, matchId) {
-    return isUserJokerForMatch(username, matchId) ? 2 : 3;
-}
-
-function chatCellBadge(username, matchId) {
-    if (!fixtureChat.available) return '';
-    const inner = chatBadgeInner(chatThread(matchId, username), false, chatCellMaxEmoji(username, matchId));
-    return inner ? `<span class="chat-badge" data-chat-badge aria-hidden="true">${inner}</span>` : '';
-}
-
-// Hover tooltip on a prediction: who reacted with which emoji
-function chatTooltipInner(username, matchId) {
-    const thread = chatThread(matchId, username);
-    let html = '';
-    chatEmojiOptions(matchId).filter(e => (thread.reactions[e] || []).length).forEach(emoji => {
-        const names = thread.reactions[emoji].map(w => w.username === currentUsername ? 'You' : escapeHtml(chatDisplayName(w.username))).join(', ');
-        html += `<span class="tooltip-line tooltip-reaction">${emoji} ${names}</span>`;
-    });
-    return html;
-}
-
-function chatTooltipHtml(username, matchId) {
-    if (!fixtureChat.available) return '';
-    return `<span class="tooltip-chat" data-tooltip-chat>${chatTooltipInner(username, matchId)}</span>`;
-}
-
-// Update chips and badges in place (no table re-render, so the scroll position is kept)
-function refreshChatIndicators() {
-    document.querySelectorAll('[data-chat-chip]').forEach(chip => {
-        const id = Number(chip.dataset.chatChip);
-        chip.innerHTML = chatChipInner(id);
-        chip.classList.toggle('has-activity', chatChipHasActivity(id));
-    });
-    document.querySelectorAll('td[data-chat-user]').forEach(cell => {
-        const extras = cell.querySelector('.cell-extras') || cell;
-        const old = cell.querySelector('[data-chat-badge]');
-        if (old) old.remove();
-        const matchId = Number(cell.dataset.chatMatch);
-        const inner = chatBadgeInner(chatThread(matchId, cell.dataset.chatUser), false, chatCellMaxEmoji(cell.dataset.chatUser, matchId));
-        if (inner) extras.insertAdjacentHTML('beforeend', `<span class="chat-badge" data-chat-badge aria-hidden="true">${inner}</span>`);
-        const tipChat = cell.querySelector('[data-tooltip-chat]');
-        if (tipChat) {
-            tipChat.innerHTML = chatTooltipInner(cell.dataset.chatUser, Number(cell.dataset.chatMatch));
-            const tip = tipChat.closest('.tooltip');
-            if (tip) tip.classList.toggle('tooltip-empty', !tip.textContent.trim());
-        }
-    });
-}
-
-function chatCanPost() {
-    return !!currentUsername && !isGuest && !!(users[currentUsername] && users[currentUsername].id);
+    return ` data-chat-match="${matchId}" data-chat-user="${escapeHtml(username)}" tabindex="0" role="button" aria-label="${escapeHtml(chatDisplayName(username))}'s prediction: see how it was scored"`;
 }
 
 function highlightChatSelection() {
@@ -139,7 +29,6 @@ function highlightChatSelection() {
 }
 
 function openFixtureChat(matchId, username, opener) {
-    if (!fixtureChat.available) return;
     fixtureChatSelection = { matchId, username: username || null, tab: username ? 'pred' : 'match', opener: opener || null };
     document.body.classList.add('fixture-chat-open');
     document.getElementById('fixtureChatSheet').setAttribute('aria-hidden', 'false');
@@ -189,8 +78,6 @@ function renderFixtureChat() {
     const match = matches.find(m => m.id === sel.matchId);
     if (!match) { closeFixtureChat(); return; }
     const isPred = sel.tab === 'pred' && sel.username;
-    const thread = chatThread(match.id, isPred ? sel.username : null);
-    const canPost = chatCanPost();
 
     document.getElementById('fixtureChatTitle').textContent = isPred ? `${chatDisplayName(sel.username)}'s prediction` : `${match.team1} v ${match.team2}`;
     document.getElementById('fixtureChatSub').textContent = isPred
@@ -228,52 +115,10 @@ function renderFixtureChat() {
         matchCard = `<div class="fc-pred-card"><dl class="fc-pred-lines">${lines}</dl></div>`;
     }
 
-    const options = chatEmojiOptions(match.id);
-    const reactButtons = options.map(emoji => {
-        const who = thread.reactions[emoji] || [];
-        const mine = who.some(w => w.username === currentUsername);
-        const names = who.map(w => w.username === currentUsername ? 'You' : chatDisplayName(w.username)).join(', ');
-        return `<button type="button" class="fc-emoji" ${canPost ? '' : 'disabled'} aria-pressed="${mine}" title="${escapeHtml(names || 'No reactions yet')}" aria-label="${emoji} ${who.length}${names ? ': ' + escapeHtml(names) : ''}" onclick="toggleFixtureReaction('${emoji}')">${emoji}${who.length ? `<small>${who.length}</small>` : ''}</button>`;
-    }).join('');
-
-    const whoRows = options.filter(e => (thread.reactions[e] || []).length).map(emoji =>
-        `<li><span aria-hidden="true">${emoji}</span><span>${thread.reactions[emoji].map(w => w.username === currentUsername ? '<span class="fc-you">You</span>' : escapeHtml(chatDisplayName(w.username))).join(', ')}</span></li>`);
-
-    document.getElementById('fixtureChatBody').innerHTML = `${predCard}${matchCard}
-        <div class="fc-reacts" role="group" aria-label="Reactions">${reactButtons}</div>
-        ${whoRows.length ? `<div><p class="fc-who-title">Who reacted</p><ul class="fc-who">${whoRows.join('')}</ul></div>` : '<p class="fc-empty">No reactions yet.</p>'}
-        ${canPost ? '' : '<p class="fc-guest-note">Sign in to react. Guests can see the reactions.</p>'}`;
+    document.getElementById('fixtureChatBody').innerHTML = `${predCard}${matchCard}`;
 }
 
-async function reloadFixtureChat() {
-    if (tourDemoActive) return;
-    fixtureChat = await Storage.getFixtureChat(matches.map(m => m.id));
-    refreshChatIndicators();
-    renderFixtureChat();
-}
-
-async function toggleFixtureReaction(emoji) {
-    if (fixtureChatBusy || !fixtureChatSelection || !chatCanPost()) return;
-    const sel = fixtureChatSelection;
-    const isPred = sel.tab === 'pred' && sel.username;
-    const thread = chatThread(sel.matchId, isPred ? sel.username : null);
-    const mine = (thread.reactions[emoji] || []).find(w => w.username === currentUsername);
-    fixtureChatBusy = true;
-    try {
-        const error = mine
-            ? await Storage.deleteFixtureReaction(mine.id)
-            : await Storage.addFixtureReaction({ match_id: sel.matchId, user_id: users[currentUsername].id, target_user_id: isPred ? users[sel.username].id : null, emoji });
-        if (error) {
-            alert('Could not save your reaction: ' + (error.message || 'unknown error'));
-            return;
-        }
-        await reloadFixtureChat();
-    } finally {
-        fixtureChatBusy = false;
-    }
-}
-
-// Tapping a prediction opens its chat; the fixture header chip has its own button
+// Tapping a prediction or a match header opens the pop-up
 (function bindFixtureChatEvents() {
     const container = document.getElementById('summaryContainer');
     if (container) {
@@ -281,7 +126,7 @@ async function toggleFixtureReaction(emoji) {
             const cell = event.target.closest('td[data-chat-user]');
             if (cell) { openFixtureChat(Number(cell.dataset.chatMatch), cell.dataset.chatUser, cell); return; }
             const head = event.target.closest('th[data-chat-match]');
-            if (head && !event.target.closest('.chat-chip')) openFixtureChat(Number(head.dataset.chatMatch), null, head);
+            if (head) openFixtureChat(Number(head.dataset.chatMatch), null, head);
         });
         container.addEventListener('keydown', (event) => {
             if (event.key !== 'Enter' && event.key !== ' ') return;

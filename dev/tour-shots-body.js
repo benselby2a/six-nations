@@ -102,7 +102,6 @@
     m.h = total; m.v = crypto.createHash('md5').update(bufP).digest('hex').slice(0, 8);
     console.log('pdf (with page)', tw + 'x' + total, Math.round(bufP.length / 1024) + 'KB');
   } catch (e) { console.log('PDF PICTURE FAILED', e.message); }
-  await shot('chips', { clip: ['.summary-container'], marks: [{ visible: '[data-chat-chip]' }, { visible: 'td[data-chat-user]' }], maxH: 560 });
   await shot('stats', { scrollTo: '#triesStatsContainer', clip: ['#triesStatsContainer', '#prizeMoneyContainer'], marks: ['#triesStatsContainer', '#prizeMoneyContainer'], maxH: 760 });
 
   // ---- the admin tour ----

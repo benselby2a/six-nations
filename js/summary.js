@@ -6,7 +6,7 @@
         let lastSummarySignature = null;
         function summarySignature() {
             try {
-                return JSON.stringify([selectedYear, matches, users, appSettings, userJokerSelections, fixtureChat, activeScoringRules, currentFilter, selectedRound, currentUsername, isGuest, summaryViewMode]);
+                return JSON.stringify([selectedYear, matches, users, appSettings, userJokerSelections, activeScoringRules, currentFilter, selectedRound, currentUsername, isGuest, summaryViewMode]);
             } catch (e) { return null; }
         }
         function showSummary() {
@@ -121,7 +121,7 @@
                         <div class="match-header-bottom">
                             <div class="match-result-row">${hasResult ? `<div class="match-result">${match.actualScore1} - ${match.actualScore2}</div>` : '<div class="no-result">-</div>'}${match.jokerEligible ? '<span class="joker-inline" aria-hidden="true">🃏</span>' : ''}</div>
                             <div class="match-tries${hasTries ? '' : ' match-tries-empty'}">${hasTries ? `(${totalMatchTries} tries)` : '&nbsp;'}</div>
-                            <div class="match-extras">${match.jokerEligible ? '<span class="joker-indicator joker-eligible-icon" title="Joker eligible" role="img" aria-label="Joker eligible">🃏</span>' : ''}${chatChipMarkup(match.id)}</div>
+                            <div class="match-extras">${match.jokerEligible ? '<span class="joker-indicator joker-eligible-icon" title="Joker eligible" role="img" aria-label="Joker eligible">🃏</span>' : ''}</div>
                         </div>
                     </div>
                 </th>`;
@@ -236,7 +236,6 @@
                     if (isJoker) {
                         tooltipContent += `<span class="tooltip-line joker-bonus">🃏 Joker selection: points are doubled</span>`;
                     }
-                    tooltipContent += chatTooltipHtml(user.username, match.id);
                     const tipClass = tooltipContent.replace(/<[^>]*>/g, '').trim() ? 'tooltip' : 'tooltip tooltip-empty';
 
                     // Every cell has the same slots, so rows line up: the score, the points pill, then one line holding the Joker and the top emoji
@@ -244,9 +243,9 @@
                     const pointsLine = hasResult
                         ? `<span class="points-earned ${pointsClass}">${pointsEarned} pts</span>`
                         : '<span class="points-earned points-placeholder">&nbsp;</span>';
-                    const extrasLine = `<div class="cell-extras">${jokerIndicator}${chatCellBadge(user.username, match.id)}</div>`;
-                    // With the reactions pop-up available, tapping or clicking a prediction shows the detail there, so no hover tooltip
-                    const showTooltip = !fixtureChat.available && (hasResult || isJoker);
+                    const extrasLine = `<div class="cell-extras">${jokerIndicator}</div>`;
+                    // Tapping or clicking a prediction shows the detail in the pop-up, so no hover tooltip
+                    const showTooltip = false;
                     html += `<td class="${jokerCellClass}"${chatCellAttrs(user.username, match.id)}>
                         ${showTooltip
                             ? `<div class="tooltip-container">${scoreLine}${pointsLine}<div class="${tipClass}">${tooltipContent}</div></div>`
