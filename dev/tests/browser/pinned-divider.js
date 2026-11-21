@@ -121,9 +121,11 @@ const mock = `
       const th = document.querySelector('.summary-table:not(.summary-table-clone) th.competitor-col');
       const tds = [...document.querySelectorAll('.summary-table:not(.summary-table-clone) td.competitor-name')];
       const rights = [th, ...tds].map(e => Math.round(e.getBoundingClientRect().right));
-      return { head: cs(th), body: tds.map(cs), rights };
+      const gap = (td) => { const sc = td.querySelector('.comp-score'); const inner = sc || td.querySelector('.comp-nick, .comp-name'); const right = (() => { const r = document.createRange(); r.selectNodeContents(inner); return r.getBoundingClientRect().right; })(); return Math.round((td.getBoundingClientRect().right - 3) - right); };
+      return { head: cs(th), body: tds.map(cs), rights, gaps: tds.map(gap) };
     });
     const has = (v) => /inset/.test(v) && /-3px 0px 0px 0px/.test(v);
+    console.log(mode + ' content sits at least 2px clear of the divider:', r.gaps.every(g => g >= 2), r.gaps);
     console.log(mode + ' name column has a 3px divider on its right, header and rows:', has(r.head) && r.body.every(has), '| edges line up:', new Set(r.rights).size === 1);
   }
   console.log('errors', errors);
