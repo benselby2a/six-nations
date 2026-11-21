@@ -19,6 +19,7 @@ tour-images.js
 tour.js
 app-bar.js
 export-pdf.js
+pdf-view.js
 rules-admin.js
 recovery-usage.js
 unsaved-changes.js

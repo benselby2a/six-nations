@@ -6,7 +6,7 @@
         let lastSummarySignature = null;
         function summarySignature() {
             try {
-                return JSON.stringify([selectedYear, matches, users, appSettings, userJokerSelections, fixtureChat, activeScoringRules, currentFilter, selectedRound, currentUsername, isGuest, document.body.classList.contains('summary-compact')]);
+                return JSON.stringify([selectedYear, matches, users, appSettings, userJokerSelections, fixtureChat, activeScoringRules, currentFilter, selectedRound, currentUsername, isGuest, summaryViewMode]);
             } catch (e) { return null; }
         }
         function showSummary() {
@@ -63,6 +63,17 @@
                     .sort((a, b) => b.totalPoints - a.totalPoints);
                 renderPrizeMoneyPanel(sortedUsersForPrizeOnly);
                 renderWormChart(sortedUsersForPrizeOnly);
+                updateLeaderboard();
+                return;
+            }
+
+            // PDF view: the same table, drawn like the PDF export
+            if (summaryViewMode === 'pdf') {
+                const sortedForPdf = pdfvSortedUsers();
+                container.innerHTML = buildPdfStyleViewHtml(filteredMatches, sortedForPdf);
+                fitPdfView();
+                renderPrizeMoneyPanel(sortedForPdf);
+                renderWormChart(sortedForPdf);
                 updateLeaderboard();
                 return;
             }

@@ -61,7 +61,7 @@
 
   // ---- the app tour ----
   await shot('predictions', { before: () => clickTab('My Predictions'), clip: [tab('My Predictions'), '#matchesContainer .prediction-table-container'], marks: [tab('My Predictions'), '#matchesContainer .prediction-table-container button.btn-success'], maxH: 760 });
-  await shot('score', { before: () => clickTab('Match Summary'), clip: [tab('Match Summary'), '.summary-container'], marks: [tab('Match Summary'), '.summary-container', '#summaryCompactBtn'], maxH: 760 });
+  await shot('score', { before: () => clickTab('Match Summary'), clip: [tab('Match Summary'), '.summary-container'], marks: [tab('Match Summary'), '.summary-container', '#summaryViewSwitch'], maxH: 760 });
   await shot('pdf', { clip: ['.summary-toolbar', '.summary-updated-row'], marks: ['#exportPdfBtn'] });
   // The PDF itself: build it with the app's own export, save the download, turn page 1 into a picture
   try {
