@@ -4019,3 +4019,9 @@ html.app-reloaded body { animation: appFadeIn 0.45s ease both; }
     /* the buttons never change size either (not in compact steps, not for Done) */
     .tour-card .tour-buttons button, .tour-card.tour-compact .tour-buttons button { min-height: 44px; min-width: 6.6rem; padding: 0.55rem 1rem; font-size: 1.05rem; }
 }
+
+/* The app's general button hover (lifts the button 2px and adds a glow) must not touch these controls: on a phone a tapped button stays "hovered", which pushed the chosen view up and left a gap under it */
+.tour-view-tab, .view-switch-btn, .pdfv-zoom button { transition: none; }
+.tour-view-tab:hover, .tour-view-tab:active, .view-switch-btn:hover, .view-switch-btn:active, .pdfv-zoom button:hover, .pdfv-zoom button:active { transform: none; box-shadow: none; }
+.tour-view-tab:not(.on):hover, .tour-view-tab:not(.on):active { background: transparent; }
+.tour-view-tab.on:hover, .tour-view-tab.on:active { background: var(--bright-gold); }
