@@ -79,26 +79,45 @@ function tourBuildSteps(rulesHtml, chatLive) {
 
 // The summary view choices, each with a picture: tapping one makes it the default (the same switch as above the table)
 const TOUR_VIEW_OPTIONS = [
-    ['full', 'Full', 'Dates, reactions and tries for every match.'],
-    ['compact', 'Compact', 'Just the countries and scores, so more fits on screen.'],
-    ['classic', 'Classic', 'The traditional page, laid out like the PDF.']
+    ['full', 'Full', [
+        'Dates, kick-off times and try counts for every match.',
+        'Emoji reactions on matches and predictions.',
+        'The header row stays pinned as you scroll.'
+    ]],
+    ['compact', 'Compact', [
+        'Just the countries and scores, so more fits on screen.',
+        'The default on phones.',
+        'Same points, Jokers and ranking as Full.'
+    ]],
+    ['classic', 'Classic', [
+        'Laid out like the traditional PDF page, in light or dark.',
+        'The whole tournament on one sheet: pinch to zoom in.',
+        'Win and lose shading, rank colours and tinted alternate rows.'
+    ]]
 ];
+// A big picture of the chosen view above the choices, and what is good about it below. Tapping a choice makes it the default.
 function tourViewsHtml() {
-    const cards = TOUR_VIEW_OPTIONS.map(([mode, label, text]) => {
+    const current = (typeof summaryViewMode !== 'undefined') ? summaryViewMode : 'full';
+    const pictures = TOUR_VIEW_OPTIONS.map(([mode, label]) => {
         const image = (typeof TOUR_IMAGES !== 'undefined') ? TOUR_IMAGES['view-' + mode] : null;
-        const picture = image ? `<img src="${image.src}?v=${image.v}" alt="" width="${image.w}" height="${image.h}" style="aspect-ratio:${image.w}/${image.h}">` : '';
-        const on = typeof summaryViewMode !== 'undefined' && summaryViewMode === mode;
-        return `<button type="button" class="tour-view${on ? ' on' : ''}" data-view="${mode}" aria-pressed="${on}" onclick="tourPickView('${mode}')">${picture}<b>${label}</b><span class="tour-view-text">${text}</span><em class="tour-view-on">Your default</em></button>`;
+        const img = image ? `<img src="${image.src}?v=${image.v}" alt="The ${label} view" width="${image.w}" height="${image.h}" style="aspect-ratio:${image.w}/${image.h}">` : '';
+        return `<div class="tour-view-pic" data-view="${mode}"${mode === current ? '' : ' hidden'}>${img}</div>`;
     }).join('');
-    return `<p class="tour-views-intro">Pick the view you like best. It becomes your default on this device, and you can change it any time with the switch above the table.</p><div class="tour-views">${cards}</div>`;
+    const tabs = TOUR_VIEW_OPTIONS.map(([mode, label]) =>
+        `<button type="button" class="tour-view-tab${mode === current ? ' on' : ''}" data-view="${mode}" aria-pressed="${mode === current}" onclick="tourPickView('${mode}')">${label}</button>`).join('');
+    const points = TOUR_VIEW_OPTIONS.map(([mode, label, list]) =>
+        `<ul class="tour-view-points" data-view="${mode}"${mode === current ? '' : ' hidden'}>${list.map(t => `<li>${t}</li>`).join('')}</ul>`).join('');
+    return `<p class="tour-views-intro">Tap a view to make it your default. You can change it any time with the switch above the table.</p>`
+        + `<div class="tour-view-pics">${pictures}</div><div class="tour-view-tabs" role="group" aria-label="Table view">${tabs}</div>${points}`;
 }
 function tourPickView(mode) {
     if (typeof setSummaryView === 'function') setSummaryView(mode);
-    document.querySelectorAll('#tourBody .tour-view').forEach(card => {
-        const on = card.dataset.view === mode;
-        card.classList.toggle('on', on);
-        card.setAttribute('aria-pressed', on ? 'true' : 'false');
+    document.querySelectorAll('#tourBody [data-view]').forEach(el => {
+        const on = el.dataset.view === mode;
+        if (el.classList.contains('tour-view-tab')) { el.classList.toggle('on', on); el.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+        else el.hidden = !on;
     });
+    if (typeof tourFitSoon === 'function') tourFitSoon();
 }
 
 function tourBuildAdminSteps() {
@@ -198,18 +217,17 @@ function tourFitContent(allowHide) {
     const body = document.getElementById('tourBody');
     const card = document.getElementById('tourCard');
     if (!body || !card || !tourState) return;
-    // The view-choice step has several pictures: shrink them until everything fits without scrolling
-    if (body.querySelector('.tour-views')) {
+    // The view-choice step: one big picture above the choices; shrink it until everything fits without scrolling
+    if (body.querySelector('.tour-view-pics')) {
         card.classList.remove('tour-compact');
-        const pics = [...body.querySelectorAll('.tour-view img')];
-        // How tall the body may be: the visible screen, less the layer's padding and the card's own header and footer
+        const pic = body.querySelector('.tour-view-pic:not([hidden]) img');
         const layer = document.getElementById('tourLayer');
         const ls = getComputedStyle(layer);
         const screenH = (window.visualViewport && window.visualViewport.height) || innerHeight;
-        const allowed = () => screenH - parseFloat(ls.paddingTop) - parseFloat(ls.paddingBottom) - (card.offsetHeight - body.offsetHeight) - parseFloat(getComputedStyle(card).borderTopWidth) * 0;
-        let max = Math.round(screenH * 0.34);
-        pics.forEach(i => { i.style.maxHeight = max + 'px'; });
-        while (body.scrollHeight > allowed() && max > 24) { max -= 8; pics.forEach(i => { i.style.maxHeight = max + 'px'; }); }
+        const allowed = () => screenH - parseFloat(ls.paddingTop) - parseFloat(ls.paddingBottom) - (card.offsetHeight - body.offsetHeight);
+        let max = Math.round(screenH * 0.42);
+        body.querySelectorAll('.tour-view-pic img').forEach(i => { i.style.maxHeight = max + 'px'; });
+        while (pic && body.scrollHeight > allowed() && max > 50) { max -= 8; body.querySelectorAll('.tour-view-pic img').forEach(i => { i.style.maxHeight = max + 'px'; }); }
         if (body.scrollHeight > allowed()) card.classList.add('tour-compact');
         return;
     }
