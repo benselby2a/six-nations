@@ -4026,3 +4026,10 @@ html.app-reloaded body { animation: appFadeIn 0.45s ease both; }
 .tour-view-tab:hover, .tour-view-tab:active, .view-switch-btn:hover, .view-switch-btn:active, .pdfv-zoom button:hover, .pdfv-zoom button:active { transform: none; box-shadow: none; }
 .tour-view-tab:not(.on):hover, .tour-view-tab:not(.on):active { background: transparent; }
 .tour-view-tab.on:hover, .tour-view-tab.on:active { background: var(--bright-gold); }
+
+/* iPhone Home Screen app: iOS blurs a band under the status bar, so the whole app starts a little lower than the safe area */
+@media (display-mode: standalone) {
+    @supports (-webkit-touch-callout: none) {
+        body { padding-top: calc(env(safe-area-inset-top, 0px) + 12px); }
+    }
+}
