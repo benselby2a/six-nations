@@ -73,21 +73,21 @@ function tourBuildSteps(rulesHtml) {
 
 // The summary view choices, each with a picture: tapping one makes it the default (the same switch as above the table)
 const TOUR_VIEW_OPTIONS = [
-    ['full', 'Full', [
-        'Dates, kick-off times and try counts for every match.',
-        'Tap a match header or a prediction for the details.',
-        'The header row stays pinned as you scroll.'
-    ], 'Everything'],
     ['compact', 'Compact', [
-        'Just the countries and scores, so more fits on screen.',
+        'Designed for small screens: just the countries and scores, so more fits.',
         'The default on phones.',
         'Same points, Jokers and ranking as Full.'
-    ], 'Just scores'],
+    ], 'Small screens'],
+    ['full', 'Full', [
+        'Also designed for small screens, with more detail: dates, kick-off times and try counts.',
+        'Tap a match header or a prediction for the details.',
+        'The header row stays pinned as you scroll.'
+    ], 'Small screens'],
     ['classic', 'Classic', [
+        'Best on a bigger screen (or pinch to zoom on a phone).',
         'An Excel-styled page: a spreadsheet-style grid, in light or dark.',
-        'The whole tournament on one sheet: pinch or tap + to zoom in.',
-        'Win and lose shading, rank colours and tinted alternate rows.'
-    ], 'Excel style']
+        'The whole tournament on one sheet, with win and lose shading and rank colours.'
+    ], 'Big screens']
 ];
 // A big picture of the chosen view above the choices, and what is good about it below. Tapping a choice makes it the default.
 function tourViewsHtml() {
