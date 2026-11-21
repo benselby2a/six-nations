@@ -103,6 +103,8 @@ const mock = `
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage();
+  // the view step only lets you move on once a default view has been tapped: do that, then press Next
+  const tourNextClick = async () => { await page.evaluate(() => { if (document.querySelector('.tour-view-tabs') && !tourState.viewChosen) tourPickView(summaryViewMode); }); await page.click('#tourNext'); };
   const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('dialog', d => d.accept());
   await page.route('**/@supabase/supabase-js**', r => r.fulfill({contentType:'application/javascript', body: mock}));
   await page.route('**/cdn.jsdelivr.net/**', r => r.request().url().includes('supabase') ? r.fallback() : r.fulfill({contentType:'application/javascript', body:''}));
@@ -142,13 +144,13 @@ const mock = `
   for (let i = 0; i < total; i++) {
     const s = await state(); if (s.image !== null) cards.add(JSON.stringify(s.card));   // the text-only rules card is smaller by design
     console.log(JSON.stringify({ n: s.count, title: s.title, image: s.image, marks: s.marks, items: s.items, inViewport: s.inViewport }));
-    if (i < total - 1) { await page.click('#tourNext'); await page.waitForTimeout(i === 0 ? 450 : 250); }
+    if (i < total - 1) { await tourNextClick(); await page.waitForTimeout(i === 0 ? 450 : 250); }
   }
   const after = await state();
   console.log('card never moved between picture steps (different positions):', cards.size, '| live app untouched (tab, scroll, screen):', after.activeTab === before.activeTab && after.scrollY === before.scrollY && after.summaryVisible);
   await page.click('#tourBack'); await page.waitForTimeout(150); console.log('back ->', (await state()).title);
-  await page.click('#tourNext'); await page.waitForTimeout(150);
-  await page.click('#tourNext'); await page.waitForTimeout(300);
+  await tourNextClick(); await page.waitForTimeout(150);
+  await tourNextClick(); await page.waitForTimeout(300);
   console.log('after Done:', JSON.stringify({ open: (await state()).open, remembered: await page.evaluate(() => localStorage.getItem('tourAnswered:ben')) }));
   await page.click('#avatarBtn'); await page.click('#menuHelpBtn'); await page.click('#globalHelpModal button:has-text("Take a tour")'); await page.waitForTimeout(300);
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
@@ -159,7 +161,7 @@ const mock = `
   await page.waitForTimeout(300);
   const titles = await page.evaluate(() => tourState.steps.map(x => x.title));
   console.log('on an iPhone the tour has', titles.length, 'steps, last:', titles[titles.length - 1]);
-  for (let i = 0; i < titles.length - 1; i++) { await page.click('#tourNext'); await page.waitForTimeout(i === 0 ? 450 : 80); }
+  for (let i = 0; i < titles.length - 1; i++) { await tourNextClick(); await page.waitForTimeout(i === 0 ? 450 : 80); }
   await page.waitForTimeout(450);
   console.log('Home Screen step explains the long press:', await page.evaluate(() => { const b = document.getElementById('tourBody'); return { text: /long press/i.test(b.textContent) && /Share/.test(b.textContent), noScroll: b.scrollHeight <= b.clientHeight + 2, title: document.getElementById('tourTitle').textContent }; }).then(JSON.stringify));
   await page.keyboard.press('Escape');
@@ -173,14 +175,14 @@ const mock = `
   for (let i = 0; i < adminSteps.length; i++) {
     const s = await state();
     console.log(JSON.stringify({ n: s.count, title: s.title, image: s.image, marks: s.marks, items: s.items }));
-    if (i < adminSteps.length - 1) { await page.click('#tourNext'); await page.waitForTimeout(200); }
+    if (i < adminSteps.length - 1) { await tourNextClick(); await page.waitForTimeout(200); }
   }
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   console.log('left half way, not remembered:', await page.evaluate(() => localStorage.getItem('adminTourAnswered:ben')), '| not re-offered on leaving:', !(await adminPromptShown()));
   await page.click('button.tab:has-text("Match Summary")'); await page.click('button.tab:has-text("Admin Functions")'); await page.waitForTimeout(300);
   console.log('offered again next time:', await adminPromptShown());
   await page.click('#adminTourPromptYes'); await page.waitForTimeout(300);
-  for (let i = 0; i < adminSteps.length; i++) { await page.click('#tourNext'); await page.waitForTimeout(120); }
+  for (let i = 0; i < adminSteps.length; i++) { await tourNextClick(); await page.waitForTimeout(120); }
   console.log('finished, remembered:', await page.evaluate(() => localStorage.getItem('adminTourAnswered:ben')));
   await page.click('button.tab:has-text("Match Summary")'); await page.click('button.tab:has-text("Admin Functions")'); await page.waitForTimeout(300);
   console.log('not offered again:', !(await adminPromptShown()));
@@ -194,7 +196,7 @@ const mock = `
   await page.evaluate(() => { closeGlobalHelpModal(); closeAdminHelpModal(); startTour(); });
   await page.waitForTimeout(500);
   const loadedAtOnce = [];
-  for (let i = 0; i < 5; i++) { await page.click('#tourNext'); loadedAtOnce.push(await page.evaluate(() => { const im = document.querySelector('#tourBody img'); return im ? im.complete && im.naturalWidth > 0 : null; })); }
+  for (let i = 0; i < 5; i++) { await tourNextClick(); loadedAtOnce.push(await page.evaluate(() => { const im = document.querySelector('#tourBody img'); return im ? im.complete && im.naturalWidth > 0 : null; })); }
   console.log('each picture is loaded as its step opens:', loadedAtOnce.join(','), '| preloaded images:', await page.evaluate(() => tourPreloaded.length));
   await page.keyboard.press('Escape');
   // ---- the card fits small and short screens (iPhone with its toolbars, landscape), top and bottom visible ----
@@ -208,7 +210,7 @@ const mock = `
         return c.top >= 0 && c.bottom <= innerHeight + 1 && hd.top >= 0 && n.bottom <= innerHeight && c.left >= 0 && c.right <= innerWidth + 1 && b.scrollHeight <= b.clientHeight + 1; });
       if (!ok) bad++;
       if (true) pics.push(await page.evaluate(() => { const f = document.querySelector('#tourBody .tour-figure'); return f ? (f.style.display === 'none' ? 'hidden' : Math.round(f.getBoundingClientRect().height)) : 'text'; }));
-      if (i < 6) { await page.click('#tourNext'); await page.waitForTimeout([0, 2, 3, 4].includes(i) ? 700 : 80); }
+      if (i < 6) { await tourNextClick(); await page.waitForTimeout([0, 2, 3, 4].includes(i) ? 700 : 80); }
     }
     for (let i = 0; i < 6; i++) { await page.click('#tourBack'); await page.waitForTimeout([3, 4, 5].includes(i) ? 700 : 30); }
     console.log(`fits with no scrolling at ${w}x${h}:`, bad === 0 && !pics.includes('hidden'), '| picture heights (first/last step):', pics.join(','), '| pictures all shown:', !pics.includes('hidden'));
@@ -221,7 +223,7 @@ const mock = `
     for (let i = 0; i < 8; i++) {
       const ok = await page.evaluate(() => { const b = document.getElementById('tourBody'); const c = document.getElementById('tourCard').getBoundingClientRect(); return b.scrollHeight <= b.clientHeight + 2 && c.top >= 0 && c.bottom <= innerHeight + 1; });
       if (!ok) bad++;
-      if (i < 7) { await page.click('#tourNext'); await page.waitForTimeout(320); }
+      if (i < 7) { await tourNextClick(); await page.waitForTimeout(320); }
     }
     for (let i = 0; i < 7; i++) { await page.click('#tourBack'); await page.waitForTimeout(60); }
     console.log(`admin tour fits with no scrolling at ${w}x${h}:`, bad === 0);

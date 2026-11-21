@@ -56,7 +56,7 @@ function tourBuildSteps(rulesHtml) {
         'Everyone\'s rank and total score are on the left, with each prediction and the points it earned for every match.',
         'Choose how the table looks (<strong>Full, Compact or Classic</strong>) on the next screen.'
     ], '<p>Tap any prediction to see how it was scored. The header row stays at the top as you scroll, and a 🃏 marks a Joker. <strong>All matches / Current round</strong> sits above the table.</p>'));
-    steps.push({ id: null, title: 'Choose your view', raw: () => tourViewsHtml() });
+    steps.push({ id: null, title: 'Choose your view', raw: () => tourViewsHtml(), needsViewChoice: true });
     steps.push(tourStep('menu-view', 'Change your view any time', [
         'Tap your <strong>initial</strong> at the top right to open the player menu.',
         'Under <strong>Table view</strong>, choose Full, Compact or Classic whenever you like.',
@@ -96,21 +96,30 @@ const TOUR_VIEW_OPTIONS = [
 ];
 // A big picture of the chosen view above the choices, and what is good about it below. Tapping a choice makes it the default.
 function tourViewsHtml() {
+    const chosen = !!(tourState && tourState.viewChosen);
     const current = (typeof summaryViewMode !== 'undefined') ? summaryViewMode : 'full';
     const pictures = TOUR_VIEW_OPTIONS.map(([mode, label]) => {
         const image = (typeof TOUR_IMAGES !== 'undefined') ? TOUR_IMAGES['view-' + mode] : null;
         const img = image ? `<img src="${image.src}?v=${image.v}" alt="The ${label} view" width="${image.w}" height="${image.h}" style="aspect-ratio:${image.w}/${image.h}">` : '';
         return `<div class="tour-view-pic" data-view="${mode}"${mode === current ? '' : ' hidden'}>${img}</div>`;
     }).join('');
-    const tabs = TOUR_VIEW_OPTIONS.map(([mode, label]) =>
-        `<button type="button" class="tour-view-tab${mode === current ? ' on' : ''}" data-view="${mode}" aria-pressed="${mode === current}" onclick="tourPickView('${mode}')">${label}</button>`).join('');
+    // Nothing is highlighted until the person taps a view: that tap is their choice of default, and it unlocks Next
+    const tabs = TOUR_VIEW_OPTIONS.map(([mode, label]) => {
+        const on = chosen && mode === current;
+        return `<button type="button" class="tour-view-tab${on ? ' on' : ''}" data-view="${mode}" aria-pressed="${on}" onclick="tourPickView('${mode}')">${label}</button>`;
+    }).join('');
     const points = TOUR_VIEW_OPTIONS.map(([mode, label, list]) =>
         `<ul class="tour-view-points" data-view="${mode}"${mode === current ? '' : ' hidden'}>${list.map(t => `<li>${t}</li>`).join('')}</ul>`).join('');
     return `<p class="tour-views-intro">Tap a view to make it your default. You can change it any time from your player menu (next screen).</p>`
-        + `<div class="tour-view-pics">${pictures}</div><div class="tour-view-tabs" role="group" aria-label="Table view">${tabs}</div>${points}`;
+        + `<div class="tour-view-pics">${pictures}</div><div class="tour-view-tabs" role="group" aria-label="Table view">${tabs}</div>`
+        + `<p class="tour-views-need"${chosen ? ' hidden' : ''}>Choose a view to continue.</p>${points}`;
 }
 function tourPickView(mode) {
     if (typeof setSummaryView === 'function') setSummaryView(mode);
+    if (tourState) tourState.viewChosen = true;
+    tourUpdateNext();
+    const need = document.querySelector('#tourBody .tour-views-need');
+    if (need) need.hidden = true;
     document.querySelectorAll('#tourBody [data-view]').forEach(el => {
         const on = el.dataset.view === mode;
         if (el.classList.contains('tour-view-tab')) { el.classList.toggle('on', on); el.setAttribute('aria-pressed', on ? 'true' : 'false'); }
@@ -334,7 +343,8 @@ function showTourStep(index) {
     tourAnimateSize(sizeBefore);
     tourAnimateStep(direction);
     tourFitSoon();
-    document.getElementById('tourNext').focus();
+    tourUpdateNext();
+    if (!tourNextBlocked()) document.getElementById('tourNext').focus();
 }
 
 // Slide the new step's title and content in from the side you are heading towards (the card itself stays put)
@@ -346,8 +356,19 @@ function tourAnimateStep(direction) {
     card.classList.add(direction === 'next' ? 'tour-go-next' : 'tour-go-prev');
 }
 
+// The view step cannot be skipped past: Next waits until a default view has been chosen
+function tourNextBlocked() {
+    const step = tourState && tourState.steps[tourState.index];
+    return !!(step && step.needsViewChoice && !tourState.viewChosen);
+}
+function tourUpdateNext() {
+    const btn = document.getElementById('tourNext');
+    if (!btn || !tourState) return;
+    btn.disabled = tourNextBlocked();
+    btn.setAttribute('aria-disabled', btn.disabled ? 'true' : 'false');
+}
 function nextTourStep() {
-    if (!tourState) return;
+    if (!tourState || tourNextBlocked()) return;
     if (tourState.index >= tourState.steps.length - 1) { endTour(true); return; }
     showTourStep(tourState.index + 1);
 }
