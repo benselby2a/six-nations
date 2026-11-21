@@ -77,17 +77,17 @@ const TOUR_VIEW_OPTIONS = [
         'Designed for small screens: just the countries and scores, so more fits.',
         'The default on phones.',
         'Same points, Jokers and ranking as Full.'
-    ], 'Small screens'],
+    ]],
     ['full', 'Full', [
         'Also designed for small screens, with more detail: dates, kick-off times and try counts.',
         'Tap a match header or a prediction for the details.',
         'The header row stays pinned as you scroll.'
-    ], 'Small screens'],
+    ]],
     ['classic', 'Classic', [
         'Best on a bigger screen (or pinch to zoom on a phone).',
         'An Excel-styled page: a spreadsheet-style grid, in light or dark.',
         'The whole tournament on one sheet, with win and lose shading and rank colours.'
-    ], 'Big screens']
+    ]]
 ];
 // A big picture of the chosen view above the choices, and what is good about it below. Tapping a choice makes it the default.
 function tourViewsHtml() {
@@ -99,9 +99,9 @@ function tourViewsHtml() {
         return `<div class="tour-view-pic" data-view="${mode}"${mode === current ? '' : ' hidden'}>${img}</div>`;
     }).join('');
     // Nothing is highlighted until the person taps a view: that tap is their choice of default, and it unlocks Next
-    const tabs = TOUR_VIEW_OPTIONS.map(([mode, label, list, caption]) => {
+    const tabs = TOUR_VIEW_OPTIONS.map(([mode, label]) => {
         const on = chosen && mode === current;
-        return `<span class="tour-view-cell"><button type="button" class="tour-view-tab${on ? ' on' : ''}" data-view="${mode}" aria-pressed="${on}" onclick="tourPickView('${mode}')"><i class="tour-radio" aria-hidden="true"></i><b>${label}</b><small>${caption}</small></button></span>`;
+        return `<span class="tour-view-cell"><button type="button" class="tour-view-tab${on ? ' on' : ''}" data-view="${mode}" aria-pressed="${on}" onclick="tourPickView('${mode}')"><i class="tour-radio" aria-hidden="true"></i><b>${label}</b></button></span>`;
     }).join('');
     const points = TOUR_VIEW_OPTIONS.map(([mode, label, list]) =>
         `<ul class="tour-view-points" data-view="${mode}"${mode === current ? '' : ' hidden'}>${list.map(t => `<li>${t}</li>`).join('')}</ul>`).join('');
