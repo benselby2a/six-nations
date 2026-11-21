@@ -119,6 +119,7 @@ document.addEventListener('visibilitychange', () => {
 // sticky strip outside the box (the browser keeps that smooth), is scrolled sideways in step with the table, and is shown only once the real
 // header has scrolled out of view. The two look identical, so the hand-over is not visible.
 const PINNED_COLS = '.rank-col, .competitor-col, .pts-col';
+let stickyResizeObserver = null;
 let stickyScrollEl = null;   // the sideways-moving part of the pinned header
 function syncSummaryStickyScroll() {
     const box = document.querySelector('.summary-table-wrap .summary-container');
@@ -158,7 +159,17 @@ function buildSummaryStickyHead() {
         box.addEventListener('scroll', syncSummaryStickyScroll, { passive: true });
     }
     sizeSummaryStickyHead();
-    updateSummaryStickyVisibility();
+    // Row heights can change later (reactions arrive, fonts load): re-measure the zone whenever the table changes size
+    if (stickyResizeObserver) stickyResizeObserver.disconnect();
+    if (typeof ResizeObserver !== 'undefined') {
+        let queued = false;
+        stickyResizeObserver = new ResizeObserver(() => {
+            if (queued) return;
+            queued = true;
+            requestAnimationFrame(() => { queued = false; sizeSummaryStickyHead(); });
+        });
+        stickyResizeObserver.observe(table);
+    }
 }
 function sizeSummaryStickyHead() {
     const wrap = document.querySelector('.summary-table-wrap');
@@ -183,7 +194,7 @@ function sizeSummaryStickyHead() {
     pinCopy.style.width = pinW + 'px';
     pinCopy.style.height = copy.offsetHeight + 'px';
     syncSummaryStickyScroll();
-    measureSummarySticky();
+    layoutSummarySticky();
 }
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (document.querySelector('.summary-sticky-inner')) sizeSummaryStickyHead(); });   // web fonts change row heights
 let pinProbe = null;
@@ -195,39 +206,25 @@ function summaryPinTop() {
     }
     return parseFloat(getComputedStyle(pinProbe).paddingTop) || 0;
 }
-// Measured once (and again on resize / rebuild), not on every scroll frame: layout reads while scrolling cause judder on iPhone
-let stickyMeasure = { pinnedH: 0, lastRowH: 0, pinTop: null };
-let stickyShown = null, stickySlide = null;
-function measureSummarySticky() {
-    const table = document.querySelector('.summary-table:not(.summary-table-clone)');
-    const inner = document.querySelector('.summary-sticky-inner');
-    if (!table || !table.tHead || !inner) return;
+// The pinned header is positioned by the browser alone (position: sticky inside a zone that ends just above the table's last row),
+// so it follows the scroll exactly, with no script running per frame, and it slides away with the table without covering the last row.
+// This only has to size the zone: once on build, and again on resize or when fonts change row heights.
+function layoutSummarySticky() {
+    const wrap = document.querySelector('.summary-table-wrap');
+    if (!wrap) return;
+    const box = wrap.querySelector('.summary-container');
+    const table = box && box.querySelector('table.summary-table');
+    const zone = wrap.querySelector('.summary-sticky-zone');
+    const head = wrap.querySelector('.summary-sticky-head');
+    const inner = wrap.querySelector('.summary-sticky-inner');
+    if (!table || !table.tHead || !zone || !head || !inner) return;
     const lastRow = table.tBodies.length ? table.tBodies[table.tBodies.length - 1].lastElementChild : null;
-    stickyMeasure = { pinnedH: inner.offsetHeight || table.tHead.offsetHeight, lastRowH: lastRow ? lastRow.getBoundingClientRect().height : 0, pinTop: summaryPinTop() };
-    stickyShown = null; stickySlide = null;
+    const pinnedH = inner.offsetHeight || table.tHead.offsetHeight;
+    zone.style.top = (box.offsetTop + box.clientTop) + 'px';
+    zone.style.height = Math.max(pinnedH, table.offsetHeight - (lastRow ? lastRow.offsetHeight : 0)) + 'px';
+    head.style.height = pinnedH + 'px';
 }
-function updateSummaryStickyVisibility() {
-    const table = document.querySelector('.summary-table:not(.summary-table-clone)');
-    const inner = document.querySelector('.summary-sticky-inner');
-    if (!table || !table.tHead || !inner) return;
-    if (!stickyMeasure.pinnedH) measureSummarySticky();
-    const { pinnedH, lastRowH, pinTop: top } = stickyMeasure;
-    const rect = table.getBoundingClientRect();
-    // Pinned while the table is on screen; at the end it slides up so its bottom edge stays above the last row (which stays visible)
-    const end = rect.bottom - lastRowH;
-    const show = rect.top < top && end > top;
-    if (show !== stickyShown) { inner.classList.toggle('show', show); stickyShown = show; }
-    const slide = Math.min(0, Math.round(end - (top + pinnedH)));
-    if (slide !== stickySlide) { inner.style.transform = slide < 0 ? `translate3d(0, ${slide}px, 0)` : ''; stickySlide = slide; }
-}
-let pinQueued = false;
-function queueSummaryStickyVisibility() {
-    if (pinQueued) return;
-    pinQueued = true;
-    requestAnimationFrame(() => { pinQueued = false; updateSummaryStickyVisibility(); });
-}
-window.addEventListener('scroll', queueSummaryStickyVisibility, { passive: true });
-window.addEventListener('resize', () => { sizeSummaryStickyHead(); queueSummaryStickyVisibility(); const hint = document.getElementById('scrollHint'); const box = document.querySelector('.summary-container'); if (hint && box) hint.classList.toggle('hidden', box.scrollWidth <= box.clientWidth); if (typeof syncSummaryScrollLock === 'function') syncSummaryScrollLock(); if (typeof refreshWormChartLayout === 'function') refreshWormChartLayout(); });
+window.addEventListener('resize', () => { sizeSummaryStickyHead(); const hint = document.getElementById('scrollHint'); const box = document.querySelector('.summary-container'); if (hint && box) hint.classList.toggle('hidden', box.scrollWidth <= box.clientWidth); if (typeof syncSummaryScrollLock === 'function') syncSummaryScrollLock(); if (typeof refreshWormChartLayout === 'function') refreshWormChartLayout(); });
 
 // Compact mode: hides the emoji rows and, in the headers, the date and tries, to save space. Remembered on this device.
 const SUMMARY_COMPACT_KEY = 'summaryCompact';

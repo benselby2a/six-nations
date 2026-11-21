@@ -113,7 +113,7 @@ const mock = `
   await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(Math.min(1000, 40));
   const t = async (label, fn) => console.log(label, JSON.stringify(await page.evaluate(fn)));
   const sheetOpen = () => page.evaluate(() => document.body.classList.contains('fixture-chat-open'));
-  const chip = async () => { await page.evaluate(() => scrollTo(0, 0)); await page.mouse.move(2, 2); await page.click('.summary-container [data-chat-chip="1"]'); await page.waitForTimeout(300); };
+  const chip = async () => { await page.evaluate(() => scrollTo(0, 0)); await page.mouse.move(2, 2); await page.click('.summary-sticky-inner [data-chat-chip="1"]'); await page.waitForTimeout(300); };
   await page.evaluate(() => switchYear(2026)); await page.waitForTimeout(500);
   await page.click('button.tab:has-text("Match Summary")'); await page.waitForTimeout(200);
   await t('1 chips and badges', () => ({ chips: [...document.querySelectorAll('.summary-container [data-chat-chip]')].map(c => c.textContent.trim()), badges: [...document.querySelectorAll('td[data-chat-user] .chat-badge')].map(b => b.parentElement.dataset.chatUser + ':' + b.textContent) }));

@@ -534,3 +534,5 @@ Load time: jsPDF and its table plugin are fetched on demand by `loadPdfLibs()` (
 - New file in `js/`: add it to `js/load-order.txt`. Version check: `js/connectivity.js` compares the `?v=` of `dist/app.min.js` with the one in a freshly fetched `index.html`.
 
 Pinned summary header: two layers (`.summary-sticky-pinned` = the first three columns, fixed; `.summary-sticky-scroll` = everything else, moved sideways with one `translate3d` in `syncSummaryStickyScroll`), instead of scrolling a copy with `scrollLeft` on every scroll event. Test: `dev/test.sh header-sideways`.
+
+Pinned summary header is positioned by the browser alone (no scroll script): `.summary-sticky-zone` (absolute, top = the table, height = table minus the last row; set by `layoutSummarySticky` and a ResizeObserver) contains `.summary-sticky-head` (`position: sticky`) which holds the copy. The copy always sits exactly over the real header, sticks at the top while scrolling, and slides away with the table above the last row. Only the sideways movement still uses a script (one transform). Tests tap the copy (`.summary-sticky-inner`) since it covers the real header.

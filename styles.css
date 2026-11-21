@@ -3652,9 +3652,9 @@ body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-wi
 
 /* Pinned summary header: a copy of the header row in a sticky strip (see buildSummaryStickyHead) */
 .summary-table-wrap { position: relative; }
+.summary-sticky-zone { position: absolute; left: 0; right: 0; top: 0; height: 0; pointer-events: none; z-index: 40; }
 .summary-sticky-head { position: sticky; top: env(safe-area-inset-top, 0px); height: 0; z-index: 40; }
-.summary-sticky-inner { position: absolute; top: 0; overflow-x: hidden; visibility: hidden; pointer-events: none; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); border-radius: 10px 10px 0 0; }
-.summary-sticky-inner.show { visibility: visible; pointer-events: auto; }
+.summary-sticky-inner { position: absolute; top: 0; overflow-x: hidden; pointer-events: auto; box-shadow: 0 3px 5px -2px rgba(0, 0, 0, 0.3); border-radius: 10px 10px 0 0; }
 /* iPhone: give the pinned header its own solid, composited layer so it is painted crisply (and never see-through) while the page scrolls under it */
 .summary-sticky-inner { background: var(--grid-bg); -webkit-transform: translateZ(0); transform: translateZ(0); -webkit-backface-visibility: hidden; backface-visibility: hidden; -webkit-font-smoothing: antialiased; }
 /* (no transform on .summary-sticky-head itself: a transformed sticky element is positioned by the page's main thread on iPhone, which judders) */

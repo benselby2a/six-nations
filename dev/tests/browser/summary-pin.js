@@ -115,9 +115,9 @@ const mock = `
   await page.setViewportSize({width:390,height:260});
   await page.click('#appView .app-bar > .tabs .tab:has-text("Match Summary")'); await page.waitForTimeout(400);
   const y = await page.evaluate(() => document.querySelector('.summary-table').getBoundingClientRect().top + scrollY);
-  const state = () => page.evaluate(() => { const i = document.querySelector('.summary-sticky-inner'); const th = i.querySelector('th.match-header-cell'); const r = th.getBoundingClientRect(); const real = document.querySelector('.summary-container th.match-header-cell').getBoundingClientRect(); return { shown: i.classList.contains('show') && getComputedStyle(i).visibility === 'visible', top: Math.round(r.top), left: Math.round(r.left), realLeft: Math.round(real.left), box: Math.round(document.querySelector('.summary-container').getBoundingClientRect().left), cloneW: Math.round(r.width), realW: Math.round(real.width) }; });
+  const state = () => page.evaluate(() => { const i = document.querySelector('.summary-sticky-inner'); const th = i.querySelector('th.match-header-cell'); const r = th.getBoundingClientRect(); const real = document.querySelector('.summary-container th.match-header-cell').getBoundingClientRect(); return { realTop: Math.round(real.top), shown: r.bottom > 0 && r.top < innerHeight && getComputedStyle(i).visibility === 'visible', top: Math.round(r.top), left: Math.round(r.left), realLeft: Math.round(real.left), box: Math.round(document.querySelector('.summary-container').getBoundingClientRect().left), cloneW: Math.round(r.width), realW: Math.round(real.width) }; });
   await page.evaluate(() => scrollTo(0, 0)); await page.waitForTimeout(250);
-  const a0 = await state(); console.log('at the top the copy is hidden:', JSON.stringify(a0), !a0.shown);
+  const a0 = await state(); console.log('at the top the copy sits exactly over the real header (identical, so nothing shows):', JSON.stringify(a0), a0.top === a0.realTop);
   await page.evaluate(v => scrollTo(0, v + 60), y); await page.waitForTimeout(250);
   const a = await state(); console.log('scrolled into the table the copy is pinned at the top:', JSON.stringify(a), a.shown && a.top === 0);
   console.log('copy columns match the real ones:', a.cloneW === a.realW);
@@ -125,7 +125,7 @@ const mock = `
   const f = await page.evaluate(() => { const g = (c) => Math.round(document.querySelector('.summary-sticky-inner th.' + c).getBoundingClientRect().left); const m = document.querySelector('.summary-sticky-inner th.match-header-cell').getBoundingClientRect().left; const r = document.querySelector('.summary-container th.match-header-cell').getBoundingClientRect().left; return { rank: g('rank-col'), comp: g('competitor-col'), pts: g('pts-col'), copyMatch: Math.round(m), realMatch: Math.round(r), box: Math.round(document.querySelector('.summary-container').getBoundingClientRect().left) }; });
   console.log('sideways: first three stay left, match columns move with the table:', JSON.stringify(f), f.rank <= f.box + 4 && Math.abs(f.copyMatch - f.realMatch) <= 1);
   await page.evaluate(() => scrollTo(0, document.body.scrollHeight)); await page.waitForTimeout(250);
-  console.log('past the table the copy is gone:', await page.evaluate(() => !document.querySelector('.summary-sticky-inner').classList.contains('show')));
+  console.log('past the table the copy has slid away with it (never below the table):', await page.evaluate(() => document.querySelector('.summary-sticky-inner').getBoundingClientRect().bottom <= document.querySelector('.summary-table:not(.summary-table-clone)').getBoundingClientRect().bottom));
   console.log('errors', errors);
   await browser.close();
 })();
