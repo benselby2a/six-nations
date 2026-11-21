@@ -132,7 +132,7 @@ const mock = `
   await page.click('#tourBack'); await page.waitForTimeout(500);
   console.log('coming back, the choice stays and Next is open:', JSON.stringify(await st()));
   const h = await page.evaluate(() => { const t = document.querySelector('.tour-view-tabs'), b = t.querySelector('.tour-view-tab.on'); const tr = t.getBoundingClientRect(), br = b.getBoundingClientRect(), cr = b.parentElement.getBoundingClientRect(); return { top: Math.round(br.top - tr.top), bottom: Math.round(tr.bottom - br.bottom), cellFilled: Math.abs(br.height - cr.height) < 1 && Math.abs(br.width - cr.width) <= 3 }; });
-  console.log('the chosen tab fills the control top to bottom (only the border shows):', JSON.stringify(h), h.top <= 3 && h.bottom <= 3 && h.cellFilled);
+  console.log('the chosen card fills its cell:', JSON.stringify(h), h.cellFilled);
   // a tapped button stays "hovered" on a phone: that must not lift it or add a glow
   const look = () => page.evaluate(() => { const b = document.querySelector('.tour-view-tab.on'); const c = b.parentElement.getBoundingClientRect(), r = b.getBoundingClientRect(), cs = getComputedStyle(b); return { transform: cs.transform, shadow: cs.boxShadow, top: Math.round(r.top - c.top), bottom: Math.round(c.bottom - r.bottom) }; });
   const rest = await look();
@@ -152,6 +152,14 @@ const mock = `
     const still = spots.every(p => Math.abs(p.tabs - spots[0].tabs) <= 1 && Math.abs(p.points - spots[0].points) <= 1);
     console.log(`the view choices do not move when the picture changes at ${w}x${h}:`, JSON.stringify(spots), still);
   }
+  // choosing a view must not move the cards either (the hint above the highlights keeps its line)
+  await page.setViewportSize({ width: 390, height: 700 }); await page.waitForTimeout(400);
+  await page.evaluate(() => { endTour(); localStorage.removeItem('summaryViewMode'); startTour(); showTourStep(3); }); await page.waitForTimeout(900);
+  const cardsTop = () => page.evaluate(() => Math.round(document.querySelector('.tour-view-tabs').getBoundingClientRect().top));
+  const t0 = await cardsTop();
+  await page.click('.tour-view-tab[data-view="classic"]'); await page.waitForTimeout(500);
+  const t1 = await cardsTop();
+  console.log('the cards stay put when a view is chosen:', t0, t1, Math.abs(t0 - t1) <= 1);
   console.log('errors', errors);
   await browser.close();
 })();

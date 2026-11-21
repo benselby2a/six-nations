@@ -77,17 +77,17 @@ const TOUR_VIEW_OPTIONS = [
         'Dates, kick-off times and try counts for every match.',
         'Tap a match header or a prediction for the details.',
         'The header row stays pinned as you scroll.'
-    ]],
+    ], 'Everything'],
     ['compact', 'Compact', [
         'Just the countries and scores, so more fits on screen.',
         'The default on phones.',
         'Same points, Jokers and ranking as Full.'
-    ]],
+    ], 'Just scores'],
     ['classic', 'Classic', [
         'An Excel-styled page: a spreadsheet-style grid, in light or dark.',
         'The whole tournament on one sheet: pinch or tap + to zoom in.',
         'Win and lose shading, rank colours and tinted alternate rows.'
-    ]]
+    ], 'Excel style']
 ];
 // A big picture of the chosen view above the choices, and what is good about it below. Tapping a choice makes it the default.
 function tourViewsHtml() {
@@ -99,21 +99,23 @@ function tourViewsHtml() {
         return `<div class="tour-view-pic" data-view="${mode}"${mode === current ? '' : ' hidden'}>${img}</div>`;
     }).join('');
     // Nothing is highlighted until the person taps a view: that tap is their choice of default, and it unlocks Next
-    const tabs = TOUR_VIEW_OPTIONS.map(([mode, label]) => {
+    const tabs = TOUR_VIEW_OPTIONS.map(([mode, label, list, caption]) => {
         const on = chosen && mode === current;
-        return `<span class="tour-view-cell"><button type="button" class="tour-view-tab${on ? ' on' : ''}" data-view="${mode}" aria-pressed="${on}" onclick="tourPickView('${mode}')">${label}</button></span>`;
+        return `<span class="tour-view-cell"><button type="button" class="tour-view-tab${on ? ' on' : ''}" data-view="${mode}" aria-pressed="${on}" onclick="tourPickView('${mode}')"><i class="tour-radio" aria-hidden="true"></i><b>${label}</b><small>${caption}</small></button></span>`;
     }).join('');
     const points = TOUR_VIEW_OPTIONS.map(([mode, label, list]) =>
         `<ul class="tour-view-points" data-view="${mode}"${mode === current ? '' : ' hidden'}>${list.map(t => `<li>${t}</li>`).join('')}</ul>`).join('');
     // A column: the picture takes whatever room is left above, so the choices and their highlights keep their place at the bottom
     return `<div class="tour-views-wrap"><p class="tour-views-intro">Tap a view to make it your default. You can change it any time from your player menu (next screen).</p>`
-        + `<div class="tour-view-pics">${pictures}</div><div class="tour-view-tabs" role="group" aria-label="Table view">${tabs}</div>`
+        + `<div class="tour-view-pics">${pictures}</div><div class="tour-view-tabs${chosen ? '' : ' pending'}" role="group" aria-label="Choose your view">${tabs}</div>`
         + `<p class="tour-views-need"${chosen ? ' hidden' : ''}>Choose a view to continue.</p><div class="tour-view-points-stack">${points}</div></div>`;
 }
 function tourPickView(mode) {
     if (typeof setSummaryView === 'function') setSummaryView(mode);
     if (tourState) tourState.viewChosen = true;
     tourUpdateNext();
+    const group = document.querySelector('#tourBody .tour-view-tabs');
+    if (group) group.classList.remove('pending');
     const need = document.querySelector('#tourBody .tour-views-need');
     if (need) need.hidden = true;
     document.querySelectorAll('#tourBody [data-view]').forEach(el => {
@@ -238,8 +240,11 @@ function tourFitContent(allowHide) {
         let min = Math.round(screenH * 0.3);
         pics.style.minHeight = min + 'px';
         while (overflows() && min > 50) { min -= 8; pics.style.minHeight = min + 'px'; }
-        if (overflows()) {   // still too tall: drop the intro and the third highlight, then shrink the picture area some more
+        // A short screen: when the picture would end up small, tighten everything below it (no intro, smaller cards, two highlights)
+        if (overflows() || pics.clientHeight < 120) {
             card.classList.add('tour-compact');
+            pics.style.minHeight = Math.round(screenH * 0.3) + 'px';
+            min = Math.round(screenH * 0.3);
             while (overflows() && min > 30) { min -= 8; pics.style.minHeight = min + 'px'; }
         }
         return;
