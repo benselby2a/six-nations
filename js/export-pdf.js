@@ -46,31 +46,7 @@
                 return calculateMatchPoints(pred, match, canSeePredictionsOf(username) && isUserJokerForMatch(username, match.id));
             }
 
-            const P = {
-                border: [84, 84, 84],
-                text: [17, 17, 17],
-                red: [200, 44, 44],
-                blue: [34, 121, 196],
-                green: [52, 137, 75],
-                homeBg: [204, 234, 210],
-                awayBg: [238, 201, 206],
-                predWinBg: [198, 230, 206],
-                predWinFg: [26, 110, 57],
-                predLoseBg: [244, 199, 199],
-                predLoseFg: [153, 27, 27],
-                predDrawBg: [233, 233, 233],
-                predDrawFg: [72, 72, 72],
-                pointsBg: [236, 228, 202],
-                jokerBg: [157, 190, 221],
-                gameTotalBg: [163, 197, 142],
-                triesBg: [234, 223, 205],
-                rankTopBg: [40, 176, 96],
-                rankMidBg: [238, 214, 128],
-                rankLowBg: [239, 205, 182],
-                neutralBg: [234, 234, 234],
-                moverUp: [40, 176, 96],
-                moverDown: [255, 49, 49],
-            };
+            const P = PDF_SCHEMES.light.P;   // the colours live in js/pdf-view.js, shared with the on-screen PDF view
 
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
@@ -96,14 +72,7 @@
             doc.text(`Exported ${exportDate} at ${exportTime}`, 3, 12);
             doc.setTextColor(17, 17, 17);
 
-            const teamColors = {
-                England: [34, 34, 34],
-                France: [41, 143, 224],
-                Ireland: [28, 148, 88],
-                Italy: [0, 163, 224],
-                Scotland: [120, 78, 185],
-                Wales: [210, 44, 44]
-            };
+            const teamColors = PDF_SCHEMES.light.team;
             const verticalTeamName = teamName => String(teamName || '').split('').join('\n');
             const blendTowardWhite = (rgb, amount = 0.12) => {
                 if (!Array.isArray(rgb) || rgb.length < 3) return [255, 255, 255];

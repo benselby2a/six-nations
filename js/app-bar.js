@@ -226,30 +226,39 @@ function layoutSummarySticky() {
 }
 window.addEventListener('resize', () => { sizeSummaryStickyHead(); const hint = document.getElementById('scrollHint'); const box = document.querySelector('.summary-container'); if (hint && box) hint.classList.toggle('hidden', box.scrollWidth <= box.clientWidth); if (typeof syncSummaryScrollLock === 'function') syncSummaryScrollLock(); if (typeof refreshWormChartLayout === 'function') refreshWormChartLayout(); });
 
-// Compact mode: hides the emoji rows and, in the headers, the date and tries, to save space. Remembered on this device.
-const SUMMARY_COMPACT_KEY = 'summaryCompact';
-function applySummaryCompact(compact) {
-    document.body.classList.toggle('summary-compact', compact);
-    const btn = document.getElementById('summaryCompactBtn');
-    if (btn) {
-        btn.setAttribute('aria-pressed', compact ? 'true' : 'false');
-        btn.setAttribute('data-tip', compact ? 'Compact mode: on' : 'Compact mode');
-        btn.setAttribute('aria-label', compact ? 'Compact mode: on' : 'Compact mode');
-    }
-    buildSummaryStickyHead();   // the pinned copy follows the new header height
+// Table view: Full, Compact (hides the emoji rows and, in the headers, the date and tries, to save space) or PDF (the table drawn
+// like the PDF export, see js/pdf-view.js). Remembered on this device.
+const SUMMARY_COMPACT_KEY = 'summaryCompact';        // the older two-way choice (still read, so nobody's choice is lost)
+const SUMMARY_VIEW_MODE_KEY = 'summaryViewMode';
+let summaryViewMode = 'full';
+function applySummaryViewMode(mode, redraw) {
+    if (!['full', 'compact', 'pdf'].includes(mode)) mode = 'full';
+    summaryViewMode = mode;
+    document.body.classList.toggle('summary-compact', mode === 'compact');
+    document.body.classList.toggle('summary-pdf', mode === 'pdf');
+    document.querySelectorAll('#summaryViewSwitch .view-switch-btn').forEach(btn => {
+        const on = btn.dataset.view === mode;
+        btn.classList.toggle('active', on);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    if (redraw && typeof showSummary === 'function' && document.getElementById('summaryContainer')) showSummary();   // the redraw also rebuilds the pinned header
 }
-function toggleSummaryCompact() {
-    const compact = !document.body.classList.contains('summary-compact');
-    try { localStorage.setItem(SUMMARY_COMPACT_KEY, compact ? '1' : '0'); } catch (error) { /* not remembered */ }
-    applySummaryCompact(compact);
+function setSummaryView(mode) {
+    try { localStorage.setItem(SUMMARY_VIEW_MODE_KEY, mode); localStorage.setItem(SUMMARY_COMPACT_KEY, mode === 'compact' ? '1' : '0'); } catch (error) { /* not remembered */ }
+    applySummaryViewMode(mode, true);
 }
+// Kept for older callers: flips between Compact and Full
+function toggleSummaryCompact() { setSummaryView(summaryViewMode === 'compact' ? 'full' : 'compact'); }
+// Kept for older callers
+function applySummaryCompact(compact) { applySummaryViewMode(compact ? 'compact' : 'full', true); }
+
 // Compact mode starts on for phones (a narrow screen, or a phone held sideways) unless the person has chosen for themselves
 function isPhoneScreen() {
     return !!(window.matchMedia && window.matchMedia('(max-width: 480px), (orientation: landscape) and (max-height: 500px) and (hover: none)').matches);
 }
 document.addEventListener('DOMContentLoaded', () => {
-    let saved = null;
-    try { saved = localStorage.getItem(SUMMARY_COMPACT_KEY); } catch (error) { saved = null; }
-    const compact = saved === '1' || (saved === null && isPhoneScreen());
-    if (compact) applySummaryCompact(true);
+    let mode = null, legacy = null;
+    try { mode = localStorage.getItem(SUMMARY_VIEW_MODE_KEY); legacy = localStorage.getItem(SUMMARY_COMPACT_KEY); } catch (error) { /* ignore */ }
+    if (!['full', 'compact', 'pdf'].includes(mode)) mode = legacy === '1' ? 'compact' : (legacy === '0' ? 'full' : (isPhoneScreen() ? 'compact' : 'full'));
+    applySummaryViewMode(mode, false);
 });
