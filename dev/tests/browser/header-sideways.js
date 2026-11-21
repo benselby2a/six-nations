@@ -133,6 +133,7 @@ const mock = `
   console.log(JSON.stringify(cmp));
   console.log('scrolling columns line up with the real table at every position:', cmp.every(c => c.scrolledColsOff.every(d => d <= 1)));
   console.log('fixed columns line up with the real table at every position:', cmp.every(c => c.pinnedColsOff.every(d => d <= 1)));
+  console.log('the sideways movement is done by CSS scroll-driven animation where supported:', await page.evaluate(() => SCROLL_TIMELINE_OK ? (getComputedStyle(document.querySelector('.summary-sticky-scroll')).animationName === 'summary-slide' && !document.querySelector('.summary-sticky-scroll').style.transform) : 'not supported here'));
   console.log('errors', errors);
   await browser.close();
 })();

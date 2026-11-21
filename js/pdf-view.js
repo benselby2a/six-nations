@@ -1,4 +1,4 @@
-// "PDF" view of the Match Summary: the table drawn in HTML exactly like the PDF export (same layout, rules and colours),
+// The "Classic" (Excel-styled) view of the Match Summary: the table drawn in HTML exactly like the PDF export (same layout, rules and colours),
 // in a light scheme (identical to the PDF) and a dark scheme. Both colour sets are written into each cell as CSS variables,
 // so switching the app between light and dark needs no redraw.
 // Classic script (shared global scope); load order is set in js/load-order.txt.

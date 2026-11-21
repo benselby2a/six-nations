@@ -58,8 +58,8 @@ function tourBuildSteps(rulesHtml, chatLive) {
     ], '<p>Tap any prediction to see how it was scored. The header row stays at the top as you scroll, and a 🃏 marks a Joker. <strong>All matches / Current round</strong> sits under the switch.</p>'));
     steps.push({ id: null, title: 'Choose your view', raw: () => tourViewsHtml() });
     steps.push(tourStep('pdf', 'Download the PDF', [
-        'Tap the <strong>download icon</strong> beside the view switch to get the traditional PDF page.'
-    ], '<p>The Classic view shows the same page on screen. On a computer the icon opens the file in a pop-up with Print and Save buttons. The picture shows the page you get.</p>'));
+        'Tap the <strong>download icon</strong> beside the view switch to save the Classic page as a PDF.'
+    ], '<p>The Classic view is the same Excel-styled page, shown on screen. On a computer the icon opens the file in a pop-up with Print and Save buttons. The picture shows the page you get.</p>'));
     if (chatLive) {
         steps.push(tourStep('chips', 'React to matches and results', [
             'Tap the <strong>😀＋ chip</strong> under a match (or anywhere on the match header) to react to the match with an emoji or one of the two team flags.',
@@ -90,8 +90,8 @@ const TOUR_VIEW_OPTIONS = [
         'Same points, Jokers and ranking as Full.'
     ]],
     ['classic', 'Classic', [
-        'Laid out like the traditional PDF page, in light or dark.',
-        'The whole tournament on one sheet: pinch to zoom in.',
+        'An Excel-styled page: a spreadsheet-style grid, in light or dark.',
+        'The whole tournament on one sheet: pinch or tap + to zoom in.',
         'Win and lose shading, rank colours and tinted alternate rows.'
     ]]
 ];
