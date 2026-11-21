@@ -125,8 +125,8 @@ const mock = `
   console.log('and Next moves on:', (await st()).title);
   await page.click('#tourBack'); await page.waitForTimeout(500);
   console.log('coming back, the choice stays and Next is open:', JSON.stringify(await st()));
-  const h = await page.evaluate(() => { const t = document.querySelector('.tour-view-tabs'), b = t.querySelector('.tour-view-tab.on'); const tr = t.getBoundingClientRect(), br = b.getBoundingClientRect(); return { top: Math.round(br.top - tr.top), bottom: Math.round(tr.bottom - br.bottom) }; });
-  console.log('the chosen tab fills the control top to bottom (only the border shows):', JSON.stringify(h), h.top <= 3 && h.bottom <= 3);
+  const h = await page.evaluate(() => { const t = document.querySelector('.tour-view-tabs'), b = t.querySelector('.tour-view-tab.on'); const tr = t.getBoundingClientRect(), br = b.getBoundingClientRect(), cr = b.parentElement.getBoundingClientRect(); return { top: Math.round(br.top - tr.top), bottom: Math.round(tr.bottom - br.bottom), cellFilled: Math.abs(br.height - cr.height) < 1 && Math.abs(br.width - cr.width) <= 3 }; });
+  console.log('the chosen tab fills the control top to bottom (only the border shows):', JSON.stringify(h), h.top <= 3 && h.bottom <= 3 && h.cellFilled);
   console.log('errors', errors);
   await browser.close();
 })();
