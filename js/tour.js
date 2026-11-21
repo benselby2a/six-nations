@@ -80,7 +80,7 @@ function tourBuildSteps(rulesHtml) {
 const TOUR_VIEW_OPTIONS = [
     ['full', 'Full', [
         'Dates, kick-off times and try counts for every match.',
-        'Emoji reactions on matches and predictions.',
+        'Tap a match header or a prediction for the details.',
         'The header row stays pinned as you scroll.'
     ]],
     ['compact', 'Compact', [
@@ -364,6 +364,9 @@ function tourUpdateNext() {
     if (!btn || !tourState) return;
     btn.disabled = tourNextBlocked();
     btn.setAttribute('aria-disabled', btn.disabled ? 'true' : 'false');
+    // On the view step the button says what is needed until a view has been chosen
+    if (btn.disabled) btn.textContent = 'Select view';
+    else btn.textContent = tourState.index === tourState.steps.length - 1 ? 'Done' : 'Next';
 }
 function nextTourStep() {
     if (!tourState || tourNextBlocked()) return;

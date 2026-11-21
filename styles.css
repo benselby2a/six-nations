@@ -4018,7 +4018,9 @@ html.app-reloaded body { animation: appFadeIn 0.45s ease both; }
 }
 @media (max-width: 600px), (max-height: 520px) {
     /* the buttons never change size either (not in compact steps, not for Done) */
-    .tour-card .tour-buttons button, .tour-card.tour-compact .tour-buttons button { min-height: 44px; min-width: 6.6rem; padding: 0.55rem 1rem; font-size: 1.05rem; }
+    .tour-card .tour-buttons button, .tour-card.tour-compact .tour-buttons button { min-height: 44px; min-width: 5rem; padding: 0.55rem 0.8rem; font-size: 1.05rem; }
+    .tour-card .tour-buttons button { white-space: nowrap; }
+    .tour-card .tour-buttons #tourNext { width: 10.6rem; padding-left: 0.4rem; padding-right: 0.4rem; letter-spacing: 0.06em; }   /* wide enough for "Select view", so the button is the same size on every step */
 }
 
 /* The app's general button hover (lifts the button 2px and adds a glow) must not touch these controls: on a phone a tapped button stays "hovered", which pushed the chosen view up and left a gap under it */
@@ -4033,3 +4035,5 @@ html.app-reloaded body { animation: appFadeIn 0.45s ease both; }
         body { padding-top: calc(env(safe-area-inset-top, 0px) + 12px); }
     }
 }
+
+@media (max-width: 380px) { .tour-dots { display: none; } }   /* the "n of N" count at the top says where you are; the dots would crowd the buttons */
