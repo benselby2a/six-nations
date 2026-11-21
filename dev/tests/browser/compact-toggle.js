@@ -119,7 +119,7 @@ const mock = `
   const pickView = async (v) => { await page.click('#avatarBtn'); await page.waitForTimeout(150); await page.click(`#summaryViewSwitch [data-view="${v}"]`); await page.waitForTimeout(150); await page.keyboard.press('Escape'); await page.evaluate(() => closeAccountMenu()); };
   await pickView('compact'); await page.waitForTimeout(300);
   const after = await read(); console.log('compact:', JSON.stringify(after));
-  console.log('compact hides reactions, dates and tries, shrinks header and rows:', after.compact && !after.dateShown && !after.triesShown && !after.extrasShown && !after.cellExtrasShown && after.headH < before.headH && after.rowH < before.rowH && after.jokerInline >= 1 && after.pressed === 'true');
+  console.log('compact hides dates and tries and shrinks the header (Full already has the Joker inline and tight rows):', after.compact && !after.dateShown && !after.triesShown && !after.extrasShown && !after.cellExtrasShown && after.headH < before.headH && after.rowH <= before.rowH && after.jokerInline >= 1 && before.jokerInline >= 1 && !before.extrasShown && !before.cellExtrasShown && after.pressed === 'true');
   await page.screenshot({path:'/tmp/claude-0/-home-user-six-nations/55e70b8c-24a4-53e8-973b-d120bef1189e/scratchpad/compact.png', clip:{x:0,y:200,width:390,height:420}});
   await page.reload(); await page.waitForTimeout(1500);
   console.log('remembered after reload:', await page.evaluate(() => document.body.classList.contains('summary-compact')));
