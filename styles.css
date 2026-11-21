@@ -3907,7 +3907,7 @@ body .cell-score .joker-inline { width: 1.25rem; height: 1.25rem; font-size: 0.8
 .summary-table-clone-pinned { width: auto; }
 
 /* Table view switch (Full | Compact | PDF), in the summary toolbar */
-.view-switch { display: grid; grid-template-columns: repeat(3, auto); flex: none; border: 2px solid rgb(var(--accent-rgb) / 0.3); border-radius: 8px; overflow: hidden; }
+.view-switch { display: grid; grid-template-columns: repeat(4, auto); flex: none; border: 2px solid rgb(var(--accent-rgb) / 0.3); border-radius: 8px; overflow: hidden; }
 .view-switch-btn { all: unset; box-sizing: border-box; cursor: pointer; position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; padding: 0 0.4rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; text-align: center; color: var(--text); background: transparent; min-width: 0; white-space: nowrap; }
 .view-switch-cell { position: relative; display: block; min-height: 2.6rem; }
 .view-switch-cell + .view-switch-cell { border-left: 2px solid rgb(var(--accent-rgb) / 0.3); }
@@ -3959,7 +3959,7 @@ body.summary-classic .summary-toolbar .export-pdf-btn { margin-left: auto; }
 .tour-view-points[hidden] { display: grid; visibility: hidden; }
 .tour-view-pic img { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; border-radius: 6px; border: 2px solid var(--line-strong); background: #fff; object-fit: contain; }
 /* Each choice is a cell (a plain box, which always stretches) with the button filling it exactly: no gap, in every browser */
-.tour-view-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin: 0 0 0.6rem; padding: 0 0.45rem; }   /* side room, so the pulsing glow is not cut off by the edge of the scrolling area */
+.tour-view-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.35rem; margin: 0 0 0.6rem; padding: 0 0.45rem; }   /* side room, so the pulsing glow is not cut off by the edge of the scrolling area */
 /* The choices are big radio cards: a ring, the name and a few words; the chosen one fills with gold */
 .tour-view-cell { position: relative; display: block; min-height: 3.8rem; border-radius: 12px; }
 .tour-view-tab { all: unset; box-sizing: border-box; cursor: pointer; position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.15rem; padding: 0.3rem 0.25rem; text-align: center; color: var(--text); background: rgba(255, 255, 255, 0.07); border: 2px solid rgba(255, 215, 0, 0.55); border-radius: 12px; -webkit-tap-highlight-color: transparent; }
@@ -3989,7 +3989,7 @@ body.summary-classic .summary-toolbar .export-pdf-btn { margin-left: auto; }
 /* Player menu: the Table view choice, under Appearance */
 .account-view { padding: 0.35rem 0.5rem 0.55rem; }
 .account-view-label { display: block; margin: 0 0 0.3rem; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
-.account-view .view-switch { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
+.account-view .view-switch { display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; }
 .account-view .view-switch-btn { padding: 0 0.2rem; }
 .tour-card.tour-compact .tour-view-points li:nth-child(n+3), .tour-card.tour-compact .tour-views-intro { display: none; }
 
@@ -4080,3 +4080,51 @@ body.summary-compact .summary-table td.competitor-name .comp-score { display: in
 .match-header-cell .match-header-bottom .match-result-row { max-width: 100%; min-width: 0; gap: 0.2rem; }
 .match-header-cell .match-header-bottom .match-result-row .match-result { min-width: 0; flex: 0 1 auto; padding-left: 0.3rem; padding-right: 0.3rem; overflow: hidden; text-overflow: clip; }
 .match-header-cell .match-header-bottom .match-result-row .joker-inline { flex: none; }
+
+/* Four tour choices fit on one row: slimmer type */
+.tour-view-tab b { font-size: 0.72rem; letter-spacing: 0.02em; }
+.tour-view-tab { padding-left: 0.1rem; padding-right: 0.1rem; }
+.view-switch-btn { font-size: 0.68rem; letter-spacing: 0; padding: 0 0.2rem; }
+
+/* Simple view: Compact's layout in plain, larger, higher-contrast text. No flags, cards or padlocks; a Joker is an amber cell with a strong bar
+   (and a hidden "Joker" word for screen readers), so it still reads without colour vision. */
+.simple-legend { display: none; }
+body.summary-simple .simple-legend { display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.6rem; font-size: 1rem; font-weight: 600; color: var(--text); }
+.simple-legend-swatch { flex: none; width: 1.6rem; height: 1.1rem; border-radius: 3px; background: #ffd45e; border-left: 6px solid #b45f00; box-sizing: border-box; }
+body.summary-simple .summary-table { font-size: 1.05rem; }
+body.summary-simple .summary-table th, body.summary-simple .summary-table td { color: var(--text); }
+body.summary-simple .summary-table td { padding-top: 0.7rem; padding-bottom: 0.7rem; }
+body.summary-simple .summary-table td.competitor-name .comp-nick { font-size: 1.05rem; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+body.summary-simple .summary-table td.competitor-name .comp-score { font-size: 1.1rem; font-weight: 800; color: var(--text); }
+body.summary-simple .summary-table td.rank-col { font-size: 1.05rem; font-weight: 700; }
+body.summary-simple .summary-table th.competitor-col, body.summary-simple .summary-table th.rank-col { vertical-align: bottom; font-size: 0.95rem; }
+body.summary-simple .summary-table th.competitor-col .th-angled { display: inline; width: auto; height: auto; transform: none; margin: 0; font-size: 0.95rem; white-space: nowrap; }
+body.summary-simple .summary-table td.competitor-name { min-width: 120px; width: 120px; max-width: 120px; }
+body.summary-simple .match-header-cell .match-header-top .match-teams { height: auto; font-size: 1.1rem; font-weight: 800; letter-spacing: 0.03em; line-height: 1.35; margin-bottom: 0.4rem; }
+body.summary-simple .match-header-cell .match-header-bottom .match-result,
+body.summary-simple .match-header-cell .match-header-bottom .no-result { font-size: 1.05rem; font-weight: 700; height: auto; padding: 0.1rem 0.3rem; }
+body.summary-simple .summary-table td.prediction-cell { font-size: 1.1rem; }
+body.summary-simple .summary-table td.prediction-cell .cell-score { font-size: 1.2rem; font-weight: 800; }
+body.summary-simple .summary-table td.prediction-cell .points-earned { font-size: 0.95rem; font-weight: 700; padding: 0; border: 0; background: transparent; color: var(--text); text-shadow: none; height: auto; margin-top: 0.15rem; }
+body.summary-simple .summary-table td.hidden-prediction .cell-score { font-size: 1rem; font-weight: 600; color: var(--muted); }
+body.summary-simple .pred-score-tie { color: var(--text); }
+body.summary-simple .summary-table td.tries-col { font-size: 1rem; }
+/* Joker: amber fill + a thick dark-amber bar on the left (light), bright-amber bar (dark); the header of a Joker match gets a matching amber bar underneath */
+body.summary-simple .summary-table td.simple-joker { background: #ffd45e; box-shadow: inset 6px 0 0 #b45f00; color: #1a1200; }
+body.summary-simple .summary-table td.simple-joker .pred-score,
+body.summary-simple .summary-table td.simple-joker .points-earned { color: #1a1200; }
+body.summary-simple .summary-table td.simple-joker .pred-score-win { color: #0a4f26; }
+body.summary-simple .summary-table td.simple-joker .pred-score-lose { color: #8a1010; }
+body.summary-simple .summary-table th.joker-eligible-header { box-shadow: inset 0 -8px 0 #e8b02a; }
+:root[data-theme="dark"] body.summary-simple .summary-table td.simple-joker { background: #5c4300; box-shadow: inset 6px 0 0 #ffd45e; color: #fff; }
+:root[data-theme="dark"] body.summary-simple .summary-table td.simple-joker .pred-score,
+:root[data-theme="dark"] body.summary-simple .summary-table td.simple-joker .points-earned { color: #fff; }
+:root[data-theme="dark"] body.summary-simple .summary-table td.simple-joker .pred-score-win { color: #7ef5a8; }
+:root[data-theme="dark"] body.summary-simple .summary-table td.simple-joker .pred-score-lose { color: #ffb1a5; }
+:root[data-theme="dark"] body.summary-simple .summary-table thead th.joker-eligible-header { box-shadow: inset 0 -8px 0 #ffd45e; }
+:root[data-theme="dark"] .simple-legend-swatch { background: #5c4300; border-left-color: #ffd45e; }
+:root[data-theme="dark"] body.summary-simple .summary-table td.competitor-name .comp-score { color: var(--text); }
+/* Simple: the score sits on the same line as the name (flags are gone, so there is nothing else under it) */
+body.summary-simple .summary-table td.competitor-name .comp-name { flex-direction: row; align-items: center; justify-content: space-between; gap: 0.4rem; }
+body.summary-simple .summary-table td.competitor-name .comp-sub { width: auto; flex: none; min-height: 0; }
+body.summary-simple .summary-table td.competitor-name .comp-nick { min-width: 0; }
