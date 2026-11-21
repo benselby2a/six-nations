@@ -282,6 +282,7 @@ This is the main browser-to-Supabase boundary.
 - The app is installable as a full-screen web app: `manifest.json` has `display: standalone`, `index.html` has the `apple-mobile-web-app-*` meta tags and `viewport-fit=cover`, and `body` / `.modal` pad for `env(safe-area-inset-*)` (0 in a normal browser). A full-screen app has its own storage, separate from Safari, so it signs in on its own (login is a code for this reason).
 - No reload gesture exists in full-screen mode, so the Match Summary has a Refresh button with an "Updated hh:mm" label, and `refreshWhenReturning` refreshes the summary when the app returns to the foreground after 5 minutes (only if the summary is showing, so unsaved predictions are never disturbed).
 - `#installTip` is a dismissible tip shown only to iPhone/iPad Safari users who are not already in the full-screen app (flag in localStorage `rugbyPredictorInstallTipDismissed`).
+- The Home Screen advice lives only in the tour (a step shown on iPhone/iPad when not already installed; `tourCanAddToHomeScreen`); there is no banner any more.
 - If the artwork changes, re-render the PNGs and `favicon.ico` and bump the `?v=` on the icon links in `index.html` and `manifest.json`; browsers cache icons hard.
 
 ## Cache busting

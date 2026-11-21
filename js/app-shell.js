@@ -177,42 +177,11 @@
         fillLoginEmailOptions();
 
         // ---- Home Screen install tip (iPhone Safari only) ----
-        const INSTALL_TIP_DISMISSED_KEY = 'rugbyPredictorInstallTipDismissed';
-
         function isStandaloneApp() {
             return window.navigator.standalone === true
                 || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
         }
 
-        function shouldShowInstallTip() {
-            const ua = navigator.userAgent || '';
-            const isIosDevice = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-            const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA\//.test(ua);
-            if (!isIosDevice || !isSafari || isStandaloneApp()) return false;
-            try {
-                if (localStorage.getItem(INSTALL_TIP_DISMISSED_KEY) === '1') return false;
-            } catch (error) {
-                // Storage unavailable: show the tip.
-            }
-            return true;
-        }
-
-        function showInstallTipIfNeeded() {
-            const tip = document.getElementById('installTip');
-            if (tip) tip.classList.toggle('hidden', !shouldShowInstallTip());
-        }
-
-        function dismissInstallTip() {
-            try {
-                localStorage.setItem(INSTALL_TIP_DISMISSED_KEY, '1');
-            } catch (error) {
-                // Ignore storage errors; the tip just comes back next time.
-            }
-            const tip = document.getElementById('installTip');
-            if (tip) tip.classList.add('hidden');
-        }
-
-        showInstallTipIfNeeded();
         showAppVersion();
         document.addEventListener('visibilitychange', refreshWhenReturning);
         window.addEventListener('pageshow', (event) => { if (event.persisted) refreshWhenReturning(); });
