@@ -212,7 +212,10 @@ function tourFitSoon() {
         setTimeout(() => {
             tourFitContent(true);
             const f = document.querySelector('#tourBody .tour-figure');
-            if (f) f.style.visibility = '';
+            // A picture that has not arrived yet has no size to fit: keep it hidden, and fit again the moment it loads
+            const waiting = f ? [...f.querySelectorAll('img')].filter(i => !i.complete) : [];
+            if (f && !waiting.length) f.style.visibility = '';
+            waiting.forEach(i => i.addEventListener('load', () => { if (tourState) tourFitSoon(); }, { once: true }));
         }, 120);
     });
 }
@@ -290,6 +293,7 @@ function startTour(kind) {
     if (window.visualViewport) { window.visualViewport.addEventListener('resize', tourFitScreen); window.visualViewport.addEventListener('scroll', tourFitScreen); }
     document.body.classList.add('tour-open');
     document.getElementById('tourLayer').setAttribute('aria-hidden', 'false');
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (tourState) tourFitSoon(); });   // web fonts that arrive late change the text height
     document.addEventListener('keydown', tourKeys);
     showTourStep(0);
 }
