@@ -160,6 +160,9 @@ const mock = `
   await page.click('.tour-view-tab[data-view="classic"]'); await page.waitForTimeout(500);
   const t1 = await cardsTop();
   console.log('the cards stay put when a view is chosen:', t0, t1, Math.abs(t0 - t1) <= 1);
+  // the pulsing glow (up to 5px) has room on both sides: nothing is cut off by the scrolling area
+  const room = await page.evaluate(() => { const b = document.getElementById('tourBody').getBoundingClientRect(); const cells = [...document.querySelectorAll('.tour-view-cell')].map(c => c.getBoundingClientRect()); return { left: Math.round(cells[0].left - b.left), right: Math.round(b.right - cells[cells.length - 1].right) }; });
+  console.log('the glow has room on both sides:', JSON.stringify(room), room.left >= 6 && room.right >= 6);
   console.log('errors', errors);
   await browser.close();
 })();

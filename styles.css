@@ -3957,7 +3957,7 @@ body.summary-classic .summary-toolbar .export-pdf-btn { margin-left: auto; }
 .tour-view-points[hidden] { display: grid; visibility: hidden; }
 .tour-view-pic img { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; border-radius: 6px; border: 2px solid var(--line-strong); background: #fff; object-fit: contain; }
 /* Each choice is a cell (a plain box, which always stretches) with the button filling it exactly: no gap, in every browser */
-.tour-view-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin: 0 0 0.6rem; }
+.tour-view-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin: 0 0 0.6rem; padding: 0 0.45rem; }   /* side room, so the pulsing glow is not cut off by the edge of the scrolling area */
 /* The choices are big radio cards: a ring, the name and a few words; the chosen one fills with gold */
 .tour-view-cell { position: relative; display: block; min-height: 4.7rem; border-radius: 12px; }
 .tour-view-tab { all: unset; box-sizing: border-box; cursor: pointer; position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.15rem; padding: 0.3rem 0.25rem; text-align: center; color: var(--text); background: rgba(255, 255, 255, 0.07); border: 2px solid rgba(255, 215, 0, 0.55); border-radius: 12px; -webkit-tap-highlight-color: transparent; }
