@@ -296,14 +296,42 @@
             box.classList.toggle('no-scroll', box.scrollWidth - box.clientWidth <= 3);
         }
 
+        // The "scroll left and right" hint goes away for good once the user has scrolled the table sideways themselves
+        const SCROLL_HINT_DISMISSED_KEY = 'summaryScrollHintDismissed';
+        function scrollHintDismissed() {
+            try { return localStorage.getItem(SCROLL_HINT_DISMISSED_KEY) === '1'; } catch (error) { return false; }
+        }
+        function dismissScrollHint() {
+            try { localStorage.setItem(SCROLL_HINT_DISMISSED_KEY, '1'); } catch (error) { /* not remembered */ }
+            const hint = document.getElementById('scrollHint');
+            if (hint) hint.remove();
+        }
+        // A scroll counts only if the user just touched, dragged or wheeled the table (the app also scrolls it by itself when it draws)
+        function watchScrollHint(box) {
+            if (!box || box.dataset.hintWatch || scrollHintDismissed()) return;
+            box.dataset.hintWatch = '1';
+            let lastInput = 0;
+            const note = () => { lastInput = Date.now(); };
+            ['touchstart', 'touchmove', 'wheel', 'mousedown', 'keydown'].forEach(type => box.addEventListener(type, note, { passive: true }));
+            let startLeft = box.scrollLeft;
+            box.addEventListener('scroll', () => {
+                if (Math.abs(box.scrollLeft - startLeft) < 4) return;
+                if (Date.now() - lastInput < 1500) dismissScrollHint();
+                else startLeft = box.scrollLeft;   // moved by the app, not the user
+            }, { passive: true });
+        }
+
         function checkTableOverflow() {
             const container = document.querySelector('.summary-container');
             const scrollHint = document.getElementById('scrollHint');
             if (!container || !scrollHint) return;
 
-            // Show hint if table is wider than container
-            if (container.scrollWidth > container.clientWidth) {
+            // Show hint if table is wider than container (and the user has not already learned to scroll it)
+            if (scrollHintDismissed()) {
+                scrollHint.remove();
+            } else if (container.scrollWidth > container.clientWidth) {
                 scrollHint.classList.remove('hidden');
+                watchScrollHint(container);
             } else {
                 scrollHint.classList.add('hidden');
             }
