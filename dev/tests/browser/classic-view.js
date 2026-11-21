@@ -115,7 +115,8 @@ const mock = `
   await page.click('#appView .app-bar > .tabs .tab:has-text("Match Summary")'); await page.waitForTimeout(500);
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.evaluate(() => changeTheme('light'));
-  await page.click('#summaryViewSwitch [data-view="classic"]'); await page.waitForTimeout(600);
+  const pickView = async (v) => { await page.click('#avatarBtn'); await page.waitForTimeout(150); await page.click(`#summaryViewSwitch [data-view="${v}"]`); await page.waitForTimeout(150); await page.keyboard.press('Escape'); await page.evaluate(() => closeAccountMenu()); };
+  await pickView('classic'); await page.waitForTimeout(600);
   console.log('PDF button in the switch is on and remembered:', await page.evaluate(() => ({ on: document.querySelector('#summaryViewSwitch [data-view=classic]').getAttribute('aria-pressed'), saved: localStorage.getItem('summaryViewMode'), sheet: !!document.getElementById('pdfViewSheet'), table: !!document.querySelector('.summary-table') })));
   const bg = (sel) => page.evaluate(s => { const e = document.querySelector(s); return e ? getComputedStyle(e).backgroundColor : null; }, sel);
   // Ben's row (first player row): home 25 v away 20 -> home wins; points 10; joker 'x'; rank 1
@@ -166,7 +167,7 @@ const mock = `
   const colsRound = await page.evaluate(() => document.querySelectorAll('.pdfv-table colgroup col').length);
   console.log('the Classic view ignores the match filter (always the whole tournament):', colsAll, '->', colsRound, colsRound === colsAll);
   await page.evaluate(() => filterMatches('default'));
-  await page.click('#summaryViewSwitch [data-view="full"]'); await page.waitForTimeout(500);
+  await pickView('full'); await page.waitForTimeout(500);
   console.log('and shown again in Full:', await page.evaluate(() => getComputedStyle(document.getElementById('summaryFilterToggle')).display !== 'none'));
   console.log('the toolbar order is: view switch, download, then the match filter:', await page.evaluate(() => { const y = id => Math.round(document.getElementById(id).getBoundingClientRect().top); return JSON.stringify({ sw: y('summaryViewSwitch'), dl: y('exportPdfBtn'), filter: y('summaryFilterToggle') }); }));
   console.log('there is no refresh button any more:', await page.evaluate(() => !document.getElementById('summaryRefreshBtn')));

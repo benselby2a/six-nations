@@ -54,9 +54,14 @@ function tourBuildSteps(rulesHtml, chatLive) {
     steps.push(tourStep('score', 'See the current score', [
         'Tap <strong>Match Summary</strong> at the top of the screen. It is the screen you land on after signing in.',
         'Everyone\'s rank and total score are on the left, with each prediction and the points it earned for every match.',
-        'The <strong>Full / Compact / Classic</strong> switch above the table changes how it looks (choose your favourite on the next screen).'
-    ], '<p>Tap any prediction to see how it was scored. The header row stays at the top as you scroll, and a 🃏 marks a Joker. <strong>All matches / Current round</strong> sits under the switch.</p>'));
+        'Choose how the table looks (<strong>Full, Compact or Classic</strong>) on the next screen.'
+    ], '<p>Tap any prediction to see how it was scored. The header row stays at the top as you scroll, and a 🃏 marks a Joker. <strong>All matches / Current round</strong> sits above the table.</p>'));
     steps.push({ id: null, title: 'Choose your view', raw: () => tourViewsHtml() });
+    steps.push(tourStep('menu-view', 'Change your view any time', [
+        'Tap your <strong>initial</strong> at the top right to open the player menu.',
+        'Under <strong>Table view</strong>, choose Full, Compact or Classic whenever you like.',
+        '<strong>Appearance</strong> switches between Auto, Light and Dark mode.'
+    ], '<p>Your choices are remembered on this device. Auto follows your phone\'s light or dark setting.</p>'));
     steps.push(tourStep('pdf', 'Download the PDF', [
         'Tap the <strong>download icon</strong> beside the view switch to save the Classic page as a PDF.'
     ], '<p>The Classic view is the same Excel-styled page, shown on screen. On a computer the icon opens the file in a pop-up with Print and Save buttons. The picture shows the page you get.</p>'));
@@ -107,7 +112,7 @@ function tourViewsHtml() {
         `<button type="button" class="tour-view-tab${mode === current ? ' on' : ''}" data-view="${mode}" aria-pressed="${mode === current}" onclick="tourPickView('${mode}')">${label}</button>`).join('');
     const points = TOUR_VIEW_OPTIONS.map(([mode, label, list]) =>
         `<ul class="tour-view-points" data-view="${mode}"${mode === current ? '' : ' hidden'}>${list.map(t => `<li>${t}</li>`).join('')}</ul>`).join('');
-    return `<p class="tour-views-intro">Tap a view to make it your default. You can change it any time with the switch above the table.</p>`
+    return `<p class="tour-views-intro">Tap a view to make it your default. You can change it any time from your player menu (next screen).</p>`
         + `<div class="tour-view-pics">${pictures}</div><div class="tour-view-tabs" role="group" aria-label="Table view">${tabs}</div>${points}`;
 }
 function tourPickView(mode) {
@@ -224,11 +229,14 @@ function tourFitContent(allowHide) {
         const layer = document.getElementById('tourLayer');
         const ls = getComputedStyle(layer);
         const screenH = (window.visualViewport && window.visualViewport.height) || innerHeight;
-        const allowed = () => screenH - parseFloat(ls.paddingTop) - parseFloat(ls.paddingBottom) - (card.offsetHeight - body.offsetHeight);
+        const allowed = () => screenH - parseFloat(ls.paddingTop) - parseFloat(ls.paddingBottom) - (card.offsetHeight - body.offsetHeight) - 6;   // a little slack
         let max = Math.round(screenH * 0.42);
         body.querySelectorAll('.tour-view-pic img').forEach(i => { i.style.maxHeight = max + 'px'; });
         while (pic && body.scrollHeight > allowed() && max > 50) { max -= 8; body.querySelectorAll('.tour-view-pic img').forEach(i => { i.style.maxHeight = max + 'px'; }); }
-        if (body.scrollHeight > allowed()) card.classList.add('tour-compact');
+        if (body.scrollHeight > allowed()) {   // still too tall: drop the intro and the third highlight, then shrink the picture some more
+            card.classList.add('tour-compact');
+            while (pic && body.scrollHeight > allowed() && max > 30) { max -= 8; body.querySelectorAll('.tour-view-pic img').forEach(i => { i.style.maxHeight = max + 'px'; }); }
+        }
         return;
     }
     const fig = body.querySelector('.tour-figure');
