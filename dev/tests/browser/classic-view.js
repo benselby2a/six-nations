@@ -160,6 +160,11 @@ const mock = `
   });
   console.log('pinching with two fingers zooms it, ready to scroll sideways:', JSON.stringify(pinch), pinch.scroll > pinch.client * 1.5);
   await page.setViewportSize({ width: 1280, height: 900 }); await page.waitForTimeout(400);
+  for (const w of [390, 1280]) {
+    await page.setViewportSize({ width: w, height: 800 }); await page.waitForTimeout(300);
+    const hs = await page.evaluate(() => ({ download: Math.round(document.getElementById('exportPdfBtn').getBoundingClientRect().height * 10) / 10, zoom: Math.round(document.querySelector('.classic-tools .pdfv-zoom').getBoundingClientRect().height * 10) / 10 }));
+    console.log(`the zoom controls are as tall as the download button at ${w}px:`, JSON.stringify(hs), hs.download === hs.zoom);
+  }
   // the round filter narrows the columns; Full returns the normal table
   const colsAll = await page.evaluate(() => document.querySelectorAll('.pdfv-table colgroup col').length);
   await page.evaluate(() => { matches[1].round = 2; selectedRound = 1; filterMatches('round'); }); await page.waitForTimeout(500);

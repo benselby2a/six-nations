@@ -3977,3 +3977,7 @@ body.summary-classic .summary-toolbar .export-pdf-btn { margin-left: auto; }
 body.summary-classic .classic-tools { display: flex; }
 .summary-toolbar .export-pdf-btn { order: 3; }
 .classic-tools .pdfv-hint { margin-right: auto; }
+
+/* Classic zoom controls: exactly as tall as the download button beside them */
+.classic-tools .pdfv-zoom { box-sizing: border-box; height: var(--toolbar-btn-h, 34px); }
+.classic-tools .pdfv-zoom button { height: 100%; padding: 0 0.6rem; display: grid; place-items: center; }
