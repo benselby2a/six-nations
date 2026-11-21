@@ -141,6 +141,17 @@ const mock = `
   console.log('hovering or tapping the chosen tab does not lift it or add a glow:', JSON.stringify(hov), hov.transform === 'none' && hov.shadow === 'none' && hov.top === rest.top && hov.bottom === rest.bottom);
   await page.hover('.tour-view-tab:not(.on)'); await page.waitForTimeout(300);
   console.log('and a hovered, unchosen tab is not turned gold:', await page.evaluate(() => { const b = document.querySelector('.tour-view-tab:not(.on):hover'); return b ? getComputedStyle(b).backgroundColor : 'n/a'; }));
+  // the choices stay put whichever picture is showing
+  for (const [w, h] of [[390, 700], [320, 480], [844, 390], [1280, 800]]) {
+    await page.setViewportSize({ width: w, height: h }); await page.waitForTimeout(500);
+    const spots = [];
+    for (const mode of ['full', 'compact', 'classic', 'full']) {
+      await page.evaluate(m => tourPickView(m), mode); await page.waitForTimeout(450);
+      spots.push(await page.evaluate(() => { const t = document.querySelector('.tour-view-tabs').getBoundingClientRect(), pts = document.querySelector('.tour-view-points:not([hidden])').getBoundingClientRect(), img = document.querySelector('.tour-view-pic:not([hidden]) img').getBoundingClientRect(); return { tabs: Math.round(t.top), points: Math.round(pts.top), pic: Math.round(img.height) }; }));
+    }
+    const still = spots.every(p => Math.abs(p.tabs - spots[0].tabs) <= 1 && Math.abs(p.points - spots[0].points) <= 1);
+    console.log(`the view choices do not move when the picture changes at ${w}x${h}:`, JSON.stringify(spots), still);
+  }
   console.log('errors', errors);
   await browser.close();
 })();
