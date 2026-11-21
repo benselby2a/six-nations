@@ -173,7 +173,7 @@
 
             container.innerHTML = `
                 <div class="worm-chart-title">Points Progression${roundOnly ? ` (Round ${selectedRound})` : ''}</div>
-                <div class="worm-chart-hover-hint">Hover or tap a player or line to highlight them; click or tap a point for that game's details.</div>
+                <div class="worm-chart-tools"><span class="worm-chart-hover-hint">Hover or tap a player or line to highlight them; click or tap a point for that game's details. Pinch to zoom, drag to move.</span><span class="pdfv-zoom worm-zoom"><button type="button" onclick="zoomWormChart(1 / 1.3)" aria-label="Zoom the chart out">−</button><button type="button" onclick="zoomWormChart(0)" aria-label="Fit the chart to the screen">Fit</button><button type="button" onclick="zoomWormChart(1.3)" aria-label="Zoom the chart in">+</button></span></div>
                 <div class="worm-chart-wrap">
                     <svg class="worm-chart-svg${phone ? ' phone' : ''}" width="100%" viewBox="0 0 ${svgWidth} ${svgHeight}" role="img" aria-label="Line chart showing each player's cumulative points per game">
                         <line class="worm-axis-line" x1="${marginLeft}" y1="${marginTop}" x2="${marginLeft}" y2="${marginTop + plotHeight}"></line>
@@ -189,6 +189,8 @@
             `;
 
             bindWormChartInteractions();
+            applyWormZoom(currentWormZoom());
+            enableWormPinch(container.querySelector('.worm-chart-wrap'));
         }
 
         function setActiveWormPlayer(username) {
@@ -309,3 +311,50 @@
                 clear();
             }, { passive: true });
         }
+
+
+// ---- Zoom: the chart starts fitted to the screen width; +/- and Fit (above the chart) or a two-finger pinch zoom it, and the chart box scrolls sideways
+let wormZoom = null;   // null = fitted
+const WORM_MAX_ZOOM = 4;
+function currentWormZoom() { return Math.max(1, Math.min(WORM_MAX_ZOOM, wormZoom || 1)); }
+function applyWormZoom(k) {
+    const svg = document.querySelector('#wormChartContainer .worm-chart-svg');
+    const wrap = document.querySelector('#wormChartContainer .worm-chart-wrap');
+    if (!svg || !wrap) return;
+    svg.style.width = (k * 100) + '%';
+    wrap.dataset.zoomed = k > 1.01 ? '1' : '';
+}
+function zoomWormChart(factor) {
+    const wrap = document.querySelector('#wormChartContainer .worm-chart-wrap');
+    if (!wrap) return;
+    const before = currentWormZoom();
+    wormZoom = factor === 0 ? null : Math.max(1, Math.min(WORM_MAX_ZOOM, before * factor));
+    const k = currentWormZoom();
+    const centre = (wrap.scrollLeft + wrap.clientWidth / 2) / before;   // keep what is in the middle in the middle
+    applyWormZoom(k);
+    wrap.scrollLeft = Math.max(0, centre * k - wrap.clientWidth / 2);
+}
+function enableWormPinch(wrap) {
+    if (!wrap || wrap.dataset.pinch) return;
+    wrap.dataset.pinch = '1';
+    let start = null;
+    const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    wrap.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 2) { start = null; return; }
+        const rect = wrap.getBoundingClientRect();
+        const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+        const k0 = currentWormZoom();
+        start = { d0: dist(e.touches), k0, cx, contentX: (wrap.scrollLeft + cx) / k0 };
+    }, { passive: true });
+    wrap.addEventListener('touchmove', (e) => {
+        if (!start || e.touches.length !== 2) return;
+        e.preventDefault();
+        const k = Math.max(1, Math.min(WORM_MAX_ZOOM, start.k0 * dist(e.touches) / start.d0));
+        wormZoom = k;
+        applyWormZoom(k);
+        wrap.scrollLeft = Math.max(0, start.contentX * k - start.cx);
+    }, { passive: false });
+    const end = (e) => { if (e.touches.length < 2) start = null; };
+    wrap.addEventListener('touchend', end, { passive: true });
+    wrap.addEventListener('touchcancel', end, { passive: true });
+}
