@@ -4058,6 +4058,12 @@ html.app-reloaded body { animation: appFadeIn 0.45s ease both; }
 body.summary-compact .summary-table th.pts-col, body.summary-compact .summary-table td.pts-col { display: none; }
 body.summary-compact .summary-table td.competitor-name .comp-score { display: inline; font-weight: 800; font-size: 1.02rem; line-height: 1.1; color: var(--bright-gold); }
 
+/* Compact and Simple: a clear divider between the pinned Rank + Name columns and the grid that scrolls under them (header and body rows alike) */
+body.summary-compact .summary-table th.competitor-col,
+body.summary-compact .summary-table td.competitor-name { box-shadow: inset -3px 0 0 var(--gold), 4px 0 6px -2px rgba(0, 0, 0, 0.4); }
+:root[data-theme="dark"] body.summary-compact .summary-table th.competitor-col,
+:root[data-theme="dark"] body.summary-compact .summary-table td.competitor-name { box-shadow: inset -3px 0 0 var(--bright-gold), 5px 0 8px -2px rgba(0, 0, 0, 0.7); }
+
 /* Points Progression: the hint on the left, the zoom controls (as in the Classic view) on the right */
 .worm-chart-tools { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin: 0 0 0.4rem; }
 .worm-chart-tools .worm-chart-hover-hint { margin: 0; flex: 1 1 auto; }
