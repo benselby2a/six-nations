@@ -218,12 +218,12 @@ const mock = `
   for (const [w, h] of [[390, 664], [1280, 800]]) {
     await page.setViewportSize({ width: w, height: h }); await page.waitForTimeout(450);
     let bad = 0;
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 8; i++) {
       const ok = await page.evaluate(() => { const b = document.getElementById('tourBody'); const c = document.getElementById('tourCard').getBoundingClientRect(); return b.scrollHeight <= b.clientHeight + 2 && c.top >= 0 && c.bottom <= innerHeight + 1; });
       if (!ok) bad++;
-      if (i < 6) { await page.click('#tourNext'); await page.waitForTimeout(320); }
+      if (i < 7) { await page.click('#tourNext'); await page.waitForTimeout(320); }
     }
-    for (let i = 0; i < 6; i++) { await page.click('#tourBack'); await page.waitForTimeout(60); }
+    for (let i = 0; i < 7; i++) { await page.click('#tourBack'); await page.waitForTimeout(60); }
     console.log(`admin tour fits with no scrolling at ${w}x${h}:`, bad === 0);
   }
   await page.keyboard.press('Escape');

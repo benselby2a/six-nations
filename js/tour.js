@@ -134,7 +134,12 @@ function tourBuildAdminSteps() {
         tourStep('admin-fixtures', 'Fixtures and Scores', [
             'Tap a row to edit a fixture, set it Joker eligible, or enter the actual score and tries once the match is played.',
             '<strong>Bulk Import</strong> adds a whole year in one go: one fixture per line as <em>DD/MM/YYYY, HH:MM, Home, Away</em>. Tip: ask Google AI to write the fixtures in that format, then check them against the official list.'
-        ], '<p>Find it under Admin Functions, then <strong>Fixtures and Scores</strong>. <strong>Add New Fixture</strong> adds a single match. Rounds are worked out from the dates. The red <strong>+ score</strong> button on the Match Summary is the quick way to enter a result.</p>'),
+        ], '<p>Find it under Admin Functions, then <strong>Fixtures and Scores</strong>. <strong>Add New Fixture</strong> adds a single match. Rounds are worked out from the dates.</p>'),
+        tourStep('admin-scores', 'Adding scores to matches', [
+            'Quickest, on the day: tap the red <strong>+ score</strong> button above the Match Summary, enter the score and tries, and save. It offers the match that is on now (or the next one still without a score), and becomes <strong>Update</strong> once a score is in.',
+            'Any other match, or to correct a mistake: Admin Functions, then <strong>Fixtures and Scores</strong>, tap <strong>Edit</strong> on the fixture and enter its score and tries.',
+            'The <strong>Setup Checklist</strong> lists matches still missing a score and takes you straight to Fixtures and Scores.'
+        ], '<p>Points, ranks and the Points Progression chart update as soon as a score is saved. Everyone\'s Match Summary picks it up on their next refresh (every 2 minutes during a match).</p>'),
         tourStep('admin-lock', 'Predictions and the lock', [
             'Admin Functions, then <strong>Predictions</strong>.',
             'Switch on <strong>Lock Predictions</strong> when the tournament starts. Each year has its own lock.',
