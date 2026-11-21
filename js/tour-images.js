@@ -24,7 +24,7 @@ const TOUR_IMAGES = {
  },
  "score": {
   "src": "tour-images/score.webp",
-  "v": "50beb902",
+  "v": "80347f17",
   "w": 780,
   "h": 1520,
   "marks": [
@@ -38,111 +38,89 @@ const TOUR_IMAGES = {
    {
     "n": 2,
     "x": 2.5,
-    "y": 21.8,
+    "y": 21,
     "w": 95.1,
-    "h": 78.2
+    "h": 79
    }
   ]
  },
  "view-full": {
   "src": "tour-images/view-full.webp",
-  "v": "18faa3df",
+  "v": "8093eef4",
   "w": 780,
   "h": 660,
   "marks": []
  },
  "view-compact": {
   "src": "tour-images/view-compact.webp",
-  "v": "b01bad0c",
+  "v": "1c6eee0a",
   "w": 780,
   "h": 660,
   "marks": []
  },
  "view-classic": {
   "src": "tour-images/view-classic.webp",
-  "v": "13031c5d",
+  "v": "66b43d5b",
   "w": 780,
   "h": 296,
   "marks": []
  },
  "menu-view": {
   "src": "tour-images/menu-view.webp",
-  "v": "478d9049",
+  "v": "cc705484",
   "w": 580,
-  "h": 792,
+  "h": 816,
   "marks": [
    {
     "n": 1,
     "x": 83.6,
-    "y": 2.5,
+    "y": 2.4,
     "w": 13.1,
-    "h": 9.6
+    "h": 9.3
    },
    {
     "n": 2,
     "x": 6.7,
-    "y": 37.8,
+    "y": 36.7,
     "w": 86.9,
-    "h": 17.2
+    "h": 19.6
    },
    {
     "n": 3,
     "x": 6.7,
-    "y": 27.8,
+    "y": 27,
     "w": 86.9,
-    "h": 10
+    "h": 9.8
    }
   ]
  },
  "pdf": {
   "src": "tour-images/pdf.webp",
-  "v": "1ba78ccf",
+  "v": "eb0505da",
   "w": 780,
-  "h": 402,
+  "h": 586,
   "marks": [
    {
     "n": 1,
     "x": 87.8,
-    "y": 5.2,
+    "y": 37,
     "w": 9.7,
-    "h": 16.9
+    "h": 11.6
    }
   ]
  },
  "admin-scores": {
   "src": "tour-images/admin-scores.webp",
-  "v": "361209b5",
+  "v": "662c7cf4",
   "w": 780,
   "h": 176,
   "marks": [
    {
     "n": 1,
-    "x": 53,
+    "x": 27.7,
     "y": 57.7,
     "w": 44.5,
     "h": 31.4
-   }
-  ]
- },
- "stats": {
-  "src": "tour-images/stats.webp",
-  "v": "ff55ff1a",
-  "w": 780,
-  "h": 1520,
-  "marks": [
-   {
-    "n": 1,
-    "x": 2.5,
-    "y": 0,
-    "w": 95.1,
-    "h": 48.8
-   },
-   {
-    "n": 2,
-    "x": 2.5,
-    "y": 51.9,
-    "w": 95.1,
-    "h": 48.1
    }
   ]
  },
