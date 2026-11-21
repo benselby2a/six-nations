@@ -546,3 +546,5 @@ Pinned summary header is positioned by the browser alone (no scroll script): `.s
 
 ## Emoji reactions removed
 - The emoji reactions feature (chips under match headers, badges in cells, reaction buttons and "who reacted" in the pop-up, the tour step) is gone. The pop-up itself stays (js/fixture-chat.js, name kept): tap a prediction for how it was scored, a match header for the match facts, a chart point for that game. `Storage` no longer reads or writes `fixture_reactions`; the table and its SQL migration are left in the database untouched (nothing deletes the old reactions). Test: `dev/test.sh match-details`.
+
+Tour pictures: `tourPreload(kind, true)` fetches every picture the moment the tour opens (high priority). Any step with pictures (`.tour-figure` or the view chooser `.tour-view-pics`) stays hidden until its images have loaded, then is fitted; the view chooser only shrinks its picture when the body really overflows. Tests: `tour-late-picture`, `tour-picture-heights`, `tour-fixed-size`.
