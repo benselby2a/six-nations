@@ -54,12 +54,12 @@ function tourBuildSteps(rulesHtml) {
     steps.push(tourStep('score', 'See the leaderboard', [
         'Tap <strong>Match Summary</strong> at the top of the screen. It is the screen you land on after signing in.',
         'Everyone\'s rank and total score are on the left, with each prediction and the points it earned for every match.',
-        'Choose how the table looks (<strong>Full, Compact, Classic or Simple</strong>) on the next screen.'
+        'Choose how the table looks (<strong>Full, Compact, Classic or Plain</strong>) on the next screen.'
     ], '<p>Tap any prediction to see how it was scored. The header row stays at the top as you scroll, and a 🃏 marks a Joker. <strong>All matches / Current round</strong> sits above the table.</p>'));
     steps.push({ id: null, title: 'Choose your view', raw: () => tourViewsHtml(), needsViewChoice: true });
     steps.push(tourStep('menu-view', 'Change your view any time', [
         'Tap your <strong>initial</strong> at the top right to open the player menu.',
-        'Under <strong>Table view</strong>, choose Full, Compact, Classic or Simple whenever you like.',
+        'Under <strong>Table view</strong>, choose Full, Compact, Classic or Plain whenever you like.',
         '<strong>Appearance</strong> switches between Auto, Light and Dark mode.'
     ], '<p>Your choices are remembered on this device. Auto follows your phone\'s light or dark setting.</p>'));
     steps.push(tourStep('pdf', 'Download and print', [
@@ -88,7 +88,7 @@ const TOUR_VIEW_OPTIONS = [
         'An Excel-styled page: a spreadsheet-style grid, in light or dark.',
         'The whole tournament on one sheet, with win and lose shading and rank colours.'
     ]],
-    ['simple', 'Simple', [
+    ['simple', 'Plain', [
         'The easiest to read: larger plain text, no icons or flags.',
         'Compact\'s layout: just the countries and scores.',
         'A Joker is shown by an amber line under the score, not a card.'
