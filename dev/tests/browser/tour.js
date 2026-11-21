@@ -205,14 +205,14 @@ const mock = `
   for (const [w, h] of [[320, 480], [390, 664], [844, 390], [1280, 800]]) {
     await page.setViewportSize({ width: w, height: h }); await page.waitForTimeout(450);
     let bad = 0; const pics = [];
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 6; i++) {
       const ok = await page.evaluate(() => { const c = document.getElementById('tourCard').getBoundingClientRect(); const hd = document.querySelector('.tour-head').getBoundingClientRect(); const n = document.getElementById('tourNext').getBoundingClientRect(); const b = document.getElementById('tourBody');
         return c.top >= 0 && c.bottom <= innerHeight + 1 && hd.top >= 0 && n.bottom <= innerHeight && c.left >= 0 && c.right <= innerWidth + 1 && b.scrollHeight <= b.clientHeight + 1; });
       if (!ok) bad++;
       if (true) pics.push(await page.evaluate(() => { const f = document.querySelector('#tourBody .tour-figure'); return f ? (f.style.display === 'none' ? 'hidden' : Math.round(f.getBoundingClientRect().height)) : 'text'; }));
-      if (i < 6) { await tourNextClick(); await page.waitForTimeout([0, 2, 3, 4].includes(i) ? 700 : 80); }
+      if (i < 5) { await tourNextClick(); await page.waitForTimeout([0, 2, 3, 4].includes(i) ? 700 : 80); }
     }
-    for (let i = 0; i < 6; i++) { await page.click('#tourBack'); await page.waitForTimeout([3, 4, 5].includes(i) ? 700 : 30); }
+    for (let i = 0; i < 5; i++) { await page.click('#tourBack'); await page.waitForTimeout([3, 4].includes(i) ? 700 : 30); }
     console.log(`fits with no scrolling at ${w}x${h}:`, bad === 0 && !pics.includes('hidden'), '| picture heights (first/last step):', pics.join(','), '| pictures all shown:', !pics.includes('hidden'));
   }
   // the admin tour too (picture hidden only where the screen is too short for picture and text together)
