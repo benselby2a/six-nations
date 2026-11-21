@@ -4004,3 +4004,11 @@ body.summary-classic .summary-toolbar .filter-toggle, body.summary-classic .roun
 .tour-view-points { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.25rem; font-size: 0.98rem; line-height: 1.35; }
 .tour-view-points li::marker { color: var(--bright-gold); }
 @media (max-height: 500px) { .tour-view-points li:nth-child(n+3), .tour-views-intro { display: none; } }
+
+/* Pinned header, sideways: tied to the table's own scrolling by the browser (no script per frame) where that is supported */
+@supports (animation-timeline: scroll()) {
+    .summary-table-wrap { timeline-scope: --sumx; }
+    .summary-table-wrap .summary-container { scroll-timeline: --sumx x; }
+    .summary-sticky-scroll { animation: summary-slide linear both; animation-timeline: --sumx; }
+    @keyframes summary-slide { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(calc(var(--sum-range, 0) * -1px), 0, 0); } }
+}

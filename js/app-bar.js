@@ -121,9 +121,19 @@ document.addEventListener('visibilitychange', () => {
 const PINNED_COLS = '.rank-col, .competitor-col, .pts-col';
 let stickyResizeObserver = null;
 let stickyScrollEl = null;   // the sideways-moving part of the pinned header
+// Where the browser can tie an animation to a scroller (scroll-driven animations: Chrome, Safari 26) the sideways movement is done in CSS, on the
+// graphics chip, exactly in step with the table (see .summary-sticky-scroll); only the distance is passed in (--sum-range). Elsewhere a scroll
+// listener moves it, which is a frame behind and a little jerky.
+const SCROLL_TIMELINE_OK = !!(window.CSS && CSS.supports && CSS.supports('animation-timeline: scroll()'));
 function syncSummaryStickyScroll() {
     const box = document.querySelector('.summary-table-wrap .summary-container');
-    if (stickyScrollEl && box) stickyScrollEl.style.transform = `translate3d(${-box.scrollLeft}px, 0, 0)`;
+    if (!box) return;
+    if (SCROLL_TIMELINE_OK) {
+        const wrap = box.closest('.summary-table-wrap');
+        if (wrap) wrap.style.setProperty('--sum-range', String(Math.max(0, box.scrollWidth - box.clientWidth)));
+        return;
+    }
+    if (stickyScrollEl) stickyScrollEl.style.transform = `translate3d(${-box.scrollLeft}px, 0, 0)`;
 }
 // Two layers: the first three columns (#, Competitor, Score) stay put; everything else is one layer that is moved sideways with a
 // single transform (smooth, done by the graphics chip) in step with the table, and slides under the fixed columns like the real table.
@@ -154,7 +164,7 @@ function buildSummaryStickyHead() {
     inner.appendChild(scrolling);
     inner.appendChild(pinned);
     stickyScrollEl = scrolling;
-    if (!box.dataset.pinSync) {   // one listener per box (the box is replaced whenever the summary is redrawn)
+    if (!SCROLL_TIMELINE_OK && !box.dataset.pinSync) {   // one listener per box (the box is replaced whenever the summary is redrawn)
         box.dataset.pinSync = '1';
         box.addEventListener('scroll', syncSummaryStickyScroll, { passive: true });
     }
