@@ -88,7 +88,7 @@
 
             let html = predictionsRevealed() ? '' : '<div class="predictions-hidden-note" role="status">🔒 Other players\' predictions are hidden until predictions are locked, so nobody is influenced by them. You can still see your own.</div>';
             html += scrollHintMarkup;
-            html += '<div class="summary-table-wrap"><div class="summary-sticky-head"><div class="summary-sticky-inner"></div></div>';
+            html += '<div class="summary-table-wrap"><div class="summary-sticky-zone"><div class="summary-sticky-head"><div class="summary-sticky-inner"></div></div></div>';
             html += '<div class="summary-container">';
             html += '<table class="summary-table">';
             

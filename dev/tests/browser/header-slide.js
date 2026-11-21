@@ -115,7 +115,7 @@ const mock = `
   await page.evaluate(() => switchYear(2026)); await page.waitForTimeout(600);
   await page.click('#appView .app-bar > .tabs .tab:has-text("Match Summary")'); await page.waitForTimeout(500);
   await page.evaluate(() => { const tb = document.querySelector('.summary-table tbody'); [...tb.querySelectorAll('tr')].forEach(r => { for (let i = 0; i < 6; i++) tb.appendChild(r.cloneNode(true)); }); buildSummaryStickyHead(); });
-  const state = () => page.evaluate(() => { const tbl = document.querySelector('.summary-table:not(.summary-table-clone)'), t = tbl.getBoundingClientRect(), lastRowH = Math.round(tbl.tBodies[0].lastElementChild.getBoundingClientRect().height), i = document.querySelector('.summary-sticky-inner'), r = i.getBoundingClientRect(); return { show: i.classList.contains('show'), pinnedTop: Math.round(r.top), pinnedBottom: Math.round(r.bottom), tableBottom: Math.round(t.bottom), lastRowH, tr: i.style.transform }; });
+  const state = () => page.evaluate(() => { const tbl = document.querySelector('.summary-table:not(.summary-table-clone)'), t = tbl.getBoundingClientRect(), lastRowH = Math.round(tbl.tBodies[0].lastElementChild.getBoundingClientRect().height), i = document.querySelector('.summary-sticky-inner'), r = i.getBoundingClientRect(); return { show: r.bottom > 0 && r.top < innerHeight, pinnedTop: Math.round(r.top), pinnedBottom: Math.round(r.bottom), tableBottom: Math.round(t.bottom), lastRowH }; });
   await page.mouse.move(200, 400);
   const log = [];
   for (const want of [500, 400, 300, 250, 200, 150, 110, 60, 10]) {
