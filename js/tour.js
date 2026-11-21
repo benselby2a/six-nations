@@ -62,8 +62,8 @@ function tourBuildSteps(rulesHtml, chatLive) {
         'Under <strong>Table view</strong>, choose Full, Compact or Classic whenever you like.',
         '<strong>Appearance</strong> switches between Auto, Light and Dark mode.'
     ], '<p>Your choices are remembered on this device. Auto follows your phone\'s light or dark setting.</p>'));
-    steps.push(tourStep('pdf', 'Download the PDF', [
-        'Tap the <strong>download icon</strong> beside the view switch to save the Classic page as a PDF.'
+    steps.push(tourStep('pdf', 'Download and print', [
+        'Tap the <strong>download icon</strong> above the table to save the Classic page as a PDF, or to print it.'
     ], '<p>The Classic view is the same Excel-styled page, shown on screen. On a computer the icon opens the file in a pop-up with Print and Save buttons. The picture shows the page you get.</p>'));
     if (chatLive) {
         steps.push(tourStep('chips', 'React to matches and results', [

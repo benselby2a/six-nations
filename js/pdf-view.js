@@ -199,7 +199,7 @@ function buildPdfStyleViewHtml(matchList, sortedUsers) {
     const colgroup = `<col style="width:${mm(22)}">` + matchSchemas.map(({ cols }) => cols.map(() => `<col style="width:${mm(matchColWidth)}">`).join('')).join('') + `<col style="width:${mm(9)}"><col style="width:${mm(9)}"><col style="width:${mm(9)}">`;
     const stamp = new Date();
     const updated = stamp.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    return `<div class="pdfv-tools"><span class="pdfv-hint">Pinch to zoom, drag to move.</span><span class="pdfv-zoom"><button type="button" onclick="zoomPdfView(1 / 1.3)" aria-label="Zoom out">−</button><button type="button" onclick="zoomPdfView(0)" aria-label="Fit to screen">Fit</button><button type="button" onclick="zoomPdfView(1.3)" aria-label="Zoom in">+</button></span></div><div class="pdfv-wrap" id="pdfViewWrap"><div class="pdfv-stage" id="pdfViewStage"><div class="pdfv-sheet" id="pdfViewSheet" style="width:${PDFV_SHEET_W.toFixed(0)}px;padding:${mm(3)}">`
+    return `<div class="pdfv-wrap" id="pdfViewWrap"><div class="pdfv-stage" id="pdfViewStage"><div class="pdfv-sheet" id="pdfViewSheet" style="width:${PDFV_SHEET_W.toFixed(0)}px;padding:${mm(3)}">`
         + `<div class="pdfv-title">${escapeHtml(String(selectedYear || stamp.getFullYear()))} Six Nations Guesser</div>`
         + `<div class="pdfv-sub">Updated ${updated}</div>`
         + `<table class="pdfv-table" style="width:${mm(tableWidth)}"><colgroup>${colgroup}</colgroup>`
