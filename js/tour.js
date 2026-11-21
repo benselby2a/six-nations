@@ -54,12 +54,12 @@ function tourBuildSteps(rulesHtml, chatLive) {
     steps.push(tourStep('score', 'See the current score', [
         'Tap <strong>Match Summary</strong> at the top of the screen. It is the screen you land on after signing in.',
         'Everyone\'s rank and total score are on the left, with each prediction and the points it earned for every match.',
-        'Use the <strong>Full / Compact / PDF</strong> switch above the table: Compact hides the emoji rows, dates and tries so more fits on screen.'
-    ], '<p>Tap any prediction to see how it was scored. The header row stays at the top as you scroll, and a 🃏 marks a Joker. Turn your phone sideways for a compact view with just the countries and scores.</p>'));
-    steps.push(tourStep('pdf', 'The traditional view', [
-        'On the Match Summary, tap <strong>PDF</strong> in the view switch to see the table laid out like the traditional PDF page (it follows light or dark mode).',
-        'Tap the <strong>PDF icon</strong> beside it to download the file itself.'
-    ], '<p>The whole page fits on screen: pinch to zoom in. On a computer the icon opens the file in a pop-up with Print and Save buttons. The picture shows the page you get.</p>'));
+        'The <strong>Full / Compact / Classic</strong> switch above the table changes how it looks (choose your favourite on the next screen).'
+    ], '<p>Tap any prediction to see how it was scored. The header row stays at the top as you scroll, and a 🃏 marks a Joker. <strong>All matches / Current round</strong> sits under the switch.</p>'));
+    steps.push({ id: null, title: 'Choose your view', raw: () => tourViewsHtml() });
+    steps.push(tourStep('pdf', 'Download the PDF', [
+        'Tap the <strong>download icon</strong> beside the view switch to get the traditional PDF page.'
+    ], '<p>The Classic view shows the same page on screen. On a computer the icon opens the file in a pop-up with Print and Save buttons. The picture shows the page you get.</p>'));
     if (chatLive) {
         steps.push(tourStep('chips', 'React to matches and results', [
             'Tap the <strong>😀＋ chip</strong> under a match (or anywhere on the match header) to react to the match with an emoji or one of the two team flags.',
@@ -75,6 +75,30 @@ function tourBuildSteps(rulesHtml, chatLive) {
         steps.push({ id: null, title: 'Add it to your Home Screen', raw: () => '<p>For one-tap access, add the Six Nations Guesser to your iPhone Home Screen.</p><p>Tap the <strong>Share</strong> button <svg class="tour-share-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> in your browser, then choose <strong>Add to Home Screen</strong>. Open it from there and sign in with a code.</p><p><strong>Can\'t see the Share button?</strong> Press and hold (long press) the browser address at the bottom of the screen, then choose <strong>Share</strong>.</p>' });
     }
     return steps;
+}
+
+// The summary view choices, each with a picture: tapping one makes it the default (the same switch as above the table)
+const TOUR_VIEW_OPTIONS = [
+    ['full', 'Full', 'Dates, reactions and tries for every match.'],
+    ['compact', 'Compact', 'Just the countries and scores, so more fits on screen.'],
+    ['classic', 'Classic', 'The traditional page, laid out like the PDF.']
+];
+function tourViewsHtml() {
+    const cards = TOUR_VIEW_OPTIONS.map(([mode, label, text]) => {
+        const image = (typeof TOUR_IMAGES !== 'undefined') ? TOUR_IMAGES['view-' + mode] : null;
+        const picture = image ? `<img src="${image.src}?v=${image.v}" alt="" width="${image.w}" height="${image.h}" style="aspect-ratio:${image.w}/${image.h}">` : '';
+        const on = typeof summaryViewMode !== 'undefined' && summaryViewMode === mode;
+        return `<button type="button" class="tour-view${on ? ' on' : ''}" data-view="${mode}" aria-pressed="${on}" onclick="tourPickView('${mode}')">${picture}<b>${label}</b><span class="tour-view-text">${text}</span><em class="tour-view-on">Your default</em></button>`;
+    }).join('');
+    return `<p class="tour-views-intro">Pick the view you like best. It becomes your default on this device, and you can change it any time with the switch above the table.</p><div class="tour-views">${cards}</div>`;
+}
+function tourPickView(mode) {
+    if (typeof setSummaryView === 'function') setSummaryView(mode);
+    document.querySelectorAll('#tourBody .tour-view').forEach(card => {
+        const on = card.dataset.view === mode;
+        card.classList.toggle('on', on);
+        card.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
 }
 
 function tourBuildAdminSteps() {
@@ -174,6 +198,21 @@ function tourFitContent(allowHide) {
     const body = document.getElementById('tourBody');
     const card = document.getElementById('tourCard');
     if (!body || !card || !tourState) return;
+    // The view-choice step has several pictures: shrink them until everything fits without scrolling
+    if (body.querySelector('.tour-views')) {
+        card.classList.remove('tour-compact');
+        const pics = [...body.querySelectorAll('.tour-view img')];
+        // How tall the body may be: the visible screen, less the layer's padding and the card's own header and footer
+        const layer = document.getElementById('tourLayer');
+        const ls = getComputedStyle(layer);
+        const screenH = (window.visualViewport && window.visualViewport.height) || innerHeight;
+        const allowed = () => screenH - parseFloat(ls.paddingTop) - parseFloat(ls.paddingBottom) - (card.offsetHeight - body.offsetHeight) - parseFloat(getComputedStyle(card).borderTopWidth) * 0;
+        let max = Math.round(screenH * 0.34);
+        pics.forEach(i => { i.style.maxHeight = max + 'px'; });
+        while (body.scrollHeight > allowed() && max > 24) { max -= 8; pics.forEach(i => { i.style.maxHeight = max + 'px'; }); }
+        if (body.scrollHeight > allowed()) card.classList.add('tour-compact');
+        return;
+    }
     const fig = body.querySelector('.tour-figure');
     const img = fig && fig.querySelector('img');
     let naturalHeight = 0;   // how tall the picture would like to be

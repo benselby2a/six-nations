@@ -115,8 +115,8 @@ const mock = `
   await page.click('#appView .app-bar > .tabs .tab:has-text("Match Summary")'); await page.waitForTimeout(500);
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.evaluate(() => changeTheme('light'));
-  await page.click('#summaryViewSwitch [data-view="pdf"]'); await page.waitForTimeout(600);
-  console.log('PDF button in the switch is on and remembered:', await page.evaluate(() => ({ on: document.querySelector('#summaryViewSwitch [data-view=pdf]').getAttribute('aria-pressed'), saved: localStorage.getItem('summaryViewMode'), sheet: !!document.getElementById('pdfViewSheet'), table: !!document.querySelector('.summary-table') })));
+  await page.click('#summaryViewSwitch [data-view="classic"]'); await page.waitForTimeout(600);
+  console.log('PDF button in the switch is on and remembered:', await page.evaluate(() => ({ on: document.querySelector('#summaryViewSwitch [data-view=classic]').getAttribute('aria-pressed'), saved: localStorage.getItem('summaryViewMode'), sheet: !!document.getElementById('pdfViewSheet'), table: !!document.querySelector('.summary-table') })));
   const bg = (sel) => page.evaluate(s => { const e = document.querySelector(s); return e ? getComputedStyle(e).backgroundColor : null; }, sel);
   // Ben's row (first player row): home 25 v away 20 -> home wins; points 10; joker 'x'; rank 1
   const rows = () => page.evaluate(() => [...document.querySelectorAll('.pdfv-table tbody tr')].map(tr => [...tr.cells].map(td => td.textContent.trim())));
@@ -136,15 +136,19 @@ const mock = `
   // the round filter narrows the columns; Full returns the normal table
   const colsAll = await page.evaluate(() => document.querySelectorAll('.pdfv-table colgroup col').length);
   await page.evaluate(() => { matches[1].round = 2; selectedRound = 1; filterMatches('round'); }); await page.waitForTimeout(500);
+  console.log('the All matches / Current round controls are hidden in Classic:', await page.evaluate(() => getComputedStyle(document.getElementById('summaryFilterToggle')).display === 'none'));
   const colsRound = await page.evaluate(() => document.querySelectorAll('.pdfv-table colgroup col').length);
-  console.log('Current round shows only that round:', colsAll, '->', colsRound, colsRound < colsAll);
+  console.log('the Classic view ignores the match filter (always the whole tournament):', colsAll, '->', colsRound, colsRound === colsAll);
   await page.evaluate(() => filterMatches('default'));
   await page.click('#summaryViewSwitch [data-view="full"]'); await page.waitForTimeout(500);
+  console.log('and shown again in Full:', await page.evaluate(() => getComputedStyle(document.getElementById('summaryFilterToggle')).display !== 'none'));
+  console.log('the toolbar order is: view switch, download, then the match filter:', await page.evaluate(() => { const y = id => Math.round(document.getElementById(id).getBoundingClientRect().top); return JSON.stringify({ sw: y('summaryViewSwitch'), dl: y('exportPdfBtn'), filter: y('summaryFilterToggle') }); }));
+  console.log('there is no refresh button any more:', await page.evaluate(() => !document.getElementById('summaryRefreshBtn')));
   console.log('Full brings the normal table back:', await page.evaluate(() => !document.getElementById('pdfViewSheet') && !!document.querySelector('.summary-table') && !document.body.classList.contains('summary-compact') && !document.body.classList.contains('summary-pdf')));
   await page.reload(); await page.waitForTimeout(1500);
   console.log('the choice is remembered after a reload (Full):', await page.evaluate(() => summaryViewMode));
-  await page.evaluate(() => setSummaryView('pdf')); await page.reload(); await page.waitForTimeout(1800);
-  console.log('PDF is remembered after a reload:', await page.evaluate(() => summaryViewMode + ' ' + document.body.classList.contains('summary-pdf') + ' ' + document.querySelector('#summaryViewSwitch [data-view=pdf]').getAttribute('aria-pressed')));
+  await page.evaluate(() => setSummaryView('classic')); await page.reload(); await page.waitForTimeout(1800);
+  console.log('PDF is remembered after a reload:', await page.evaluate(() => summaryViewMode + ' ' + document.body.classList.contains('summary-classic') + ' ' + document.querySelector('#summaryViewSwitch [data-view=classic]').getAttribute('aria-pressed')));
   console.log('errors', errors);
   await browser.close();
 })();
