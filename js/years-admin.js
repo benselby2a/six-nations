@@ -92,7 +92,7 @@
 
         function updateSummaryUpdatedAt() {
             const el = document.getElementById('summaryUpdatedAt');
-            if (el) el.textContent = 'Updated ' + new Date(lastDataRefreshAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            if (el) el.textContent = 'Data last updated ' + new Date(lastDataRefreshAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
         }
 
         async function manualRefreshSummary() {

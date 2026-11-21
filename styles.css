@@ -3284,8 +3284,11 @@
     border-top: none;
 }
 
-.app-version { text-align: center; font-size: 0.72rem; opacity: 0.45; padding: 1.5rem 1rem calc(1rem + env(safe-area-inset-bottom)); letter-spacing: 0.04em; }
-.app-version:empty { display: none; }
+/* Footer: when the data was last fetched, then the app version, on one line */
+.app-footer { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 0.6rem; text-align: center; font-size: 0.72rem; opacity: 0.55; padding: 1.5rem 1rem calc(1rem + env(safe-area-inset-bottom)); letter-spacing: 0.04em; }
+.app-footer:not(:has(:not(:empty))) { display: none; }
+.app-footer-updated:empty, .app-version:empty { display: none; }
+.app-footer-updated:not(:empty) + .app-version:not(:empty)::before { content: '\00b7'; margin-right: 0.6rem; }
 
 /* Refresh sits beside Logout, same size, in a neutral colour */
 
@@ -3498,7 +3501,7 @@ body.in-app .container { padding-top: 0.8rem; }
 .toolbar-icon-btn:hover:not(:disabled) { background: rgb(var(--ink) / 0.16); }
 .toolbar-icon-btn:disabled { opacity: 0.6; cursor: default; }
 .toolbar-icon-btn.refreshing .refresh-icon { animation: refreshSpin 0.8s linear infinite; }
-.summary-updated-row { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; min-height: 28px; margin: 0 0 0.5rem; }
+.summary-updated-row { display: flex; align-items: center; justify-content: flex-end; gap: 0.6rem; min-height: 0; margin: 0 0 0.5rem; }
 .summary-updated-row .profile-hint { margin: 0; }
 .pill-add { all: unset; box-sizing: border-box; cursor: pointer; border: 1px solid rgba(231, 76, 60, 0.85); background: rgba(231, 76, 60, 0.2); color: var(--bad-text); border-radius: 999px; padding: 0.3rem 0.8rem; font-family: var(--body-font); font-size: 0.78rem; font-weight: 700; white-space: nowrap; }
 .pill-add:hover:not(:disabled) { background: rgba(231, 76, 60, 0.4); }
