@@ -185,8 +185,10 @@ async function checkForNewVersion() {
         let tried = null;
         try { tried = sessionStorage.getItem('rugbyPredictorReloadedFor'); } catch (e) { /* ignore */ }
         if (tried === m[1]) return;   // already reloaded for this version once (never loop)
-        try { sessionStorage.setItem('rugbyPredictorReloadedFor', m[1]); } catch (e) { /* ignore */ }
-        location.reload();
+        try { sessionStorage.setItem('rugbyPredictorReloadedFor', m[1]); sessionStorage.setItem('rugbyPredictorFadeIn', '1'); } catch (e) { /* ignore */ }
+        // Fade the page out first, and fade the new one in (see the start of index.html), so the update is not a flash
+        document.documentElement.classList.add('app-updating');
+        setTimeout(() => location.reload(), 280);
     } catch (e) { /* no signal or blocked: try again next time */ }
 }
 
