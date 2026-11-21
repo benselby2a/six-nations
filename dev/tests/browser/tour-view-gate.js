@@ -114,11 +114,17 @@ const mock = `
   await page.setViewportSize({ width: 390, height: 700 });
   await page.evaluate(() => { localStorage.removeItem('summaryViewMode'); startTour(); showTourStep(3); }); await page.waitForTimeout(900);
   const st = () => page.evaluate(() => ({ title: document.getElementById('tourTitle').textContent, html: document.getElementById('tourBody').innerHTML.slice(0, 60), nextDisabled: document.getElementById('tourNext').disabled, hint: !!document.querySelector('.tour-views-need') && !document.querySelector('.tour-views-need').hidden, selected: [...document.querySelectorAll('.tour-view-tab.on')].length }));
+  const nextBox = () => page.evaluate(() => { const b = document.getElementById('tourNext').getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top), Math.round(b.width), Math.round(b.height)].join(','); });
+  const nextLabel = () => page.evaluate(() => document.getElementById('tourNext').textContent);
+  const boxBefore = await nextBox(), labelBefore = await nextLabel();
   const before = await st();
   console.log('on the view step Next is locked until a view is chosen:', JSON.stringify(before), before.title === 'Choose your view' && before.nextDisabled && before.hint && before.selected === 0);
   await page.evaluate(() => nextTourStep()); await page.waitForTimeout(300);
   console.log('the keyboard / script cannot skip it either:', (await st()).title === 'Choose your view');
+  console.log('before a view is chosen the button says Select view:', JSON.stringify(labelBefore), labelBefore === 'Select view');
   await page.click('.tour-view-tab[data-view="compact"]'); await page.waitForTimeout(300);
+  const boxAfter = await nextBox(), labelAfter = await nextLabel();
+  console.log('then it says Next, in exactly the same place and size:', labelAfter, boxBefore, boxAfter, labelAfter === 'Next' && boxBefore === boxAfter);
   const after = await st();
   console.log('choosing a view unlocks Next and highlights it:', JSON.stringify(after), !after.nextDisabled && !after.hint && after.selected === 1 && (await page.evaluate(() => summaryViewMode)) === 'compact');
   await page.click('#tourNext'); await page.waitForTimeout(500);
