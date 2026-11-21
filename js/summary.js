@@ -97,7 +97,10 @@
             const scrollHintArrow = currentFilter === 'default' ? '↔' : '→';
             const scrollHintMarkup = `<div class="scroll-hint hidden" id="scrollHint"><span>${scrollHintText}</span><span class="scroll-hint-arrow">${scrollHintArrow}</span></div>`;
 
-            let html = predictionsRevealed() ? '' : '<div class="predictions-hidden-note" role="status">🔒 Other players\' predictions are hidden until predictions are locked, so nobody is influenced by them. You can still see your own.</div>';
+            // Simple view: plain words only (no flags, cards, padlocks); a Joker is shown by colour, explained by the legend line
+            const simple = summaryViewMode === 'simple';
+            let html = predictionsRevealed() ? '' : `<div class="predictions-hidden-note" role="status">${simple ? '' : '🔒 '}Other players' predictions are hidden until predictions are locked, so nobody is influenced by them. You can still see your own.</div>`;
+            if (simple) html += '<p class="simple-legend" role="note"><span class="simple-legend-swatch" aria-hidden="true"></span>Amber cells = Joker played (points doubled).</p>';
             html += scrollHintMarkup;
             html += '<div class="summary-table-wrap"><div class="summary-sticky-zone"><div class="summary-sticky-head"><div class="summary-sticky-inner"></div></div></div>';
             html += '<div class="summary-container">';
@@ -115,13 +118,13 @@
                 html += `<th class="match-header-cell ${match.jokerEligible ? 'joker-eligible-header' : ''}" data-match-col="${colIndex}" data-chat-match="${match.id}"${chatHeaderAttrs(match)}>
                     <div class="match-header-cell-inner">
                         <div class="match-header-top">
-                            <div class="match-teams"><span>${getFlag(match.team1)} ${getTeamAbbr(match.team1)}</span><span>${getFlag(match.team2)} ${getTeamAbbr(match.team2)}</span></div>
+                            <div class="match-teams">${simple ? `<span>${getTeamAbbr(match.team1)}</span><span>${getTeamAbbr(match.team2)}</span>` : `<span>${getFlag(match.team1)} ${getTeamAbbr(match.team1)}</span><span>${getFlag(match.team2)} ${getTeamAbbr(match.team2)}</span>`}</div>
                             <div class="match-date">${match.date} - ${match.time}</div>
                         </div>
                         <div class="match-header-bottom">
-                            <div class="match-result-row">${hasResult ? `<div class="match-result">${match.actualScore1} - ${match.actualScore2}</div>` : '<div class="no-result">-</div>'}${match.jokerEligible ? '<span class="joker-inline" aria-hidden="true">🃏</span>' : ''}</div>
+                            <div class="match-result-row">${hasResult ? `<div class="match-result">${match.actualScore1} - ${match.actualScore2}</div>` : '<div class="no-result">-</div>'}${match.jokerEligible ? (simple ? '<span class="sr-only">Joker</span>' : '<span class="joker-inline" aria-hidden="true">🃏</span>') : ''}</div>
                             <div class="match-tries${hasTries ? '' : ' match-tries-empty'}">${hasTries ? `(${totalMatchTries} tries)` : '&nbsp;'}</div>
-                            <div class="match-extras">${match.jokerEligible ? '<span class="joker-indicator joker-eligible-icon" title="Joker eligible" role="img" aria-label="Joker eligible">🃏</span>' : ''}</div>
+                            <div class="match-extras">${match.jokerEligible && !simple ? '<span class="joker-indicator joker-eligible-icon" title="Joker eligible" role="img" aria-label="Joker eligible">🃏</span>' : ''}</div>
                         </div>
                     </div>
                 </th>`;
@@ -164,14 +167,14 @@
                 
                 html += `<tr class="${rowClass}" data-player="${escapeHtml(user.username)}">`;
                 html += `<td class="rank-col">${rank}</td>`;
-                html += `<td class="competitor-name"><div class="comp-name"><span class="comp-nick">${user.nickname}</span><div class="comp-sub">${getUserFlags(user.username)}<span class="comp-score">${user.totalPoints}</span></div></div></td>`;
+                html += `<td class="competitor-name"><div class="comp-name"><span class="comp-nick">${user.nickname}</span><div class="comp-sub">${simple ? '' : getUserFlags(user.username)}<span class="comp-score">${user.totalPoints}</span></div></div></td>`;
                 html += `<td class="pts-col">${user.totalPoints}</td>`;
 
                 // Column for each match
                 filteredMatches.forEach(match => {
                     if (!canSeePredictionsOf(user.username)) {
                         // Hidden until predictions are locked: same slots as a normal cell, so rows still line up
-                        html += '<td class="prediction-cell hidden-prediction" title="Hidden until predictions are locked"><div class="cell-score"><span aria-label="Hidden until predictions are locked">🔒</span></div><span class="points-earned points-placeholder">&nbsp;</span><div class="cell-extras"></div></td>';
+                        html += '<td class="prediction-cell hidden-prediction" title="Hidden until predictions are locked"><div class="cell-score"><span aria-label="Hidden until predictions are locked">' + (simple ? 'Hidden' : '🔒') + '</span></div><span class="points-earned points-placeholder">&nbsp;</span><div class="cell-extras"></div></td>';
                         return;
                     }
                     const pred = users[user.username].predictions[match.id];
@@ -215,9 +218,9 @@
                         tooltipContent += `<span class="tooltip-line" style="margin-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 0.5rem;">Total: ${pointsEarned} pts</span>`;
                     }
 
-                    const jokerIndicator = isJoker ? '<span class="joker-indicator">🃏</span>' : '';
+                    const jokerIndicator = isJoker && !simple ? '<span class="joker-indicator">🃏</span>' : '';
                     const jokerScoreClass = isJoker ? 'joker-score' : '';
-                    const jokerCellClass = isJoker ? 'prediction-cell joker-cell' : 'prediction-cell';
+                    const jokerCellClass = isJoker ? (simple ? 'prediction-cell joker-cell simple-joker' : 'prediction-cell joker-cell') : 'prediction-cell';
                     const score1 = pred.team1;
                     const score2 = pred.team2;
                     let score1Class = 'pred-score';
@@ -239,7 +242,7 @@
                     const tipClass = tooltipContent.replace(/<[^>]*>/g, '').trim() ? 'tooltip' : 'tooltip tooltip-empty';
 
                     // Every cell has the same slots, so rows line up: the score, the points pill, then one line holding the Joker and the top emoji
-                    const scoreLine = `<div class="cell-score"><span class="${score1Class}">${score1}</span> - <span class="${score2Class}">${score2}</span>${isJoker ? '<span class="joker-inline" aria-hidden="true">🃏</span>' : ''}</div>`;
+                    const scoreLine = `<div class="cell-score"><span class="${score1Class}">${score1}</span> - <span class="${score2Class}">${score2}</span>${isJoker ? (simple ? '<span class="sr-only">Joker</span>' : '<span class="joker-inline" aria-hidden="true">🃏</span>') : ''}</div>`;
                     const pointsLine = hasResult
                         ? `<span class="points-earned ${pointsClass}">${pointsEarned} pts</span>`
                         : '<span class="points-earned points-placeholder">&nbsp;</span>';
@@ -257,7 +260,7 @@
                 // Predicted tries column (only when not filtering by round): just the number, no tooltip
                 if (currentFilter !== 'round') {
                     const userTries = users[user.username].totalTries;
-                    html += `<td class="tries-col">${!canSeePredictionsOf(user.username) ? '🔒' : (userTries !== null && userTries !== undefined ? userTries : '-')}</td>`;
+                    html += `<td class="tries-col">${!canSeePredictionsOf(user.username) ? (simple ? 'Hidden' : '🔒') : (userTries !== null && userTries !== undefined ? userTries : '-')}</td>`;
                 }
                 
                 html += '</tr>';

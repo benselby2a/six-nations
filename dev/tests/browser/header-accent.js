@@ -120,9 +120,11 @@ const mock = `
   console.log('the header accent is on the selected tab on every screen:', results.every(([, m, want]) => m.count === 1 && m.name.toUpperCase().startsWith(want.toUpperCase().slice(0, 8)) && m.width === '3px' && m.accent === (want === 'Admin Functions' ? 'rgb(255, 85, 96)' : 'rgb(232, 176, 42)')));
   // right after signing in, after a reload that restores another tab, and as a guest
   const signIn = async () => { await page.fill('#loginEmail', 'ben@example.com'); await page.click('#sendLoginCodeBtn'); await page.waitForTimeout(150); await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(1200); };
+  // Admin Functions is deliberately never restored: the app reopens on whichever of My Predictions / Match Summary was viewed last
+  await page.click('#appView .app-bar > .tabs .tab:has-text("My Predictions")'); await page.waitForTimeout(300);
   await page.click('#appView .app-bar > .tabs .tab:has-text("Admin Functions")'); await page.waitForTimeout(300);
   await page.reload(); await page.waitForTimeout(1200); await signIn();
-  const restored = await marked(); console.log('after a reload that restores Admin Functions:', JSON.stringify(restored), restored.count === 1 && restored.name === 'Admin Functions');
+  const restored = await marked(); console.log('after a reload (Admin is not restored; the last other tab is):', JSON.stringify(restored), restored.count === 1 && restored.name === 'My Predictions' && restored.width === '3px');
   await page.evaluate(() => logout()); await page.waitForTimeout(500); await page.evaluate(() => loginAsGuest()); await page.waitForTimeout(800);
   const guest = await marked(); console.log('as a guest:', JSON.stringify(guest), guest.count === 1 && guest.name === 'Match Summary');
   console.log('errors', errors);

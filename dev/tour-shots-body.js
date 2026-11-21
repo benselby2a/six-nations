@@ -66,6 +66,7 @@
   await shot('view-full', { before: () => page.evaluate(() => setSummaryView('full')), clip: ['.summary-container'], marks: [], maxH: 330 });
   await shot('view-compact', { before: () => page.evaluate(() => setSummaryView('compact')), clip: ['.summary-container'], marks: [], maxH: 330 });
   await shot('view-classic', { before: () => page.evaluate(() => setSummaryView('classic')), clip: ['#pdfViewWrap'], marks: [], maxH: 330 });
+  await shot('view-simple', { before: () => page.evaluate(() => setSummaryView('simple')), clip: ['.summary-container'], marks: [], maxH: 330 });
   await page.evaluate(() => setSummaryView('full')); await page.waitForTimeout(300);
   // the player menu, open: the Table view and Appearance choices
   await shot('menu-view', { before: async () => { await page.evaluate(() => { window.scrollTo(0, 0); document.getElementById('avatarBtn').click(); }); await page.waitForTimeout(350); }, clip: ['#avatarBtn', '#accountMenu'], marks: ['#avatarBtn', '#accountViewRow', '#themeToggleBtn'], maxH: 420 });

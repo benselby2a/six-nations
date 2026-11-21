@@ -118,7 +118,11 @@ const mock = `
   await page.evaluate(() => window.scrollTo(120, 0)); await page.waitForTimeout(150);
   console.log('trying to scroll the page sideways: scrollX =', await page.evaluate(() => window.scrollX));
   await page.evaluate(() => { document.getElementById('wide').remove(); });
-  console.log('the table still scrolls inside its own box:', await page.evaluate(() => { const c = document.querySelector('.summary-container'); c.scrollLeft = 0; c.scrollLeft = 30; return c.scrollLeft > 0 && window.scrollX === 0; }));
+  // A table that fits its box is deliberately locked (no sideways bounce on iPhone); one that is wider still scrolls inside its own box
+  console.log('a table that fits is locked, so it cannot bounce sideways:', await page.evaluate(() => { const c = document.querySelector('.summary-container'); return c.classList.contains('no-scroll') && getComputedStyle(c).overflowX === 'hidden'; }));
+  await page.evaluate(() => { const st = document.createElement('style'); st.id = 'forceWide'; st.textContent = '.summary-table:not(.summary-table-clone) { min-width: 900px !important; }'; document.head.appendChild(st); syncSummaryScrollLock(); });
+  await page.waitForTimeout(150);
+  console.log('a wider table still scrolls inside its own box (and the page does not move):', await page.evaluate(() => { const c = document.querySelector('.summary-container'); c.scrollLeft = 0; c.scrollLeft = 30; return !c.classList.contains('no-scroll') && c.scrollLeft > 0 && window.scrollX === 0; }));
   console.log('errors', errors);
   await browser.close();
 })();
