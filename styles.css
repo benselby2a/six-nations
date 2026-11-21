@@ -4067,6 +4067,15 @@ body.summary-compact .summary-table td.competitor-name { box-shadow: inset -3px 
 body.summary-compact .summary-table th.competitor-col,
 body.summary-compact .summary-table td.competitor-name { padding-right: 6px; }
 
+/* Compact and Plain: a score is never split over two lines (the column's overflow-wrap: anywhere used to break "124" in two when a few flags shared its row);
+   on phones the Compact Name column is a little wider so up to three flags and a three-digit total sit on one line */
+.summary-table td.competitor-name .comp-score { white-space: nowrap; flex: none; overflow-wrap: normal; word-break: keep-all; }
+.summary-table td.competitor-name .supported-team-flags { min-width: 0; }
+@media (max-width: 699px) {
+    body.summary-compact:not(.summary-simple) .summary-table th.competitor-col,
+    body.summary-compact:not(.summary-simple) .summary-table td.competitor-name { min-width: 78px; width: 78px; max-width: 78px; }
+}
+
 /* Points Progression: the hint on the left, the zoom controls (as in the Classic view) on the right */
 .worm-chart-tools { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin: 0 0 0.4rem; }
 .worm-chart-tools .worm-chart-hover-hint { margin: 0; flex: 1 1 auto; }
