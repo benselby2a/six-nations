@@ -1,7 +1,8 @@
 // Admin > Predictions: download a spreadsheet template for one competitor and upload it back, so an admin can enter a player's
 // scores, Joker and total tries on their behalf. The file is checked first and shown as a preview; nothing is saved until the admin
 // confirms. Saving goes through the same path as the Edit button on the same screen (Storage.savePredictions / saveUserJokerSelections).
-// File reading and writing (.xlsx and .csv) is in js/xlsx-lite.js.
+// The template is downloaded as .xlsx only; an upload may be .csv, .xls or .xlsx. Writing and reading .xlsx and .csv is in js/xlsx-lite.js,
+// reading the old binary .xls (and .xls files that are really XML or an HTML table) is in js/xls-lite.js.
 
 let adminUploadPlan = null;   // the checked upload waiting for the admin to confirm
 
@@ -33,23 +34,25 @@ function setAdminUploadStatus(text, isError) {
 
 // ---- the template ----
 function buildAdminTemplate(username) {
-    const user = users[username];
+    // With no competitor chosen the template is blank (Player and Username empty, no saved scores); with one it is pre-filled with theirs
+    const user = username && users[username] ? users[username] : null;
     const required = getRequiredJokerCount();
-    const selected = new Set(getUserSelectedJokerMatchIds(username));
-    const predictions = user.predictions || {};
+    const selected = new Set(user ? getUserSelectedJokerMatchIds(username) : []);
+    const predictions = (user && user.predictions) || {};
     const rows = [];
     rows.push(['Six Nations Guesser - predictions template']);
     rows.push(['Season', Number(selectedYear)]);
-    rows.push(['Player', getDisplayName(username)]);
-    rows.push(['Username', username]);
-    rows.push(['Total tries', user.totalTries === null || user.totalTries === undefined ? '' : user.totalTries]);
+    rows.push(['Player', user ? getDisplayName(username) : '', user ? '' : 'Fill in the player name, or leave blank and choose the player in the app when you upload.']);
+    rows.push(['Username', user ? username : '', user ? '' : 'Optional. The username is checked against the player you choose when you upload.']);
+    rows.push(['Total tries', user && user.totalTries !== null && user.totalTries !== undefined ? user.totalTries : '']);
     rows.push(['Jokers allowed', required, required === 0 ? 'Jokers are switched off in the current rules.' : 'Only on fixtures marked Yes/No in the Joker column.']);
     rows.push(['Fill in the shaded cells: Total tries, Home score, Away score and (where the fixture allows it) Joker = Yes or No. Leave a cell blank to keep what is already saved.']);
-    rows.push(['Do not change the Season, Username or Match id cells. Save the file as .xlsx or .csv and upload it on the same screen.']);
+    rows.push([user ? 'Do not change the Season, Username or Match id cells. Save the file as .xlsx, .xls or .csv and upload it on the same screen.' : 'Do not change the Season or Match id cells. Save the file as .xlsx, .xls or .csv and upload it on the same screen.']);
     rows.push([]);
     const headerRow = rows.length;
     rows.push(ADMIN_TEMPLATE_HEADER.slice());
     const inputCells = [{ row: 4, col: 1 }];
+    if (!user) inputCells.push({ row: 2, col: 1 }, { row: 3, col: 1 });
     const validations = [];
     const jokerCells = [];
     matches.forEach(match => {
@@ -83,18 +86,25 @@ function downloadAdminBlob(bytes, type, filename) {
     setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
-function downloadPredictionTemplate(format) {
-    const username = adminPredictionUsername;
-    if (!username || !users[username]) { setAdminUploadStatus('Select a competitor first.', true); return; }
-    const template = buildAdminTemplate(username);
-    const base = `predictions-template-${selectedYear}-${username.replace(/[^a-z0-9_-]+/gi, '_')}`;
-    if (format === 'csv') {
-        downloadAdminBlob(toCsv(template.rows), 'text/csv;charset=utf-8', base + '.csv');
-    } else {
+function setAdminTemplateStatus(text, isError) {
+    const el = document.getElementById('adminTemplateStatus');
+    if (!el) return;
+    el.textContent = text || '';
+    el.classList.toggle('error', !!isError);
+}
+
+// Always available, above the competitor list: blank when no competitor is chosen, pre-filled with their saved predictions when one is
+function downloadPredictionTemplate() {
+    const username = adminPredictionUsername && users[adminPredictionUsername] ? adminPredictionUsername : null;
+    try {
+        const template = buildAdminTemplate(username);
+        const base = `predictions-template-${selectedYear}` + (username ? '-' + username.replace(/[^a-z0-9_-]+/gi, '_') : '');
         const bytes = writeXlsx({ sheetName: 'Predictions', rows: template.rows, boldRows: template.boldRows, inputCells: template.inputCells, validations: template.validations, widths: template.widths });
         downloadAdminBlob(bytes, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', base + '.xlsx');
+        setAdminTemplateStatus(username ? `Template for ${getDisplayName(username)} downloaded, with their saved predictions.` : 'Blank template downloaded.', false);
+    } catch (error) {
+        setAdminTemplateStatus('The template could not be created in this browser. Try again, or use a different browser.', true);
     }
-    setAdminUploadStatus(`Template for ${getDisplayName(username)} downloaded.`, false);
 }
 
 // ---- reading and checking an upload ----
@@ -128,10 +138,16 @@ function buildAdminUploadPlan(grid, username) {
         const season = Number(cellText(seasonRow[1]));
         if (Number.isFinite(season) && season !== Number(selectedYear)) plan.errors.push(`This template is for the ${season} season but ${selectedYear} is selected. Nothing was read from it.`);
     }
+    // Only a filled-in Player / Username that differs from the chosen competitor warns; blank cells are fine
     const nameRow = labelRow('username');
-    if (nameRow && cellText(nameRow[1]) && cellText(nameRow[1]).toLowerCase() !== username) {
+    const playerRow = labelRow('player');
+    const fileUsername = nameRow ? cellText(nameRow[1]) : '';
+    const filePlayer = playerRow ? cellText(playerRow[1]) : '';
+    const chosenNames = [username, getDisplayName(username)].map(n => String(n).toLowerCase());
+    const mismatch = fileUsername ? fileUsername.toLowerCase() !== username : (filePlayer && !chosenNames.includes(filePlayer.toLowerCase()));
+    if (mismatch) {
         plan.nameMismatch = true;
-        plan.warnings.push(`This template was made for "${cellText(nameRow[1])}" but you are saving it for ${getDisplayName(username)}.`);
+        plan.warnings.push(`This template was made for "${fileUsername || filePlayer}" but you are saving it for ${getDisplayName(username)}.`);
     }
 
     const headerIndex = grid.findIndex(row => cellText(row[0]).toLowerCase() === 'match id');
@@ -232,12 +248,32 @@ function buildAdminUploadPlan(grid, username) {
 }
 
 // ---- upload flow ----
+const ADMIN_UPLOAD_TYPES_MESSAGE = 'Upload a .csv, .xls or .xlsx file.';
+
+// The extension decides what is allowed (.csv, .xls, .xlsx); the first bytes decide how it is read, because Excel and other tools
+// often save an .xls that is really XML or an HTML table, and a .csv may be a re-named workbook.
 async function readAdminUploadFile(file) {
+    const extension = (String(file.name || '').match(/\.([^.]+)$/) || [])[1];
+    if (!extension || !['csv', 'xls', 'xlsx'].includes(extension.toLowerCase())) throw new Error(ADMIN_UPLOAD_TYPES_MESSAGE);
     const bytes = new Uint8Array(await file.arrayBuffer());
     if (bytes.length > 4 * 1024 * 1024) throw new Error('That file is too large to be a prediction template.');
-    if (bytes[0] === 0x50 && bytes[1] === 0x4B) return await readXlsx(bytes);
+    if (!bytes.length) throw new Error('That file is empty.');
+    if (bytes[0] === 0x50 && bytes[1] === 0x4B) {   // a zip: .xlsx
+        try { return await readXlsx(bytes); }
+        catch (error) { throw new Error('Could not read this .xlsx file; save it again from Excel as .xlsx or .csv and try again'); }
+    }
+    if (xlsIsOle(bytes)) return readXls(bytes);   // the old binary Excel format
+    // anything else must be text
+    const head = bytes.subarray(0, 4096);
+    if (head.includes(0) || (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46)) throw new Error(`That is not a spreadsheet. ${ADMIN_UPLOAD_TYPES_MESSAGE}`);
     let text = new TextDecoder('utf-8').decode(bytes);
-    if (text.includes('�')) text = new TextDecoder('windows-1252').decode(bytes);
+    if (text.includes('\ufffd')) text = new TextDecoder('windows-1252').decode(bytes);
+    const start = text.replace(/^\ufeff/, '').trimStart();
+    if (start.startsWith('<')) {
+        if (/urn:schemas-microsoft-com:office:spreadsheet/i.test(text)) return readSpreadsheetMl(text.replace(/^\ufeff/, ''));
+        if (/<table[\s>]/i.test(text)) return readHtmlTable(text);
+        throw new Error(`That is not a spreadsheet. ${ADMIN_UPLOAD_TYPES_MESSAGE}`);
+    }
     return parseCsv(text);
 }
 

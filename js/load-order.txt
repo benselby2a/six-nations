@@ -10,6 +10,7 @@ profile.js
 auth.js
 predictions.js
 xlsx-lite.js
+xls-lite.js
 admin-prediction-upload.js
 scoring.js
 trevs-tips.js

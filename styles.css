@@ -4194,6 +4194,9 @@ body.summary-compact .summary-table thead th.match-header-cell.match-col-now, bo
 .admin-template-tools { background: var(--surface); border: 2px solid rgb(var(--accent-rgb) / 0.25); border-radius: 8px; padding: 0.9rem 1rem; margin-bottom: 1.25rem; }
 .admin-template-tools h3 { font-family: 'Bebas Neue', cursive; font-size: 1.8rem; color: var(--bright-gold); margin: 0 0 0.5rem; letter-spacing: 0.1em; }
 .admin-template-tools p { margin: 0 0 0.6rem; font-size: 0.9rem; opacity: 0.85; }
+.admin-template-download { background: var(--surface); border: 2px solid rgb(var(--accent-rgb) / 0.25); border-radius: 8px; padding: 0.7rem 1rem; margin-bottom: 1rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.admin-template-download .btn-small { margin: 0; }
+.admin-template-note { flex-basis: 100%; margin: 0; font-size: 0.85rem; opacity: 0.8; }
 .admin-template-buttons { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .admin-template-buttons .btn-small { margin: 0; }
 .admin-upload-preview { margin-top: 0.8rem; border-top: 1px solid var(--line-strong); padding-top: 0.8rem; }
