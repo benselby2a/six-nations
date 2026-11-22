@@ -4144,7 +4144,7 @@ body.summary-simple .summary-table td.hidden-prediction .cell-score { font-size:
 body.summary-simple .pred-score-tie { color: var(--text); }
 body.summary-simple .summary-table td.tries-col { font-size: 1.2rem; font-weight: 800; }   /* the same size and weight as the scores */
 body.summary-simple .summary-table thead th.tries-col { font-size: 1.1rem; font-weight: 800; letter-spacing: 0.03em; }   /* and the same as the team names in the match headers */
-/* Joker: a light gold background shading on the cell (no bars, no card); the Joker match header gets a gold accent bar along its top edge (no tint, heading colours unchanged). One yellow-gold (--joker-gold) for both, tuned per theme. */
+/* Joker: a light gold background shading on the cell (no bars, no card); the Joker match header gets a gold accent bar along its bottom edge (no tint, heading colours unchanged). One yellow-gold (--joker-gold) for both, tuned per theme. */
 body.summary-simple { --joker-gold: #e8b02a; --joker-shade: rgba(232, 176, 42, 0.30); }
 :root[data-theme="dark"] body.summary-simple { --joker-gold: var(--bright-gold); --joker-shade: rgba(245, 207, 106, 0.22); }
 body.summary-simple .summary-table td.simple-joker { background-color: var(--joker-shade); }
@@ -4155,12 +4155,12 @@ body.summary-simple .summary-table td.prediction-cell { border-left-color: rgba(
 body.summary-simple .summary-table td.tries-col { box-shadow: inset 1px 0 0 rgba(16, 36, 26, 0.35); }
 body.summary-simple .summary-table thead th.match-header-cell,
 body.summary-simple .summary-table thead th.tries-col { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.45); }
-body.summary-simple .summary-table thead th.match-header-cell.joker-eligible-header { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.45), inset 0 5px 0 var(--joker-gold); }
+body.summary-simple .summary-table thead th.match-header-cell.joker-eligible-header { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.45), inset 0 -5px 0 var(--joker-gold); }
 :root[data-theme="dark"] body.summary-simple .summary-table td.prediction-cell { border-left-color: rgba(255, 255, 255, 0.3); }
 :root[data-theme="dark"] body.summary-simple .summary-table td.tries-col { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.3); }
 :root[data-theme="dark"] body.summary-simple .summary-table thead th.match-header-cell,
 :root[data-theme="dark"] body.summary-simple .summary-table thead th.tries-col { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.35); }
-:root[data-theme="dark"] body.summary-simple .summary-table thead th.match-header-cell.joker-eligible-header { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.35), inset 0 5px 0 var(--joker-gold); }
+:root[data-theme="dark"] body.summary-simple .summary-table thead th.match-header-cell.joker-eligible-header { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.35), inset 0 -5px 0 var(--joker-gold); }
 /* Simple: the score sits on the same line as the name (flags are gone, so there is nothing else under it) */
 body.summary-simple .summary-table td.competitor-name .comp-name { flex-direction: row; align-items: center; justify-content: space-between; gap: 0.25rem; }
 body.summary-simple .summary-table td.competitor-name .comp-sub { width: auto; flex: none; min-height: 0; }
