@@ -165,8 +165,8 @@ const mock = `
   console.log('the glow has room on both sides:', JSON.stringify(room), room.left >= 6 && room.right >= 6);
   // order, and no small/big screen labels on the cards themselves
   const order = await page.evaluate(() => ({ tour: [...document.querySelectorAll('.tour-view-tab')].map(b => b.dataset.view), menu: [...document.querySelectorAll('#summaryViewSwitch .view-switch-btn')].map(b => b.dataset.view), captions: document.querySelectorAll('.tour-view-tab small').length, labels: [...document.querySelectorAll('.tour-view-tab')].map(b => b.textContent.trim()) }));
-  console.log('the views are ordered Compact, Full, Classic, Plain (tour and menu):', JSON.stringify(order.tour), JSON.stringify(order.menu), order.tour.join() === 'compact,full,classic,simple' && order.menu.join() === 'compact,full,classic,simple');
-  console.log('the cards carry just the name (no small / big screen labels):', JSON.stringify(order.labels), order.captions === 0 && order.labels.join() === 'Compact,Full,Classic,Plain');
+  console.log('the views are ordered Compact, Full, Classic, Focus (tour and menu):', JSON.stringify(order.tour), JSON.stringify(order.menu), order.tour.join() === 'compact,full,classic,simple' && order.menu.join() === 'compact,full,classic,simple');
+  console.log('the cards carry just the name (no small / big screen labels):', JSON.stringify(order.labels), order.captions === 0 && order.labels.join() === 'Compact,Full,Classic,Focus');
   console.log('errors', errors);
   await browser.close();
 })();
