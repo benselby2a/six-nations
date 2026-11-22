@@ -37,10 +37,10 @@ const rgb = (s) => (s.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
   // England and Wales are in the 2027 fixtures, which have no summary table in this mock: check their spans straight from the renderer
   const direct = await page.evaluate(() => ['England', 'France', 'Ireland', 'Italy', 'Scotland', 'Wales'].map(t => { const d = document.createElement('div'); d.innerHTML = simpleTeamSpan(t); const e = d.firstChild; return { t, light: e.style.getPropertyValue('--team-l'), dark: e.style.getPropertyValue('--team-d'), text: e.textContent }; }));
   const toRgb = (c) => 'rgb(' + c.join(', ') + ')';
-  // Jumbo's light-theme header bar is green: England and Scotland are lightened there (white, pale lavender); everything else is Classic's colour
-  const LIGHT_BAR = { England: [255, 255, 255], Scotland: [225, 208, 255] };
+  // Jumbo's light-theme header bar is green: each team is a lighter shade of its Classic colour there (readable on the bar); dark theme is Classic's colour
+  const LIGHT_BAR = { England: [255, 255, 255], France: [170, 205, 255], Ireland: [165, 240, 190], Italy: [140, 228, 250], Scotland: [225, 208, 255], Wales: [255, 190, 190] };
   const lightWant = (t) => LIGHT_BAR[t] || palette.light[t];
-  console.log('all six teams carry the Classic colours (single source PDF_SCHEMES), England and Scotland lightened in the light theme:', direct.every(d => d.light === toRgb(lightWant(d.t)) && d.dark === toRgb(palette.dark[d.t])), JSON.stringify(direct.map(d => d.text)));
+  console.log('all six teams carry the Classic colours (single source PDF_SCHEMES), lighter shades of them in the light theme:', direct.every(d => d.light === toRgb(lightWant(d.t)) && d.dark === toRgb(palette.dark[d.t])), JSON.stringify(direct.map(d => d.text)));
   const extra = ['England', 'Wales'].map(t => ({ t, light: Math.round(ratio(palette.light[t], [255, 255, 255]) * 100) / 100, dark: Math.round(ratio(palette.dark[t], [11, 26, 20]) * 100) / 100 }));
   console.log('England and Wales contrast on the chip (light on white, dark on the dark sheet colour):', JSON.stringify(extra), extra.every(x => x.light >= 4.5 && x.dark >= 4.5));
 
@@ -54,13 +54,13 @@ const rgb = (s) => (s.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
     for (const theme of ['light', 'dark']) {
       await page.evaluate((t) => { if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); else document.documentElement.removeAttribute('data-theme'); }, theme); await page.waitForTimeout(300);
       const spans = await read();
-      const chipBg = theme === 'dark' ? [11, 26, 20] : [255, 255, 255];
+      const chipBg = theme === 'dark' ? [11, 26, 20] : [0, 105, 75];   // the header bar (light theme: green)
       const rows = spans.map(x => {
         const team = names[x.text]; const want = theme === 'light' ? lightWant(team) : palette[theme][team];
         const got = rgb(x.color);
         return { text: x.text, tint: x.tint, same: !!want && got.every((v, i) => v === want[i]), chip: !/gradient/.test(x.bg), ratio: want ? Math.round(ratio(want, chipBg) * 100) / 100 : null, clone: x.clone };
       });
-      const ok = rows.length > 0 && rows.every(r => r.tint && r.same && r.chip);
+      const ok = rows.length > 0 && rows.every(r => r.tint && r.same && r.chip && r.ratio >= 4);
       console.log(year + ' Focus ' + theme + ': every team abbreviation (header and pinned copy) is in its Classic colour (no chip):', ok, JSON.stringify(rows.filter(r => !r.clone)));
       console.log(year + ' Focus ' + theme + ' contrast of the team colour against its chip:', JSON.stringify(Object.fromEntries(rows.filter(r => !r.clone).map(r => [r.text, r.ratio]))));
       console.log(year + ' Focus ' + theme + ': the pinned header copy has the colours too:', rows.some(r => r.clone) ? rows.filter(r => r.clone).every(r => r.tint && r.same) : 'no copy on screen');
