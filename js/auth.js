@@ -543,6 +543,7 @@
             showSummary(); // Load summary by default (includes leaderboard)
             restoreLastTab();   // and the tab that was last open (My Predictions or Admin Functions)
             maybeOfferTour();
+            if (typeof whatsNewSchedule === 'function') whatsNewSchedule();   // new-feature notice, once per person per note
             setTimeout(() => tourPreload('app'), 2500);   // quietly, so the tour pictures are ready
         }
 
