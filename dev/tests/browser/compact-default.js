@@ -113,7 +113,7 @@ const mock = `
     await page.fill('#loginEmail', 'ben@example.com'); await page.click('#sendLoginCodeBtn'); await page.waitForTimeout(150);
     await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(1200);
     await page.evaluate(() => { appSettings.predictionsLocked = true; showSummary(); }); await page.waitForTimeout(300);   // before the lock the summary is only the signed-up list
-    const r = await page.evaluate(() => ({ pdfModalOnThisDevice: isDesktopPointer(), headerJokers: [...document.querySelectorAll('.summary-container thead .joker-eligible-icon, .summary-container thead .joker-inline')].filter(e => e.offsetParent).length, compact: document.body.classList.contains('summary-compact'), pressed: document.querySelector('#summaryViewSwitch [data-view="compact"]').getAttribute('aria-pressed'), pad: getComputedStyle(document.querySelector('.container')).paddingLeft, containerW: Math.round(document.querySelector('.container').getBoundingClientRect().width), vw: innerWidth }));
+    const r = await page.evaluate(() => ({ pdfModalOnThisDevice: isDesktopPointer(), headerJokers: [...document.querySelectorAll('.summary-container thead .joker-eligible-icon, .summary-container thead .joker-inline')].filter(e => e.offsetParent).length, compact: document.body.classList.contains('summary-compact'), detail: document.body.classList.contains('summary-detail'), pressed: document.querySelector('#summaryViewSwitch [data-view="compact"]').getAttribute('aria-pressed'), pad: getComputedStyle(document.querySelector('.container')).paddingLeft, containerW: Math.round(document.querySelector('.container').getBoundingClientRect().width), vw: innerWidth }));
     console.log(label, JSON.stringify(r), errors.length ? errors : '');
     await ctx.close();
     return r;
@@ -125,7 +125,8 @@ const mock = `
   const landOff = await run('iPhone landscape, compact switched off:', { viewport: {width:844,height:390}, isMobile: true, hasTouch: true }, '0');
   const deskOn = await run('desktop, compact on:', { viewport: {width:1280,height:800} }, '1');
   console.log('the header always shows the Joker-eligible card (any mode, any screen):', [phone, phoneOff, land, landOff, desk, deskOn].every(r => r.headerJokers >= 1));
-  console.log('compact is the default on phones only, and the choice wins:', phone.compact && !phoneOff.compact && land.compact && !desk.compact);
+  console.log('Compact is the default everywhere (phone, landscape, desktop), with the match details off:', phone.compact && !phone.detail && land.compact && !land.detail && desk.compact && !desk.detail && deskOn.compact);
+  console.log('the oldest "not compact" choice (0, the Full view) now means Compact with the match details on:', phoneOff.compact && phoneOff.detail && landOff.compact && landOff.detail);
   console.log('the PDF pop-up is for desktop only (phones keep opening it as before):', [phone, phoneOff, land, landOff].every(r => !r.pdfModalOnThisDevice) && desk.pdfModalOnThisDevice && deskOn.pdfModalOnThisDevice);
   console.log('landscape iPhone uses the full width with a narrow border:', land.pad === '8px' && land.containerW >= land.vw - 2);
   await browser.close();

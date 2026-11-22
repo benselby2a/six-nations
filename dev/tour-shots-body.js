@@ -6,7 +6,7 @@
   await dismiss('No thanks');
   await page.addScriptTag({ content: fs.readFileSync(REPO + '/dev/tour-demo.js', 'utf8') });
   await page.evaluate(() => enterTourDemo());
-  await page.evaluate(() => { localStorage.setItem('summaryCompact', '0'); applySummaryCompact(false); });   // pictures show the full table (compact is the default on a phone-sized screen)
+  await page.evaluate(() => { localStorage.setItem('summaryViewMode', 'compact'); localStorage.setItem('summaryHeaderDetail', '0'); setSummaryView('compact'); applySummaryHeaderDetail(false, true); });   // pictures show Compact with the match details off (the default)
   await page.waitForTimeout(500);
 
   // Finds an element from a spec: a CSS selector, {sel, text} (button/element whose text starts with it), or {visible: sel} (first one actually on screen)
@@ -62,12 +62,11 @@
   // ---- the app tour ----
   await shot('predictions', { before: () => clickTab('My Predictions'), clip: [tab('My Predictions'), '#matchesContainer .prediction-table-container'], marks: [tab('My Predictions'), '#matchesContainer .prediction-table-container button.btn-success'], maxH: 760 });
   await shot('score', { before: () => clickTab('Match Summary'), clip: [tab('Match Summary'), '.summary-container'], marks: [tab('Match Summary'), '.summary-container'], maxH: 760 });
-  // the three views the tour lets people choose between
-  await shot('view-full', { before: () => page.evaluate(() => setSummaryView('full')), clip: ['.summary-container'], marks: [], maxH: 330 });
+  // the views the tour lets people choose between
   await shot('view-compact', { before: () => page.evaluate(() => setSummaryView('compact')), clip: ['.summary-container'], marks: [], maxH: 330 });
   await shot('view-classic', { before: () => page.evaluate(() => setSummaryView('classic')), clip: ['#pdfViewWrap'], marks: [], maxH: 330 });
   await shot('view-simple', { before: () => page.evaluate(() => setSummaryView('simple')), clip: ['.summary-container'], marks: [], maxH: 330 });
-  await page.evaluate(() => setSummaryView('full')); await page.waitForTimeout(300);
+  await page.evaluate(() => setSummaryView('compact')); await page.waitForTimeout(300);
   // the player menu, open: the Table view and Appearance choices
   await shot('menu-view', { before: async () => { await page.evaluate(() => { window.scrollTo(0, 0); document.getElementById('avatarBtn').click(); }); await page.waitForTimeout(350); }, clip: ['#avatarBtn', '#accountMenu'], marks: ['#avatarBtn', '#accountViewRow', '#accountThemeRow'], maxH: 420 });
   await page.evaluate(() => closeAccountMenu()); await page.waitForTimeout(200);

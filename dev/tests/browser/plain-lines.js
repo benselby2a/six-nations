@@ -125,7 +125,7 @@ const mock = `
     return { heads: heads.map(line), preds: preds.map(line), tries: tries.map(line), thTries: thTries.map(line), n: [heads.length, preds.length, tries.length],
       gold: getComputedStyle(q('td.competitor-name')[0]).boxShadow };
   });
-  for (const mode of ['compact', 'full', 'simple']) {
+  for (const mode of ['compact', 'simple']) {
     for (const theme of ['light', 'dark']) {
       await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme);
       await page.setViewportSize({ width: 390, height: 800 });

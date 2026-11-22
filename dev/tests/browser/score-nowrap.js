@@ -114,7 +114,7 @@ const mock = `
   await page.evaluate(() => switchYear(2026)); await page.waitForTimeout(600);
   await page.click('#appView .app-bar > .tabs .tab:has-text("Match Summary")'); await page.waitForTimeout(500);
   // Big numbers: the scoring rules above already give 3-digit totals; stretch some to 4 digits too so nothing is spared
-  for (const width of [360, 390]) for (const mode of ['compact', 'full', 'simple']) {
+  for (const width of [360, 390]) for (const mode of ['compact', 'simple']) {
     await page.setViewportSize({ width, height: 800 });
     await page.evaluate((m) => setSummaryView(m), mode); await page.waitForTimeout(500);
     await page.evaluate(() => { document.querySelectorAll('.summary-table:not(.summary-table-clone) .comp-score').forEach((e, i) => { if (i % 2) e.textContent = '1288'; });

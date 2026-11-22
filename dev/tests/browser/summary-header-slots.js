@@ -114,6 +114,7 @@ const mock = `
   await page.evaluate(() => switchYear(2026)); await page.waitForTimeout(500);
   await page.setViewportSize({width:390,height:900});
   await page.click('#appView .app-bar > .tabs .tab:has-text("Match Summary")'); await page.waitForTimeout(1000);
+  await page.evaluate(() => applySummaryHeaderDetail(true, true)); await page.waitForTimeout(400);   // the date and tries only show with the match details on
   // give the second match a result without tries and a long date so the cells really differ
   const slots = await page.evaluate(() => {
     const cells = [...document.querySelectorAll('.summary-container thead th.match-header-cell')];

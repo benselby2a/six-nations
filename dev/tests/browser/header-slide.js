@@ -127,7 +127,7 @@ const mock = `
   const shown = parsed.filter(p => p.show);
   console.log('while there is room the pinned header stays put:', parsed.filter(p => p.tableBottom - p.lastRowH >= 164).every(p => p.pinnedTop === 0));
   console.log('near the end it slides up and never covers the last row (its bottom edge stays above that row):', shown.length > 0 && shown.every(p => p.pinnedBottom <= p.tableBottom - p.lastRowH + 1));
-  console.log('and it slides smoothly (it is positioned exactly at the last row\'s top while sliding):', shown.filter(p => p.pinnedTop < 0).every(p => p.pinnedBottom === p.tableBottom - p.lastRowH));
+  console.log('and it slides smoothly (it is positioned exactly at the last row\'s top while sliding):', shown.filter(p => p.pinnedTop < 0).every(p => Math.abs(p.pinnedBottom - (p.tableBottom - p.lastRowH)) <= 1));   // within a pixel: the compact header is 70.6px tall, so the rounded numbers can differ by one
   console.log('errors', errors);
   await browser.close();
 })();

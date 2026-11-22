@@ -117,7 +117,7 @@ const mock = `
   const pickView = async (v) => { await page.click('#avatarBtn'); await page.waitForTimeout(150); await page.click(`#summaryViewSwitch [data-view="${v}"]`); await page.waitForTimeout(150); await page.evaluate(() => closeAccountMenu && closeAccountMenu()); await page.waitForTimeout(300); };
   await pickView('simple'); await page.waitForTimeout(400);
   const order = await page.evaluate(() => [...document.querySelectorAll('#summaryViewSwitch .view-switch-btn')].map(b => b.dataset.view).join(','));
-  console.log('menu order compact,full,classic,simple:', order === 'compact,full,classic,simple');
+  console.log('menu order compact,classic,simple:', order === 'compact,classic,simple');
   const r = await page.evaluate(() => {
     const tbl = document.querySelector('.summary-container .summary-table');
     const emoji = /[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]/u.test(tbl.textContent);

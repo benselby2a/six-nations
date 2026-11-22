@@ -114,11 +114,11 @@ const mock = `
   await page.evaluate(() => switchYear(2026)); await page.waitForTimeout(600);
   await page.click('#appView .app-bar > .tabs .tab:has-text("Match Summary")'); await page.waitForTimeout(500);
   const look = () => page.evaluate(() => { const q = sel => { const e = [...document.querySelectorAll(sel)].find(x => x.offsetParent); if (!e) return null; const c = getComputedStyle(e), r = e.getBoundingClientRect(); return { bg: c.backgroundColor, radius: c.borderRadius, w: Math.round(r.width), h: Math.round(r.height) }; }; return { cell: q('td.joker-cell .joker-indicator'), inline: q('.cell-score .joker-inline'), header: q('.match-result-row .joker-inline') }; });
-  await page.locator('.summary-container').first().screenshot({ path: '/tmp/joker-full.png' });
-  console.log('full view:', JSON.stringify(await look()));
-  await page.evaluate(() => toggleSummaryCompact()); await page.waitForTimeout(300);
   await page.locator('.summary-container').first().screenshot({ path: '/tmp/joker-compact.png' });
   console.log('compact view:', JSON.stringify(await look()));
+  await page.evaluate(() => applySummaryHeaderDetail(true, true)); await page.waitForTimeout(300);
+  await page.locator('.summary-container').first().screenshot({ path: '/tmp/joker-compact-detail.png' });
+  console.log('compact view with match details:', JSON.stringify(await look()));
   console.log('errors', errors);
   await browser.close();
 })();
