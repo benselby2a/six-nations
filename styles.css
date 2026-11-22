@@ -4174,12 +4174,15 @@ body.summary-simple .summary-table td.prediction-cell { border-left-color: rgba(
 body.summary-simple .summary-table td.tries-col { box-shadow: inset 1px 0 0 rgba(16, 36, 26, 0.35); }
 body.summary-simple .summary-table thead th.match-header-cell,
 body.summary-simple .summary-table thead th.tries-col { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.45); }
-body.summary-simple .summary-table thead th.match-header-cell.joker-eligible-header { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.45), inset 0 -5px 0 var(--joker-gold); }
+body.summary-simple .summary-table thead th.match-header-cell.joker-eligible-header { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.45); }
 :root[data-theme="dark"] body.summary-simple .summary-table td.prediction-cell { border-left-color: rgba(255, 255, 255, 0.3); }
 :root[data-theme="dark"] body.summary-simple .summary-table td.tries-col { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.3); }
 :root[data-theme="dark"] body.summary-simple .summary-table thead th.match-header-cell,
 :root[data-theme="dark"] body.summary-simple .summary-table thead th.tries-col { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.35); }
-:root[data-theme="dark"] body.summary-simple .summary-table thead th.match-header-cell.joker-eligible-header { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.35), inset 0 -5px 0 var(--joker-gold); }
+:root[data-theme="dark"] body.summary-simple .summary-table thead th.match-header-cell.joker-eligible-header { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.35); }
+/* Jumbo: the Joker match is marked by a gold bar just ABOVE the score chip in its header (4px, drawn in the gap above the chip so nothing moves) */
+body.summary-simple .summary-table thead th.joker-eligible-header .match-header-bottom { position: relative; }
+body.summary-simple .summary-table thead th.joker-eligible-header .match-header-bottom::before { content: ''; position: absolute; left: 0; right: 0; top: -6px; height: 4px; border-radius: 2px; background: var(--joker-gold); pointer-events: none; }
 /* Simple: the score sits on the same line as the name (flags are gone, so there is nothing else under it) */
 body.summary-simple .summary-table td.competitor-name .comp-name { flex-direction: row; align-items: center; justify-content: space-between; gap: 0.25rem; }
 body.summary-simple .summary-table td.competitor-name .comp-sub { width: auto; flex: none; min-height: 0; }
