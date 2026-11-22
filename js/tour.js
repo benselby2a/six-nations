@@ -186,12 +186,21 @@ function tourPreload(kind, urgent) {
 }
 
 // Fit the card to the area that is really visible (iPhone Safari's toolbars change it), not to 100vh
-function tourFitScreen() {
-    const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
-    document.documentElement.style.setProperty('--tour-h', `${Math.round(h)}px`);
-    const top = (window.visualViewport && window.visualViewport.offsetTop) || 0;
+let tourLastW = 0, tourLastH = 0;
+function tourFitScreen(evt) {
+    const vv = window.visualViewport;
+    const h = Math.round((vv && vv.height) || window.innerHeight);
+    const w = Math.round((vv && vv.width) || window.innerWidth);
+    document.documentElement.style.setProperty('--tour-h', `${h}px`);
+    const top = (vv && vv.offsetTop) || 0;
     document.getElementById('tourLayer').style.top = `${Math.round(top)}px`;
-    tourFitSoon();
+    // Scrolling the page behind the tour makes iPhone Safari's toolbars collapse and expand, which fires resize / visual-viewport
+    // events: only the first fit and a real size change re-fit the card (and then without hiding the picture), so nothing flickers
+    const changed = !tourLastH || Math.abs(h - tourLastH) > 1 || Math.abs(w - tourLastW) > 1;
+    const first = !evt || !tourLastH;
+    tourLastW = w; tourLastH = h;
+    if (first) tourFitSoon();
+    else if (changed) tourFitSoon(true);
 }
 
 // Make everything fit without scrolling: the picture shrinks to the space left after the text; on very small screens
@@ -210,10 +219,10 @@ function tourAnimateSize(before) {
     move.finished.then(done, done);
 }
 
-function tourFitSoon() {
+function tourFitSoon(quiet) {
     // Pictures stay invisible until they have loaded and been sized (no flash of a wrong size, never shown tiny)
     const hideable = () => [document.querySelector('#tourBody .tour-figure'), document.querySelector('#tourBody .tour-view-pics')].filter(Boolean);
-    hideable().forEach(el => { el.style.visibility = 'hidden'; });
+    if (!quiet) hideable().forEach(el => { el.style.visibility = 'hidden'; });   // quiet: a re-fit after a resize keeps the picture on screen
     if (tourSizeAnimating) return;   // sizes are measured once the card has finished changing size (then this runs again)
     requestAnimationFrame(() => {
         tourFitContent(true);
@@ -221,7 +230,7 @@ function tourFitSoon() {
             tourFitContent(true);
             // A picture that has not arrived yet has no size to fit: keep it hidden, and fit again the moment it loads
             const waiting = [...document.querySelectorAll('#tourBody img')].filter(i => !i.complete);
-            if (!waiting.length) hideable().forEach(el => { el.style.visibility = ''; });
+            if (!waiting.length && !quiet) hideable().forEach(el => { el.style.visibility = ''; });
             waiting.forEach(i => i.addEventListener('load', () => { if (tourState) tourFitSoon(); }, { once: true }));
         }, 120);
     });
@@ -289,6 +298,14 @@ function tourFitText(card, body) {
     if (body.scrollHeight > body.clientHeight + 2) card.classList.add('tour-compact');
 }
 
+// The page behind the tour does not scroll (that made the toolbars of iPhone Safari move and the card flicker); only the card's own text may
+function tourBlockScroll(e) {
+    if (!tourState) return;
+    const t = e.target && e.target.closest ? e.target.closest('#tourBody') : null;
+    if (t && t.scrollHeight > t.clientHeight + 1) return;   // the card's text scrolls when it is longer than the card
+    e.preventDefault();
+}
+
 function startTour(kind) {
     if (kind !== 'admin') kind = 'app';
     if (kind === 'admin' && !isCurrentUserAdmin()) return;
@@ -296,7 +313,10 @@ function startTour(kind) {
     tourPreload(kind, true);   // the tour is open: fetch every picture now
     const steps = kind === 'admin' ? tourBuildAdminSteps() : tourBuildSteps(tourRulesHtml());
     tourState = { index: 0, steps, kind };
+    tourLastW = 0; tourLastH = 0;
     tourFitScreen();
+    document.addEventListener('touchmove', tourBlockScroll, { passive: false });
+    document.addEventListener('wheel', tourBlockScroll, { passive: false });
     window.addEventListener('resize', tourFitScreen);
     if (window.visualViewport) { window.visualViewport.addEventListener('resize', tourFitScreen); window.visualViewport.addEventListener('scroll', tourFitScreen); }
     document.body.classList.add('tour-open');
@@ -390,6 +410,8 @@ function endTour(completed) {
     tourState = null;
     document.removeEventListener('keydown', tourKeys);
     window.removeEventListener('resize', tourFitScreen);
+    document.removeEventListener('touchmove', tourBlockScroll);
+    document.removeEventListener('wheel', tourBlockScroll);
     if (window.visualViewport) { window.visualViewport.removeEventListener('resize', tourFitScreen); window.visualViewport.removeEventListener('scroll', tourFitScreen); }
     document.body.classList.remove('tour-open');
     document.getElementById('tourLayer').setAttribute('aria-hidden', 'true');

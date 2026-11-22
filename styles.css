@@ -3290,7 +3290,8 @@ body.fixture-chat-open .fixture-chat-sheet { opacity: 1; pointer-events: auto; t
 /* ---- Guided tour: a fixed card over a faded, blurred app. The card never moves. It shows a static picture of the feature
    with numbered marks, and numbered instructions that match them. ---- */
 .tour-layer { position: fixed; top: 0; left: 0; width: 100%; height: var(--tour-h, 100%); z-index: 3000; display: none; font-family: var(--body-font); box-sizing: border-box; padding: max(10px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px)); }
-body.tour-open .tour-layer { display: flex; align-items: center; justify-content: center; }
+body.tour-open { overflow: hidden; overscroll-behavior: none; }
+body.tour-open .tour-layer { overscroll-behavior: contain; touch-action: none; display: flex; align-items: center; justify-content: center; }
 .tour-scrim { position: absolute; inset: 0; background: rgba(3, 12, 7, 0.9); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .tour-card { position: relative; width: min(560px, 100%); height: min(780px, 100%); max-height: 100%; flex: 0 1 auto; display: flex; flex-direction: column; background: var(--deep-green); color: var(--text); border: 3px solid var(--bright-gold); border-radius: 14px; box-shadow: 0 0 0 6px rgba(255, 215, 0, 0.22), 0 24px 70px rgba(0, 0, 0, 0.8); padding: 0.9rem 1.2rem 1rem; }
 .tour-head { display: flex; justify-content: space-between; align-items: center; }
