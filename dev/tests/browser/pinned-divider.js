@@ -128,6 +128,24 @@ const mock = `
     console.log(mode + ' content sits at least 2px clear of the divider:', r.gaps.every(g => g >= 2), r.gaps);
     console.log(mode + ' name column has a 3px divider on its right, header and rows:', has(r.head) && r.body.every(has), '| edges line up:', new Set(r.rights).size === 1);
   }
+  // iPhone/iPad: the header cells have a 24px page-coloured spacer on top (border-top); the Name header's divider shadow must not show in it.
+  // Chromium does not match the iOS-only @supports, so the same rules are injected as plain CSS.
+  const css = require('fs').readFileSync(path.replace('index.html', 'styles.css'), 'utf8');
+  // (every iOS-only block of styles.css is copied out, a small brace counter picks each one)
+  let ios = '';
+  for (let at = css.indexOf('@supports (-webkit-touch-callout: none)'); at !== -1; at = css.indexOf('@supports (-webkit-touch-callout: none)', at + 1)) {
+    let depth = 0;
+    for (let e = css.indexOf('{', at); e < css.length; e++) { if (css[e] === '{') depth++; if (css[e] === '}') { depth--; if (!depth) { ios += '@media all ' + css.slice(css.indexOf('{', at), e + 1) + '\n'; break; } } }
+  }
+  console.log('the iOS header divider rule exists in styles.css:', /ios-divider-inset/.test(css) && /border-top: 24px/.test(ios));
+  await page.addStyleTag({ content: process.env.NOFIX ? ios.slice(0, ios.lastIndexOf('@media all')) : ios });
+  for (const theme of ['light', 'dark']) for (const mode of ['compact', 'simple']) {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.evaluate(([m, t]) => { setSummaryView(m); document.documentElement.setAttribute('data-theme', t); window.scrollTo(0, 0); }, [mode, theme]); await page.waitForTimeout(500);
+    const box = await page.evaluate(() => { const th = document.querySelector('.summary-table:not(.summary-table-clone) th.competitor-col'); const r = th.getBoundingClientRect(); return { right: r.right, top: r.top }; });
+    const buf = await page.screenshot({ clip: { x: Math.floor(box.right) + 1, y: Math.floor(box.top) + 2, width: 6, height: 20 } });    const px = await page.evaluate(async (b64) => { const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode(); const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const g = c.getContext('2d'); g.drawImage(img, 0, 0); const d = g.getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 4) set.add(d[i] + ',' + d[i + 1] + ',' + d[i + 2]); return [...set]; }, buf.toString('base64'));
+    console.log(theme + ' ' + mode + ' nothing of the divider shadow shows in the 24px spacer above the header:', px.length === 1, px.slice(0, 3));
+  }
   console.log('errors', errors);
   await browser.close();
 })();

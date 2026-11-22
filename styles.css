@@ -4067,6 +4067,13 @@ body.summary-compact .summary-table td.competitor-name { box-shadow: inset -3px 
 /* ...and 3px of air between that divider and the score / content to its left (3px line + 3px gap) */
 body.summary-compact .summary-table th.competitor-col,
 body.summary-compact .summary-table td.competitor-name { padding-right: 6px; }
+/* iPhone/iPad: every header cell has a 24px page-coloured spacer on top (border-top, see the @supports block above). The Name header's outer divider shadow is painted
+   outside the cell, so it ran up through that spacer as a dark line sticking out above the header: in the header the soft edge shadow is drawn inside the cell instead
+   (same as the Score column above), so the divider starts at the green bar (ios-divider-inset) */
+@supports (-webkit-touch-callout: none) {
+    body.summary-compact .summary-table thead th.competitor-col { box-shadow: inset -3px 0 0 var(--gold), inset -7px 0 6px -6px rgba(0, 0, 0, 0.4); }
+    :root[data-theme="dark"] body.summary-compact .summary-table thead th.competitor-col { box-shadow: inset -3px 0 0 var(--bright-gold), inset -8px 0 8px -6px rgba(0, 0, 0, 0.7); }
+}
 
 /* Compact and Plain: a score is never split over two lines (the column's overflow-wrap: anywhere used to break "124" in two when a few flags shared its row);
    on phones the Compact Name column is a little wider so up to three flags and a three-digit total sit on one line */
