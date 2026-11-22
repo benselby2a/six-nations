@@ -91,7 +91,7 @@ const TOUR_VIEW_OPTIONS = [
     ['simple', 'Plain', [
         'The easiest to read: larger plain text, no icons or flags.',
         'Compact\'s layout: just the countries and scores.',
-        'A Joker is shown by an amber line under the score, not a card.'
+        'A Joker is shown by an amber line along the top of the cell, not a card.'
     ]]
 ];
 // A big picture of the chosen view above the choices, and what is good about it below. Tapping a choice makes it the default.
