@@ -126,7 +126,7 @@ const mock = `
     const h = await heads();
     const colors = [...new Set(h.filter(x => x.color).map(x => x.color))];
     const bgs = [...new Set(h.filter(x => x.bg).map(x => x.bg))];
-    console.log('plain headings, ' + theme + ': one text colour:', colors.length === 1, JSON.stringify(colors), 'one background:', bgs.length === 1, JSON.stringify(bgs), 'cells checked:', h.length);
+    console.log('focus headings, ' + theme + ': one text colour:', colors.length === 1, JSON.stringify(colors), 'one background:', bgs.length === 1, JSON.stringify(bgs), 'cells checked:', h.length);
   }
   console.log('errors', errors);
   await browser.close();

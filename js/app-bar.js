@@ -236,7 +236,7 @@ function layoutSummarySticky() {
 }
 window.addEventListener('resize', () => { sizeSummaryStickyHead(); const hint = document.getElementById('scrollHint'); const box = document.querySelector('.summary-container'); if (hint && box) hint.classList.toggle('hidden', box.scrollWidth <= box.clientWidth); if (typeof syncSummaryScrollLock === 'function') syncSummaryScrollLock(); if (typeof refreshWormChartLayout === 'function') refreshWormChartLayout(); });
 
-// Table view: Full, Compact, Simple (Compact with plain text only and colour-coded Jokers) or Classic. Compact (hides the emoji rows and, in the headers, the date and tries, to save space) or Classic (the table drawn
+// Table view: Full, Compact, Focus (key simple; Compact with plain text only and colour-coded Jokers) or Classic. Compact (hides the emoji rows and, in the headers, the date and tries, to save space) or Classic (the table drawn
 // like the PDF export, see js/pdf-view.js). Remembered on this device.
 const SUMMARY_COMPACT_KEY = 'summaryCompact';        // the older two-way choice (still read, so nobody's choice is lost)
 const SUMMARY_VIEW_MODE_KEY = 'summaryViewMode';
