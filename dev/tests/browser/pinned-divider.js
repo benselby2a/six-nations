@@ -138,7 +138,7 @@ const mock = `
     for (let e = css.indexOf('{', at); e < css.length; e++) { if (css[e] === '{') depth++; if (css[e] === '}') { depth--; if (!depth) { ios += '@media all ' + css.slice(css.indexOf('{', at), e + 1) + '\n'; break; } } }
   }
   console.log('the iOS header divider rule exists in styles.css:', /ios-divider-inset/.test(css) && /border-top: 24px/.test(ios));
-  await page.addStyleTag({ content: process.env.NOFIX ? ios.slice(0, ios.lastIndexOf('@media all')) : ios });
+  await page.addStyleTag({ content: process.env.NOFIX ? ios.slice(0, ios.lastIndexOf('@media all')) + '.summary-sticky-inner { box-shadow: 0 5px 6px -4px rgba(0, 0, 0, 0.3) !important; }' : ios });
   for (const theme of ['light', 'dark']) for (const mode of ['compact', 'simple']) {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.evaluate(([m, t]) => { setSummaryView(m); document.documentElement.setAttribute('data-theme', t); window.scrollTo(0, 0); }, [mode, theme]); await page.waitForTimeout(500);
@@ -146,6 +146,32 @@ const mock = `
     const buf = await page.screenshot({ clip: { x: Math.floor(box.right) + 1, y: Math.floor(box.top) + 2, width: 6, height: 20 } });    const px = await page.evaluate(async (b64) => { const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode(); const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const g = c.getContext('2d'); g.drawImage(img, 0, 0); const d = g.getImageData(0, 0, c.width, c.height).data; const set = new Set(); for (let i = 0; i < d.length; i += 4) set.add(d[i] + ',' + d[i + 1] + ',' + d[i + 2]); return [...set]; }, buf.toString('base64'));
     console.log(theme + ' ' + mode + ' nothing of the divider shadow shows in the 24px spacer above the header:', px.length === 1, px.slice(0, 3));
   }
+  // The whole 24px strip above the header, from the page's left edge to its right edge, must be one page colour: the pinned header's soft shadow used to leak out of its
+  // sides as faint vertical lines beside the table (far left and far right), standing up above the green bar. Compact and Focus, details off and on, light and dark.
+  for (const theme of ['light', 'dark']) for (const mode of ['compact', 'simple']) for (const detail of [false, true]) {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.evaluate(([m, t, d]) => { setSummaryView(m); applySummaryHeaderDetail(d, true); document.documentElement.setAttribute('data-theme', t); window.scrollTo(0, 0); }, [mode, theme, detail]); await page.waitForTimeout(500);
+    const top = await page.evaluate(() => document.querySelector('.summary-table:not(.summary-table-clone) th.competitor-col').getBoundingClientRect().top);
+    const buf = await page.screenshot({ clip: { x: 0, y: Math.floor(top) + 1, width: 390, height: 22 } });
+    const bad = await page.evaluate(async (b64) => { const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode(); const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const g = c.getContext('2d'); g.drawImage(img, 0, 0); const d = g.getImageData(0, 0, c.width, c.height).data; const base = d[0] + ',' + d[1] + ',' + d[2]; const xs = new Set(); for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) { const i = (y * c.width + x) * 4; if (d[i] + ',' + d[i + 1] + ',' + d[i + 2] !== base) xs.add(x); } return [...xs].slice(0, 8); }, buf.toString('base64'));
+    console.log(theme + ' ' + mode + ' details ' + (detail ? 'on' : 'off') + ' the strip above the header is clean across its full width (no vertical line at either edge):', bad.length === 0, bad);
+  }
+  // ...and still clean after a real tap on the match-details switch and after the summary redraws (what a save does), which is when the pinned header is rebuilt
+  for (const theme of ['light', 'dark']) for (const mode of ['compact', 'simple']) {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.evaluate(([m, t]) => { setSummaryView(m); document.documentElement.setAttribute('data-theme', t); window.scrollTo(0, 0); }, [mode, theme]); await page.waitForTimeout(400);
+    for (const how of ['tap on the details switch', 'redraw']) {
+      if (how === 'redraw') await page.evaluate(() => showSummary()); else await page.click('#headerDetailBtn');
+      await page.mouse.move(0, 0); await page.evaluate(() => document.activeElement && document.activeElement.blur()); await page.waitForTimeout(700);   // (the button's own tooltip is not part of the strip: it is checked below)
+      const top = await page.evaluate(() => document.querySelector('.summary-table:not(.summary-table-clone) th.competitor-col').getBoundingClientRect().top);
+      const buf = await page.screenshot({ clip: { x: 0, y: Math.floor(top) + 1, width: 390, height: 22 } });
+      const bad = await page.evaluate(async (b64) => { const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode(); const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const g = c.getContext('2d'); g.drawImage(img, 0, 0); const d = g.getImageData(0, 0, c.width, c.height).data; const base = d[0] + ',' + d[1] + ',' + d[2]; const xs = new Set(); for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) { const i = (y * c.width + x) * 4; if (d[i] + ',' + d[i + 1] + ',' + d[i + 2] !== base) xs.add(x); } return [...xs].slice(0, 8); }, buf.toString('base64'));
+      console.log(theme + ' ' + mode + ' after a ' + how + ' the strip above the header is still clean:', bad.length === 0, bad);
+    }
+  }
+  // the toolbar's tooltips (the gold-edged bubble under a button) must paint over the table, not hide behind its top edge
+  const z = await page.evaluate(() => { const tb = getComputedStyle(document.querySelector('.summary-toolbar')); const zone = getComputedStyle(document.querySelector('.summary-sticky-zone')); return { pos: tb.position, tb: Number(tb.zIndex), zone: Number(zone.zIndex) }; });
+  console.log('the toolbar (and so its tooltips) stacks above the pinned-header layer:', z.pos !== 'static' && z.tb > z.zone, z);
   console.log('errors', errors);
   await browser.close();
 })();
