@@ -185,6 +185,40 @@ function buildSummaryStickyHead() {
         stickyResizeObserver.observe(table);
     }
 }
+// Column hover (Compact and Focus, mouse only): the cell under the pointer lights up its whole column the same way the row hover lights up a row.
+// Cells in every row line up by position, so the column is "the cell at the same index in each row" of the table and of the pinned header copies.
+let columnHoverIndex = -1;
+function clearColumnHover() {
+    columnHoverIndex = -1;
+    document.querySelectorAll('.summary-table-wrap .col-hover').forEach(c => c.classList.remove('col-hover'));
+}
+function setColumnHover(index, anchor) {
+    if (index === columnHoverIndex && anchor && anchor.classList.contains('col-hover')) return;   // nothing changed (a redraw wipes the classes, so the check looks at the cell)
+    clearColumnHover();
+    columnHoverIndex = index;
+    const wrap = anchor && anchor.closest('.summary-table-wrap');
+    if (!wrap || index < 0) return;
+    wrap.querySelectorAll('table.summary-table tr').forEach(row => { const cell = row.cells[index]; if (cell) cell.classList.add('col-hover'); });
+}
+(function watchColumnHover() {
+    if (typeof document === 'undefined' || typeof window.matchMedia !== 'function') return;
+    let queued = null;
+    const canHover = () => window.matchMedia('(hover: hover) and (pointer: fine)').matches && document.body.classList.contains('summary-compact');
+    document.addEventListener('mouseover', (event) => {
+        const cell = event.target && event.target.closest ? event.target.closest('.summary-table-wrap table.summary-table td, .summary-table-wrap table.summary-table th') : null;
+        if (!cell || !canHover()) { if (columnHoverIndex !== -1) clearColumnHover(); return; }
+        if (queued) cancelAnimationFrame(queued);
+        queued = requestAnimationFrame(() => { queued = null; setColumnHover(cell.cellIndex, cell); });
+    }, { passive: true });
+    document.addEventListener('mouseout', (event) => {
+        const to = event.relatedTarget;
+        if (to && to.closest && to.closest('.summary-table-wrap table.summary-table')) return;   // moving to another cell: mouseover sets it
+        if (queued) { cancelAnimationFrame(queued); queued = null; }
+        clearColumnHover();
+    }, { passive: true });
+    // the table moving under a still pointer (sideways scroll) would leave the wrong column lit: clear it, the next mouse move sets it again
+    document.addEventListener('scroll', (event) => { if (columnHoverIndex !== -1 && event.target && event.target.classList && event.target.classList.contains('summary-container')) clearColumnHover(); }, { passive: true, capture: true });
+})();
 function sizeSummaryStickyHead() {
     const wrap = document.querySelector('.summary-table-wrap');
     if (!wrap) return;
