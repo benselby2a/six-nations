@@ -292,7 +292,6 @@ function startTour(kind) {
     if (kind !== 'admin') kind = 'app';
     if (kind === 'admin' && !isCurrentUserAdmin()) return;
     closeGlobalHelpModal();
-    closeAdminHelpModal();
     tourPreload(kind, true);   // the tour is open: fetch every picture now
     const steps = kind === 'admin' ? tourBuildAdminSteps() : tourBuildSteps(tourRulesHtml());
     tourState = { index: 0, steps, kind };

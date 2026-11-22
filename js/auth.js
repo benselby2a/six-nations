@@ -527,6 +527,7 @@
             document.getElementById('prizeFundTab').classList.add('hidden');
             document.getElementById('recoveryTab').classList.add('hidden');
             document.getElementById('usageReportTab').classList.add('hidden');
+            document.getElementById('adminHelpTab').classList.add('hidden');
             document.getElementById('yearsTab').classList.add('hidden');
             document.getElementById('checklistTab').classList.add('hidden');
             document.getElementById('adminHomeTab').classList.add('hidden');
@@ -574,6 +575,7 @@
             document.getElementById('prizeFundTab').classList.add('hidden');
             document.getElementById('recoveryTab').classList.add('hidden');
             document.getElementById('usageReportTab').classList.add('hidden');
+            document.getElementById('adminHelpTab').classList.add('hidden');
             document.getElementById('yearsTab').classList.add('hidden');
             document.getElementById('checklistTab').classList.add('hidden');
             document.getElementById('adminHomeTab').classList.add('hidden');

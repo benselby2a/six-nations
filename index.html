@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <script>try { if (sessionStorage.getItem('rugbyPredictorFadeIn')) { document.documentElement.classList.add('app-reloaded'); sessionStorage.removeItem('rugbyPredictorFadeIn'); } } catch (e) { /* ignore */ }</script>
-    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=63000b01" -->
+    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=d4952fb6" -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Six Nations Predictor</title>
@@ -26,7 +26,7 @@
     <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- jsPDF and its table plugin are loaded on demand (see loadPdfLibs in js/export-pdf.js), not on every visit -->
-    <link rel="stylesheet" href="dist/app.min.css?v=63000b01">
+    <link rel="stylesheet" href="dist/app.min.css?v=d4952fb6">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -221,7 +221,6 @@
             <!-- Admin Home Tab (Admin Only) -->
             <div id="adminHomeTab" class="prediction-section admin-only hidden" style="margin-top: 2rem;">
                 <div id="adminPanel" class="admin-panel" style="background: var(--surface); padding: 2rem; border-radius: 10px; border: 2px solid var(--red); margin-bottom: 1rem; position: relative;">
-                    <button class="admin-panel-help-btn" onclick="toggleAdminHelp()" title="Open admin help" aria-label="Open admin help">?</button>
                     <h2 id="adminPanelHeading" class="admin-panel-heading" style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bad-text); margin-bottom: 0.6rem; letter-spacing: 0.1em;">Admin Functions</h2>
                     <div class="admin-tabs-subheading" id="adminTabsSubheading" style="margin-bottom: 0.9rem; text-align: center;">These sections are only visible to admins</div>
                     <div class="tabs admin-tabs">
@@ -234,6 +233,7 @@
                         <button class="tab" onclick="showTab('years')">Years</button>
                         <button class="tab" onclick="showTab('recovery')">Database Recovery</button>
                         <button class="tab" onclick="showTab('usageReport')">Usage Report</button>
+                        <button class="tab" onclick="showTab('adminHelp')">Help</button>
                     </div>
                 </div>
             </div>
@@ -686,6 +686,26 @@
                 </div>
             </div>
 
+            <!-- Admin Help Tab (Admin Only) -->
+            <div id="adminHelpTab" class="prediction-section admin-only hidden" style="margin-top: 2rem;">
+                <div style="background: var(--surface); padding: 2rem; border-radius: 10px; border: 1px solid var(--line-strong); margin-bottom: 1rem;">
+                    <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Admin Help</h2>
+                    <div class="admin-help-content">
+                        <div><strong>Setup Checklist</strong> The tasks to finish before a year is ready: fixtures, all predictions in, predictions locked, scores entered for finished matches, rules and prize fund saved.</div>
+                        <div><strong>Fixtures and Scores</strong> Add/edit fixtures, enter the actual score and tries after each match, and set joker-eligible matches. Rounds are worked out from the dates (a Thursday to Sunday weekend is one round).</div>
+                        <div><strong>Predictions</strong> Review and correct competitor score predictions and tournament tries values, and lock or unlock predictions.</div>
+                        <div><strong>Competitors</strong> Add, edit, or remove competitors, update display names, assign teams, and manage admin access.</div>
+                        <div><strong>Prize Fund</strong> Set entry fee and payout allocation for 1st/2nd/3rd and closest tries prize.</div>
+                        <div><strong>Database Recovery</strong> Generate SQL to recreate schema and optionally restore current data.</div>
+                        <div><strong>Years</strong> Add a new year or remove one, including all of its fixtures, predictions and rules.</div>
+                        <div><strong>Usage Report</strong> View the most recent 100 login and database write events.</div>
+                    </div>
+                    <div class="fixture-modal-actions" style="justify-content: center; margin-top: 1rem;">
+                        <button type="button" onclick="startTour('admin')">Take the admin tour</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Usage Report Tab (Admin Only) -->
             <div id="usageReportTab" class="prediction-section admin-only hidden" style="margin-top: 2rem;">
                 <div style="background: var(--surface); padding: 2rem; border-radius: 10px; border: 1px solid var(--line-strong); margin-bottom: 1rem;">
@@ -732,27 +752,6 @@
             <div class="fixture-modal-actions">
                 <button type="button" onclick="startTour()">Take a tour</button>
                 <button class="btn-cancel" onclick="closeGlobalHelpModal()">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Admin Help Modal -->
-    <div id="adminHelpModal" class="modal hidden" onclick="if (event.target === this) closeAdminHelpModal()">
-        <div class="modal-content admin-help-modal-content">
-            <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bad-text); margin-bottom: 0.8rem; letter-spacing: 0.1em;">Admin Help</h2>
-            <div class="admin-help-content">
-                <div><strong>Setup Checklist</strong> The tasks to finish before a year is ready: fixtures, all predictions in, predictions locked, scores entered for finished matches, rules and prize fund saved.</div>
-                <div><strong>Fixtures and Scores</strong> Add/edit fixtures, enter the actual score and tries after each match, and set joker-eligible matches. Rounds are worked out from the dates (a Thursday to Sunday weekend is one round).</div>
-                <div><strong>Predictions</strong> Review and correct competitor score predictions and tournament tries values, and lock or unlock predictions.</div>
-                <div><strong>Competitors</strong> Add, edit, or remove competitors, update display names, assign teams, and manage admin access.</div>
-                <div><strong>Prize Fund</strong> Set entry fee and payout allocation for 1st/2nd/3rd and closest tries prize.</div>
-                <div><strong>Database Recovery</strong> Generate SQL to recreate schema and optionally restore current data.</div>
-                <div><strong>Years</strong> Add a new year or remove one, including all of its fixtures, predictions and rules.</div>
-                <div><strong>Usage Report</strong> View the most recent 100 login and database write events.</div>
-            </div>
-            <div class="fixture-modal-actions">
-                <button type="button" onclick="startTour('admin')">Take the admin tour</button>
-                <button class="btn-cancel" onclick="closeAdminHelpModal()">Close</button>
             </div>
         </div>
     </div>
@@ -842,6 +841,6 @@
     </div>
 
     <div class="app-footer"><span id="summaryUpdatedAt" class="app-footer-updated" aria-label="When the scores were last fetched"></span><span id="appVersion" class="app-version" aria-label="App version"></span></div>
-    <script src="dist/app.min.js?v=63000b01"></script>
+    <script src="dist/app.min.js?v=d4952fb6"></script>
 </body>
 </html>

@@ -12,7 +12,30 @@
             if (btn && !btn.classList.contains('hidden') && !btn.closest('.hidden')) btn.click();
         }
 
+        // Admin Functions: its section opens BELOW the button panel, often off-screen on a phone. After a click on one of the panel's
+        // buttons, scroll the opened section's top up to the top of the screen (instantly if the person prefers reduced motion).
+        // Only a real click on the panel's own buttons does this (not the tour, a restore or code calling showTab).
+        const ADMIN_SECTION_IDS = { checklist: 'checklistTab', results: 'resultsTab', scoreCorrections: 'scoreCorrectionsTab', competitors: 'competitorsTab', rules: 'rulesTab', prizeFund: 'prizeFundTab', years: 'yearsTab', recovery: 'recoveryTab', usageReport: 'usageReportTab', adminHelp: 'adminHelpTab' };
+        function scrollAdminSectionIntoView(tabName, evt) {
+            const id = ADMIN_SECTION_IDS[tabName];
+            const clicked = evt && evt.isTrusted && evt.type === 'click' && evt.target && evt.target.closest && evt.target.closest('.admin-tabs');
+            if (!id || !clicked) return;
+            const el = document.getElementById(id);
+            if (!el) return;
+            // After the section has been drawn (two frames); once more shortly after, in case its content settled (async data) and moved it
+            const go = () => {
+                const top = el.getBoundingClientRect().top;
+                if (top <= 16) return;   // already at the top of the screen
+                let reduce = false;
+                try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (error) { reduce = false; }
+                window.scrollTo({ top: Math.max(0, window.scrollY + top - 12), behavior: reduce ? 'auto' : 'smooth' });
+            };
+            requestAnimationFrame(() => requestAnimationFrame(go));
+            setTimeout(go, 450);
+        }
+
         function showTab(tabName) {
+            const clickEvent = (typeof event !== 'undefined') ? event : null;
             // Hide all tabs
             document.getElementById('predictionsTab').classList.add('hidden');
             document.getElementById('summaryTab').classList.add('hidden');
@@ -25,6 +48,7 @@
             document.getElementById('usageReportTab').classList.add('hidden');
             document.getElementById('yearsTab').classList.add('hidden');
             document.getElementById('checklistTab').classList.add('hidden');
+            document.getElementById('adminHelpTab').classList.add('hidden');
 
             // Update tab buttons
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
@@ -84,6 +108,11 @@
                 document.getElementById('usageReportTab').classList.remove('hidden');
                 event.target.classList.add('active');
                 renderUsageReport();
+            } else if (tabName === 'adminHelp') {
+                if (!isCurrentUserAdmin()) return;
+                document.getElementById('adminHelpTab').classList.remove('hidden');
+                event.target.classList.add('active');
+                tourPreload('admin');
             } else if (tabName === 'checklist') {
                 if (!isCurrentUserAdmin()) return;
                 document.getElementById('checklistTab').classList.remove('hidden');
@@ -95,7 +124,7 @@
             }
 
             // Inside any admin screen the top bar's Admin Functions tab stays the highlighted one
-            if (['adminHome', 'results', 'scoreCorrections', 'competitors', 'rules', 'prizeFund', 'years', 'recovery', 'usageReport', 'checklist'].includes(tabName)) {
+            if (['adminHome', 'results', 'scoreCorrections', 'competitors', 'rules', 'prizeFund', 'years', 'recovery', 'usageReport', 'adminHelp', 'checklist'].includes(tabName)) {
                 const adminTop = document.querySelector('#appView .app-bar > .tabs .admin-top-tab');
                 if (adminTop) adminTop.classList.add('active');
             }
@@ -104,6 +133,7 @@
             }
             updatePastYearBanners();
             renderReadinessChecklist();
+            scrollAdminSectionIntoView(tabName, clickEvent);
             if (tabName === 'adminHome') { tourPreload('admin'); maybeOfferAdminTour(); }
         }
 
