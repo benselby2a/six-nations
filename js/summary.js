@@ -41,9 +41,11 @@
         // Focus view: a team abbreviation in the same colour Classic uses for that team's name (PDF_SCHEMES in js/pdf-view.js is the single source of
         // the colours: light and dark are both written as CSS variables, so switching the theme needs no redraw). A team with no colour, such as one
         // from another tournament, keeps the plain heading colour.
+        // Jumbo's light-theme header bar is green, where Classic's dark England and purple Scotland are unreadable: these two read better lighter there (white 6.7:1, pale lavender 4.7:1 on the bar). Everything else keeps Classic's colours.
+        const JUMBO_LIGHT_BAR_TEAMS = { England: [255, 255, 255], Scotland: [225, 208, 255] };
         function simpleTeamSpan(team) {
             const abbr = getTeamAbbr(team);
-            const light = typeof PDF_SCHEMES !== 'undefined' && PDF_SCHEMES.light.team[team];
+            const light = typeof PDF_SCHEMES !== 'undefined' && (JUMBO_LIGHT_BAR_TEAMS[team] || PDF_SCHEMES.light.team[team]);
             const dark = typeof PDF_SCHEMES !== 'undefined' && PDF_SCHEMES.dark.team[team];
             if (!light || !dark) return `<span>${abbr}</span>`;
             return `<span class="team-tint" style="--team-l: ${pdfvRgb(light)}; --team-d: ${pdfvRgb(dark)}">${abbr}</span>`;
