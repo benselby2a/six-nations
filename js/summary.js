@@ -291,6 +291,7 @@
             html += '</div></div>';
 
             container.innerHTML = html;
+            fitFocusNameColumn();
             buildSummaryStickyHead();
             renderPrizeMoneyPanel(sortedUsers);
             renderWormChart(sortedUsers);
@@ -301,6 +302,43 @@
             if (currentFilter === 'default') {
                 scrollToDefaultMatches();
             }
+        }
+
+
+        // Focus view: names never wrap or break mid-word. The Name column is sized to the longest name plus its score (between 108px and 150px, --focus-name-w on the body);
+        // a name longer than that shrinks a little, and only then is cut with an ellipsis (the full name is in its title). Sized from the real text, so it adapts to the fonts and names in use.
+        const FOCUS_NAME_MIN = 108, FOCUS_NAME_MAX = 150;
+        function fitFocusNameColumn() {
+            const root = document.body;
+            if (summaryViewMode !== 'simple') { root.style.removeProperty('--focus-name-w'); return; }
+            const cells = [...document.querySelectorAll('.summary-container .summary-table td.competitor-name')];
+            if (!cells.length) return;
+            root.style.setProperty('--focus-name-w', FOCUS_NAME_MIN + 'px');
+            let need = 0;
+            cells.forEach(td => {
+                const nick = td.querySelector('.comp-nick'), score = td.querySelector('.comp-score');
+                if (!nick || !score) return;
+                nick.classList.remove('nick-shrink');
+                nick.title = nick.textContent.trim();
+                const cs = getComputedStyle(td);
+                const padding = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+                need = Math.max(need, Math.ceil(nick.scrollWidth + score.offsetWidth + 4 + padding + 2));
+            });
+            const width = Math.min(FOCUS_NAME_MAX, Math.max(FOCUS_NAME_MIN, need));
+            root.style.setProperty('--focus-name-w', width + 'px');
+            // anything still too long for the cap shrinks first (the ellipsis in the CSS is the last resort)
+            cells.forEach(td => {
+                const nick = td.querySelector('.comp-nick');
+                if (nick && nick.scrollWidth > nick.clientWidth + 0.5) nick.classList.add('nick-shrink');
+            });
+        }
+        // Fonts that arrive after the first draw change the text widths: fit again, then re-pin the header
+        if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(() => {
+                if (summaryViewMode !== 'simple' || !document.querySelector('.summary-container .summary-table')) return;
+                fitFocusNameColumn();
+                if (typeof layoutSummarySticky === 'function') layoutSummarySticky();
+            }).catch(() => {});
         }
 
         // Scroll the summary table so the default matches (last 2 completed + next 3 upcoming) are visible
