@@ -55,10 +55,10 @@ const rgb = (s) => (s.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
       const rows = spans.map(x => {
         const team = names[x.text]; const want = palette[theme][team];
         const got = rgb(x.color);
-        return { text: x.text, tint: x.tint, same: !!want && got.every((v, i) => v === want[i]), chip: /gradient/.test(x.bg), ratio: want ? Math.round(ratio(want, chipBg) * 100) / 100 : null, clone: x.clone };
+        return { text: x.text, tint: x.tint, same: !!want && got.every((v, i) => v === want[i]), chip: !/gradient/.test(x.bg), ratio: want ? Math.round(ratio(want, chipBg) * 100) / 100 : null, clone: x.clone };
       });
       const ok = rows.length > 0 && rows.every(r => r.tint && r.same && r.chip);
-      console.log(year + ' Focus ' + theme + ': every team abbreviation (header and pinned copy) is in its Classic colour on a chip:', ok, JSON.stringify(rows.filter(r => !r.clone)));
+      console.log(year + ' Focus ' + theme + ': every team abbreviation (header and pinned copy) is in its Classic colour (no chip):', ok, JSON.stringify(rows.filter(r => !r.clone)));
       console.log(year + ' Focus ' + theme + ' contrast of the team colour against its chip:', JSON.stringify(Object.fromEntries(rows.filter(r => !r.clone).map(r => [r.text, r.ratio]))));
       console.log(year + ' Focus ' + theme + ': the pinned header copy has the colours too:', rows.some(r => r.clone) ? rows.filter(r => r.clone).every(r => r.tint && r.same) : 'no copy on screen');
       if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '-' + theme + '.png', clip: { x: 0, y: 130, width: 390, height: 330 } });
