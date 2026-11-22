@@ -3986,11 +3986,12 @@ body.summary-classic .summary-toolbar .export-pdf-btn { margin-left: auto; }
     @keyframes summary-slide { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(calc(var(--sum-range, 0) * -1px), 0, 0); } }
 }
 
-/* Player menu: the Table view choice, under Appearance */
+/* Player menu: the Appearance choice (Light, Dark, Auto), then the Table view choice */
 .account-view { padding: 0.35rem 0.5rem 0.55rem; }
 .account-view-label { display: block; margin: 0 0 0.3rem; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
 .account-view .view-switch { display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; }
 .account-view .view-switch-btn { padding: 0 0.2rem; }
+.account-view .view-switch.theme-switch { grid-template-columns: repeat(3, 1fr); }
 .tour-card.tour-compact .tour-view-points li:nth-child(n+3), .tour-card.tour-compact .tour-views-intro { display: none; }
 
 /* Classic view: the zoom hint and controls sit in the toolbar, next to the download icon */

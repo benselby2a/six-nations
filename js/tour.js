@@ -60,7 +60,7 @@ function tourBuildSteps(rulesHtml) {
     steps.push(tourStep('menu-view', 'Change your view any time', [
         'Tap your <strong>initial</strong> at the top right to open the player menu.',
         'Under <strong>Table view</strong>, choose Full, Compact, Classic or Plain whenever you like.',
-        '<strong>Appearance</strong> switches between Auto, Light and Dark mode.'
+        'Under <strong>Appearance</strong>, choose Light, Dark or Auto.'
     ], '<p>Your choices are remembered on this device. Auto follows your phone\'s light or dark setting.</p>'));
     steps.push(tourStep('pdf', 'Download and print', [
         'Tap the <strong>download icon</strong> above the table to save the Classic page as a PDF, or to print it.'
