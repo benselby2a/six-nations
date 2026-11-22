@@ -70,7 +70,7 @@
   // the player menu, open: the Table view and Appearance choices
   await shot('menu-view', { before: async () => { await page.evaluate(() => { window.scrollTo(0, 0); document.getElementById('avatarBtn').click(); }); await page.waitForTimeout(350); }, clip: ['#avatarBtn', '#accountMenu'], marks: ['#avatarBtn', '#accountViewRow', '#accountThemeRow'], maxH: 420 });
   await page.evaluate(() => closeAccountMenu()); await page.waitForTimeout(200);
-  await shot('pdf', { clip: ['.summary-toolbar', '.summary-updated-row'], marks: ['#exportPdfBtn'] });
+  await shot('pdf', { clip: ['.summary-toolbar', '.summary-updated-row'], marks: ['#exportPdfBtn', '#headerDetailBtn'] });
   // the quick score button, on the Match Summary
   await shot('admin-scores', { before: async () => { await clickTab('Match Summary'); await page.evaluate(() => { const m = matches[1] || matches[0]; const b = document.getElementById('nextMatchScoreMainBtn'); b.classList.remove('hidden'); b.disabled = false; b.textContent = `+ ${getFlag(m.team1)} ${getTeamAbbr(m.team1)} v ${getFlag(m.team2)} ${getTeamAbbr(m.team2)} score`; }); }, clip: ['.summary-toolbar', '.summary-updated-row'], marks: ['#nextMatchScoreMainBtn'], maxH: 220 });
   // The PDF itself: build it with the app's own export, save the download, turn page 1 into a picture
