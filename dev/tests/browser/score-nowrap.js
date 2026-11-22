@@ -137,10 +137,9 @@ const mock = `
       return { bad, nScores: scores.length, overflow, tdW: Math.round(td.getBoundingClientRect().width), gaps };
     });
     if (mode === 'simple') {
-      // Focus keeps a tight column: it was 120px with 46px of empty space left of a short name's score; now 108px and at most 36px, with the score still on one line
-      const widest = Math.max(...r.gaps.map(g => g.gap));
+      // Focus sizes its Name column to the longest name (108px at least, 150px at most; see focus-names), and the score still stays on one line
       console.log('focus gaps', width, JSON.stringify(r.gaps));
-      console.log(`focus @${width}: column <= 108px and space left of the score <= 36px:`, r.tdW <= 108 && widest <= 36, '| col', r.tdW, 'widest gap', widest);
+      console.log(`focus @${width}: column between 108px and 150px:`, r.tdW >= 108 && r.tdW <= 150, '| col', r.tdW);
     }
     console.log(`${mode} @${width}: no wrapped score text:`, r.bad.length === 0, r.bad, '| scores seen:', r.nScores, '| spill past divider:', r.overflow, '| name col', r.tdW, 'px');
   }

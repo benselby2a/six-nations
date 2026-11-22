@@ -4122,7 +4122,8 @@ body.summary-compact:not(.summary-simple) .summary-table th.competitor-col .th-a
 body.summary-simple .summary-table { font-size: 1.05rem; }
 body.summary-simple .summary-table th, body.summary-simple .summary-table td { color: var(--text); }
 body.summary-simple .summary-table td { padding-top: 0.7rem; padding-bottom: 0.7rem; }
-body.summary-simple .summary-table td.competitor-name .comp-nick { font-size: 1.05rem; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+body.summary-simple .summary-table td.competitor-name .comp-nick { font-size: 1.05rem; font-weight: 700; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; word-break: normal; }   /* names stay on one line: the column is sized to them (--focus-name-w), then they shrink, then an ellipsis */
+body.summary-simple .summary-table td.competitor-name .comp-nick.nick-shrink { font-size: 0.9rem; }
 body.summary-simple .summary-table td.competitor-name .comp-score { font-size: 1.1rem; font-weight: 800; color: var(--text); }
 body.summary-simple .summary-table td.rank-col { font-size: 1.05rem; font-weight: 700; }
 body.summary-simple .summary-table th.competitor-col, body.summary-simple .summary-table th.rank-col { vertical-align: bottom; font-size: 0.95rem; }
@@ -4134,7 +4135,7 @@ body.summary-simple .summary-table thead th .match-teams { color: #fff !importan
 :root[data-theme="dark"] body.summary-simple .summary-table thead th .th-angled,
 :root[data-theme="dark"] body.summary-simple .summary-table thead th .match-teams { color: var(--text) !important; }
 body.summary-simple .summary-table th.competitor-col .th-angled { display: inline; width: auto; height: auto; transform: none; margin: 0; font-size: 0.95rem; white-space: nowrap; }
-body.summary-simple .summary-table td.competitor-name { min-width: 108px; width: 108px; max-width: 108px; }
+body.summary-simple .summary-table td.competitor-name { min-width: var(--focus-name-w, 108px); width: var(--focus-name-w, 108px); max-width: var(--focus-name-w, 108px); }
 body.summary-simple .match-header-cell .match-header-top .match-teams { height: auto; font-size: 1.1rem; font-weight: 800; letter-spacing: 0.03em; line-height: 1.35; margin-bottom: 0.4rem; }
 body.summary-simple .match-header-cell .match-header-bottom .match-result,
 body.summary-simple .match-header-cell .match-header-bottom .no-result { font-size: 1.05rem; font-weight: 700; height: auto; padding: 0.1rem 0.3rem; }
