@@ -269,7 +269,7 @@ This is the main browser-to-Supabase boundary.
 
 ## App icon
 
-- Original artwork (not the official Six Nations crest): a modern flat rugby ball (white with emerald seams and gold lacing, soft shadow) ringed by the six nations' flags (England, France, Italy, Wales, Ireland, Scotland) on an emerald gradient; the favicon is the ball alone (the flags would not be legible at 16 to 48px). Sources are `icons/icon.svg` (full), `icons/icon-small.svg` (favicon, ball only on a rounded square) and `icons/icon-maskable.svg` (Android, ball scaled into the safe zone). The PNGs in `icons/` and `favicon.ico` are rendered from them with Playwright (screenshot of the SVG at each size; opaque for `apple-touch-icon`; `favicon.ico` = `convert favicon-16.png favicon-32.png favicon-48.png favicon.ico`). Bump the `?v=` on the icon links in `index.html` and `manifest.json` when the artwork changes, so phones refetch it.
+- Original artwork (not the official Six Nations crest): the "Flag halo" design, a white rugby ball with emerald seams and gold lacing on a green disc inside a thin gold ring, ringed by six flag-filled arc segments (England, France, Italy, Wales, Ireland, Scotland) on a dark emerald gradient. All content sits inside the central 80% circle, so the same artwork works as the maskable icon. Sources: `icons/icon-maskable.svg` (1024) and `icons/icon-small.svg` are the same SVG at different sizes; the PNGs and `favicon.ico` (16, 32, 48) are renders of it (Chromium screenshots at exact sizes).
 - `index.html` links the favicons, the 180px `apple-touch-icon`, a theme colour and `manifest.json`.
 
 ## Competitors screen
