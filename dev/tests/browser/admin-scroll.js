@@ -125,6 +125,31 @@ const mock = `
     const after = await info(id);
     console.log(label + ':', JSON.stringify({ before: before.y, after }), 'scrolled down and content under the top edge:', after.visible && after.y > before.y && after.top >= 18 && after.top <= 40);
   }
+  // Regression: the page-load "open at the very top" timers (300/900/2000ms after load) used to jump back to the top and undo the scroll when the
+  // first admin button was tapped soon after loading (intermittent). Tapping now counts as the person having acted. Repeat the first-click case on
+  // freshly loaded pages, normally and with a slowed-down CPU, and every time the section must have been scrolled into view and stay there.
+  const fresh = async (throttle) => {
+    const c2 = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
+    const p2 = await c2.newPage();
+    await p2.addInitScript(() => { window.__noTourPrompts = true; });
+    await p2.route('**/@supabase/supabase-js**', r => r.fulfill({contentType:'application/javascript', body: mock}));
+    await p2.route('**/cdn.jsdelivr.net/**', r => r.request().url().includes('supabase') ? r.fallback() : r.fulfill({contentType:'application/javascript', body:''}));
+    await p2.route('**/fonts.googleapis.com/**', r => r.fulfill({body:''}));
+    if (throttle) { const cdp = await c2.newCDPSession(p2); await cdp.send('Emulation.setCPUThrottlingRate', { rate: throttle }); }
+    await p2.goto('file://' + path); await p2.waitForTimeout(40);
+    await p2.fill('#loginEmail', 'ben@example.com'); await p2.click('#sendLoginCodeBtn'); await p2.waitForTimeout(40);
+    await p2.fill('#loginCode', '123456'); await p2.click('#verifyCodeBtn'); await p2.waitForTimeout(40);
+    await p2.click('.admin-top-tab'); await p2.waitForTimeout(100);
+    await p2.click('#adminPanel .admin-tabs button:has-text("Setup Checklist")');
+    await p2.waitForTimeout(2600);   // past the last (2000ms) load-time jump to the top
+    const r = await p2.evaluate(() => ({ y: Math.round(window.scrollY), top: Math.round(document.getElementById('checklistTab').getBoundingClientRect().top) }));
+    await c2.close();
+    return r;
+  };
+  let freshOk = true; const freshResults = [];
+  for (let i = 0; i < 10; i++) { const r = await fresh(i === 9 ? 4 : 0); freshResults.push(r); if (!(r.y > 0 && r.top >= 18 && r.top <= 40)) freshOk = false; }
+  console.log('first click soon after load scrolls and stays (10 fresh pages, the last with a 4x slower CPU):', freshOk, JSON.stringify(freshResults.slice(0, 3)) + '...');
+
   // Re-clicking the same button scrolls again
   await page.evaluate(() => window.scrollTo(0, 0)); await page.waitForTimeout(150);
   await page.click('#adminPanel .admin-tabs button:has-text("Years")'); await page.waitForTimeout(900);

@@ -94,7 +94,8 @@ let appTouchedByUser = false;   // set once the person scrolls, so a late jump t
 function scrollToTop() {
     window.scrollTo(0, 0);
 }
-['touchmove', 'wheel', 'keydown'].forEach(type => window.addEventListener(type, () => { appTouchedByUser = true; }, { passive: true, once: true }));
+// (a tap or click counts too: a late jump to the top must never undo what a button the person just pressed did, e.g. an admin screen scrolling itself into view)
+['touchstart', 'pointerdown', 'mousedown', 'touchmove', 'wheel', 'keydown'].forEach(type => window.addEventListener(type, () => { appTouchedByUser = true; }, { passive: true, once: true }));
 
 window.addEventListener('load', () => {
     scrollToTop();
