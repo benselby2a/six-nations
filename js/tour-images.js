@@ -53,14 +53,14 @@ const TOUR_IMAGES = {
  },
  "view-classic": {
   "src": "tour-images/view-classic.webp",
-  "v": "43514fb2",
+  "v": "347a3053",
   "w": 780,
   "h": 294,
   "marks": []
  },
  "view-simple": {
   "src": "tour-images/view-simple.webp",
-  "v": "f337adbf",
+  "v": "66c1a494",
   "w": 780,
   "h": 660,
   "marks": []
@@ -96,7 +96,7 @@ const TOUR_IMAGES = {
  },
  "pdf": {
   "src": "tour-images/pdf.webp",
-  "v": "bb7c3f63",
+  "v": "305986a5",
   "w": 780,
   "h": 586,
   "marks": [
@@ -133,7 +133,7 @@ const TOUR_IMAGES = {
  },
  "admin-menu": {
   "src": "tour-images/admin-menu.webp",
-  "v": "67c950cb",
+  "v": "08fc75fc",
   "w": 780,
   "h": 940,
   "marks": [
