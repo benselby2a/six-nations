@@ -203,7 +203,7 @@ async function readXlsx(bytes) {
     return rows;
 }
 
-// ---- csv ----
+// ---- csv (read only: the template is downloaded as .xlsx) ----
 function parseCsv(text) {
     text = String(text || '').replace(/^﻿/, '');
     // The separator is whichever of comma, semicolon or tab (outside quotes) is most common in the first lines
@@ -227,13 +227,4 @@ function parseCsv(text) {
     }
     if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
     return rows;
-}
-
-function toCsv(rows) {
-    const cell = (v) => {
-        if (v === null || v === undefined) return '';
-        const s = String(v);
-        return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-    };
-    return '﻿' + rows.map(row => row.map(cell).join(',')).join('\r\n') + '\r\n';
 }

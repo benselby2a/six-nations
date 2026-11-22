@@ -122,11 +122,22 @@ const out = (label, ok, extra) => console.log(label + ':', ok, extra === undefin
   await page.click('.admin-top-tab'); await page.waitForTimeout(300);
   await page.click('#adminPanel .admin-tabs button:has-text("Predictions")'); await page.waitForTimeout(600);
   out('template tools are hidden until a competitor is chosen', await page.evaluate(() => document.getElementById('adminTemplateTools').classList.contains('hidden')));
+  // ---- the download sits above the competitor list and works with nobody chosen: a blank template ----
+  const tmp = require('os').tmpdir();
+  out('the download button is above the competitor list and always shown', await page.evaluate(() => { const b = [...document.querySelectorAll('button')].find(x => /Download template \(\.xlsx\)/.test(x.textContent)); const sel = document.getElementById('adminPredictionUserSelect'); return !!b && b.offsetParent !== null && !!(b.compareDocumentPosition(sel) & Node.DOCUMENT_POSITION_FOLLOWING) && !document.getElementById('adminTemplateTools').contains(b); }));
+  out('there is no CSV download', await page.evaluate(() => !/Download as CSV/i.test(document.body.innerText) && !document.querySelector('[onclick*="csv"]')));
+  const [dlBlank] = await Promise.all([page.waitForEvent('download'), page.click('button:has-text("Download template (.xlsx)")')]);
+  const blankPath = tmp + '/blank-' + Date.now() + '.xlsx'; await dlBlank.saveAs(blankPath);
+  const blankGrid = await page.evaluate(async (b64) => { const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0)); return await readXlsx(bytes); }, fs.readFileSync(blankPath).toString('base64'));
+  out('blank template: file name without a player', /^predictions-template-2026\.xlsx$/.test(dlBlank.suggestedFilename()), dlBlank.suggestedFilename());
+  out('blank template: season filled, Player, Username and Total tries empty, instruction beside Player', blankGrid[1][1] === '2026' && blankGrid[2][1] === '' && /Fill in the player name/.test(blankGrid[2][2]) && blankGrid[3][1] === '' && blankGrid[4][1] === '', JSON.stringify(blankGrid.slice(1, 5)));
+  const blankRows = blankGrid.slice(blankGrid.findIndex(r => r[0] === 'Match id') + 1);
+  out('blank template: every 2026 fixture listed with empty scores; Joker Yes/No only where eligible', blankRows.length === 4 && blankRows.every(r => r[6] === '' && r[7] === '') && blankRows.find(r => r[0] === '2')[8] === 'n/a' && blankRows.find(r => r[0] === '4')[8] === 'No', JSON.stringify(blankRows.map(r => [r[0], r[6], r[7], r[8]])));
+  out('blank template status message', await page.evaluate(() => /Blank template downloaded/.test(document.getElementById('adminTemplateStatus').textContent)));
   await page.selectOption('#adminPredictionUserSelect', 'sam'); await page.waitForTimeout(400);
   out('template tools show for the chosen competitor', await page.evaluate(() => !document.getElementById('adminTemplateTools').classList.contains('hidden')));
 
   // ---- download the .xlsx and read it back ----
-  const tmp = require('os').tmpdir();
   const [dl] = await Promise.all([page.waitForEvent('download'), page.click('button:has-text("Download template (.xlsx)")')]);
   const xlsxPath = tmp + '/tpl-' + Date.now() + '.xlsx'; await dl.saveAs(xlsxPath);
   out('xlsx file name', /predictions-template-2026-sam\.xlsx$/.test(dl.suggestedFilename()), dl.suggestedFilename());
@@ -144,20 +155,18 @@ const out = (label, ok, extra) => console.log(label + ':', ok, extra === undefin
   const xl = require('child_process').spawnSync('python3', ['-c', 'import openpyxl,sys; ws=openpyxl.load_workbook(sys.argv[1]).active; print(ws["A10"].value, ws["I14"].value, ws.max_row)', xlsxPath]);
   if (xl.status === 0) out('openpyxl opens the template', /Match id/.test(String(xl.stdout)), String(xl.stdout).trim()); else console.log('openpyxl not available, skipped');
 
-  // ---- csv download ----
-  const [dlCsv] = await Promise.all([page.waitForEvent('download'), page.click('button:has-text("Download as CSV")')]);
-  const csvPath = tmp + '/tpl-' + Date.now() + '.csv'; await dlCsv.saveAs(csvPath);
-  const csvText = fs.readFileSync(csvPath, 'utf8');
-  const csvGrid = await page.evaluate((t) => parseCsv(t), csvText);
-  out('csv download has a BOM, the same cells, and round-trips', csvText.charCodeAt(0) === 0xFEFF && csvGrid.findIndex(r => r[0] === 'Match id') === 9 && csvGrid[3][1] === 'sam' && csvGrid.length >= 14, JSON.stringify(csvGrid.slice(9, 11)));
+  // ---- csv: only for upload; a small writer for the test files ----
+  const csvFrom = (g, sep) => '﻿' + g.map(r => r.map(v => { v = v === null || v === undefined ? '' : String(v); return /[",;\t\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(sep || ',')).join('\r\n') + '\r\n';
+  const csvPath = tmp + '/tpl-' + Date.now() + '.csv'; fs.writeFileSync(csvPath, csvFrom(grid));
+  const csvGrid = await page.evaluate((t) => parseCsv(t), fs.readFileSync(csvPath, 'utf8'));
+  out('csv reader: the template as csv reads back to the same cells', csvGrid.findIndex(r => r[0] === 'Match id') === 9 && csvGrid[3][1] === 'sam' && csvGrid.length >= 14, JSON.stringify(csvGrid.slice(2, 5)));
 
   // a filled-in file made from the template
   const makeFile = async (name, edit, format) => {
     const g = JSON.parse(JSON.stringify(grid));
     edit(g);
+    if (format === 'csv' || format === 'csv-semicolon' || format === 'csv-tab') { const cp = tmp + '/' + name; fs.writeFileSync(cp, csvFrom(g, format === 'csv' ? ',' : format === 'csv-semicolon' ? ';' : '\t')); return cp; }
     const b64 = await page.evaluate(({ g, format }) => {
-      if (format === 'csv') return btoa(unescape(encodeURIComponent(toCsv(g))));
-      if (format === 'csv-semicolon') return btoa(unescape(encodeURIComponent('﻿' + g.map(r => r.join(';')).join('\r\n'))));
       const bytes = writeXlsx({ sheetName: 'Predictions', rows: g }); let s = ''; bytes.forEach(b => s += String.fromCharCode(b)); return btoa(s);
     }, { g, format });
     const p = tmp + '/' + name; fs.writeFileSync(p, Buffer.from(b64, 'base64')); return p;
@@ -197,6 +206,89 @@ const out = (label, ok, extra) => console.log(label + ':', ok, extra === undefin
   out('ticking "save anyway" enables Save', await page.evaluate(() => !document.getElementById('adminUploadConfirm').disabled));
   await page.click('.admin-upload-actions .btn-cancel'); await page.waitForTimeout(100);
 
+  // ---- what may be uploaded: .csv, .xls or .xlsx only ----
+  const statusText = () => page.evaluate(() => document.getElementById('adminUploadStatus').textContent);
+  const previewHidden = () => page.evaluate(() => document.getElementById('adminUploadPreview').classList.contains('hidden'));
+  const tryFile = async (name, content) => { const fp = tmp + '/' + name; fs.writeFileSync(fp, content); await page.setInputFiles('#adminUploadFile', fp); await page.waitForTimeout(500); return { status: await statusText(), hidden: await previewHidden() }; };
+  let r = await tryFile('junk.txt', 'hello there');
+  out('a .txt file is refused with the plain message and nothing is shown', /Upload a \.csv, \.xls or \.xlsx file/.test(r.status) && r.hidden, r);
+  r = await tryFile('scan.pdf', '%PDF-1.4 not a spreadsheet');
+  out('a .pdf file is refused', /Upload a \.csv, \.xls or \.xlsx file/.test(r.status) && r.hidden, r);
+  r = await tryFile('letter.docx', Buffer.from('PK\u0003\u0004 not really'));
+  out('a .docx file is refused', /Upload a \.csv, \.xls or \.xlsx file/.test(r.status) && r.hidden, r);
+  r = await tryFile('renamed.csv', '%PDF-1.4 binary \u0000\u0000 stuff');
+  out('a PDF renamed .csv is refused by its content', /not a spreadsheet/.test(r.status) && r.hidden, r);
+  r = await tryFile('empty.csv', '');
+  out('an empty file is refused', /empty/.test(r.status) && r.hidden, r);
+  out('the file picker offers .xlsx, .xls and .csv', await page.evaluate(() => { const a = document.getElementById('adminUploadFile').accept; return /\.xlsx/.test(a) && /\.xls\b/.test(a) && /\.csv/.test(a) && !/\.txt/.test(a); }));
+
+  // a text file named .csv that is not a template: the check explains what is missing and nothing can be saved
+  fs.writeFileSync(tmp + '/notes.csv', 'hello there');
+  await page.setInputFiles('#adminUploadFile', tmp + '/notes.csv'); await page.waitForTimeout(400);
+  out('text that is not a template shows an error in the preview and saves nothing', await page.evaluate(() => /Match id/.test(document.getElementById('adminUploadPreview').innerText)), await page.evaluate(() => document.getElementById('adminUploadPreview').innerText));
+  await page.click('.admin-upload-actions .btn-cancel'); await page.waitForTimeout(100);
+
+  // ---- corrupt files: a plain message, nothing saved ----
+  const xlsxBytes = fs.readFileSync(blankPath);
+  r = await tryFile('cut.xlsx', xlsxBytes.subarray(0, Math.floor(xlsxBytes.length * 0.6)));
+  out('a damaged .xlsx says it could not be read and shows nothing', /Could not read this \.xlsx file/.test(r.status) && r.hidden, r);
+  const fixDir = require('path').join(__dirname, '..', 'fixtures');
+  const xlwtBytes = fs.readFileSync(fixDir + '/predictions-xlwt.xls');
+  r = await tryFile('cut.xls', xlwtBytes.subarray(0, 700));
+  out('a damaged .xls (cut short) says it could not be read and shows nothing', /Could not read this \.xls file; save it as \.xlsx or \.csv and try again/.test(r.status) && r.hidden, r);
+  r = await tryFile('zeros.xls', Buffer.concat([xlwtBytes.subarray(0, 512), Buffer.alloc(2048)]));
+  out('an .xls with a valid header but no workbook says it could not be read', /Could not read this \.xls file/.test(r.status) && r.hidden, r);
+  r = await tryFile('garbage.xls', Buffer.concat([Buffer.from([0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]), Buffer.from('this is not really an OLE file'.repeat(30))]));
+  out('an .xls that only starts with the OLE signature is refused too', /Could not read this \.xls file/.test(r.status) && r.hidden, r);
+  out('nothing was saved by any refused file', JSON.stringify(await db()) === JSON.stringify(before));
+
+  // ---- .xls: a file written by xlwt and one converted by LibreOffice (blank Player and Username) ----
+  for (const name of ['predictions-xlwt.xls', 'predictions-libreoffice.xls']) {
+    pv = await upload(fixDir + '/' + name);
+    out(name + ': read; changed and new rows, a Joker and total tries previewed; a blank player needs no tick', pv.shown && !pv.errors.length && /30-20 \(changed\)/.test(pv.text) && /21-14 \(new\)/.test(pv.text) && /7-3 \(new\)/.test(pv.text) && /Total tries:[\s\S]*52/.test(pv.text) && !pv.warnings.some(w => /was made for/.test(w)) && pv.confirmDisabled === false, { errors: pv.errors, warnings: pv.warnings, confirmDisabled: pv.confirmDisabled, text: pv.text.replace(/\s+/g, ' ').slice(0, 300) });
+    out(name + ': the Joker is on England v Wales', await page.evaluate(() => [...document.querySelectorAll('.admin-upload-table tbody tr')].filter(tr => /Yes/.test(tr.lastElementChild.textContent)).map(tr => tr.firstElementChild.textContent).join('|')) .then(t => /England v Wales/.test(t) && !/Wales v Italy/.test(t)));
+    await page.click('.admin-upload-actions .btn-cancel'); await page.waitForTimeout(100);
+  }
+  out('reading .xls did not save anything', JSON.stringify(await db()) === JSON.stringify(before));
+
+  // ---- the reader itself: shared strings that continue over several records, non-Latin text, decimals and formulas ----
+  const readFixture = (file) => page.evaluate(async (b64) => readXls(Uint8Array.from(atob(b64), c => c.charCodeAt(0))), fs.readFileSync(fixDir + '/' + file).toString('base64'));
+  const longRows = await readFixture('long-strings.xls');
+  out('xls reader: long and non-Latin strings, decimals and a string table over several records', JSON.stringify(longRows) === JSON.stringify(JSON.parse(fs.readFileSync(fixDir + '/long-strings.json', 'utf8'))), [longRows.length, longRows[1] && longRows[1][1], longRows[longRows.length - 1]]);
+  const formulaRows = await readFixture('formulas.xls');
+  out('xls reader: formula results (number, text, fraction)', JSON.stringify(formulaRows) === JSON.stringify([['52', 'Yes', '0.5'], ['Season', '2026']]), formulaRows);
+
+  // ---- an .xls that is really SpreadsheetML (XML) or an HTML table, as other tools save them ----
+  const xmlEsc = (v) => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const gridWithBlankPlayer = JSON.parse(JSON.stringify(grid)); gridWithBlankPlayer[2][1] = ''; gridWithBlankPlayer[3][1] = '';
+  const setRowIn = (g, id, h, a, j) => { const rr = g.find((x, i) => i > 9 && String(x[0]) === String(id)); rr[6] = h; rr[7] = a; if (j !== undefined) rr[8] = j; };
+  setRowIn(gridWithBlankPlayer, 4, '21', '14', 'Yes'); setRowIn(gridWithBlankPlayer, 5, '7', '3', 'No'); setRowIn(gridWithBlankPlayer, 1, '30', '20'); gridWithBlankPlayer[4][1] = '52';
+  const spreadsheetMl = '<?xml version="1.0"?>\n<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Predictions"><Table>' +
+    gridWithBlankPlayer.map((row, i) => row.length ? '<Row>' + row.map((v, c) => (v === '' ? '<Cell ss:Index="' + (c + 2) + '"/>' : '<Cell><Data ss:Type="' + (typeof v === 'number' ? 'Number' : 'String') + '">' + xmlEsc(v) + '</Data></Cell>')).join('') + '</Row>' : '<Row ss:Index="' + (i + 2) + '"/>').join('') + '</Table></Worksheet></Workbook>';
+  pv = await upload(await (async () => { const fp = tmp + '/spreadsheetml.xls'; fs.writeFileSync(fp, spreadsheetMl); return fp; })());
+  out('SpreadsheetML saved as .xls is read', pv.shown && !pv.errors.length && /30-20 \(changed\)/.test(pv.text) && /21-14 \(new\)/.test(pv.text) && /Total tries:[\s\S]*52/.test(pv.text) && pv.confirmDisabled === false, { errors: pv.errors, text: pv.text.replace(/\s+/g, ' ').slice(0, 240) });
+  await page.click('.admin-upload-actions .btn-cancel'); await page.waitForTimeout(100);
+  const htmlTable = '<html><body><table border="1">' + gridWithBlankPlayer.map(row => '<tr>' + row.map(v => '<td>' + xmlEsc(v) + '</td>').join('') + '</tr>').join('') + '</table></body></html>';
+  pv = await upload(await (async () => { const fp = tmp + '/table.xls'; fs.writeFileSync(fp, htmlTable); return fp; })());
+  out('an HTML table saved as .xls is read', pv.shown && !pv.errors.length && /30-20 \(changed\)/.test(pv.text) && /7-3 \(new\)/.test(pv.text) && /Total tries:[\s\S]*52/.test(pv.text) && pv.confirmDisabled === false, { errors: pv.errors, text: pv.text.replace(/\s+/g, ' ').slice(0, 240) });
+  await page.click('.admin-upload-actions .btn-cancel'); await page.waitForTimeout(100);
+
+  // ---- blank Player/Username is fine for any chosen competitor; filled ones that differ warn ----
+  pv = await upload(await makeFile('blank-player.xlsx', g => { g[2][1] = ''; g[3][1] = ''; setRow(g, 4, '21', '14', 'Yes'); setRow(g, 5, '', '', 'No'); }));
+  out('a file with Player and Username blank uploads for the chosen competitor with no warning', !pv.errors.length && !pv.warnings.length && pv.confirmDisabled === false && /21-14 \(new\)/.test(pv.text), { errors: pv.errors, warnings: pv.warnings, confirmDisabled: pv.confirmDisabled });
+  await page.click('.admin-upload-actions .btn-cancel'); await page.waitForTimeout(100);
+  pv = await upload(await makeFile('player-name-only.xlsx', g => { g[3][1] = ''; g[2][1] = 'Someone Else'; setRow(g, 4, '21', '14'); }));
+  out('only a different Player name filled in still warns and holds Save', pv.warnings.some(w => /Someone Else/.test(w)) && pv.confirmDisabled === true, pv.warnings);
+  await page.click('.admin-upload-actions .btn-cancel'); await page.waitForTimeout(100);
+  pv = await upload(await makeFile('player-name-matches.xlsx', g => { g[3][1] = ''; g[2][1] = 'Sam'; setRow(g, 4, '21', '14'); }));
+  out('the chosen competitor\'s own Player name filled in is fine', !pv.warnings.length && pv.confirmDisabled === false, pv.warnings);
+  await page.click('.admin-upload-actions .btn-cancel'); await page.waitForTimeout(100);
+
+  // tab separated text is read too
+  pv = await upload(await makeFile('tab.csv', g => { setRow(g, 4, '10', '11', 'Yes'); setRow(g, 5, '7', '3', 'No'); }, 'csv-tab'));
+  out('tab separated text is read too', !pv.errors.length && /10-11 \(new\)/.test(pv.text), pv.errors.concat(pv.text.replace(/\s+/g, ' ').slice(0, 200)));
+  await page.click('.admin-upload-actions .btn-cancel'); await page.waitForTimeout(100);
+
   // ---- a good .xlsx: scores, tries and a Joker, then confirm ----
   const good = await makeFile('good.xlsx', g => { g[4][1] = '52'; setRow(g, 1, '30', '20'); setRow(g, 4, '21', '14', 'Yes'); setRow(g, 5, '', '', 'No'); });
   pv = await upload(good);
@@ -225,12 +317,6 @@ const out = (label, ok, extra) => console.log(label + ':', ok, extra === undefin
   // ---- semicolon csv (Excel in some regions) ----
   pv = await upload(await makeFile('semi.csv', g => { setRow(g, 4, '10', '11', 'Yes'); setRow(g, 5, '7', '3', 'No'); }, 'csv-semicolon'));
   out('semicolon separated csv is read too', !pv.errors.length && /10-11 \(changed\)/.test(pv.text), pv.errors.concat(pv.text.replace(/\s+/g, ' ').slice(0, 200)));
-  await page.click('.admin-upload-actions .btn-cancel'); await page.waitForTimeout(100);
-
-  // ---- not a template at all ----
-  fs.writeFileSync(tmp + '/junk.txt', 'hello there');
-  await page.setInputFiles('#adminUploadFile', tmp + '/junk.txt'); await page.waitForTimeout(400);
-  out('a file that is not a template shows a plain error and saves nothing', await page.evaluate(() => /Match id/.test(document.getElementById('adminUploadPreview').innerText)), await page.evaluate(() => document.getElementById('adminUploadPreview').innerText));
   await page.click('.admin-upload-actions .btn-cancel'); await page.waitForTimeout(100);
 
   // ---- a different competitor clears the preview ----

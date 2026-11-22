@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <script>try { if (sessionStorage.getItem('rugbyPredictorFadeIn')) { document.documentElement.classList.add('app-reloaded'); sessionStorage.removeItem('rugbyPredictorFadeIn'); } } catch (e) { /* ignore */ }</script>
-    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=f568d5d0" -->
+    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=af0b0b16" -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Six Nations Predictor</title>
@@ -26,7 +26,7 @@
     <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- jsPDF and its table plugin are loaded on demand (see loadPdfLibs in js/export-pdf.js), not on every visit -->
-    <link rel="stylesheet" href="dist/app.min.css?v=f568d5d0">
+    <link rel="stylesheet" href="dist/app.min.css?v=af0b0b16">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -277,6 +277,12 @@
                     <div id="lockToggle" class="toggle-switch" onclick="togglePredictionsLock()"></div>
                 </div>
 
+                <div class="admin-template-download">
+                    <button type="button" class="btn-small" onclick="downloadPredictionTemplate()">Download template (.xlsx)</button>
+                    <span id="adminTemplateStatus" class="tries-save-status" role="status" aria-live="polite"></span>
+                    <p class="admin-template-note">A blank template for filling in scores, Jokers and total tries in Excel. Once a competitor is chosen below it comes pre-filled with their saved predictions.</p>
+                </div>
+
                 <div class="admin-score-corrections-toolbar">
                     <label for="adminPredictionUserSelect">Competitor</label>
                     <select id="adminPredictionUserSelect" onchange="onAdminPredictionUserChange()"></select>
@@ -284,12 +290,10 @@
 
                 <div class="admin-template-tools hidden" id="adminTemplateTools">
                     <h3>Enter predictions from a spreadsheet</h3>
-                    <p>Download a template for the selected competitor, fill in their scores, Joker and total tries in Excel, then upload it. You see a preview and confirm before anything is saved.</p>
+                    <p>Fill in the template, then upload it for the competitor chosen above (a .csv, .xls or .xlsx file). You see a preview and confirm before anything is saved.</p>
                     <div class="admin-template-buttons">
-                        <button type="button" class="btn-small" onclick="downloadPredictionTemplate('xlsx')">Download template (.xlsx)</button>
-                        <button type="button" class="btn-small" style="background: var(--accent-blue);" onclick="downloadPredictionTemplate('csv')">Download as CSV</button>
                         <button type="button" class="btn-small btn-success" onclick="document.getElementById('adminUploadFile').click()">Upload completed template</button>
-                        <input type="file" id="adminUploadFile" class="sr-only" accept=".xlsx,.csv,.txt,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onchange="onAdminUploadFileChosen(this)" data-no-unsaved>
+                        <input type="file" id="adminUploadFile" class="sr-only" accept=".xlsx,.xls,.csv,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onchange="onAdminUploadFileChosen(this)" data-no-unsaved>
                     </div>
                     <span id="adminUploadStatus" class="tries-save-status" role="status" aria-live="polite"></span>
                     <div id="adminUploadPreview" class="admin-upload-preview hidden"></div>
@@ -707,7 +711,7 @@
                     <div class="admin-help-content">
                         <div><strong>Setup Checklist</strong> The tasks to finish before a year is ready: fixtures, all predictions in, predictions locked, scores entered for finished matches, rules and prize fund saved.</div>
                         <div><strong>Fixtures and Scores</strong> Add/edit fixtures, enter the actual score and tries after each match, and set joker-eligible matches. Rounds are worked out from the dates (a Thursday to Sunday weekend is one round).</div>
-                        <div><strong>Predictions</strong> Review and correct competitor score predictions and tournament tries values, and lock or unlock predictions. To enter a competitor's predictions for them, download their spreadsheet template (.xlsx or CSV), fill in the scores, total tries and Joker, then upload it: you check a preview before anything is saved.</div>
+                        <div><strong>Predictions</strong> Review and correct competitor score predictions and tournament tries values, and lock or unlock predictions. To enter a competitor's predictions for them, download the spreadsheet template (.xlsx only, above the competitor list: blank, or pre-filled once a competitor is chosen), fill in the scores, total tries and Joker, then upload it for the chosen competitor (.csv, .xls or .xlsx): you check a preview before anything is saved.</div>
                         <div><strong>Competitors</strong> Add, edit, or remove competitors, update display names, assign teams, and manage admin access.</div>
                         <div><strong>Prize Fund</strong> Set entry fee and payout allocation for 1st/2nd/3rd and closest tries prize.</div>
                         <div><strong>Database Recovery</strong> Generate SQL to recreate schema and optionally restore current data.</div>
@@ -855,6 +859,6 @@
     </div>
 
     <div class="app-footer"><span id="summaryUpdatedAt" class="app-footer-updated" aria-label="When the scores were last fetched"></span><span id="appVersion" class="app-version" aria-label="App version"></span></div>
-    <script src="dist/app.min.js?v=f568d5d0"></script>
+    <script src="dist/app.min.js?v=af0b0b16"></script>
 </body>
 </html>
