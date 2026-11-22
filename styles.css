@@ -3421,6 +3421,8 @@ body.in-app .container { padding-top: 0.8rem; }
 
 /* one toolbar above the table */
 .summary-toolbar { display: flex; align-items: center; gap: 0.45rem; margin: 0 0 0.5rem; }
+/* the toolbar sits above the table's pinned-header layer, so a button's tooltip (shown below it, and left showing after a tap on a phone) is not half hidden behind the table's top edge */
+.summary-toolbar { position: relative; z-index: 45; }
 .summary-toolbar .filter-toggle { flex: 1; display: grid; grid-template-columns: 1fr 1fr; width: auto; margin: 0; flex-direction: row; border-radius: 8px; min-width: 0; }
 .summary-toolbar .filter-toggle-btn { padding: 0.5rem 0.3rem; font-size: 0.72rem; letter-spacing: 0.02em; margin: 0; border-radius: 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .toolbar-icon-btn { all: unset; box-sizing: border-box; width: 38px; height: 38px; display: grid; place-items: center; flex: none; border-radius: 8px; border: 1px solid rgb(var(--ink) / 0.18); background: rgb(var(--ink) / 0.07); color: var(--text); cursor: pointer; }
@@ -3841,7 +3843,8 @@ body .cell-score .joker-inline { width: 1.25rem; height: 1.25rem; font-size: 0.8
         .summary-table thead th { border-top: 24px solid var(--bg); }
         /* the table's outline would run up the spacer as two vertical bars: keep its widths (for alignment) but hide the sides, top and corners */
         .summary-container { border-left-color: transparent; border-right-color: transparent; border-top-color: transparent; border-radius: 0; }
-        .summary-sticky-inner { border-radius: 0; box-shadow: 0 5px 6px -4px rgba(0, 0, 0, 0.3); }
+        /* the pinned header's soft shadow falls only below it: a spread of -8px keeps its blur inside the box's sides, so it cannot show as faint vertical lines beside the table in the spacer strip above the header (ios-sticky-shadow) */
+        .summary-sticky-inner { border-radius: 0; box-shadow: 0 8px 6px -8px rgba(0, 0, 0, 0.4); }
         /* The column dividers in the header are inset shadows, not left borders: a left border meets the spacer's top border at a slant and showed as thin dark lines above the table */
         /* the pinned Score column's edge shadow is drawn inside the cell, so it does not run up through the spacer as a line */
         .summary-table thead th.pts-col { box-shadow: inset -6px 0 6px -6px rgba(0, 0, 0, 0.3); }
