@@ -3918,7 +3918,7 @@ body .cell-score .joker-inline { width: 1.25rem; height: 1.25rem; font-size: 0.8
 /* PDF view: the A4 sheet drawn in HTML. Every cell carries its own light and dark colours as variables. */
 .pdfv-wrap { width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; margin: 0 0 1.5rem; border-radius: 8px; border: 1px solid var(--line-strong); }
 .pdfv-stage { position: relative; }
-.pdfv-stage > .pdfv-sheet { position: absolute; top: 0; left: 0; }
+.pdfv-stage-scaled > .pdfv-sheet { position: absolute; top: 0; left: 0; }
 .pdfv-sheet { box-sizing: border-box; transform-origin: top left; font-family: Helvetica, Arial, sans-serif; background: #fff; color: #111; }
 .pdfv-title { font-weight: 700; font-size: 18.7px; line-height: 1.1; color: #111; }
 .pdfv-sub { font-size: 12px; color: #5f5f5f; margin: 2px 0 8px; }
@@ -4099,13 +4099,10 @@ body.summary-compact .summary-table td.tries-col { font-weight: 700; color: var(
 .worm-chart-tools .worm-zoom { flex: none; box-sizing: border-box; height: 34px; margin-left: auto; }
 .worm-chart-tools .worm-zoom button { height: 100%; padding: 0 0.6rem; display: grid; place-items: center; }
 
-/* Classic, zoomed in: the Name column is pinned at the left edge (a sticky layer outside the scaled sheet) */
-.pdfv-pin { position: sticky; left: 0; top: 0; z-index: 3; display: none; background: #fff; box-shadow: 4px 0 6px -2px rgba(0, 0, 0, 0.4); overflow: hidden; }
-.pdfv-pin::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 3px; background: var(--gold); pointer-events: none; }   /* over the copied cells, so the divider is always visible */
-.pdfv-pin-inner { position: absolute; transform-origin: top left; }
-.pdfv-pin-table { table-layout: fixed; width: 100%; }
-:root[data-theme="dark"] .pdfv-pin { background: #0b1a14; box-shadow: 5px 0 8px -2px rgba(0, 0, 0, 0.7); }
-:root[data-theme="dark"] .pdfv-pin::after { background: var(--bright-gold); }
+/* Classic: the first column (Date / KO, Name, Result, Try Count) is pinned at the left edge with plain position: sticky while the sheet scrolls sideways.
+   The 3px gold divider and the soft shadow are box-shadows (collapsed table borders do not travel with a sticky cell). */
+.pdfv-pinned { position: sticky; left: 0; z-index: 2; box-shadow: inset -3px 0 0 var(--gold), 4px 0 6px -2px rgba(0, 0, 0, 0.4); }
+:root[data-theme="dark"] .pdfv-pinned { box-shadow: inset -3px 0 0 var(--bright-gold), 5px 0 8px -2px rgba(0, 0, 0, 0.7); }
 
 /* Compact: the scores line up in one column (right edge of the Competitor column), whatever flags a person has */
 .summary-table td.competitor-name .comp-sub { width: 100%; }

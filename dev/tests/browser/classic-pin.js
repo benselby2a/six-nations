@@ -115,27 +115,48 @@ const mock = `
   await page.click('#appView .app-bar > .tabs .tab:has-text("Match Summary")'); await page.waitForTimeout(500);
   await page.setViewportSize({ width: 390, height: 800 });
   await page.evaluate(() => setSummaryView('classic')); await page.waitForTimeout(600);
-  const pinState = () => page.evaluate(() => { const w = document.getElementById('pdfViewWrap'), p = document.querySelector('.pdfv-pin'); const real = document.querySelectorAll('.pdfv-sheet .pdfv-table tr')[4].cells[0].getBoundingClientRect(); const pinCell = p ? p.querySelectorAll('tr')[4].cells[0] : null; const pr = pinCell ? pinCell.getBoundingClientRect() : null; const wr = w.getBoundingClientRect(); return { zoomed: w.dataset.zoomed, display: p ? getComputedStyle(p).display : null, scrollLeft: Math.round(w.scrollLeft), pinLeft: pr ? Math.round(pr.left - wr.left) : null, realLeft: Math.round(real.left - wr.left), pinTop: pr ? Math.round(pr.top) : null, realTop: Math.round(real.top), pinH: pr ? Math.round(pr.height * 10) / 10 : null, realH: Math.round(real.height * 10) / 10, name: pinCell ? pinCell.textContent : null }; });
+  // The first column of every row (Date / KO, Name, Result, Try Count, each person) is a sticky cell: it must sit at the box's left edge when the sheet is scrolled sideways
+  const pinState = () => page.evaluate(() => {
+    const w = document.getElementById('pdfViewWrap'), wr = w.getBoundingClientRect();
+    const rows = [...document.querySelectorAll('.pdfv-sheet .pdfv-table tr')];
+    const left = rows.map(tr => Math.round((tr.cells[0].getBoundingClientRect().left - wr.left - w.clientLeft) * 10) / 10);
+    const second = rows[2].cells[1].getBoundingClientRect().left - wr.left;
+    const c0 = getComputedStyle(rows[2].cells[0]);
+    return { scrollLeft: Math.round(w.scrollLeft), scrollW: w.scrollWidth, clientW: w.clientWidth, rows: rows.length, minLeft: Math.min(...left), maxLeft: Math.max(...left), second: Math.round(second), pos: c0.position, names: rows.slice(0, 5).map(tr => tr.cells[0].textContent.replace(/\s+/g, ' ').trim()), zoom: getComputedStyle(document.getElementById('pdfViewSheet')).zoom, transform: document.getElementById('pdfViewSheet').style.transform };
+  });
   const fit = await pinState();
-  console.log('fitted to the screen the pinned copy is not shown:', JSON.stringify(fit), fit.display === 'none');
-  await page.evaluate(() => { zoomPdfView(1.3); zoomPdfView(1.3); zoomPdfView(1.3); }); await page.waitForTimeout(400);
-  await page.evaluate(() => { document.getElementById('pdfViewWrap').scrollLeft = 0; }); await page.waitForTimeout(250);
-  const z0 = await pinState();
-  console.log('zoomed in at the left edge the pinned column sits exactly over the real one:', JSON.stringify(z0), z0.display === 'block' && Math.abs(z0.pinLeft - z0.realLeft) <= 1 && Math.abs(z0.pinTop - z0.realTop) <= 1 && Math.abs(z0.pinH - z0.realH) <= 1);
-  await page.evaluate(() => { document.getElementById('pdfViewWrap').scrollLeft = 200; }); await page.waitForTimeout(300);
-  const z1 = await pinState();
-  console.log('scrolled sideways the Name column stays at the left edge while the sheet moves:', JSON.stringify(z1), z1.realLeft < 0 || z1.realLeft < z0.realLeft - 100, z1.pinLeft === z0.pinLeft, z1.pinTop === z0.pinTop);
+  console.log('fitted: the sheet fits, first column cells are sticky:', JSON.stringify(fit), fit.pos === 'sticky' && fit.scrollW <= fit.clientW + 1, fit.rows >= 8);
+  const checkAt = async (label, sl) => {
+    await page.evaluate((x) => { const w = document.getElementById('pdfViewWrap'); w.scrollLeft = x < 0 ? w.scrollWidth : x; }, sl); await page.waitForTimeout(250);
+    const st = await pinState();
+    // every row's first cell is exactly at the left edge (within 1px) once the sheet has moved sideways
+    console.log(label + ':', JSON.stringify(st), st.scrollW > st.clientW + 50, Math.abs(st.minLeft) <= 1 && Math.abs(st.maxLeft) <= 1, st.second < 0);
+    return st;
+  };
+  for (const [name, times] of [['2 steps in', 2], ['3 steps in', 3], ['4 steps in', 4]]) {
+    await page.evaluate(() => zoomPdfView(0)); await page.waitForTimeout(200);
+    await page.evaluate((n) => { for (let i = 0; i < n; i++) zoomPdfView(1.3); }, times); await page.waitForTimeout(300);
+    await checkAt(name + ', scrolled 150px', 150);
+    await checkAt(name + ', scrolled 400px', 400);
+    await checkAt(name + ', scrolled to the far right', -1);
+  }
+  // the divider and shadow on the pinned cells, light and dark
+  const divider = () => page.evaluate(() => { const c = document.querySelectorAll('.pdfv-sheet .pdfv-table tr')[3].cells[0]; const cs = getComputedStyle(c); return { shadow: cs.boxShadow, bg: cs.backgroundColor, z: cs.zIndex }; });
+  const dl = await divider();
+  console.log('light: a 3px gold divider and a soft shadow, opaque background:', JSON.stringify(dl), /-3px/.test(dl.shadow) && /inset,.*rgba/.test(dl.shadow) && dl.bg !== 'rgba(0, 0, 0, 0)');
+  await page.evaluate(() => changeTheme('dark')); await page.waitForTimeout(300);
+  const dd = await divider();
+  console.log('dark: its own gold divider and shadow:', JSON.stringify(dd), dd.shadow !== dl.shadow && /-3px/.test(dd.shadow) && dd.bg !== 'rgba(0, 0, 0, 0)');
   await page.screenshot({ path: '/tmp/pin-classic.png', clip: { x: 0, y: 100, width: 390, height: 360 } });
-  const divider = () => page.evaluate(() => { const p = document.querySelector('.pdfv-pin'), a = getComputedStyle(p, '::after'); return { w: a.width, bg: a.backgroundColor, shadow: getComputedStyle(p).boxShadow !== 'none' }; });
-  const d1 = await divider();
-  console.log('the pinned column has a 3px gold divider and a shadow:', JSON.stringify(d1), d1.w === '3px' && d1.bg !== 'rgba(0, 0, 0, 0)' && d1.shadow);
-  // a second, higher zoom level, scrolled all the way to the right
-  await page.evaluate(() => { zoomPdfView(1.5); }); await page.waitForTimeout(300);
-  await page.evaluate(() => { const w = document.getElementById('pdfViewWrap'); w.scrollLeft = w.scrollWidth; }); await page.waitForTimeout(300);
-  const z2 = await pinState();
-  console.log('zoomed in further and scrolled to the far right the Name column is still at the left edge:', JSON.stringify(z2), z2.display === 'block' && z2.pinLeft >= 0 && z2.pinLeft < 40 && z2.realLeft < 0 && Math.abs(z2.pinTop - z2.realTop) <= 1);
+  await page.evaluate(() => changeTheme('light'));
+  // with the round filter set (Classic ignores it and always draws the whole tournament) the first column is still pinned
+  await page.evaluate(() => { matches[1].round = 2; selectedRound = 1; filterMatches('round'); }); await page.waitForTimeout(500);
+  await page.evaluate(() => zoomPdfView(0)); await page.waitForTimeout(200);
+  await page.evaluate(() => { for (let i = 0; i < 4; i++) zoomPdfView(1.3); }); await page.waitForTimeout(300);
+  await checkAt('Current round, zoomed and scrolled', 120);
   await page.evaluate(() => zoomPdfView(0)); await page.waitForTimeout(300);
-  console.log('Fit hides it again:', (await pinState()).display === 'none');
+  const back = await pinState();
+  console.log('Fit puts it back, nothing scrolls:', JSON.stringify(back), back.scrollW <= back.clientW + 1);
   console.log('errors', errors);
   await browser.close();
 })();
