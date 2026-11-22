@@ -140,13 +140,20 @@ const mock = `
     await checkAt(name + ', scrolled 400px', 400);
     await checkAt(name + ', scrolled to the far right', -1);
   }
-  // the divider and shadow on the pinned cells, light and dark
-  const divider = () => page.evaluate(() => { const c = document.querySelectorAll('.pdfv-sheet .pdfv-table tr')[3].cells[0]; const cs = getComputedStyle(c); return { shadow: cs.boxShadow, bg: cs.backgroundColor, z: cs.zIndex }; });
+  // the divider and shadow on the pinned cells, light and dark; the divider is thinner when the sheet is zoomed out and a full 3px zoomed in
+  const divider = () => page.evaluate(() => { const c = document.querySelectorAll('.pdfv-sheet .pdfv-table tr')[3].cells[0]; const cs = getComputedStyle(c); const m = /(-[\d.]+)px 0px 0px 0px inset, rgba\(0, 0, 0, [\d.]+\)/.exec(cs.boxShadow); const w = m ? Math.abs(parseFloat(m[1])) : 0; return { shadow: cs.boxShadow, bg: cs.backgroundColor, z: cs.zIndex, w, k: parseFloat(getComputedStyle(document.querySelector('.pdfv-sheet')).getPropertyValue('--pdfv-k')) }; });
+  await page.evaluate(() => zoomPdfView(0)); await page.waitForTimeout(300);
+  const df = await divider();
+  console.log('fit: a thin divider (1 to 2.2px) and a soft shadow, opaque background:', JSON.stringify(df), df.w >= 1 && df.w <= 2.2 && /rgba/.test(df.shadow) && df.bg !== 'rgba(0, 0, 0, 0)');
+  await page.evaluate(() => { for (let i = 0; i < 4; i++) zoomPdfView(1.3); }); await page.waitForTimeout(300);
   const dl = await divider();
-  console.log('light: a 3px gold divider and a soft shadow, opaque background:', JSON.stringify(dl), /-3px/.test(dl.shadow) && /inset,.*rgba/.test(dl.shadow) && dl.bg !== 'rgba(0, 0, 0, 0)');
+  console.log('zoomed in: the full 3px gold divider, thicker than at fit:', JSON.stringify(dl), Math.abs(dl.w - 3) < 0.05 && dl.w > df.w && /rgba/.test(dl.shadow) && dl.bg !== 'rgba(0, 0, 0, 0)');
   await page.evaluate(() => changeTheme('dark')); await page.waitForTimeout(300);
   const dd = await divider();
-  console.log('dark: its own gold divider and shadow:', JSON.stringify(dd), dd.shadow !== dl.shadow && /-3px/.test(dd.shadow) && dd.bg !== 'rgba(0, 0, 0, 0)');
+  console.log('dark: its own gold divider and shadow:', JSON.stringify(dd), dd.shadow !== dl.shadow && Math.abs(dd.w - 3) < 0.05 && dd.bg !== 'rgba(0, 0, 0, 0)');
+  await page.evaluate(() => zoomPdfView(0)); await page.waitForTimeout(300);
+  const ddf = await divider();
+  console.log('dark, fit: thin as well:', JSON.stringify(ddf), ddf.w >= 1 && ddf.w <= 2.2);
   await page.screenshot({ path: '/tmp/pin-classic.png', clip: { x: 0, y: 100, width: 390, height: 360 } });
   await page.evaluate(() => changeTheme('light'));
   // with the round filter set (Classic ignores it and always draws the whole tournament) the first column is still pinned
