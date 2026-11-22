@@ -122,6 +122,8 @@
         function onAdminPredictionUserChange() {
             const select = document.getElementById('adminPredictionUserSelect');
             adminPredictionUsername = select ? select.value : null;
+            clearAdminUploadPreview();
+            setAdminUploadStatus('', false);
             renderAdminScoreCorrections();
         }
 
@@ -347,6 +349,7 @@
             if (!container) return;
 
             populateAdminPredictionUserSelect();
+            syncAdminTemplateTools();
 
             const username = adminPredictionUsername;
             if (!username || !users[username]) {

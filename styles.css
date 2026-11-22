@@ -4175,3 +4175,22 @@ body.summary-compact .summary-table td.match-col-now, body.summary-compact .summ
 /* the header bar is forced with !important elsewhere, so the tint needs it too; a lighter band keeps the heading text just as readable */
 body.summary-compact .summary-table thead th.match-header-cell.match-col-now, body.summary-compact .summary-table thead th.match-header-cell.match-col-next { background-image: linear-gradient(rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.16)) !important; }
 :root[data-theme="dark"] body.summary-compact .summary-table thead th.match-header-cell.match-col-now, :root[data-theme="dark"] body.summary-compact .summary-table thead th.match-header-cell.match-col-next { background-image: linear-gradient(rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.10)) !important; }
+
+/* Admin > Predictions: spreadsheet template download and upload */
+.admin-template-tools { background: var(--surface); border: 2px solid rgb(var(--accent-rgb) / 0.25); border-radius: 8px; padding: 0.9rem 1rem; margin-bottom: 1.25rem; }
+.admin-template-tools h3 { font-family: 'Bebas Neue', cursive; font-size: 1.8rem; color: var(--bright-gold); margin: 0 0 0.5rem; letter-spacing: 0.1em; }
+.admin-template-tools p { margin: 0 0 0.6rem; font-size: 0.9rem; opacity: 0.85; }
+.admin-template-buttons { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.admin-template-buttons .btn-small { margin: 0; }
+.admin-upload-preview { margin-top: 0.8rem; border-top: 1px solid var(--line-strong); padding-top: 0.8rem; }
+.admin-upload-title { margin: 0 0 0.5rem; font-size: 1rem; }
+.admin-upload-list { margin: 0 0 0.6rem; padding-left: 1.2rem; font-size: 0.88rem; }
+.admin-upload-errors { color: var(--bad-text); font-weight: 700; }
+.admin-upload-warnings { color: var(--text); }
+.admin-upload-table td, .admin-upload-table th { padding: 0.35rem 0.5rem; font-size: 0.85rem; }
+.admin-upload-table tr.admin-upload-new td, .admin-upload-table tr.admin-upload-changed td { font-weight: 700; }
+.admin-upload-line { margin: 0.5rem 0; font-size: 0.9rem; }
+.admin-upload-ack { display: block; margin: 0.6rem 0; font-size: 0.9rem; }
+.admin-upload-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem; }
+.admin-upload-actions .btn-small, .admin-upload-actions .btn-cancel { margin: 0; width: auto; padding: 0.5rem 1rem; font-size: 0.85rem; }
+.admin-upload-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
