@@ -140,6 +140,37 @@
             return 0;
         }
 
+        // The match column to highlight in Compact and Focus: the match in play now, otherwise the next one.
+        //  - In play: no result entered yet and kick-off was at most 3 hours ago (the latest kick-off wins if two overlap).
+        //  - Next: the earliest not-yet-started match with no result.
+        // Matches that kick off at the same time are all highlighted. Returns a Map of match id -> 'now' | 'next' (empty when nothing is left).
+        const MATCH_HIGHLIGHT_WINDOW_MS = 3 * 60 * 60 * 1000;
+        function getHighlightedMatches(now = new Date()) {
+            const result = new Map();
+            if (typeof matches === 'undefined' || typeof getMatchKickoffDate !== 'function') return result;
+            const open = matches
+                .filter(m => !(m.actualScore1 !== null && m.actualScore2 !== null))
+                .map(m => ({ m, t: (getMatchKickoffDate(m) || { getTime: () => NaN }).getTime() }))
+                .filter(x => !Number.isNaN(x.t));
+            const nowMs = now.getTime();
+            const inPlay = open.filter(x => x.t <= nowMs && nowMs - x.t < MATCH_HIGHLIGHT_WINDOW_MS);
+            if (inPlay.length) {
+                const t = Math.max(...inPlay.map(x => x.t));
+                inPlay.filter(x => x.t === t).forEach(x => result.set(x.m.id, 'now'));
+                return result;
+            }
+            const upcoming = open.filter(x => x.t > nowMs);
+            if (upcoming.length) {
+                const t = Math.min(...upcoming.map(x => x.t));
+                upcoming.filter(x => x.t === t).forEach(x => result.set(x.m.id, 'next'));
+            }
+            return result;
+        }
+        // Only the two table views that show it need the highlight
+        function matchHighlightsFor(viewMode) {
+            return (viewMode === 'compact' || viewMode === 'simple') ? getHighlightedMatches() : new Map();
+        }
+
         function roundMoney(value) {
             return Math.round((Number(value) || 0) * 100) / 100;
         }

@@ -6,7 +6,7 @@
         let lastSummarySignature = null;
         function summarySignature() {
             try {
-                return JSON.stringify([selectedYear, matches, users, appSettings, userJokerSelections, activeScoringRules, currentFilter, selectedRound, currentUsername, isGuest, summaryViewMode]);
+                return JSON.stringify([selectedYear, matches, users, appSettings, userJokerSelections, activeScoringRules, currentFilter, selectedRound, currentUsername, isGuest, summaryViewMode, [...matchHighlightsFor(summaryViewMode)]]);
             } catch (e) { return null; }
         }
         function showSummary() {
@@ -20,6 +20,23 @@
             showSummary();
             return true;
         }
+
+        // As time passes the match in play / next match changes by itself: once a minute, and when the app comes back to the front,
+        // redraw (keeping the reader's place) if that moved. The signature includes the highlighted match, so nothing else redraws.
+        function refreshMatchHighlight() {
+            if (document.visibilityState !== 'visible') return;
+            if (typeof summaryTabIsShowing === 'function' && !summaryTabIsShowing()) return;
+            if (summaryViewMode !== 'compact' && summaryViewMode !== 'simple') return;
+            const box = document.querySelector('.summary-container');
+            const left = box ? box.scrollLeft : 0;
+            const top = window.scrollY;
+            if (!showSummaryIfChanged()) return;
+            const newBox = document.querySelector('.summary-container');
+            if (newBox) newBox.scrollLeft = left;
+            window.scrollTo(window.scrollX, top);
+        }
+        setInterval(refreshMatchHighlight, 60 * 1000);
+        document.addEventListener('visibilitychange', refreshMatchHighlight);
 
         function renderSummaryNow() {
             const container = document.getElementById('summaryContainer');
@@ -99,7 +116,10 @@
 
             // Simple view: plain words only (no flags, cards, padlocks); a Joker is shown by colour
             const simple = summaryViewMode === 'simple';
-            let html = predictionsRevealed() ? '' : `<div class="predictions-hidden-note" role="status">${simple ? '' : '🔒 '}Other players' predictions are hidden until predictions are locked, so nobody is influenced by them. You can still see your own.</div>`;
+            // The match in play, or else the next one, gets a faint column tint in Compact and Focus
+            const highlights = matchHighlightsFor(summaryViewMode);
+            const hlClass = (match) => highlights.has(match.id) ? ` match-col-${highlights.get(match.id)}` : '';
+            let html =predictionsRevealed() ? '' : `<div class="predictions-hidden-note" role="status">${simple ? '' : '🔒 '}Other players' predictions are hidden until predictions are locked, so nobody is influenced by them. You can still see your own.</div>`;
             html += scrollHintMarkup;
             html += '<div class="summary-table-wrap"><div class="summary-sticky-zone"><div class="summary-sticky-head"><div class="summary-sticky-inner"></div></div></div>';
             html += '<div class="summary-container">';
@@ -115,10 +135,10 @@
                 const hasResult = match.actualScore1 !== null && match.actualScore2 !== null;
                 const hasTries = match.actualTries1 !== null && match.actualTries2 !== null;
                 const totalMatchTries = hasTries ? match.actualTries1 + match.actualTries2 : null;
-                html += `<th class="match-header-cell ${match.jokerEligible ? 'joker-eligible-header' : ''}" data-match-col="${colIndex}" data-chat-match="${match.id}"${chatHeaderAttrs(match)}>
+                html += `<th class="match-header-cell ${match.jokerEligible ? 'joker-eligible-header' : ''}${hlClass(match)}" data-match-col="${colIndex}" data-chat-match="${match.id}"${chatHeaderAttrs(match)}>
                     <div class="match-header-cell-inner">
                         <div class="match-header-top">
-                            <div class="match-teams">${simple ? `<span>${getTeamAbbr(match.team1)}</span><span>${getTeamAbbr(match.team2)}</span>` : `<span>${getFlag(match.team1)} ${getTeamAbbr(match.team1)}</span><span>${getFlag(match.team2)} ${getTeamAbbr(match.team2)}</span>`}</div>
+                            ${highlights.has(match.id) ? `<span class="sr-only">${highlights.get(match.id) === 'now' ? 'In play now. ' : 'Next match. '}</span>` : ''}<div class="match-teams">${simple ? `<span>${getTeamAbbr(match.team1)}</span><span>${getTeamAbbr(match.team2)}</span>` : `<span>${getFlag(match.team1)} ${getTeamAbbr(match.team1)}</span><span>${getFlag(match.team2)} ${getTeamAbbr(match.team2)}</span>`}</div>
                             <div class="match-date">${match.date} - ${match.time}</div>
                         </div>
                         <div class="match-header-bottom">
@@ -174,14 +194,14 @@
                 filteredMatches.forEach(match => {
                     if (!canSeePredictionsOf(user.username)) {
                         // Hidden until predictions are locked: same slots as a normal cell, so rows still line up
-                        html += '<td class="prediction-cell hidden-prediction" title="Hidden until predictions are locked"><div class="cell-score"><span aria-label="Hidden until predictions are locked">' + (simple ? 'Hidden' : '🔒') + '</span></div><span class="points-earned points-placeholder">&nbsp;</span><div class="cell-extras"></div></td>';
+                        html += '<td class="prediction-cell hidden-prediction' + hlClass(match) + '" title="Hidden until predictions are locked"><div class="cell-score"><span aria-label="Hidden until predictions are locked">' + (simple ? 'Hidden' : '🔒') + '</span></div><span class="points-earned points-placeholder">&nbsp;</span><div class="cell-extras"></div></td>';
                         return;
                     }
                     const pred = users[user.username].predictions[match.id];
                     const hasResult = match.actualScore1 !== null && match.actualScore2 !== null;
                     
                     if (!pred) {
-                        html += '<td>-</td>';
+                        html += `<td class="${hlClass(match).trim()}">-</td>`;
                         return;
                     }
                     
@@ -249,7 +269,7 @@
                     const extrasLine = `<div class="cell-extras">${jokerIndicator}</div>`;
                     // Tapping or clicking a prediction shows the detail in the pop-up, so no hover tooltip
                     const showTooltip = false;
-                    html += `<td class="${jokerCellClass}"${chatCellAttrs(user.username, match.id)}>
+                    html += `<td class="${jokerCellClass}${hlClass(match)}"${chatCellAttrs(user.username, match.id)}>
                         ${showTooltip
                             ? `<div class="tooltip-container">${scoreLine}${pointsLine}<div class="${tipClass}">${tooltipContent}</div></div>`
                             : `${scoreLine}${pointsLine}`}
