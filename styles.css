@@ -4069,6 +4069,11 @@ body.summary-compact .summary-table td.tries-col { font-weight: 700; color: var(
 /* Compact: the scores line up in one column (right edge of the Competitor column), whatever flags a person has */
 .summary-table td.competitor-name .comp-sub { width: 100%; }
 .summary-table td.competitor-name .comp-score { margin-left: auto; text-align: right; }
+/* Compact (not Focus): the first column header reads "Competitor & Score" (the player scores in the rows are unchanged) */
+/* "Competitor & Score" wraps normally over two lines ("Competitor" / "& Score"), horizontal at every width (no rotation, no nowrap), so it is never clipped */
+body.summary-compact:not(.summary-simple) .summary-table th.competitor-col { vertical-align: bottom; text-align: left; white-space: normal; overflow: visible; }
+body.summary-compact:not(.summary-simple) .summary-table th.competitor-col .th-angled { display: block; width: auto; height: auto; transform: none; margin: 0; white-space: normal; overflow-wrap: normal; font-size: 0.8rem; line-height: 1.15; letter-spacing: 0; }
+body.summary-compact:not(.summary-simple) .summary-table th.competitor-col .th-amp { display: block; }
 
 /* A match header's result box (with the Joker card beside it) must never spill out of its own column: on a narrow column it slid under the
    pinned Competitor column and showed through there */
