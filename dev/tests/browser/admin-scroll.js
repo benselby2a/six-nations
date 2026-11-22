@@ -120,6 +120,8 @@ const mock = `
     const before = await info('adminHomeTab');
     await page.click('#adminPanel .admin-tabs button:has-text("' + label + '")');
     await page.waitForTimeout(900);
+    // under load (the whole suite in parallel) the first section can take longer to draw and start scrolling: wait until it has moved and settled
+    for (let i = 0; i < 20; i++) { const a = await info(id); await page.waitForTimeout(250); const b = await info(id); if (b.y > 0 && a.y === b.y) break; }
     const after = await info(id);
     console.log(label + ':', JSON.stringify({ before: before.y, after }), 'scrolled down and content under the top edge:', after.visible && after.y > before.y && after.top >= 18 && after.top <= 40);
   }

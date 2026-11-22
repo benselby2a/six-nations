@@ -9,6 +9,8 @@ admin-competitors.js
 profile.js
 auth.js
 predictions.js
+xlsx-lite.js
+admin-prediction-upload.js
 scoring.js
 trevs-tips.js
 leaderboard.js
