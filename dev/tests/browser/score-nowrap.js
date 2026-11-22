@@ -137,7 +137,7 @@ const mock = `
       return { bad, nScores: scores.length, overflow, tdW: Math.round(td.getBoundingClientRect().width), gaps };
     });
     if (mode === 'simple') {
-      // Focus sizes its Name column to the longest name (108px at least, 150px at most; see focus-names), and the score still stays on one line
+      // Jumbo sizes its Name column to the longest name (108px at least, 150px at most; see focus-names), and the score still stays on one line
       console.log('focus gaps', width, JSON.stringify(r.gaps));
       console.log(`focus @${width}: column between 108px and 150px:`, r.tdW >= 108 && r.tdW <= 150, '| col', r.tdW);
     }

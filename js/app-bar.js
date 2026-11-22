@@ -240,7 +240,7 @@ function layoutSummarySticky() {
 }
 window.addEventListener('resize', () => { sizeSummaryStickyHead(); const hint = document.getElementById('scrollHint'); const box = document.querySelector('.summary-container'); if (hint && box) hint.classList.toggle('hidden', box.scrollWidth <= box.clientWidth); if (typeof syncSummaryScrollLock === 'function') syncSummaryScrollLock(); if (typeof refreshWormChartLayout === 'function') refreshWormChartLayout(); });
 
-// Table view: Compact, Classic or Focus (key simple: Compact with plain text only and a light gold shade for Jokers).
+// Table view: Compact, Classic or Jumbo (key simple: Compact with plain text only and a light gold shade for Jokers).
 // Compact keeps the match headers short (countries and score); the "details" switch beside the download button brings the date and tries
 // back into them (body class summary-detail, remembered separately). Classic draws the table like the PDF export, see js/pdf-view.js.
 // Everything is remembered on this device.
@@ -267,7 +267,7 @@ function setSummaryView(mode) {
     try { localStorage.setItem(SUMMARY_VIEW_MODE_KEY, mode); } catch (error) { /* not remembered */ }
     applySummaryViewMode(mode, true);
 }
-// The match-details switch beside the download button: puts the date and tries back into the Compact / Focus headers
+// The match-details switch beside the download button: puts the date and tries back into the Compact / Jumbo headers
 function applySummaryHeaderDetail(on, redraw) {
     summaryHeaderDetail = !!on;
     document.body.classList.toggle('summary-detail', summaryHeaderDetail);

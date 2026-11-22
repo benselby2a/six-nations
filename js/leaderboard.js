@@ -140,7 +140,7 @@
             return 0;
         }
 
-        // The match column to highlight in Compact and Focus: the match in play now, otherwise the next one.
+        // The match column to highlight in Compact and Jumbo: the match in play now, otherwise the next one.
         //  - In play: no result entered yet and kick-off was at most 3 hours ago (the latest kick-off wins if two overlap).
         //  - Next: the earliest not-yet-started match with no result.
         // Matches that kick off at the same time are all highlighted. Returns a Map of match id -> 'now' | 'next' (empty when nothing is left).

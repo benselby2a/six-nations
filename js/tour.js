@@ -54,17 +54,17 @@ function tourBuildSteps(rulesHtml) {
     steps.push(tourStep('score', 'See the leaderboard', [
         'Tap <strong>Match Summary</strong> at the top of the screen. It is the screen you land on after signing in.',
         'Everyone\'s rank and total score are on the left, with each prediction and the points it earned for every match.',
-        'Choose how the table looks (<strong>Compact, Classic or Focus</strong>) on the next screen.'
+        'Choose how the table looks (<strong>Compact, Classic or Jumbo</strong>) on the next screen.'
     ], '<p>Tap any prediction to see how it was scored. The header row stays at the top as you scroll, and a 🃏 marks a Joker. <strong>All matches / Current round</strong> sits above the table.</p>'));
     steps.push({ id: null, title: 'Choose your view', raw: () => tourViewsHtml(), needsViewChoice: true });
     steps.push(tourStep('menu-view', 'Change your view any time', [
         'Tap your <strong>initial</strong> at the top right to open the player menu.',
-        'Under <strong>Table view</strong>, choose Compact, Classic or Focus whenever you like.',
+        'Under <strong>Table view</strong>, choose Compact, Classic or Jumbo whenever you like.',
         'Under <strong>Appearance</strong>, choose Light, Dark or Auto.'
     ], '<p>Your choices are remembered on this device. Auto follows your phone\'s light or dark setting.</p>'));
     steps.push(tourStep('pdf', 'Download and print', [
         'Tap the <strong>download icon</strong> above the table to save the Classic page as a PDF, or to print it.',
-        'The button just before it, <strong>Show match details</strong>, adds the date and tries to the column headings in Compact and Focus.'
+        'The button just before it, <strong>Show match details</strong>, adds the date and tries to the column headings in Compact and Jumbo.'
     ], '<p>The Classic view is the same Excel-styled page, shown on screen. On a computer the icon opens the file in a pop-up with Print and Save buttons. The picture shows the page you get.</p>'));
     if (tourCanAddToHomeScreen()) {
         steps.push({ id: null, title: 'Add it to your Home Screen', raw: () => '<p>For one-tap access, add the Six Nations Guesser to your iPhone Home Screen.</p><p>Tap the <strong>Share</strong> button <svg class="tour-share-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> in your browser, then choose <strong>Add to Home Screen</strong>. Open it from there and sign in with a code.</p><p><strong>Can\'t see the Share button?</strong> Press and hold (long press) the browser address at the bottom of the screen, then choose <strong>Share</strong>.</p>' });
@@ -84,7 +84,7 @@ const TOUR_VIEW_OPTIONS = [
         'An Excel-styled page: a spreadsheet-style grid, in light or dark.',
         'The whole tournament on one sheet, with win and lose shading and rank colours.'
     ]],
-    ['simple', 'Focus', [
+    ['simple', 'Jumbo', [
         'The easiest to read: larger plain text, no icons or flags.',
         'Compact\'s layout: just the countries and scores.',
         'A Joker is shown by light gold shading on the cell, not a card.'

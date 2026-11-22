@@ -127,7 +127,7 @@
 
             // Simple view: plain words only (no flags, cards, padlocks); a Joker is shown by colour
             const simple = summaryViewMode === 'simple';
-            // The match in play, or else the next one, gets a faint column tint in Compact and Focus
+            // The match in play, or else the next one, gets a faint column tint in Compact and Jumbo
             const highlights = matchHighlightsFor(summaryViewMode);
             const hlClass = (match) => highlights.has(match.id) ? ` match-col-${highlights.get(match.id)}` : '';
             let html =predictionsRevealed() ? '' : `<div class="predictions-hidden-note" role="status">${simple ? '' : '🔒 '}Other players' predictions are hidden until predictions are locked, so nobody is influenced by them. You can still see your own.</div>`;
@@ -139,7 +139,7 @@
             // Header row: Rank | Competitor | Score | Match 1 | Match 2 | ... | Predicted Tries
             html += '<thead><tr>';
             html += '<th class="rank-col">#</th>';
-            // Compact: the score sits under the name, so the column is "Competitor & Score" (the "& Score" part drops to a second line on phones); Focus keeps "Competitor"
+            // Compact: the score sits under the name, so the column is "Competitor & Score" (the "& Score" part drops to a second line on phones); Jumbo keeps "Competitor"
             html += `<th class="competitor-col"><span class="th-angled">Competitor${simple ? '' : ' <span class="th-amp">&amp; Score</span>'}</span></th>`;
             html += '<th class="pts-col"><span class="th-angled">Score</span></th>';
             filteredMatches.forEach((match, colIndex) => {
@@ -316,7 +316,7 @@
         }
 
 
-        // Focus view: names never wrap or break mid-word. The Name column is sized to the longest name plus its score (between 108px and 150px, --focus-name-w on the body);
+        // Jumbo view: names never wrap or break mid-word. The Name column is sized to the longest name plus its score (between 108px and 150px, --focus-name-w on the body);
         // a name longer than that shrinks a little, and only then is cut with an ellipsis (the full name is in its title). Sized from the real text, so it adapts to the fonts and names in use.
         const FOCUS_NAME_MIN = 108, FOCUS_NAME_MAX = 150;
         function fitFocusNameColumn() {

@@ -97,7 +97,7 @@ const mock = `
   })};
 })();`;
 
-// The match in play (kick-off passed, no result yet, within 3 hours), or else the next match, gets a faint column tint in Compact and Focus (not Classic).
+// The match in play (kick-off passed, no result yet, within 3 hours), or else the next match, gets a faint column tint in Compact and Jumbo (not Classic).
 // Time is fixed with page.clock so each case is exact. 2026 fixtures: 1 (result in), 2 Sat 7 Feb 14:10, 3 Sat 7 Feb 16:40, 4 + 5 both Sat 14 Feb 14:10 (simultaneous), 6 Sun 15 Feb 15:10
 const FIXTURES = [
   {id:1,year:2026,round:1,date:'Thu, Feb 5',time:'20:10',team1:'France',team2:'Ireland',actual_score1:30,actual_score2:20,actual_tries1:4,actual_tries2:2,joker_eligible:true},
@@ -195,12 +195,12 @@ const FIXTURES = [
   console.log('6 before the clock moved:', t0, '| a minute tick after kick-off:', summarise(s));
   console.log('6 the timer redraws the table by itself and the column becomes "now":', /^next:/.test(t0) && /^now:/.test(summarise(s)) && /ITA/.test(summarise(s)));
 
-  // 7. Focus works too, in light and dark; Classic has none
+  // 7. Jumbo works too, in light and dark; Classic has none
   await setTime('2026-02-06T09:00:00');
   await page.evaluate(() => setSummaryView('simple')); await tick(400);
   s = await state();
   console.log('7 focus:', summarise(s), JSON.stringify(s.bgs));
-  console.log('7 Focus highlights the same column, as a gradient layer:', s.mode === 'simple' && marked(s).length === 1 && /ITA/.test(marked(s)[0].text) && /linear-gradient/.test(s.bgs.td || ''));
+  console.log('7 Jumbo highlights the same column, as a gradient layer:', s.mode === 'simple' && marked(s).length === 1 && /ITA/.test(marked(s)[0].text) && /linear-gradient/.test(s.bgs.td || ''));
   for (const theme of ['dark', 'light']) {
     await page.evaluate((t) => document.documentElement.setAttribute('data-theme', t), theme); await tick(300);
     const bg = await page.evaluate(() => { const T = '.summary-table:not(.summary-table-clone)'; const o = (e) => getComputedStyle(e).backgroundImage; return { th: o(document.querySelector(T + ' thead th.match-col-next')), td: o(document.querySelector(T + ' td.match-col-next')), plain: o(document.querySelector(T + ' td.prediction-cell:not(.match-col-next)')) }; });

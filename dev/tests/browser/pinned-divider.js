@@ -147,7 +147,7 @@ const mock = `
     console.log(theme + ' ' + mode + ' nothing of the divider shadow shows in the 24px spacer above the header:', px.length === 1, px.slice(0, 3));
   }
   // The whole 24px strip above the header, from the page's left edge to its right edge, must be one page colour: the pinned header's soft shadow used to leak out of its
-  // sides as faint vertical lines beside the table (far left and far right), standing up above the green bar. Compact and Focus, details off and on, light and dark.
+  // sides as faint vertical lines beside the table (far left and far right), standing up above the green bar. Compact and Jumbo, details off and on, light and dark.
   for (const theme of ['light', 'dark']) for (const mode of ['compact', 'simple']) for (const detail of [false, true]) {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.evaluate(([m, t, d]) => { setSummaryView(m); applySummaryHeaderDetail(d, true); document.documentElement.setAttribute('data-theme', t); window.scrollTo(0, 0); }, [mode, theme, detail]); await page.waitForTimeout(500);
