@@ -69,12 +69,12 @@ function buildPdfStyleViewHtml(matchList, sortedUsers) {
     const totalActualTries = getTotalActualTries();
 
     // One cell. paint(scheme) gives its fill and text colour in that scheme; both are written out as variables.
-    const cell = ({ content = '', colspan = 1, paint, bold = false, size = bodyFont, align = 'center', valign = 'middle', borders = '', stack = false }) => {
+    const cell = ({ content = '', colspan = 1, paint, bold = false, size = bodyFont, align = 'center', valign = 'middle', borders = '', stack = false, pin = false }) => {
         const vars = schemes.map(([suffix, S]) => { const c = paint(S); return `--bg${suffix}:${pdfvRgb(c.fill)};--fg${suffix}:${pdfvRgb(c.text)}`; }).join(';');
         const inner = stack
             ? String(content).split('').map(ch => `<span>${escapeHtml(ch)}</span>`).join('')
             : escapeHtml(String(content)).replace(/\n/g, '<br>');
-        return `<td${colspan > 1 ? ` colspan="${colspan}"` : ''} class="pdfv-c${stack ? ' pdfv-stack' : ''}" style="${vars};font-size:${pt(size)};font-weight:${bold ? 700 : 400};text-align:${align};vertical-align:${valign};${borders}">${inner}</td>`;
+        return `<td${colspan > 1 ? ` colspan="${colspan}"` : ''} class="pdfv-c${stack ? ' pdfv-stack' : ''}${pin ? ' pdfv-pinned' : ''}" style="${vars};font-size:${pt(size)};font-weight:${bold ? 700 : 400};text-align:${align};vertical-align:${valign};${borders}">${inner}</td>`;
     };
     const THIN = mm(0.35), HEAD = mm(0.45), BOLD = mm(0.9);
     // The heavier lines at the left and right edge of each match group
@@ -86,13 +86,13 @@ function buildPdfStyleViewHtml(matchList, sortedUsers) {
     };
 
     // ---- header rows
-    let head1 = cell({ content: 'Date /\nKO', bold: true, size: headFont, paint: (S) => ({ fill: S.head, text: S.P.red }), borders: `border-width:${HEAD};` });
+    let head1 = cell({ pin: true, content: 'Date /\nKO', bold: true, size: headFont, paint: (S) => ({ fill: S.head, text: S.P.red }), borders: `border-width:${HEAD};` });
     matchSchemas.forEach(({ match, cols }) => {
         head1 += cell({ content: `R${match.round}\n${match.date}\n${match.time}`, colspan: cols.length, bold: true, size: roundHeaderFont, paint: (S) => ({ fill: S.head, text: S.P.red }), borders: `border-width:${HEAD};border-left-width:${BOLD};border-right-width:${BOLD};` });
     });
     head1 += cell({ colspan: 3, paint: (S) => ({ fill: S.head, text: S.P.text }), borders: `border-width:${HEAD};` });
 
-    let head2 = cell({ content: 'Name', bold: true, size: headFont, align: 'left', paint: (S) => ({ fill: S.head, text: S.P.text }), borders: `border-width:${HEAD};` });
+    let head2 = cell({ pin: true, content: 'Name', bold: true, size: headFont, align: 'left', paint: (S) => ({ fill: S.head, text: S.P.text }), borders: `border-width:${HEAD};` });
     matchSchemas.forEach(({ match, cols }) => {
         cols.forEach((kind, offset) => {
             const colMeta = { kind, offset, size: cols.length };
@@ -121,7 +121,7 @@ function buildPdfStyleViewHtml(matchList, sortedUsers) {
         const rk = cell({ paint: (S) => ({ fill: S.P.neutralBg, text: S.P.text }), bold: true });
         return gt + tr + rk;
     };
-    let resultRow = cell({ content: 'Result', bold: true, align: 'left', paint: (S) => ({ fill: S.white, text: S.P.red }) });
+    let resultRow = cell({ pin: true, content: 'Result', bold: true, align: 'left', paint: (S) => ({ fill: S.white, text: S.P.red }) });
     matchSchemas.forEach(({ match, cols }) => cols.forEach((kind, offset) => {
         const colMeta = { kind, offset, size: cols.length };
         if (kind === 'home' || kind === 'away') {
@@ -135,7 +135,7 @@ function buildPdfStyleViewHtml(matchList, sortedUsers) {
     }));
     resultRow += tail('result');
 
-    let tryRow = cell({ content: 'Try Count', bold: true, align: 'left', paint: (S) => ({ fill: S.white, text: S.tryLabel }) });
+    let tryRow = cell({ pin: true, content: 'Try Count', bold: true, align: 'left', paint: (S) => ({ fill: S.white, text: S.tryLabel }) });
     matchSchemas.forEach(({ match, cols }) => {
         const sum = match.actualTries1 !== null && match.actualTries2 !== null ? match.actualTries1 + match.actualTries2 : null;
         tryRow += cell({ content: sum !== null ? String(sum) : '', colspan: 2, bold: true, paint: (S) => ({ fill: S.white, text: S.P.green }), borders: `border-left-width:${BOLD};` });
@@ -165,7 +165,7 @@ function buildPdfStyleViewHtml(matchList, sortedUsers) {
             const isWin = pdfvSame(c.fill, S.P.predWinBg), isLose = pdfvSame(c.fill, S.P.predLoseBg);
             return { fill: pdfvSame(c.fill, S.white) ? S.altBase : pdfvBlend(c.fill, S.altBlendTo, (isWin || isLose) ? 0.58 : 0.45), text: c.text };
         };
-        let row = cell({ content: user.nickname, bold: true, align: 'left', paint: tone((S) => ({ fill: S.white, text: S.P.text })), borders: topBorder + minH });
+        let row = cell({ pin: true, content: user.nickname, bold: true, align: 'left', paint: tone((S) => ({ fill: S.white, text: S.P.text })), borders: topBorder + minH });
         matchSchemas.forEach(({ match, cols }) => {
             const pred = getViewablePrediction(user.username, match.id);
             const isJoker = canSeePredictionsOf(user.username) && isUserJokerForMatch(user.username, match.id);
@@ -212,59 +212,23 @@ function buildPdfStyleViewHtml(matchList, sortedUsers) {
 let pdfvZoom = null;   // null = fitted; otherwise the chosen scale
 const PDFV_MAX_ZOOM = 4;
 function pdfvFitScale(wrap) { return Math.min(1.6, wrap.clientWidth / PDFV_SHEET_W); }
+// The sheet is scaled with CSS zoom (not a transform), so it takes up its real zoomed size and the box scrolls sideways natively. That lets the
+// first column (Date / KO, Name, Result, Try Count) stay at the left edge with plain `position: sticky`, with no scroll-event syncing.
+const PDFV_CAN_ZOOM = typeof CSS !== 'undefined' && !!CSS.supports && CSS.supports('zoom', '1');
 function applyPdfvScale(k) {
     const wrap = document.getElementById('pdfViewWrap');
     const stage = document.getElementById('pdfViewStage');
     const sheet = document.getElementById('pdfViewSheet');
     if (!wrap || !stage || !sheet) return;
-    sheet.style.transform = `scale(${k})`;
-    stage.style.width = Math.ceil(PDFV_SHEET_W * k) + 'px';
-    stage.style.height = Math.ceil(sheet.offsetHeight * k) + 'px';
-    wrap.dataset.zoomed = k > pdfvFitScale(wrap) + 0.01 ? '1' : '';
-    syncPdfvPin(k);
-}
-// The Name column stays at the left edge while the sheet is scrolled sideways (zoomed in). A sticky layer outside the scaled sheet holds a
-// copy of that column, with each row exactly as tall as the real row; it only shows once the sheet is wider than the screen.
-function syncPdfvPin(k) {
-    const stage = document.getElementById('pdfViewStage');
-    const sheet = document.getElementById('pdfViewSheet');
-    const table = sheet && sheet.querySelector('.pdfv-table');
-    if (!stage || !table) return;
-    let pin = stage.querySelector('.pdfv-pin');
-    if (!pin) {
-        pin = document.createElement('div');
-        pin.className = 'pdfv-pin';
-        pin.setAttribute('aria-hidden', 'true');
-        pin.innerHTML = '<div class="pdfv-pin-inner"><table class="pdfv-table pdfv-pin-table"><colgroup></colgroup><tbody></tbody></table></div>';
-        stage.insertBefore(pin, stage.firstChild);
-        const pinTable = pin.querySelector('table');
-        pinTable.querySelector('colgroup').appendChild(table.querySelector('colgroup col').cloneNode());
-        const body = pinTable.querySelector('tbody');
-        table.querySelectorAll('tr').forEach(tr => {
-            const row = document.createElement('tr');
-            row.appendChild(tr.cells[0].cloneNode(true));
-            body.appendChild(row);
-        });
+    if (PDFV_CAN_ZOOM) {
+        sheet.style.zoom = String(k);
+    } else {   // a browser without CSS zoom: scale with a transform instead (the first column then scrolls with the sheet)
+        sheet.style.transform = `scale(${k})`;
+        stage.classList.add('pdfv-stage-scaled');
+        stage.style.width = Math.ceil(PDFV_SHEET_W * k) + 'px';
+        stage.style.height = Math.ceil(sheet.offsetHeight * k) + 'px';
     }
-    // Pinned whenever the sheet is wider than its box (zoomed with the buttons, pinched, or a screen too narrow to fit it), not only past the fit scale
-    const zoomed = stage.offsetWidth > stage.parentElement.clientWidth + 1;
-    pin.style.display = zoomed ? 'block' : 'none';
-    if (!zoomed) return;
-    // Sizes of the sheet, in its own (unscaled) pixels
-    const padLeft = table.getBoundingClientRect().left - sheet.getBoundingClientRect().left;
-    const rows = [...table.querySelectorAll('tr')];
-    const pinRows = pin.querySelectorAll('tr');
-    const cur = Number((sheet.style.transform.match(/scale\(([\d.]+)\)/) || [0, k])[1]) || k;
-    rows.forEach((tr, i) => { if (pinRows[i]) pinRows[i].style.height = (tr.getBoundingClientRect().height / cur) + 'px'; });
-    const colW = table.querySelector('colgroup col').getBoundingClientRect().width / cur;
-    const top = (table.getBoundingClientRect().top - sheet.getBoundingClientRect().top) / cur;
-    pin.style.width = Math.ceil((padLeft / cur + colW) * k + 1) + 'px';
-    pin.style.height = stage.style.height;
-    const inner = pin.querySelector('.pdfv-pin-inner');
-    inner.style.transform = `scale(${k})`;
-    inner.style.left = (padLeft / cur * k) + 'px';
-    inner.style.top = (top * k) + 'px';
-    inner.style.width = colW + 'px';
+    wrap.dataset.zoomed = k > pdfvFitScale(wrap) + 0.01 ? '1' : '';
 }
 function currentPdfvScale() {
     const wrap = document.getElementById('pdfViewWrap');
