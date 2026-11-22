@@ -24,11 +24,21 @@
             if (!el) return;
             // After the section has been drawn (two frames); once more shortly after, in case its content settled (async data) and moved it
             const go = () => {
+                // On iPhone the status-bar area (safe-area-inset-top) is covered by a solid/faded bar, so leave that much room above the section's heading as well
+                let safeTop = 0;
+                try {
+                    const probe = document.createElement('div');
+                    probe.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;padding-top:env(safe-area-inset-top,0px)';
+                    document.body.appendChild(probe);
+                    safeTop = parseFloat(getComputedStyle(probe).paddingTop) || 0;
+                    probe.remove();
+                } catch (error) { safeTop = 0; }
+                const gap = safeTop + 24;
                 const top = el.getBoundingClientRect().top;
-                if (top <= 16) return;   // already at the top of the screen
+                if (top <= gap + 4) return;   // already clear of the top of the screen
                 let reduce = false;
                 try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (error) { reduce = false; }
-                window.scrollTo({ top: Math.max(0, window.scrollY + top - 12), behavior: reduce ? 'auto' : 'smooth' });
+                window.scrollTo({ top: Math.max(0, window.scrollY + top - gap), behavior: reduce ? 'auto' : 'smooth' });
             };
             requestAnimationFrame(() => requestAnimationFrame(go));
             setTimeout(go, 450);

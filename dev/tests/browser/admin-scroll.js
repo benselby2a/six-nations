@@ -121,7 +121,7 @@ const mock = `
     await page.click('#adminPanel .admin-tabs button:has-text("' + label + '")');
     await page.waitForTimeout(900);
     const after = await info(id);
-    console.log(label + ':', JSON.stringify({ before: before.y, after }), 'scrolled down and content under the top edge:', after.visible && after.y > before.y && after.top >= 0 && after.top <= 40);
+    console.log(label + ':', JSON.stringify({ before: before.y, after }), 'scrolled down and content under the top edge:', after.visible && after.y > before.y && after.top >= 18 && after.top <= 40);
   }
   // Re-clicking the same button scrolls again
   await page.evaluate(() => window.scrollTo(0, 0)); await page.waitForTimeout(150);
