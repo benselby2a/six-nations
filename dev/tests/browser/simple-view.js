@@ -130,7 +130,7 @@ const mock = `
       heads, hasAbbr: heads.some(h => /FRA/.test(h) && /IRE/.test(h)),
       jokerCells: jokerCells.length, jokerClass: jokerCells.every(c => c.classList.contains('simple-joker')), jokerBg: jokerCells[0] && getComputedStyle(jokerCells[0]).backgroundColor, jokerShadow: jokerCells[0] && getComputedStyle(jokerCells[0]).boxShadow,
       jokerText: jokerCells.every(c => /Joker/.test(c.textContent) && c.querySelector('.sr-only')),
-      hdrAccent: !!hdr && /Joker/.test(hdr.textContent) && /0px 5px 0px 0px/.test(getComputedStyle(hdr).boxShadow) && getComputedStyle(hdr).backgroundImage === 'none',
+      hdrAccent: !!hdr && /Joker/.test(hdr.textContent) && /0px -5px 0px 0px/.test(getComputedStyle(hdr).boxShadow) && getComputedStyle(hdr).backgroundImage === 'none',
       legend: !!document.querySelector('.simple-legend'),
       angled: [...tbl.querySelectorAll('th.competitor-col .th-angled')].map(e => getComputedStyle(e).transform),
       pinned: !!document.querySelector('.summary-sticky-pinned') };
@@ -139,7 +139,7 @@ const mock = `
   console.log('no emoji / flags / card icons in the table:', !r.emoji && !r.flagsEl && r.jokerIcons === 0);
   console.log('text abbreviations in headers:', r.hasAbbr);
   console.log('joker cell has colour class, light gold shading (no bar) and hidden Joker text:', r.jokerCells >= 1 && r.jokerClass && r.jokerText && /232, 176, 42/.test(r.jokerBg) && !/0px 4px/.test(r.jokerShadow));
-  console.log('header has a gold top accent bar, no tint, and no legend line:', r.hdrAccent && !r.legend);
+  console.log('header has a gold bottom accent bar, no tint, and no legend line:', r.hdrAccent && !r.legend);
   console.log('competitor header horizontal and header pinned:', r.angled.every(t => t === 'none') && r.pinned);
   await page.screenshot({path:'/tmp/claude-0/-home-user-six-nations/55e70b8c-24a4-53e8-973b-d120bef1189e/scratchpad/simple-light.png', clip:{x:0,y:150,width:390,height:520}});
   await page.evaluate(() => { document.documentElement.setAttribute('data-theme', 'dark'); }); await page.waitForTimeout(300);
@@ -158,11 +158,11 @@ const mock = `
   await page.addStyleTag({ content: ios });
   for (const theme of ['light', 'dark']) {
     await page.evaluate((t) => { document.documentElement.setAttribute('data-theme', t); window.scrollTo(0, 0); }, theme); await page.waitForTimeout(400);
-    const box = await page.evaluate(() => { const th = document.querySelector('.summary-table:not(.summary-table-clone) th.joker-eligible-header'); const r = th.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top, bt: parseFloat(getComputedStyle(th).borderTopWidth) }; });
+    const box = await page.evaluate(() => { const th = document.querySelector('.summary-table:not(.summary-table-clone) th.joker-eligible-header'); const r = th.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.bottom, bt: 0 }; });
     const sample = async (dy) => { const buf = await page.screenshot({ clip: { x: Math.floor(box.x), y: Math.floor(box.y + box.bt + dy), width: 1, height: 1 } }); return await page.evaluate(async (b64) => { const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode(); const c = document.createElement('canvas'); c.width = c.height = 1; const x = c.getContext('2d'); x.drawImage(img, 0, 0); return [...x.getImageData(0, 0, 1, 1).data].slice(0, 3); }, buf.toString('base64')); };
-    const bar = await sample(2), head = await sample(10);
+    const bar = await sample(-3), head = await sample(-12);
     const goldish = c => c[0] > 180 && c[1] > 140 && c[2] < 140;   // yellow-gold, not green
-    console.log(theme + ' iOS: gold bar shows at the top of the Joker header (below the spacer), header colour below it:', goldish(bar) && !goldish(head), bar, head);
+    console.log(theme + ' iOS: gold bar shows along the bottom of the Joker header, header colour above it:', goldish(bar) && !goldish(head), bar, head);
     if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT + '-ios-' + theme + '.png', clip: { x: 0, y: Math.max(0, box.y - 10), width: 390, height: 150 } });
   }
   await page.evaluate(() => document.documentElement.removeAttribute('data-theme'));
