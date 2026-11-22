@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <script>try { if (sessionStorage.getItem('rugbyPredictorFadeIn')) { document.documentElement.classList.add('app-reloaded'); sessionStorage.removeItem('rugbyPredictorFadeIn'); } } catch (e) { /* ignore */ }</script>
-    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=097027ad" -->
+    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=6c417fa2" -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Six Nations Predictor</title>
@@ -26,7 +26,7 @@
     <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- jsPDF and its table plugin are loaded on demand (see loadPdfLibs in js/export-pdf.js), not on every visit -->
-    <link rel="stylesheet" href="dist/app.min.css?v=097027ad">
+    <link rel="stylesheet" href="dist/app.min.css?v=6c417fa2">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -190,7 +190,14 @@
                 <button type="button" id="avatarBtn" class="avatar-btn" aria-haspopup="true" aria-expanded="false" aria-controls="accountMenu" aria-label="Account menu" onclick="toggleAccountMenu(event)"><span id="avatarInitial">?</span><i class="avatar-dot hidden" id="avatarDot"></i></button>
                 <div id="accountMenu" class="account-menu hidden" role="menu" aria-label="Account">
                     <div class="account-who"><div class="username profile-link" id="currentUser" onclick="closeAccountMenu(); openProfile()"></div></div>
-                    <button type="button" class="account-item" id="themeToggleBtn" role="menuitem" onclick="toggleTheme()">Appearance: Auto</button>
+                    <div class="account-view account-theme" id="accountThemeRow">
+                        <span class="account-view-label" id="accountThemeLabel">Appearance</span>
+                        <div class="view-switch theme-switch" id="themeSwitch" role="group" aria-labelledby="accountThemeLabel">
+                            <span class="view-switch-cell"><button type="button" class="view-switch-btn" data-theme-mode="light" aria-pressed="false" onclick="changeTheme('light')">Light</button></span>
+                            <span class="view-switch-cell"><button type="button" class="view-switch-btn" data-theme-mode="dark" aria-pressed="false" onclick="changeTheme('dark')">Dark</button></span>
+                            <span class="view-switch-cell"><button type="button" class="view-switch-btn" data-theme-mode="auto" aria-pressed="false" onclick="changeTheme('auto')">Auto</button></span>
+                        </div>
+                    </div>
                     <div class="account-view" id="accountViewRow">
                         <span class="account-view-label" id="accountViewLabel">Table view</span>
                         <div class="view-switch" id="summaryViewSwitch" role="group" aria-label="Table view">
@@ -715,7 +722,7 @@
         <div class="modal-content global-help-modal-content">
             <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 0.8rem; letter-spacing: 0.1em;">App Help</h2>
             <div class="global-help-content">
-                <div><strong>Dark and light mode:</strong> The app follows your device&#39;s dark or light setting. To choose for yourself, open your account menu (your initial, top right) and tap Appearance to cycle between Auto, Light and Dark.</div>
+                <div><strong>Dark and light mode:</strong> The app follows your device&#39;s dark or light setting. To choose for yourself, open your account menu (your initial, top right) and choose Light, Dark or Auto under Appearance.</div>
                 <div><strong>Your Profile:</strong> If you are logged in, open your account menu (your initial, top right) and click your name to customise your profile and choose your preferred team(s). Appearance, Take a tour, Help and Log out are in the same menu.</div>
                 <div><strong>My Predictions:</strong> Enter your score predictions for each fixture, choose your jokers, and set your tournament tries prediction. Predictions can only be entered/edited while predictions are unlocked.</div>
                 <div><strong>Match Summary:</strong> View the live table, tries tracking, and prize projections as results are entered. Tap a prediction to see how it was scored and who reacted. The header row stays pinned as you scroll, turning your phone sideways shows just the countries and scores, and the Compact mode button beside refresh hides the emoji rows, dates and tries to save space (it starts switched on for phones).</div>
@@ -835,6 +842,6 @@
     </div>
 
     <div class="app-footer"><span id="summaryUpdatedAt" class="app-footer-updated" aria-label="When the scores were last fetched"></span><span id="appVersion" class="app-version" aria-label="App version"></span></div>
-    <script src="dist/app.min.js?v=097027ad"></script>
+    <script src="dist/app.min.js?v=6c417fa2"></script>
 </body>
 </html>

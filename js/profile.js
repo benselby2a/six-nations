@@ -150,15 +150,13 @@
             }
         }
 
-        // The account menu button cycles Auto, Light, Dark
-        function toggleTheme() {
-            changeTheme({ auto: 'light', light: 'dark', dark: 'auto' }[colourMode]);
-        }
-
+        // The account menu's Appearance switch (Light, Dark, Auto) marks the current choice
         function updateThemeToggle() {
-            const btn = document.getElementById('themeToggleBtn');
-            if (!btn) return;
-            btn.textContent = `Appearance: ${{ auto: 'Auto', light: 'Light', dark: 'Dark' }[colourMode]}`;
+            document.querySelectorAll('#themeSwitch .view-switch-btn').forEach(btn => {
+                const on = btn.dataset.themeMode === colourMode;
+                btn.classList.toggle('active', on);
+                btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
         }
 
         // Load the saved choice (none: Auto). Someone who picked Dark under the old theme selector keeps Dark.
