@@ -165,20 +165,20 @@ const mock = `
     const hs = await page.evaluate(() => ({ download: Math.round(document.getElementById('exportPdfBtn').getBoundingClientRect().height * 10) / 10, zoom: Math.round(document.querySelector('.classic-tools .pdfv-zoom').getBoundingClientRect().height * 10) / 10 }));
     console.log(`the zoom controls are as tall as the download button at ${w}px:`, JSON.stringify(hs), hs.download === hs.zoom);
   }
-  // the round filter narrows the columns; Full returns the normal table
+  // the round filter narrows the columns; Compact returns the normal table
   const colsAll = await page.evaluate(() => document.querySelectorAll('.pdfv-sheet .pdfv-table colgroup col').length);
   await page.evaluate(() => { matches[1].round = 2; selectedRound = 1; filterMatches('round'); }); await page.waitForTimeout(500);
   console.log('the All matches / Current round controls are hidden in Classic:', await page.evaluate(() => getComputedStyle(document.getElementById('summaryFilterToggle')).display === 'none'));
   const colsRound = await page.evaluate(() => document.querySelectorAll('.pdfv-sheet .pdfv-table colgroup col').length);
   console.log('the Classic view ignores the match filter (always the whole tournament):', colsAll, '->', colsRound, colsRound === colsAll);
   await page.evaluate(() => filterMatches('default'));
-  await pickView('full'); await page.waitForTimeout(500);
-  console.log('and shown again in Full:', await page.evaluate(() => getComputedStyle(document.getElementById('summaryFilterToggle')).display !== 'none'));
+  await pickView('compact'); await page.waitForTimeout(500);
+  console.log('and shown again in Compact:', await page.evaluate(() => getComputedStyle(document.getElementById('summaryFilterToggle')).display !== 'none'));
   console.log('the toolbar order is: view switch, download, then the match filter:', await page.evaluate(() => { const y = id => Math.round(document.getElementById(id).getBoundingClientRect().top); return JSON.stringify({ sw: y('summaryViewSwitch'), dl: y('exportPdfBtn'), filter: y('summaryFilterToggle') }); }));
   console.log('there is no refresh button any more:', await page.evaluate(() => !document.getElementById('summaryRefreshBtn')));
-  console.log('Full brings the normal table back:', await page.evaluate(() => !document.getElementById('pdfViewSheet') && !!document.querySelector('.summary-table') && !document.body.classList.contains('summary-compact') && !document.body.classList.contains('summary-pdf')));
+  console.log('Compact brings the normal table back:', await page.evaluate(() => !document.getElementById('pdfViewSheet') && !!document.querySelector('.summary-table') && document.body.classList.contains('summary-compact') && !document.body.classList.contains('summary-pdf')));
   await page.reload(); await page.waitForTimeout(1500);
-  console.log('the choice is remembered after a reload (Full):', await page.evaluate(() => summaryViewMode));
+  console.log('the choice is remembered after a reload (Compact):', await page.evaluate(() => summaryViewMode));
   await page.evaluate(() => setSummaryView('classic')); await page.reload(); await page.waitForTimeout(1800);
   console.log('PDF is remembered after a reload:', await page.evaluate(() => summaryViewMode + ' ' + document.body.classList.contains('summary-classic') + ' ' + document.querySelector('#summaryViewSwitch [data-view=classic]').getAttribute('aria-pressed')));
   console.log('errors', errors);

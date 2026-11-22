@@ -3668,9 +3668,9 @@ body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-wi
 .match-result-row .joker-inline, .cell-score .joker-inline { align-items: center; padding: 0.05rem 0.2rem; font-size: 0.95rem; line-height: 1; border-radius: 5px; background: #e8b02a; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); margin-left: 0.25rem; }
 .match-result-row .joker-inline { margin-left: 0; }
 
-/* Compact: no emoji rows, no dates, no tries in the headers; the Joker moves up beside the score */
-body.summary-compact .match-header-cell .match-date,
-body.summary-compact .match-header-cell .match-tries,
+/* Compact: no emoji rows, no dates, no tries in the headers (unless the match-details switch beside the download button is on); the Joker moves up beside the score */
+body.summary-compact:not(.summary-detail) .match-header-cell .match-date,
+body.summary-compact:not(.summary-detail) .match-header-cell .match-tries,
 /* (the separate Joker line under the score, and the extras row in the header, are gone in every mode: the Joker is inline) */
 .match-header-cell .match-header-bottom .match-extras,
 .summary-table td.prediction-cell .cell-extras { display: none !important; }
@@ -3907,7 +3907,7 @@ body .cell-score .joker-inline { width: 1.25rem; height: 1.25rem; font-size: 0.8
 .summary-table-clone-pinned { width: auto; }
 
 /* Table view switch (Full | Compact | PDF), in the summary toolbar */
-.view-switch { display: grid; grid-template-columns: repeat(4, auto); flex: none; border: 2px solid rgb(var(--accent-rgb) / 0.3); border-radius: 8px; overflow: hidden; }
+.view-switch { display: grid; grid-template-columns: repeat(3, auto); flex: none; border: 2px solid rgb(var(--accent-rgb) / 0.3); border-radius: 8px; overflow: hidden; }
 .view-switch-btn { all: unset; box-sizing: border-box; cursor: pointer; position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; padding: 0 0.4rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; text-align: center; color: var(--text); background: transparent; min-width: 0; white-space: nowrap; }
 .view-switch-cell { position: relative; display: block; min-height: 2.6rem; }
 .view-switch-cell + .view-switch-cell { border-left: 2px solid rgb(var(--accent-rgb) / 0.3); }
@@ -3959,7 +3959,7 @@ body.summary-classic .summary-toolbar .export-pdf-btn { margin-left: auto; }
 .tour-view-points[hidden] { display: grid; visibility: hidden; }
 .tour-view-pic img { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; border-radius: 6px; border: 2px solid var(--line-strong); background: #fff; object-fit: contain; }
 /* Each choice is a cell (a plain box, which always stretches) with the button filling it exactly: no gap, in every browser */
-.tour-view-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.35rem; margin: 0 0 0.6rem; padding: 0 0.45rem; }   /* side room, so the pulsing glow is not cut off by the edge of the scrolling area */
+.tour-view-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem; margin: 0 0 0.6rem; padding: 0 0.45rem; }   /* side room, so the pulsing glow is not cut off by the edge of the scrolling area */
 /* The choices are big radio cards: a ring, the name and a few words; the chosen one fills with gold */
 .tour-view-cell { position: relative; display: block; min-height: 3.8rem; border-radius: 12px; }
 .tour-view-tab { all: unset; box-sizing: border-box; cursor: pointer; position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.15rem; padding: 0.3rem 0.25rem; text-align: center; color: var(--text); background: rgba(255, 255, 255, 0.07); border: 2px solid rgba(255, 215, 0, 0.55); border-radius: 12px; -webkit-tap-highlight-color: transparent; }
@@ -3989,7 +3989,7 @@ body.summary-classic .summary-toolbar .export-pdf-btn { margin-left: auto; }
 /* Player menu: the Appearance choice (Light, Dark, Auto), then the Table view choice */
 .account-view { padding: 0.35rem 0.5rem 0.55rem; }
 .account-view-label { display: block; margin: 0 0 0.3rem; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
-.account-view .view-switch { display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; }
+.account-view .view-switch { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; }
 .account-view .view-switch-btn { padding: 0 0.2rem; }
 .account-view .view-switch.theme-switch { grid-template-columns: repeat(3, 1fr); }
 .tour-card.tour-compact .tour-view-points li:nth-child(n+3), .tour-card.tour-compact .tour-views-intro { display: none; }
@@ -3998,6 +3998,9 @@ body.summary-classic .summary-toolbar .export-pdf-btn { margin-left: auto; }
 .classic-tools { display: none; order: 2; flex: 1 1 auto; align-items: center; justify-content: flex-end; gap: 0.6rem; min-width: 0; }
 body.summary-classic .classic-tools { display: flex; }
 .summary-toolbar .export-pdf-btn { order: 3; }
+/* the match-details switch sits just before the download button; Classic has its own layout, so it is hidden there */
+.summary-toolbar .header-detail-btn { order: 2; }
+body.summary-classic .summary-toolbar .header-detail-btn { display: none; }
 .classic-tools .pdfv-hint { margin-right: auto; }
 
 /* Classic zoom controls: exactly as tall as the download button beside them */
@@ -4084,6 +4087,12 @@ body.summary-compact .summary-table td.competitor-name { padding-right: 6px; }
     body.summary-compact:not(.summary-simple) .summary-table td.competitor-name { min-width: 78px; width: 78px; max-width: 78px; }
 }
 
+/* Compact: the Predicted Tries column reads like the rest of the table. Its heading is the same size and weight as the team names in the match headers
+   (it was the big 1.1rem table-heading size), and the numbers have the same bold weight and text colour as the scores beside them. */
+body.summary-compact .summary-table thead th.tries-col { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.055rem; }
+@media (max-width: 768px) { body.summary-compact .summary-table thead th.tries-col { font-size: 0.7rem; } }
+body.summary-compact .summary-table td.tries-col { font-weight: 700; color: var(--text); }
+
 /* Points Progression: the hint on the left, the zoom controls (as in the Classic view) on the right */
 .worm-chart-tools { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin: 0 0 0.4rem; }
 .worm-chart-tools .worm-chart-hover-hint { margin: 0; flex: 1 1 auto; }
@@ -4140,7 +4149,8 @@ body.summary-simple .summary-table td.prediction-cell .cell-score { font-size: 1
 body.summary-simple .summary-table td.prediction-cell .points-earned { font-size: 0.95rem; font-weight: 700; padding: 0; border: 0; background: transparent; color: var(--text); text-shadow: none; height: auto; margin-top: 0.15rem; }
 body.summary-simple .summary-table td.hidden-prediction .cell-score { font-size: 1rem; font-weight: 600; color: var(--muted); }
 body.summary-simple .pred-score-tie { color: var(--text); }
-body.summary-simple .summary-table td.tries-col { font-size: 1rem; }
+body.summary-simple .summary-table td.tries-col { font-size: 1.2rem; font-weight: 800; }   /* the same size and weight as the scores */
+body.summary-simple .summary-table thead th.tries-col { font-size: 1.1rem; font-weight: 800; letter-spacing: 0.03em; }   /* and the same as the team names in the match headers */
 /* Joker: a light gold background shading on the cell (no bars, no card); the Joker match header gets a gold accent bar along its top edge (no tint, heading colours unchanged). One yellow-gold (--joker-gold) for both, tuned per theme. */
 body.summary-simple { --joker-gold: #e8b02a; --joker-shade: rgba(232, 176, 42, 0.30); }
 :root[data-theme="dark"] body.summary-simple { --joker-gold: var(--bright-gold); --joker-shade: rgba(245, 207, 106, 0.22); }

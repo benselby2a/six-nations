@@ -145,7 +145,7 @@ const mock = `
   for (const [w, h] of [[390, 700], [320, 480], [844, 390], [1280, 800]]) {
     await page.setViewportSize({ width: w, height: h }); await page.waitForTimeout(500);
     const spots = [];
-    for (const mode of ['full', 'compact', 'classic', 'simple', 'full']) {
+    for (const mode of ['compact', 'classic', 'simple', 'compact']) {
       await page.evaluate(m => tourPickView(m), mode); await page.waitForTimeout(450);
       spots.push(await page.evaluate(() => { const t = document.querySelector('.tour-view-tabs').getBoundingClientRect(), pts = document.querySelector('.tour-view-points:not([hidden])').getBoundingClientRect(), img = document.querySelector('.tour-view-pic:not([hidden]) img').getBoundingClientRect(); return { tabs: Math.round(t.top), points: Math.round(pts.top), pic: Math.round(img.height) }; }));
     }
@@ -165,8 +165,8 @@ const mock = `
   console.log('the glow has room on both sides:', JSON.stringify(room), room.left >= 6 && room.right >= 6);
   // order, and no small/big screen labels on the cards themselves
   const order = await page.evaluate(() => ({ tour: [...document.querySelectorAll('.tour-view-tab')].map(b => b.dataset.view), menu: [...document.querySelectorAll('#summaryViewSwitch .view-switch-btn')].map(b => b.dataset.view), captions: document.querySelectorAll('.tour-view-tab small').length, labels: [...document.querySelectorAll('.tour-view-tab')].map(b => b.textContent.trim()) }));
-  console.log('the views are ordered Compact, Full, Classic, Focus (tour and menu):', JSON.stringify(order.tour), JSON.stringify(order.menu), order.tour.join() === 'compact,full,classic,simple' && order.menu.join() === 'compact,full,classic,simple');
-  console.log('the cards carry just the name (no small / big screen labels):', JSON.stringify(order.labels), order.captions === 0 && order.labels.join() === 'Compact,Full,Classic,Focus');
+  console.log('the views are ordered Compact, Classic, Focus (tour and menu):', JSON.stringify(order.tour), JSON.stringify(order.menu), order.tour.join() === 'compact,classic,simple' && order.menu.join() === 'compact,classic,simple');
+  console.log('the cards carry just the name (no small / big screen labels):', JSON.stringify(order.labels), order.captions === 0 && order.labels.join() === 'Compact,Classic,Focus');
   console.log('errors', errors);
   await browser.close();
 })();

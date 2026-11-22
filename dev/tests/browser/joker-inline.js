@@ -115,8 +115,8 @@ const mock = `
   await page.click('#appView .app-bar > .tabs .tab:has-text("Match Summary")'); await page.waitForTimeout(500);
   for (const [w, h] of [[390, 800], [1280, 800]]) {
     await page.setViewportSize({ width: w, height: h });
-    for (const theme of ['light', 'dark']) {
-      await page.evaluate((m) => { changeTheme(m); setSummaryView('full'); }, theme); await page.waitForTimeout(500);
+    for (const detail of [false, true]) for (const theme of ['light', 'dark']) {
+      await page.evaluate(([m, d]) => { changeTheme(m); setSummaryView('compact'); applySummaryHeaderDetail(d, true); }, [theme, detail]); await page.waitForTimeout(500);
       const r = await page.evaluate(() => {
         const vis = e => e && e.offsetParent !== null && e.getBoundingClientRect().width > 0;
         const cell = [...document.querySelectorAll('.summary-table tbody td.joker-cell')].find(td => vis(td.querySelector('.cell-score .joker-inline')));
@@ -134,9 +134,9 @@ const mock = `
           rowsEqual: new Set(rowsH).size === 1
         };
       });
-      console.log(`Full at ${w}px (${theme}): Joker inline with the score in cells and header, no separate Joker line:`, JSON.stringify(r),
+      console.log(`Compact (match details ${detail ? 'on' : 'off'}) at ${w}px (${theme}): Joker inline with the score in cells and header, no separate Joker line:`, JSON.stringify(r),
         r.cellJokerVisible && r.sameLineAsScore && r.abovePointsPill && r.separateLines === 0 && r.headerJokerInline && r.headerSameLine && r.headerBeside && r.headerCardAlways && r.rowsEqual);
-      if (w === 390) await page.screenshot({ path: '/tmp/full-joker-' + theme + '.png', clip: { x: 0, y: 130, width: 390, height: 360 } });
+      if (w === 390) await page.screenshot({ path: '/tmp/joker-inline-' + theme + '.png', clip: { x: 0, y: 130, width: 390, height: 360 } });
     }
   }
   console.log('errors', errors);

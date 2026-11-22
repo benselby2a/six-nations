@@ -236,13 +236,18 @@ function layoutSummarySticky() {
 }
 window.addEventListener('resize', () => { sizeSummaryStickyHead(); const hint = document.getElementById('scrollHint'); const box = document.querySelector('.summary-container'); if (hint && box) hint.classList.toggle('hidden', box.scrollWidth <= box.clientWidth); if (typeof syncSummaryScrollLock === 'function') syncSummaryScrollLock(); if (typeof refreshWormChartLayout === 'function') refreshWormChartLayout(); });
 
-// Table view: Full, Compact, Focus (key simple; Compact with plain text only and colour-coded Jokers) or Classic. Compact (hides the emoji rows and, in the headers, the date and tries, to save space) or Classic (the table drawn
-// like the PDF export, see js/pdf-view.js). Remembered on this device.
-const SUMMARY_COMPACT_KEY = 'summaryCompact';        // the older two-way choice (still read, so nobody's choice is lost)
+// Table view: Compact, Classic or Focus (key simple: Compact with plain text only and a light gold shade for Jokers).
+// Compact keeps the match headers short (countries and score); the "details" switch beside the download button brings the date and tries
+// back into them (body class summary-detail, remembered separately). Classic draws the table like the PDF export, see js/pdf-view.js.
+// Everything is remembered on this device.
+const SUMMARY_COMPACT_KEY = 'summaryCompact';        // the oldest two-way choice (still read, so nobody's choice is lost)
 const SUMMARY_VIEW_MODE_KEY = 'summaryViewMode';
-let summaryViewMode = 'full';
+const SUMMARY_DETAIL_KEY = 'summaryHeaderDetail';
+const SUMMARY_VIEW_MODES = ['compact', 'classic', 'simple'];
+let summaryViewMode = 'compact';
+let summaryHeaderDetail = false;
 function applySummaryViewMode(mode, redraw) {
-    if (!['full', 'compact', 'classic', 'simple'].includes(mode)) mode = 'full';
+    if (!SUMMARY_VIEW_MODES.includes(mode)) mode = 'compact';
     summaryViewMode = mode;
     document.body.classList.toggle('summary-compact', mode === 'compact' || mode === 'simple');   // Simple is built on Compact
     document.body.classList.toggle('summary-simple', mode === 'simple');
@@ -255,22 +260,39 @@ function applySummaryViewMode(mode, redraw) {
     if (redraw && typeof showSummary === 'function' && document.getElementById('summaryContainer')) showSummary();   // the redraw also rebuilds the pinned header
 }
 function setSummaryView(mode) {
-    try { localStorage.setItem(SUMMARY_VIEW_MODE_KEY, mode); localStorage.setItem(SUMMARY_COMPACT_KEY, mode === 'compact' ? '1' : '0'); } catch (error) { /* not remembered */ }
+    try { localStorage.setItem(SUMMARY_VIEW_MODE_KEY, mode); } catch (error) { /* not remembered */ }
     applySummaryViewMode(mode, true);
 }
-// Kept for older callers: flips between Compact and Full
-function toggleSummaryCompact() { setSummaryView(summaryViewMode === 'compact' ? 'full' : 'compact'); }
-// Kept for older callers
-function applySummaryCompact(compact) { applySummaryViewMode(compact ? 'compact' : 'full', true); }
-
-// Compact mode starts on for phones (a narrow screen, or a phone held sideways) unless the person has chosen for themselves
-function isPhoneScreen() {
-    return !!(window.matchMedia && window.matchMedia('(max-width: 480px), (orientation: landscape) and (max-height: 500px) and (hover: none)').matches);
+// The match-details switch beside the download button: puts the date and tries back into the Compact / Focus headers
+function applySummaryHeaderDetail(on, redraw) {
+    summaryHeaderDetail = !!on;
+    document.body.classList.toggle('summary-detail', summaryHeaderDetail);
+    const btn = document.getElementById('headerDetailBtn');
+    if (btn) {
+        const tip = summaryHeaderDetail ? 'Hide match details' : 'Show match details';
+        btn.setAttribute('aria-pressed', summaryHeaderDetail ? 'true' : 'false');
+        btn.setAttribute('aria-label', tip);
+        btn.setAttribute('data-tip', tip);
+    }
+    if (redraw && typeof showSummary === 'function' && document.getElementById('summaryContainer')) showSummary();   // the redraw also rebuilds the pinned header
 }
+function toggleSummaryHeaderDetail() {
+    const on = !summaryHeaderDetail;
+    try { localStorage.setItem(SUMMARY_DETAIL_KEY, on ? '1' : '0'); } catch (error) { /* not remembered */ }
+    applySummaryHeaderDetail(on, true);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-    let mode = null, legacy = null;
-    try { mode = localStorage.getItem(SUMMARY_VIEW_MODE_KEY); legacy = localStorage.getItem(SUMMARY_COMPACT_KEY); } catch (error) { /* ignore */ }
+    let mode = null, legacy = null, detail = null;
+    try { mode = localStorage.getItem(SUMMARY_VIEW_MODE_KEY); legacy = localStorage.getItem(SUMMARY_COMPACT_KEY); detail = localStorage.getItem(SUMMARY_DETAIL_KEY); } catch (error) { /* ignore */ }
     if (mode === 'pdf') mode = 'classic';   // this view was first called PDF
-    if (!['full', 'compact', 'classic', 'simple'].includes(mode)) mode = legacy === '1' ? 'compact' : (legacy === '0' ? 'full' : (isPhoneScreen() ? 'compact' : 'full'));
+    // The Full view is gone. Anyone who had it (or the oldest "not compact" choice) gets Compact with the match details switched on, which is the header they were used to
+    if (mode === 'full' || (!SUMMARY_VIEW_MODES.includes(mode) && legacy === '0')) {
+        mode = 'compact';
+        if (detail === null) detail = '1';
+        try { localStorage.setItem(SUMMARY_VIEW_MODE_KEY, 'compact'); localStorage.setItem(SUMMARY_DETAIL_KEY, detail); } catch (error) { /* ignore */ }
+    }
+    if (!SUMMARY_VIEW_MODES.includes(mode)) mode = 'compact';
     applySummaryViewMode(mode, false);
+    applySummaryHeaderDetail(detail === '1', false);
 });

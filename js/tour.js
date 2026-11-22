@@ -54,12 +54,12 @@ function tourBuildSteps(rulesHtml) {
     steps.push(tourStep('score', 'See the leaderboard', [
         'Tap <strong>Match Summary</strong> at the top of the screen. It is the screen you land on after signing in.',
         'Everyone\'s rank and total score are on the left, with each prediction and the points it earned for every match.',
-        'Choose how the table looks (<strong>Full, Compact, Classic or Focus</strong>) on the next screen.'
+        'Choose how the table looks (<strong>Compact, Classic or Focus</strong>) on the next screen.'
     ], '<p>Tap any prediction to see how it was scored. The header row stays at the top as you scroll, and a 🃏 marks a Joker. <strong>All matches / Current round</strong> sits above the table.</p>'));
     steps.push({ id: null, title: 'Choose your view', raw: () => tourViewsHtml(), needsViewChoice: true });
     steps.push(tourStep('menu-view', 'Change your view any time', [
         'Tap your <strong>initial</strong> at the top right to open the player menu.',
-        'Under <strong>Table view</strong>, choose Full, Compact, Classic or Focus whenever you like.',
+        'Under <strong>Table view</strong>, choose Compact, Classic or Focus whenever you like.',
         'Under <strong>Appearance</strong>, choose Light, Dark or Auto.'
     ], '<p>Your choices are remembered on this device. Auto follows your phone\'s light or dark setting.</p>'));
     steps.push(tourStep('pdf', 'Download and print', [
@@ -75,13 +75,8 @@ function tourBuildSteps(rulesHtml) {
 const TOUR_VIEW_OPTIONS = [
     ['compact', 'Compact', [
         'Designed for small screens: just the countries and scores, so more fits.',
-        'The default on phones.',
-        'Same points, Jokers and ranking as Full.'
-    ]],
-    ['full', 'Full', [
-        'Also designed for small screens, with more detail: dates, kick-off times and try counts.',
-        'Tap a match header or a prediction for the details.',
-        'The header row stays pinned as you scroll.'
+        'Tap the details button beside the download icon to add match dates and try counts to the headers.',
+        'Tap a match header or a prediction for the full details. The header row stays pinned as you scroll.'
     ]],
     ['classic', 'Classic', [
         'Best on a bigger screen (or pinch to zoom on a phone).',
@@ -97,7 +92,7 @@ const TOUR_VIEW_OPTIONS = [
 // A big picture of the chosen view above the choices, and what is good about it below. Tapping a choice makes it the default.
 function tourViewsHtml() {
     const chosen = !!(tourState && tourState.viewChosen);
-    const current = (typeof summaryViewMode !== 'undefined') ? summaryViewMode : 'full';
+    const current = (typeof summaryViewMode !== 'undefined') ? summaryViewMode : 'compact';
     const pictures = TOUR_VIEW_OPTIONS.map(([mode, label]) => {
         const image = (typeof TOUR_IMAGES !== 'undefined') ? TOUR_IMAGES['view-' + mode] : null;
         const img = image ? `<img src="${image.src}?v=${image.v}" alt="The ${label} view" width="${image.w}" height="${image.h}" style="aspect-ratio:${image.w}/${image.h}">` : '';
