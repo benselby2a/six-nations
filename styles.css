@@ -4091,8 +4091,9 @@ body.summary-compact .summary-table td.tries-col { font-weight: 700; color: var(
 
 /* Classic: the first column (Date / KO, Name, Result, Try Count) is pinned at the left edge with plain position: sticky while the sheet scrolls sideways.
    The 3px gold divider and the soft shadow are box-shadows (collapsed table borders do not travel with a sticky cell). */
-.pdfv-pinned { position: sticky; left: 0; z-index: 2; box-shadow: var(--pdfv-lines), inset -3px 0 0 var(--gold), 4px 0 6px -2px rgba(0, 0, 0, 0.4); }
-:root[data-theme="dark"] .pdfv-pinned { box-shadow: var(--pdfv-lines), inset -3px 0 0 var(--bright-gold), 5px 0 8px -2px rgba(0, 0, 0, 0.7); }
+.pdfv-pinned { --pdfv-div: clamp(1px, calc(5px * var(--pdfv-k, 1)), 3px); --pdfv-sh: clamp(0.3, var(--pdfv-k, 1) * 2, 1);   /* the pinned-edge divider is thinner (and its shadow smaller) when the sheet is zoomed out, full 3px when zoomed in */
+  position: sticky; left: 0; z-index: 2; box-shadow: var(--pdfv-lines), inset calc(-1 * var(--pdfv-div)) 0 0 var(--gold), calc(4px * var(--pdfv-sh)) 0 calc(6px * var(--pdfv-sh)) -2px rgba(0, 0, 0, 0.4); }
+:root[data-theme="dark"] .pdfv-pinned { box-shadow: var(--pdfv-lines), inset calc(-1 * var(--pdfv-div)) 0 0 var(--bright-gold), calc(5px * var(--pdfv-sh)) 0 calc(8px * var(--pdfv-sh)) -2px rgba(0, 0, 0, 0.7); }
 
 /* Compact: the scores line up in one column (right edge of the Competitor column), whatever flags a person has */
 .summary-table td.competitor-name .comp-sub { width: 100%; }
