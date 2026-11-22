@@ -128,8 +128,20 @@ const mock = `
       const scores = [...document.querySelectorAll('.summary-table:not(.summary-table-clone) .comp-score')].filter(e => e.getClientRects().length);
       const td = document.querySelector('.summary-table:not(.summary-table-clone) td.competitor-name');
       const overflow = scores.filter(e => e.getBoundingClientRect().right > e.closest('td').getBoundingClientRect().right - 3 + 0.5).length;
-      return { bad, nScores: scores.length, overflow, tdW: Math.round(td.getBoundingClientRect().width) };
+      // space between the end of the name text and the score, and the cell's own left padding
+      const gaps = [...document.querySelectorAll('.summary-table:not(.summary-table-clone) td.competitor-name')].filter(c => c.getClientRects().length).map(c => {
+        const nick = c.querySelector('.comp-nick'), sc = c.querySelector('.comp-score'); const rg = document.createRange(); rg.selectNodeContents(nick);
+        const textR = Math.max(...[...rg.getClientRects()].map(x => x.right));
+        return { pl: parseFloat(getComputedStyle(c).paddingLeft), gap: Math.round(sc.getBoundingClientRect().left - textR), nickW: Math.round(nick.getBoundingClientRect().width), scoreW: Math.round(sc.getBoundingClientRect().width) };
+      });
+      return { bad, nScores: scores.length, overflow, tdW: Math.round(td.getBoundingClientRect().width), gaps };
     });
+    if (mode === 'simple') {
+      // Plain keeps a tight column: it was 120px with 46px of empty space left of a short name's score; now 108px and at most 36px, with the score still on one line
+      const widest = Math.max(...r.gaps.map(g => g.gap));
+      console.log('plain gaps', width, JSON.stringify(r.gaps));
+      console.log(`plain @${width}: column <= 108px and space left of the score <= 36px:`, r.tdW <= 108 && widest <= 36, '| col', r.tdW, 'widest gap', widest);
+    }
     console.log(`${mode} @${width}: no wrapped score text:`, r.bad.length === 0, r.bad, '| scores seen:', r.nScores, '| spill past divider:', r.overflow, '| name col', r.tdW, 'px');
   }
   console.log('errors', errors);
