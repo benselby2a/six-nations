@@ -38,6 +38,17 @@
         setInterval(refreshMatchHighlight, 60 * 1000);
         document.addEventListener('visibilitychange', refreshMatchHighlight);
 
+        // Focus view: a team abbreviation in the same colour Classic uses for that team's name (PDF_SCHEMES in js/pdf-view.js is the single source of
+        // the colours: light and dark are both written as CSS variables, so switching the theme needs no redraw). A team with no colour, such as one
+        // from another tournament, keeps the plain heading colour.
+        function simpleTeamSpan(team) {
+            const abbr = getTeamAbbr(team);
+            const light = typeof PDF_SCHEMES !== 'undefined' && PDF_SCHEMES.light.team[team];
+            const dark = typeof PDF_SCHEMES !== 'undefined' && PDF_SCHEMES.dark.team[team];
+            if (!light || !dark) return `<span>${abbr}</span>`;
+            return `<span class="team-tint" style="--team-l: ${pdfvRgb(light)}; --team-d: ${pdfvRgb(dark)}">${abbr}</span>`;
+        }
+
         function renderSummaryNow() {
             const container = document.getElementById('summaryContainer');
             const allUsers = getParticipantUsernames();
@@ -138,7 +149,7 @@
                 html += `<th class="match-header-cell ${match.jokerEligible ? 'joker-eligible-header' : ''}${hlClass(match)}" data-match-col="${colIndex}" data-chat-match="${match.id}"${chatHeaderAttrs(match)}>
                     <div class="match-header-cell-inner">
                         <div class="match-header-top">
-                            ${highlights.has(match.id) ? `<span class="sr-only">${highlights.get(match.id) === 'now' ? 'In play now. ' : 'Next match. '}</span>` : ''}<div class="match-teams">${simple ? `<span>${getTeamAbbr(match.team1)}</span><span>${getTeamAbbr(match.team2)}</span>` : `<span>${getFlag(match.team1)} ${getTeamAbbr(match.team1)}</span><span>${getFlag(match.team2)} ${getTeamAbbr(match.team2)}</span>`}</div>
+                            ${highlights.has(match.id) ? `<span class="sr-only">${highlights.get(match.id) === 'now' ? 'In play now. ' : 'Next match. '}</span>` : ''}<div class="match-teams">${simple ? `${simpleTeamSpan(match.team1)}${simpleTeamSpan(match.team2)}` : `<span>${getFlag(match.team1)} ${getTeamAbbr(match.team1)}</span><span>${getFlag(match.team2)} ${getTeamAbbr(match.team2)}</span>`}</div>
                             <div class="match-date">${match.date} - ${match.time}</div>
                         </div>
                         <div class="match-header-bottom">
