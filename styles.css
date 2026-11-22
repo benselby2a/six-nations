@@ -2646,6 +2646,20 @@
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
         }
 
+        /* What's new pop-up: the app's modal, a title, one block per note */
+        .whats-new-modal { overscroll-behavior: contain; }
+        .whats-new-content { position: relative; max-width: 480px; }
+        .whats-new-title { font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin: 0 1.6rem 0.8rem 0; letter-spacing: 0.1em; }
+        .whats-new-close { position: absolute; top: 0.6rem; right: 0.6rem; margin: 0; width: 2.2rem; height: 2.2rem; padding: 0; line-height: 1; font-size: 1.5rem; background: transparent; border: 1px solid var(--line-strong); color: var(--text); border-radius: 8px; }
+        .whats-new-note { margin: 0 0 1rem; padding: 0 0 0.9rem; border-bottom: 1px solid var(--line-strong); }
+        .whats-new-note h3 { margin: 0; font-size: 1.05rem; color: var(--text); }
+        .whats-new-tag { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line-strong); border-radius: 6px; padding: 0.05rem 0.35rem; margin-left: 0.3rem; vertical-align: middle; }
+        .whats-new-date { font-size: 0.78rem; color: var(--muted); margin: 0.1rem 0 0.45rem; }
+        .whats-new-list { margin: 0; padding-left: 1.1rem; font-size: 0.92rem; line-height: 1.45; }
+        .whats-new-list li { margin: 0 0 0.35rem; }
+        .whats-new-content .fixture-modal-actions { margin-top: 0.4rem; flex-wrap: wrap; }
+        .whats-new-content .fixture-modal-actions button { flex: 1 1 130px; width: auto; min-width: 0; }
+
         .btn-cancel {
             background: transparent;
             border: 1px solid var(--line-strong);

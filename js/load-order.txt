@@ -25,5 +25,6 @@ pdf-view.js
 rules-admin.js
 recovery-usage.js
 unsaved-changes.js
+whats-new.js
 connectivity.js
 app-shell.js

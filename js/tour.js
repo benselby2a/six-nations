@@ -408,6 +408,7 @@ function endTour(completed) {
         trackUsage(tourState.kind === 'admin' ? 'admin tour completed' : 'tour completed');
     }
     tourState = null;
+    if (typeof whatsNewSchedule === 'function') whatsNewSchedule();   // a pending new-feature notice can show now
     document.removeEventListener('keydown', tourKeys);
     window.removeEventListener('resize', tourFitScreen);
     document.removeEventListener('touchmove', tourBlockScroll);
