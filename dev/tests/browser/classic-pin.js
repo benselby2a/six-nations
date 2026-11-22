@@ -122,7 +122,7 @@ const mock = `
     const left = rows.map(tr => Math.round((tr.cells[0].getBoundingClientRect().left - wr.left - w.clientLeft) * 10) / 10);
     const second = rows[2].cells[1].getBoundingClientRect().left - wr.left;
     const c0 = getComputedStyle(rows[2].cells[0]);
-    return { scrollLeft: Math.round(w.scrollLeft), scrollW: w.scrollWidth, clientW: w.clientWidth, rows: rows.length, minLeft: Math.min(...left), maxLeft: Math.max(...left), second: Math.round(second), pos: c0.position, names: rows.slice(0, 5).map(tr => tr.cells[0].textContent.replace(/\s+/g, ' ').trim()), zoom: getComputedStyle(document.getElementById('pdfViewSheet')).zoom, transform: document.getElementById('pdfViewSheet').style.transform };
+    return { scrollLeft: Math.round(w.scrollLeft), scrollW: w.scrollWidth, clientW: w.clientWidth, rows: rows.length, minLeft: Math.min(...left), maxLeft: Math.max(...left), second: Math.round(second), pos: c0.position, names: rows.slice(0, 5).map(tr => tr.cells[0].textContent.replace(/\s+/g, ' ').trim()), scale: document.getElementById('pdfViewSheet').style.getPropertyValue('--pdfv-k') };
   });
   const fit = await pinState();
   console.log('fitted: the sheet fits, first column cells are sticky:', JSON.stringify(fit), fit.pos === 'sticky' && fit.scrollW <= fit.clientW + 1, fit.rows >= 8);

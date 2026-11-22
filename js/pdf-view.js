@@ -50,8 +50,10 @@ function pdfvSortedUsers() {
 
 function buildPdfStyleViewHtml(matchList, sortedUsers) {
     const schemes = [['', PDF_SCHEMES.light], ['-d', PDF_SCHEMES.dark]];
-    const mm = (v) => `${(v * PDFV_MM).toFixed(2)}px`;
-    const pt = (v) => `${(v * 1.3333).toFixed(2)}px`;
+    // Every length is written as calc(<px at full size> * --pdfv-k) so that the whole sheet scales with one variable (see applyPdfvScale)
+    const px = (v) => `calc(${v.toFixed(2)}px * var(--pdfv-k, 1))`;
+    const mm = (v) => px(v * PDFV_MM);
+    const pt = (v) => px(v * 1.3333);
 
     const matchSchemas = matchList.map(match => ({ match, cols: match.jokerEligible ? ['home', 'away', 'pts', 'joker'] : ['home', 'away', 'pts'] }));
     const matchColsCount = matchSchemas.reduce((sum, schema) => sum + schema.cols.length, 0);
@@ -74,7 +76,13 @@ function buildPdfStyleViewHtml(matchList, sortedUsers) {
         const inner = stack
             ? String(content).split('').map(ch => `<span>${escapeHtml(ch)}</span>`).join('')
             : escapeHtml(String(content)).replace(/\n/g, '<br>');
-        return `<td${colspan > 1 ? ` colspan="${colspan}"` : ''} class="pdfv-c${stack ? ' pdfv-stack' : ''}${pin ? ' pdfv-pinned' : ''}" style="${vars};font-size:${pt(size)};font-weight:${bold ? 700 : 400};text-align:${align};vertical-align:${valign};${borders}">${inner}</td>`;
+        // The grid lines are not CSS borders (a border is never drawn thinner than 1 CSS pixel, which made the small fitted sheet heavy and squashed);
+        // they are inset shadows, so they stay true hairlines at any scale. Each cell draws half of each of its four lines (--bt/--br/--bb/--bl), so
+        // two neighbours together draw one line. The border-width declarations in `borders` are turned into those variables here.
+        const sideVar = { '': ['--bt', '--br', '--bb', '--bl'], '-top': ['--bt'], '-right': ['--br'], '-bottom': ['--bb'], '-left': ['--bl'] };
+        const lineVars = [];
+        const rest = String(borders).replace(/border(-top|-right|-bottom|-left)?-width:([^;]+);/g, (m, side, width) => { (sideVar[side || ''] || []).forEach(v => lineVars.push(`${v}:${width.trim()}`)); return ''; });
+        return `<td${colspan > 1 ? ` colspan="${colspan}"` : ''} class="pdfv-c${stack ? ' pdfv-stack' : ''}${pin ? ' pdfv-pinned' : ''}" style="${vars};${lineVars.join(';')}${lineVars.length ? ';' : ''}font-size:${pt(size)};font-weight:${bold ? 700 : 400};text-align:${align};vertical-align:${valign};${rest}">${inner}</td>`;
     };
     const THIN = mm(0.35), HEAD = mm(0.45), BOLD = mm(0.9);
     // The heavier lines at the left and right edge of each match group
@@ -200,7 +208,7 @@ function buildPdfStyleViewHtml(matchList, sortedUsers) {
     // "Updated Sat, 21 Nov 2026 at 07:26": the day and time the data was last fetched, worded like the export's "Exported ... at ..."
     const stamp = new Date(typeof lastDataRefreshAt === 'number' ? lastDataRefreshAt : Date.now());
     const updated = `${stamp.toLocaleDateString('en-GB', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })} at ${stamp.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
-    return `<div class="pdfv-wrap" id="pdfViewWrap"><div class="pdfv-stage" id="pdfViewStage"><div class="pdfv-sheet" id="pdfViewSheet" style="width:${PDFV_SHEET_W.toFixed(0)}px;padding:${mm(3)}">`
+    return `<div class="pdfv-wrap" id="pdfViewWrap"><div class="pdfv-stage" id="pdfViewStage"><div class="pdfv-sheet" id="pdfViewSheet" style="width:${px(PDFV_SHEET_W)};padding:${mm(3)}">`
         + `<div class="pdfv-title">${escapeHtml(String(selectedYear || stamp.getFullYear()))} Six Nations Guesser</div>`
         + `<div class="pdfv-sub">Updated ${updated}</div>`
         + `<table class="pdfv-table" style="width:${mm(tableWidth)}"><colgroup>${colgroup}</colgroup>`
@@ -212,22 +220,15 @@ function buildPdfStyleViewHtml(matchList, sortedUsers) {
 let pdfvZoom = null;   // null = fitted; otherwise the chosen scale
 const PDFV_MAX_ZOOM = 4;
 function pdfvFitScale(wrap) { return Math.min(1.6, wrap.clientWidth / PDFV_SHEET_W); }
-// The sheet is scaled with CSS zoom (not a transform), so it takes up its real zoomed size and the box scrolls sideways natively. That lets the
-// first column (Date / KO, Name, Result, Try Count) stay at the left edge with plain `position: sticky`, with no scroll-event syncing.
-const PDFV_CAN_ZOOM = typeof CSS !== 'undefined' && !!CSS.supports && CSS.supports('zoom', '1');
+// The sheet is scaled by one CSS variable (--pdfv-k) that every length in it is multiplied by, not by CSS zoom or a transform. It takes up its real
+// scaled size, so the box scrolls sideways natively and the first column (Date / KO, Name, Result, Try Count) stays at the left edge with plain
+// `position: sticky` (no scroll-event syncing). CSS zoom was tried and looked squashed: browsers keep every border at least 1 CSS pixel thick under
+// zoom, so at the small fit scale the hairlines became heavy and ate the cells. With calc() the borders stay true hairlines, as in the PDF.
 function applyPdfvScale(k) {
     const wrap = document.getElementById('pdfViewWrap');
-    const stage = document.getElementById('pdfViewStage');
     const sheet = document.getElementById('pdfViewSheet');
-    if (!wrap || !stage || !sheet) return;
-    if (PDFV_CAN_ZOOM) {
-        sheet.style.zoom = String(k);
-    } else {   // a browser without CSS zoom: scale with a transform instead (the first column then scrolls with the sheet)
-        sheet.style.transform = `scale(${k})`;
-        stage.classList.add('pdfv-stage-scaled');
-        stage.style.width = Math.ceil(PDFV_SHEET_W * k) + 'px';
-        stage.style.height = Math.ceil(sheet.offsetHeight * k) + 'px';
-    }
+    if (!wrap || !sheet) return;
+    sheet.style.setProperty('--pdfv-k', k.toFixed(4));
     wrap.dataset.zoomed = k > pdfvFitScale(wrap) + 0.01 ? '1' : '';
 }
 function currentPdfvScale() {
