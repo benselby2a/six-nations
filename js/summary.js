@@ -108,7 +108,8 @@
             // Header row: Rank | Competitor | Score | Match 1 | Match 2 | ... | Predicted Tries
             html += '<thead><tr>';
             html += '<th class="rank-col">#</th>';
-            html += '<th class="competitor-col"><span class="th-angled">Competitor</span></th>';
+            // Compact: the score sits under the name, so the column is "Competitor & Score" (the "& Score" part drops to a second line on phones); Focus keeps "Competitor"
+            html += `<th class="competitor-col"><span class="th-angled">Competitor${simple ? '' : ' <span class="th-amp">&amp; Score</span>'}</span></th>`;
             html += '<th class="pts-col"><span class="th-angled">Score</span></th>';
             filteredMatches.forEach((match, colIndex) => {
                 const hasResult = match.actualScore1 !== null && match.actualScore2 !== null;
