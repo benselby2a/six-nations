@@ -4058,6 +4058,31 @@ body.summary-compact .summary-table thead th.tries-col { font-size: 0.85rem; fon
 @media (max-width: 768px) { body.summary-compact .summary-table thead th.tries-col { font-size: 0.7rem; } }
 body.summary-compact .summary-table td.tries-col { font-weight: 700; color: var(--text); }
 
+/* Compact: the type is a little bigger than the base table's. Every size below was picked by measuring: the column widths, the row and header heights and the number of lines of text
+   are the same as before (nothing newly wraps), with the worst-case content (88 - 88, 188 pts, three flags, a long name). Names grow on phones only and the flags stay as they were:
+   the Name column is a fixed width, and a bigger name or flag row wrapped the long names further and made their rows taller. Focus has its own sizes. The --compact-type marker lets
+   the compact-fonts test switch these rules off to compare against the old sizes. */
+@media (max-width: 480px) {
+    body.summary-compact:not(.summary-simple) .summary-table td.rank-col { font-size: .78rem; --compact-type: 1; }
+    body.summary-compact:not(.summary-simple) .summary-table td.competitor-name .comp-nick { font-size: .69rem; --compact-type: 1; }
+    body.summary-compact:not(.summary-simple) .summary-table td.prediction-cell .cell-score, body.summary-compact:not(.summary-simple) .summary-table td.tries-col { font-size: .78rem; --compact-type: 1; }
+    body.summary-compact:not(.summary-simple) .summary-table td.prediction-cell .points-earned { font-size: .78rem; --compact-type: 1; }
+    body.summary-compact:not(.summary-simple) .summary-table thead .match-tries { font-size: .75rem; --compact-type: 1; }
+    body.summary-compact:not(.summary-simple) .summary-table thead .match-result { font-size: 1.02rem; --compact-type: 1; }
+}
+@media (min-width: 481px) and (max-width: 768px) {
+    body.summary-compact:not(.summary-simple) .summary-table td.rank-col { font-size: .9rem; --compact-type: 1; }
+    body.summary-compact:not(.summary-simple) .summary-table td.prediction-cell .cell-score, body.summary-compact:not(.summary-simple) .summary-table td.tries-col { font-size: .86rem; --compact-type: 1; }
+    body.summary-compact:not(.summary-simple) .summary-table td.prediction-cell .points-earned { font-size: .78rem; --compact-type: 1; }
+    body.summary-compact:not(.summary-simple) .summary-table thead .match-tries { font-size: .75rem; --compact-type: 1; }
+}
+@media (min-width: 769px) {
+    body.summary-compact:not(.summary-simple) .summary-table td.rank-col { font-size: 1.01rem; --compact-type: 1; }
+    body.summary-compact:not(.summary-simple) .summary-table td.prediction-cell .cell-score, body.summary-compact:not(.summary-simple) .summary-table td.tries-col { font-size: 1.01rem; --compact-type: 1; }
+    body.summary-compact:not(.summary-simple) .summary-table td.prediction-cell .points-earned { font-size: .78rem; --compact-type: 1; }
+    body.summary-compact:not(.summary-simple) .summary-table thead .match-tries { font-size: .75rem; --compact-type: 1; }
+}
+
 /* Points Progression: the hint on the left, the zoom controls (as in the Classic view) on the right */
 .worm-chart-tools { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin: 0 0 0.4rem; }
 .worm-chart-tools .worm-chart-hover-hint { margin: 0; flex: 1 1 auto; }
