@@ -138,14 +138,14 @@ const mock = `
   console.log(JSON.stringify(r));
   console.log('no emoji / flags / card icons in the table:', !r.emoji && !r.flagsEl && r.jokerIcons === 0);
   console.log('text abbreviations in headers:', r.hasAbbr);
-  console.log('joker cell has colour class, top accent (no amber fill) and hidden Joker text:', r.jokerCells >= 1 && r.jokerClass && r.jokerText && r.jokerBg !== 'rgb(255, 212, 94)' && /0px 6px/.test(r.jokerShadow));
+  console.log('joker cell has colour class, top accent (no amber fill) and hidden Joker text:', r.jokerCells >= 1 && r.jokerClass && r.jokerText && r.jokerBg !== 'rgb(255, 212, 94)' && /0px 4px/.test(r.jokerShadow));
   console.log('header accent present and no legend line:', r.hdrAccent && !r.legend);
   console.log('competitor header horizontal and header pinned:', r.angled.every(t => t === 'none') && r.pinned);
   await page.screenshot({path:'/tmp/claude-0/-home-user-six-nations/55e70b8c-24a4-53e8-973b-d120bef1189e/scratchpad/simple-light.png', clip:{x:0,y:150,width:390,height:520}});
   await page.evaluate(() => { document.documentElement.setAttribute('data-theme', 'dark'); }); await page.waitForTimeout(300);
   const d = await page.evaluate(() => { const c = document.querySelector('td.simple-joker'); const s = getComputedStyle(c); return { bg: s.backgroundColor, fg: getComputedStyle(c.querySelector('.pred-score')).color, bar: s.boxShadow }; });
   console.log('dark joker cell:', JSON.stringify(d));
-  console.log('dark works (no amber fill, bright accent kept):', d.bg !== 'rgb(92, 67, 0)' && /255, 212, 94/.test(d.bar));
+  console.log('dark works (no amber fill, gold accent kept):', d.bg !== 'rgb(92, 67, 0)' && /245, 207, 106/.test(d.bar) && /0px 4px/.test(d.bar));
   await page.screenshot({path:'/tmp/claude-0/-home-user-six-nations/55e70b8c-24a4-53e8-973b-d120bef1189e/scratchpad/simple-dark.png', clip:{x:0,y:150,width:390,height:520}});
   await page.evaluate(() => document.documentElement.removeAttribute('data-theme'));
   await page.reload(); await page.waitForTimeout(1500);
