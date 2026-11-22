@@ -20,6 +20,7 @@
             const id = ADMIN_SECTION_IDS[tabName];
             const clicked = evt && evt.isTrusted && evt.type === 'click' && evt.target && evt.target.closest && evt.target.closest('.admin-tabs');
             if (!id || !clicked) return;
+            if (typeof appTouchedByUser !== 'undefined') appTouchedByUser = true;   // the person has acted: the late jump-to-top after page load must not undo this scroll
             const el = document.getElementById(id);
             if (!el) return;
             // After the section has been drawn (two frames); once more shortly after, in case its content settled (async data) and moved it
