@@ -117,6 +117,13 @@ const mock = `
   const box = page.locator('.worm-chart-wrap'); await box.scrollIntoViewIfNeeded(); await page.waitForTimeout(300);
   const phone = await page.evaluate(() => { const w = document.querySelector('.worm-chart-wrap').getBoundingClientRect(); const lab = getComputedStyle(document.querySelector('.worm-chart-svg .worm-axis-label')); const svg = document.querySelector('.worm-chart-svg'); const vb = svg.viewBox.baseVal; return { phoneClass: svg.classList.contains('phone'), chartH: Math.round(w.height), chartW: Math.round(w.width), labelPx: Math.round(parseFloat(lab.fontSize) * (w.width / vb.width) * 10) / 10 }; });
   console.log('phone chart:', JSON.stringify(phone), '| tall and readable on a phone:', phone.phoneClass && phone.chartH >= 300 && phone.labelPx >= 12);
+  // the chart sits on the same card surface as the other panels (--surface), in both themes
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate((t) => { document.documentElement.setAttribute('data-theme', t); }, theme); await page.waitForTimeout(150);
+    const bgs = await page.evaluate(() => { const probe = document.createElement('div'); probe.style.background = 'var(--surface)'; document.body.appendChild(probe); const surface = getComputedStyle(probe).backgroundColor; probe.remove(); const g = (s) => getComputedStyle(document.querySelector(s)).backgroundColor; return { surface, box: g('.worm-chart-box'), wrap: g('.worm-chart-wrap') }; });
+    console.log(theme + ': chart card and plot area use the app card surface:', JSON.stringify(bgs), bgs.box === bgs.surface && bgs.wrap === bgs.surface);
+  }
+  await page.evaluate(() => { document.documentElement.removeAttribute('data-theme'); }); await page.waitForTimeout(150);
   await box.screenshot({path:'/tmp/claude-0/-home-user-six-nations/55e70b8c-24a4-53e8-973b-d120bef1189e/scratchpad/worm_phone.png'});
   await page.setViewportSize({width:1280,height:800}); await page.waitForTimeout(500);
   const desk = await page.evaluate(() => { const w = document.querySelector('.worm-chart-wrap').getBoundingClientRect(); const svg = document.querySelector('.worm-chart-svg'); return { phoneClass: svg.classList.contains('phone'), chartH: Math.round(w.height) }; });
