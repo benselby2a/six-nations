@@ -4,33 +4,19 @@
 // (not the build hash, which changes on every deploy). People who have not seen that id get the pop-up the next time
 // they open the app; everyone else is left alone. Text only (no emoji), short bullets.
 
-const WHATS_NEW = [
-    {
-        id: '2026-11-admin-predictions-upload',
-        audience: 'admin',          // 'all' or 'admin'
-        date: '22 Nov 2026',
-        title: 'Admin tools',
-        tour: 'admin',              // offers the matching tour ('app' or 'admin'), optional
-        bullets: [
-            'Predictions: download an Excel template for a player, fill in their scores, Joker and total tries, and upload it to enter their predictions for them. A preview shows any problems before anything is saved.',
-            'Opening a section in Admin Functions now scrolls it into view, and Help is a normal button in the same list.'
-        ]
-    },
-    {
-        id: '2026-11-views-and-appearance',
-        audience: 'all',
-        date: '22 Nov 2026',
-        title: 'New ways to read the table',
-        tour: 'app',
-        bullets: [
-            'Focus view: an easy-to-read table in plain text with larger type. Jokers are shaded light gold. Choose it under Table view in your account menu (your initial, top right).',
-            'Compact now has a Show match details button next to the download button. It adds the date and tries to the match headings. The old Full view is part of Compact now.',
-            'Appearance: choose Light, Dark or Auto (follows your phone) in the same menu.',
-            'The match being played, or the next one, is tinted in Compact and Focus.',
-            'Classic view keeps the names and dates on the left while you scroll sideways.'
-        ]
-    }
-];
+// Nothing is announced right now: the list is empty on purpose, so no pop-up shows and the "What's new" menu item is hidden.
+// To announce something, add a note like this at the TOP (newest first):
+//   {
+//       id: '2026-12-some-feature',      // stable and unique, never the build hash
+//       audience: 'all',                 // 'all' or 'admin'
+//       date: '1 Dec 2026',
+//       title: 'A short title',
+//       tour: 'app',                     // optional: offers the matching tour ('app' or 'admin')
+//       bullets: ['One short sentence per feature.']
+//   }
+const WHATS_NEW = [];
+// tests add notes of their own here (before the app starts), so the machinery can be tested while the real list is empty
+if (typeof window !== 'undefined' && Array.isArray(window.__whatsNewTestNotes)) WHATS_NEW.push(...window.__whatsNewTestNotes);
 
 const WHATS_NEW_SEEN_PREFIX = 'whatsNewSeen:';   // + username: a JSON array of the note ids this person has seen on this device
 const WHATS_NEW_MAX_NOTES = 3;                   // a returning person sees at most the newest few
