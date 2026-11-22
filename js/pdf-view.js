@@ -246,7 +246,8 @@ function syncPdfvPin(k) {
             body.appendChild(row);
         });
     }
-    const zoomed = stage.parentElement.dataset.zoomed === '1';
+    // Pinned whenever the sheet is wider than its box (zoomed with the buttons, pinched, or a screen too narrow to fit it), not only past the fit scale
+    const zoomed = stage.offsetWidth > stage.parentElement.clientWidth + 1;
     pin.style.display = zoomed ? 'block' : 'none';
     if (!zoomed) return;
     // Sizes of the sheet, in its own (unscaled) pixels
