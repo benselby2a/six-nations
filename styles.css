@@ -4121,7 +4121,7 @@ body.summary-simple .summary-table thead th .match-teams { color: #fff !importan
 :root[data-theme="dark"] body.summary-simple .summary-table thead th .th-angled,
 :root[data-theme="dark"] body.summary-simple .summary-table thead th .match-teams { color: var(--text) !important; }
 body.summary-simple .summary-table th.competitor-col .th-angled { display: inline; width: auto; height: auto; transform: none; margin: 0; font-size: 0.95rem; white-space: nowrap; }
-body.summary-simple .summary-table td.competitor-name { min-width: 120px; width: 120px; max-width: 120px; }
+body.summary-simple .summary-table td.competitor-name { min-width: 108px; width: 108px; max-width: 108px; }
 body.summary-simple .match-header-cell .match-header-top .match-teams { height: auto; font-size: 1.1rem; font-weight: 800; letter-spacing: 0.03em; line-height: 1.35; margin-bottom: 0.4rem; }
 body.summary-simple .match-header-cell .match-header-bottom .match-result,
 body.summary-simple .match-header-cell .match-header-bottom .no-result { font-size: 1.05rem; font-weight: 700; height: auto; padding: 0.1rem 0.3rem; }
@@ -4150,6 +4150,6 @@ body.summary-simple .summary-table thead th.match-header-cell.joker-eligible-hea
 :root[data-theme="dark"] body.summary-simple .summary-table thead th.tries-col { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.2); }
 :root[data-theme="dark"] body.summary-simple .summary-table thead th.match-header-cell.joker-eligible-header { box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.2), inset 0 -8px 0 #ffd45e; }
 /* Simple: the score sits on the same line as the name (flags are gone, so there is nothing else under it) */
-body.summary-simple .summary-table td.competitor-name .comp-name { flex-direction: row; align-items: center; justify-content: space-between; gap: 0.4rem; }
+body.summary-simple .summary-table td.competitor-name .comp-name { flex-direction: row; align-items: center; justify-content: space-between; gap: 0.25rem; }
 body.summary-simple .summary-table td.competitor-name .comp-sub { width: auto; flex: none; min-height: 0; }
 body.summary-simple .summary-table td.competitor-name .comp-nick { min-width: 0; }
