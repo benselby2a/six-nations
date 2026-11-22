@@ -4152,8 +4152,8 @@ body.summary-simple .summary-table th.competitor-col .th-angled { display: inlin
 body.summary-simple .summary-table td.competitor-name { min-width: var(--focus-name-w, 108px); width: var(--focus-name-w, 108px); max-width: var(--focus-name-w, 108px); }
 body.summary-simple .match-header-cell .match-header-top .match-teams { height: auto; font-size: 1.1rem; font-weight: 800; letter-spacing: 0.03em; line-height: 1.35; margin-bottom: 0.4rem; }
 /* Focus: each team abbreviation in its Classic colour (PDF_SCHEMES.team, written as --team-l / --team-d by simpleTeamSpan) on a small chip the colour of the Classic sheet (white; the dark sheet colour in dark mode), so the colours stay readable on the header bar. The chip is a background gradient inset 7% top and bottom, so it adds no height and two stacked chips never touch. */
-body.summary-simple .summary-table thead th .match-teams span.team-tint { color: var(--team-l) !important; -webkit-text-stroke: 1px #e8b02a; paint-order: stroke fill; }   /* a thin gold outline (light theme only) keeps the team colours legible on the green bar */
-:root[data-theme="dark"] body.summary-simple .summary-table thead th .match-teams span.team-tint { color: var(--team-d) !important; -webkit-text-stroke: 0; }
+body.summary-simple .summary-table thead th .match-teams span.team-tint { color: var(--team-l) !important; }
+:root[data-theme="dark"] body.summary-simple .summary-table thead th .match-teams span.team-tint { color: var(--team-d) !important; }
 body.summary-simple .match-header-cell .match-header-bottom .match-result,
 body.summary-simple .match-header-cell .match-header-bottom .no-result { font-size: 1.05rem; font-weight: 700; height: auto; padding: 0.1rem 0.3rem; }
 body.summary-simple .summary-table td.prediction-cell { font-size: 1.1rem; }
