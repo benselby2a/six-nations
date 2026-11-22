@@ -29,10 +29,10 @@ const TEST_NOTES = [
         title: 'New ways to read the table',
         tour: 'app',
         bullets: [
-            'Focus view: an easy-to-read table in plain text with larger type. Jokers are shaded light gold. Choose it under Table view in your account menu (your initial, top right).',
+            'Jumbo view: an easy-to-read table in plain text with larger type. Jokers are shaded light gold. Choose it under Table view in your account menu (your initial, top right).',
             'Compact now has a Show match details button next to the download button. It adds the date and tries to the match headings. The old Full view is part of Compact now.',
             'Appearance: choose Light, Dark or Auto (follows your phone) in the same menu.',
-            'The match being played, or the next one, is tinted in Compact and Focus.',
+            'The match being played, or the next one, is tinted in Compact and Jumbo.',
             'Classic view keeps the names and dates on the left while you scroll sideways.'
         ]
     }

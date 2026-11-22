@@ -113,7 +113,7 @@ const mock = `
   await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(Math.min(1000, 40));
   await page.evaluate(() => switchYear(2026)); await page.waitForTimeout(600);
   await page.click('#appView .app-bar > .tabs .tab:has-text("Match Summary")'); await page.waitForTimeout(500);
-  // Compact: the first column header reads "Competitor & Score", wrapped over two lines ("Competitor" / "& Score"), horizontal, never clipped; Focus keeps "Competitor"
+  // Compact: the first column header reads "Competitor & Score", wrapped over two lines ("Competitor" / "& Score"), horizontal, never clipped; Jumbo keeps "Competitor"
   const header = () => page.evaluate(() => {
     const out = {};
     for (const sel of ['.summary-table:not(.summary-table-clone) thead th.competitor-col', '.summary-sticky-inner th.competitor-col']) {
@@ -136,7 +136,7 @@ const mock = `
   await page.setViewportSize({ width: 390, height: 800 });
   await page.evaluate(() => setSummaryView('simple')); await page.waitForTimeout(500);
   const f = await header();
-  console.log('Focus keeps "Competitor":', JSON.stringify(f.table), f.table.text === 'Competitor');
+  console.log('Jumbo keeps "Competitor":', JSON.stringify(f.table), f.table.text === 'Competitor');
   const row = await page.evaluate(() => ({ score: !!document.querySelector('.summary-table:not(.summary-table-clone) td.competitor-name .comp-score') }));
   console.log('scores stay in the rows:', JSON.stringify(row), row.score);
   console.log('errors', JSON.stringify(errors));

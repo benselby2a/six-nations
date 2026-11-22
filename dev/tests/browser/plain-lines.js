@@ -135,7 +135,7 @@ const mock = `
         console.log(mode + ' ' + theme + ': faint left line on match headers, body cells and the tries column:', r.heads.every(Boolean) && r.preds.every(Boolean) && r.tries.every(Boolean) && r.thTries.every(Boolean), r.n);
         console.log(mode + ' ' + theme + ': gold 3px divider untouched:', /-3px 0px 0px 0px/.test(r.gold));
       } else {
-        console.log(mode + ' ' + theme + ': no extra line on the tries column (Focus only):', r.tries.every(v => !v) && r.thTries.every(v => !v));
+        console.log(mode + ' ' + theme + ': no extra line on the tries column (Jumbo only):', r.tries.every(v => !v) && r.thTries.every(v => !v));
       }
     }
   }

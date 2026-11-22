@@ -140,7 +140,7 @@ const mock = `
   let page = await open();
   const d0 = await read(page); console.log('default:', JSON.stringify(d0));
   console.log('Compact is the default, the match details are off, and the switch sits right beside the download button:', d0.mode === 'compact' && d0.compact && !d0.detail && d0.btnShown && d0.pressed === 'false' && d0.nextToDownload && !d0.dateShown && !d0.triesShown);
-  console.log('the Full view is gone: the menu offers Compact, Classic and Focus:', d0.switchViews === 'compact,classic,simple');
+  console.log('the Full view is gone: the menu offers Compact, Classic and Jumbo:', d0.switchViews === 'compact,classic,simple');
   await page.click('#headerDetailBtn'); await page.waitForTimeout(500);
   const d1 = await read(page); console.log('details on:', JSON.stringify(d1));
   console.log('switching the details on shows the date and tries in the headers (rows and Joker stay compact):', d1.detail && d1.pressed === 'true' && d1.label === 'Hide match details' && d1.dateShown && d1.triesShown && d1.headH > d0.headH && d1.rowH === d0.rowH && d1.jokerInline >= 1 && d1.stored === 'null/1');
@@ -150,13 +150,13 @@ const mock = `
   const d1s = await read(page);
   console.log('scrolled with the header pinned: still aligned:', d1s.pinnedHeadMatches && d1s.copyCols === d1s.realCols, d1s.copyCols, d1s.realCols);
   await page.evaluate(() => window.scrollTo(0, 0));
-  // Focus shares the switch
+  // Jumbo shares the switch
   await page.evaluate(() => setSummaryView('simple')); await page.waitForTimeout(400);
   const f1 = await read(page);
-  console.log('Focus keeps the switch and shows the details when it is on:', f1.mode === 'simple' && f1.btnShown && f1.detail && f1.dateShown && f1.triesShown && f1.pinnedHeadMatches && f1.slotsAligned);
+  console.log('Jumbo keeps the switch and shows the details when it is on:', f1.mode === 'simple' && f1.btnShown && f1.detail && f1.dateShown && f1.triesShown && f1.pinnedHeadMatches && f1.slotsAligned);
   await page.click('#headerDetailBtn'); await page.waitForTimeout(400);
   const f0 = await read(page);
-  console.log('Focus with the details off hides them again:', f0.mode === 'simple' && !f0.detail && !f0.dateShown && !f0.triesShown && f0.headH < f1.headH && f0.pressed === 'false' && f0.stored === 'simple/0');
+  console.log('Jumbo with the details off hides them again:', f0.mode === 'simple' && !f0.detail && !f0.dateShown && !f0.triesShown && f0.headH < f1.headH && f0.pressed === 'false' && f0.stored === 'simple/0');
   // Classic has its own layout
   await page.evaluate(() => setSummaryView('classic')); await page.waitForTimeout(500);
   const c0 = await page.evaluate(() => ({ mode: summaryViewMode, btnShown: getComputedStyle(document.getElementById('headerDetailBtn')).display !== 'none' }));
@@ -184,7 +184,7 @@ const mock = `
   await page.close();
   page = await open({ summaryViewMode: 'simple' });
   const m3 = await read(page);
-  console.log('a saved Focus choice is untouched:', m3.mode === 'simple' && !m3.detail);
+  console.log('a saved Jumbo choice is untouched:', m3.mode === 'simple' && !m3.detail);
   await page.close();
   page = await open({ summaryCompact: '0' });
   const m4 = await read(page);
