@@ -1,0 +1,163 @@
+const { chromium } = require('playwright');
+const path = '/home/user/six-nations/index.html';
+
+const mock = `
+(() => {
+  const db = {
+    seasons: [{year:2026},{year:2027}],
+    matches: [
+      {id:1,year:2026,round:1,date:'Thu, Feb 5',time:'20:10',team1:'France',team2:'Ireland',actual_score1:30,actual_score2:20,actual_tries1:4,actual_tries2:2,joker_eligible:true},
+      {id:2,year:2026,round:1,date:'Sat, Feb 7',time:'14:10',team1:'Italy',team2:'Scotland',actual_score1:null,actual_score2:null,actual_tries1:null,actual_tries2:null,joker_eligible:false},
+      {id:3,year:2027,round:1,date:'Fri, Feb 5',time:'20:10',team1:'England',team2:'Wales',actual_score1:null,actual_score2:null,actual_tries1:null,actual_tries2:null,joker_eligible:true}
+    ],
+    users: [
+      {id:1,username:'ben',nickname:'Ben',supported_teams:'France,Ireland,Wales',auth_user_id:'u-ben@example.com'},
+      {id:2,username:'sam',nickname:'Samuelson-Longname',supported_teams:'England,Italy'},
+      {id:3,username:'newbie',nickname:'Newbie',supported_teams:null},
+      {id:4,username:'only27',nickname:'Only27',supported_teams:null},
+      {id:6,username:'evil',nickname:'<img src=x onerror="window.__xss=(window.__xss||0)+1">Eve<b id=injected>',supported_teams:null}
+    ],
+    predictions: [
+      {id:1,user_id:1,match_id:1,team1_score:25,team2_score:20},
+      {id:2,user_id:1,match_id:2,team1_score:10,team2_score:30},
+      {id:3,user_id:2,match_id:1,team1_score:20,team2_score:25},
+      {id:4,user_id:4,match_id:3,team1_score:22,team2_score:18}
+    ],
+    user_tries: [{user_id:1,year:2026,total_tries:10},{user_id:4,year:2027,total_tries:7}],
+    user_joker_selections: [{id:1,user_id:1,match_id:1},{id:2,user_id:4,match_id:3}],
+    admin_usernames: [{username:'ben'}],
+    settings: [{key:'predictions_locked:2026',value:'true'}],
+    scoring_rules: [{id:1,year:2026,correct_result_points:60,perfect_score_bonus:40,draw_bonus:2,max_jokers_per_user:1,entry_fee_amount:10,payout_first_pct:100,payout_second_pct:0,payout_third_pct:0,payout_closest_tries_pct:0}],
+    scoring_close_tiers: [{id:1,year:2026,tier_order:1,within_points:5,bonus_points:1}],
+    usage_events: [], competitor_emails: []
+  };
+  window.__db = db; window.__log = [];
+  const match = (row, f) => f.type==='eq' ? row[f.col]===f.val : f.type==='in' ? f.vals.includes(row[f.col]) : f.type==='neq' ? row[f.col]!==f.val : f.type==='gte' ? row[f.col]>=f.val : true;
+  const builder = (table) => {
+    const st = { op:'select', filters:[], payload:null, single:false, opts:null };
+    const run = () => {
+      let rows = db[table] || (db[table]=[]);
+      const sel = rows.filter(r => st.filters.every(f => match(r,f)));
+      window.__log.push({table, op:st.op, filters:st.filters.map(f=>f.type+':'+f.col+'='+JSON.stringify(f.val??f.vals)), payload: st.payload});
+      if (st.op==='select') { const out = sel.map(r=>({...r})); return st.single===1 ? {data: out[0]||null, error:null} : st.single===2 ? {data: out[0]||null, error:null} : {data: out, error:null}; }
+      if (st.op==='insert') { const arr = [].concat(st.payload); arr.forEach(p=>{ db[table].push({id: db[table].length+100, ...p}); }); return {data:null,error:null}; }
+      if (st.op==='upsert') { const arr=[].concat(st.payload); const keys=(st.opts&&st.opts.onConflict||'id').split(','); arr.forEach(p=>{ const ex=db[table].find(r=>keys.every(k=>r[k]===p[k])); if(ex) Object.assign(ex,p); else db[table].push({...p}); }); return {data:null,error:null}; }
+      if (st.op==='update') { sel.forEach(r=>Object.assign(r,st.payload)); return {data:null,error:null}; }
+      if (st.op==='delete') { db[table] = rows.filter(r => !sel.includes(r)); return {data:null,error:null}; }
+    };
+    const o = {
+      select(){ return o; }, order(){ return o; }, limit(){ return o; },
+      eq(col,val){ st.filters.push({type:'eq',col,val}); return o; },
+      neq(col,val){ st.filters.push({type:'neq',col,val}); return o; },
+      gte(col,val){ st.filters.push({type:'gte',col,val}); return o; },
+      in(col,vals){ st.filters.push({type:'in',col,vals}); return o; },
+      single(){ st.single=1; return o; }, maybeSingle(){ st.single=2; return o; },
+      insert(p){ st.op='insert'; st.payload=p; return o; }, update(p){ st.op='update'; st.payload=p; return o; },
+      upsert(p,opts){ st.op='upsert'; st.payload=p; st.opts=opts; return o; }, delete(){ st.op='delete'; return o; },
+      then(res, rej){ return Promise.resolve(run()).then(res, rej); }
+    };
+    return o;
+  };
+  let session = null;
+  window.supabase = { createClient: () => ({
+    from: builder,
+    rpc: async (name, args = {}) => {
+      if (name === 'check_login_email') return {data: !window.__emailFree, error: null};
+      if (name === 'login_admin_names') return {data: [], error: null};
+      const u = (n) => db.users.find(x => x.username === n);
+      const meEmail = session && session.user.email;
+      const isAdmin = () => !!session && db.admin_usernames.some(a => (db.users.find(x => x.auth_user_id === session.user.id) || {}).username === a.username);
+      if (name === 'my_competitor') {
+        if (!session) return {data: [], error: null};
+        let row = db.users.find(x => x.auth_user_id === session.user.id);
+        if (!row) { const reg = db.competitor_emails.find(e => e.email === meEmail.toLowerCase()); const cand = reg && db.users.find(x => x.id === reg.user_id && !x.auth_user_id); if (cand) { cand.auth_user_id = session.user.id; row = cand; } }
+        return {data: row ? [{username: row.username, nickname: row.nickname}] : [], error: null};
+      }
+      if (name === 'admin_list_accounts') return isAdmin() ? {data: [], error: null} : {data: null, error: {message: 'Admins only.'}};
+      if (name === 'admin_list_competitor_emails') return isAdmin() ? {data: db.competitor_emails.map(e => ({username: db.users.find(x => x.id === e.user_id).username, email: e.email, linked: !!db.users.find(x => x.id === e.user_id).auth_user_id})), error: null} : {data: null, error: {message: 'Admins only.'}};
+      const setEmail = (username, email) => {
+        const user = u(String(username || '').toLowerCase().trim()); const e = String(email || '').toLowerCase().trim();
+        if (!user) throw new Error('Competitor "' + username + '" not found.');
+        if (!e) { db.competitor_emails = db.competitor_emails.filter(x => x.user_id !== user.id); return; }
+        if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(e)) throw new Error('"' + email + '" does not look like an email address.');
+        if (db.competitor_emails.some(x => x.email === e && x.user_id !== user.id)) throw new Error(e + ' is already registered to another competitor.');
+        const ex = db.competitor_emails.find(x => x.user_id === user.id); if (ex) ex.email = e; else db.competitor_emails.push({user_id: user.id, email: e});
+      };
+      if (name === 'admin_set_competitor_email') { if (!isAdmin()) return {data: null, error: {message: 'Admins only.'}}; try { setEmail(args.p_username, args.p_email); return {data: null, error: null}; } catch (e) { return {data: null, error: {message: e.message}}; } }
+      if (name === 'admin_import_competitor_emails') { if (!isAdmin()) return {data: null, error: {message: 'Admins only.'}}; let applied = 0; const skipped = []; args.p_rows.forEach((r, i) => { try { setEmail(r.username, r.email); applied++; } catch (e) { skipped.push({row: i + 1, username: r.username, reason: e.message}); } }); return {data: {applied, skipped}, error: null}; }
+      return {data: null, error: null};
+    },
+    auth: {
+      onAuthStateChange(cb){ window.__authCb = cb; setTimeout(()=>cb('INITIAL_SESSION', session),0); return {data:{subscription:{}}}; },
+      getSession: async()=>({data:{session}}),
+      signInWithOtp: async(a)=>{ window.__otp = a; return {error:null}; },
+      verifyOtp: async(a)=>{ (window.__verifyCalls = window.__verifyCalls || []).push(a); if (a.token === '123456' && a.type === 'email') { session = {user:{id:'u-' + a.email, email:a.email}}; setTimeout(()=>window.__authCb('SIGNED_IN', session),0); return {data:{session}, error:null}; } return {data:null, error:{message:'Token has expired or is invalid'}}; },
+      signOut: async()=>{ session = null; setTimeout(()=>window.__authCb('SIGNED_OUT', null),0); return {error:null}; }
+    }
+  })};
+})();`;
+
+
+
+
+(async () => {
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  await page.addInitScript(() => { window.__noTourPrompts = true; });
+  const errors = []; page.on('pageerror', e => errors.push(e.message)); page.on('dialog', d => d.accept());
+  await page.route('**/@supabase/supabase-js**', r => r.fulfill({contentType:'application/javascript', body: mock}));
+  await page.route('**/cdn.jsdelivr.net/**', r => r.request().url().includes('supabase') ? r.fallback() : r.fulfill({contentType:'application/javascript', body:''}));
+  await page.route('**/fonts.googleapis.com/**', r => r.fulfill({body:''}));
+  await page.goto('file://' + path); await page.waitForTimeout(40);
+  await page.fill('#loginEmail', 'ben@example.com'); await page.click('#sendLoginCodeBtn'); await page.waitForTimeout(40);
+  await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(40);
+  await page.evaluate(() => switchYear(2026)); await page.waitForTimeout(600);
+  await page.click('#appView .app-bar > .tabs .tab:has-text("Match Summary")'); await page.waitForTimeout(500);
+  // Compact's type was made a little bigger (rules carrying the --compact-type marker). Compare the page with those rules and without them (the old sizes), with the worst-case content:
+  // the sizes must be bigger (flags and, above 480px, names stay as they were: the Name column is a fixed width with no spare room), and the column widths, row heights, header height and number of text lines must be exactly the same, with nothing spilling out of a cell.
+  const SELS = {
+    rank: 'td.rank-col', nick: 'td.competitor-name .comp-nick', predScore: 'td.prediction-cell .cell-score',
+    pts: 'td.prediction-cell .points-earned', tries: 'td.tries-col', mtries: 'thead .match-tries', result: 'thead .match-result', score: 'td.competitor-name .comp-score'
+  };
+  let allOk = true;
+  for (const [width, detail] of [[320, false], [360, false], [360, true], [390, true], [430, true], [480, true], [481, true], [520, true], [600, true], [700, true], [768, true], [769, true], [900, true], [1280, false], [1280, true]]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.evaluate(() => { setSummaryView('compact'); }); await page.waitForTimeout(200);
+    await page.evaluate((d) => { document.body.classList.toggle('summary-detail', d); }, detail);
+    await page.evaluate(() => {
+      const tb = document.querySelector('.summary-table:not(.summary-table-clone) tbody');
+      const names = ['Ben', 'Alexander', 'Christopher', 'Samuelson-Longname', 'Jo'];
+      const base = tb.querySelector('tr');
+      names.forEach((n, i) => { const c = base.cloneNode(true); c.querySelector('.comp-nick').textContent = n; c.querySelectorAll('.cell-score').forEach(cs => { const t = cs.querySelectorAll('.pred-score'); if (t.length === 2) { t[0].textContent = i % 2 ? '88' : '19'; t[1].textContent = i % 2 ? '88' : '31'; } }); c.querySelectorAll('.points-earned').forEach(p => { if (/\d/.test(p.textContent)) p.textContent = (i % 2 ? '188' : '24') + ' pts'; }); c.querySelector('td.rank-col').textContent = i % 2 ? '10' : '2'; c.querySelector('.comp-score').textContent = i % 2 ? '1288' : '124'; tb.appendChild(c); });
+    });
+    await page.waitForTimeout(250);
+    const measure = () => page.evaluate((SELS) => {
+      const T = '.summary-table:not(.summary-table-clone)';
+      const lines = (el) => { const rg = document.createRange(); rg.selectNodeContents(el); const cs = []; [...rg.getClientRects()].filter(x => x.width > 0 && x.height > 0).forEach(x => { const c = (x.top + x.bottom) / 2; if (!cs.some(v => Math.abs(v - c) < x.height * 0.4)) cs.push(c); }); return cs.length; };
+      const res = { colW: [...document.querySelectorAll(T + ' thead th')].filter(e => e.getClientRects().length).map(e => Math.round(e.getBoundingClientRect().width * 10) / 10).join(','), headH: Math.round(document.querySelector(T + ' thead').getBoundingClientRect().height * 10) / 10, rowH: [...document.querySelectorAll(T + ' tbody tr')].map(r => Math.round(r.getBoundingClientRect().height * 10) / 10).join(','), lines: {}, sizes: {} };
+      for (const [k, sel] of Object.entries(SELS)) { const els = [...document.querySelectorAll(T + ' ' + sel)].filter(e => e.getClientRects().length); res.lines[k] = els.map(lines).join(''); const e = els[0]; res.sizes[k] = e ? Math.round(parseFloat(getComputedStyle(e).fontSize) * 100) / 100 : null; }
+      res.over = [...document.querySelectorAll(T + ' td, ' + T + ' th')].filter(c => c.getClientRects().length && c.scrollWidth > c.clientWidth + 1).length;
+      return res;
+    }, SELS);
+    const now = await measure();
+    // switch the compact type rules off (the old sizes): the same stylesheet without the rules that carry the marker
+    const css = require('fs').readFileSync(path.replace(/index\.html$/, 'dist/app.min.css'), 'utf8');
+    const oldCss = css.replace(/[^{}]*\{[^{}]*--compact-type[^{}]*\}/g, '');
+    const removed = (css.match(/--compact-type/g) || []).length - (oldCss.match(/--compact-type/g) || []).length;
+    await page.evaluate((oldCss) => { document.querySelectorAll('link[rel=stylesheet][href*="app.min.css"]').forEach(l => l.remove()); const st = document.createElement('style'); st.textContent = oldCss; document.head.appendChild(st); }, oldCss);
+    await page.waitForTimeout(150);
+    const old = await measure();
+    const same = now.colW === old.colW && now.headH === old.headH && now.rowH === old.rowH && JSON.stringify(now.lines) === JSON.stringify(old.lines) && now.over <= old.over;
+    const bigger = ['rank', 'predScore', 'pts', 'tries'].every(k => now.sizes[k] > old.sizes[k]) && (width > 480 || now.sizes.nick > old.sizes.nick);   // names only grow on phones: the Name column is a fixed width, and above 480px its long names have no room
+    const ok = removed > 0 && same && bigger;
+    allOk = allOk && ok;
+    console.log(`@${width}${detail ? ' detail' : ''}: sizes grew, nothing wraps or moves:`, ok, same ? '' : 'DIFF rowH ' + old.rowH + ' > ' + now.rowH + ' lines ' + JSON.stringify(old.lines) + ' > ' + JSON.stringify(now.lines) + ' colW ' + (old.colW === now.colW), '| rules switched off:', removed, '| sizes old -> new', Object.keys(SELS).map(k => k + ' ' + old.sizes[k] + '>' + now.sizes[k]).join(' '));
+    await page.reload(); await page.waitForTimeout(40);
+    await page.fill('#loginEmail', 'ben@example.com'); await page.click('#sendLoginCodeBtn'); await page.waitForTimeout(40);
+    await page.fill('#loginCode', '123456'); await page.click('#verifyCodeBtn'); await page.waitForTimeout(40);
+    await page.evaluate(() => switchYear(2026)); await page.waitForTimeout(500);
+    await page.click('#appView .app-bar > .tabs .tab:has-text("Match Summary")'); await page.waitForTimeout(400);
+  }
+  console.log('all widths ok:', allOk);
+  console.log('errors', errors); await browser.close();
+})();
