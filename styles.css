@@ -3883,17 +3883,17 @@ body .cell-score .joker-inline { width: 1.25rem; height: 1.25rem; font-size: 0.8
 /* PDF view: the A4 sheet drawn in HTML. Every cell carries its own light and dark colours as variables. */
 .pdfv-wrap { width: 100%; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; margin: 0 0 1.5rem; border-radius: 8px; border: 1px solid var(--line-strong); }
 .pdfv-stage { position: relative; }
-.pdfv-stage-scaled > .pdfv-sheet { position: absolute; top: 0; left: 0; }
-.pdfv-sheet { box-sizing: border-box; transform-origin: top left; font-family: Helvetica, Arial, sans-serif; background: #fff; color: #111; }
-.pdfv-title { font-weight: 700; font-size: 18.7px; line-height: 1.1; color: #111; }
-.pdfv-sub { font-size: 12px; color: #5f5f5f; margin: 2px 0 8px; }
+.pdfv-sheet { --pdfv-k: 1; --pdfv-thin: calc(1.32px * var(--pdfv-k)); box-sizing: border-box; font-family: Helvetica, Arial, sans-serif; background: #fff; color: #111; }
+.pdfv-title { font-weight: 700; font-size: calc(18.7px * var(--pdfv-k));  line-height: 1.1; color: #111; }
+.pdfv-sub { font-size: calc(12px * var(--pdfv-k)); color: #5f5f5f; margin: calc(2px * var(--pdfv-k)) 0 calc(8px * var(--pdfv-k)); }
 .pdfv-table { border-collapse: collapse; table-layout: fixed; }
-.pdfv-c { box-sizing: border-box; padding: 1px; overflow: hidden; border: 1.32px solid #545454; background: var(--bg); color: var(--fg); line-height: 1.15; }
+.pdfv-c { --lc: #545454; --pdfv-lines: inset calc(var(--bl, var(--pdfv-thin)) / 2) 0 0 0 var(--lc), inset calc(var(--br, var(--pdfv-thin)) / -2) 0 0 0 var(--lc), inset 0 calc(var(--bt, var(--pdfv-thin)) / 2) 0 0 var(--lc), inset 0 calc(var(--bb, var(--pdfv-thin)) / -2) 0 0 var(--lc);
+    box-sizing: border-box; padding: calc(1.6px * var(--pdfv-k)) calc(1px * var(--pdfv-k)); overflow: hidden; border: 0; box-shadow: var(--pdfv-lines); background: var(--bg); color: var(--fg); line-height: 1.15; }
 .pdfv-stack span { display: block; line-height: 1.12; }
 :root[data-theme="dark"] .pdfv-sheet { background: #0b1a14; }
 :root[data-theme="dark"] .pdfv-title { color: #eaf3ee; }
 :root[data-theme="dark"] .pdfv-sub { color: #9db4a7; }
-:root[data-theme="dark"] .pdfv-c { border-color: #4a6858; background: var(--bg-d); color: var(--fg-d); }
+:root[data-theme="dark"] .pdfv-c { --lc: #4a6858; background: var(--bg-d); color: var(--fg-d); }
 /* Toolbar: All matches / Current round, then the download icon (the view switch lives in the player menu). Classic hides the filter. */
 .summary-toolbar .filter-toggle { order: 1; flex: 1 1 0; }
 .summary-toolbar .export-pdf-btn { order: 2; }
@@ -4091,8 +4091,8 @@ body.summary-compact .summary-table td.tries-col { font-weight: 700; color: var(
 
 /* Classic: the first column (Date / KO, Name, Result, Try Count) is pinned at the left edge with plain position: sticky while the sheet scrolls sideways.
    The 3px gold divider and the soft shadow are box-shadows (collapsed table borders do not travel with a sticky cell). */
-.pdfv-pinned { position: sticky; left: 0; z-index: 2; box-shadow: inset -3px 0 0 var(--gold), 4px 0 6px -2px rgba(0, 0, 0, 0.4); }
-:root[data-theme="dark"] .pdfv-pinned { box-shadow: inset -3px 0 0 var(--bright-gold), 5px 0 8px -2px rgba(0, 0, 0, 0.7); }
+.pdfv-pinned { position: sticky; left: 0; z-index: 2; box-shadow: var(--pdfv-lines), inset -3px 0 0 var(--gold), 4px 0 6px -2px rgba(0, 0, 0, 0.4); }
+:root[data-theme="dark"] .pdfv-pinned { box-shadow: var(--pdfv-lines), inset -3px 0 0 var(--bright-gold), 5px 0 8px -2px rgba(0, 0, 0, 0.7); }
 
 /* Compact: the scores line up in one column (right edge of the Competitor column), whatever flags a person has */
 .summary-table td.competitor-name .comp-sub { width: 100%; }
