@@ -4166,3 +4166,11 @@ body.summary-simple .summary-table thead th.match-header-cell.joker-eligible-hea
 body.summary-simple .summary-table td.competitor-name .comp-name { flex-direction: row; align-items: center; justify-content: space-between; gap: 0.25rem; }
 body.summary-simple .summary-table td.competitor-name .comp-sub { width: auto; flex: none; min-height: 0; }
 body.summary-simple .summary-table td.competitor-name .comp-nick { min-width: 0; }
+
+/* Compact and Focus: the match in play ("now"), or else the next match, gets a faint tint down its whole column (header and every row).
+   The tint is a gradient layer, so it sits on top of whatever colour the cell already has (rows, current user, Joker shading) without replacing it. */
+body.summary-compact .summary-table td.match-col-now, body.summary-compact .summary-table td.match-col-next { background-image: linear-gradient(rgba(232, 176, 42, 0.14), rgba(232, 176, 42, 0.14)); }
+:root[data-theme="dark"] body.summary-compact .summary-table td.match-col-now, :root[data-theme="dark"] body.summary-compact .summary-table td.match-col-next { background-image: linear-gradient(rgba(245, 207, 106, 0.10), rgba(245, 207, 106, 0.10)); }
+/* the header bar is forced with !important elsewhere, so the tint needs it too; a lighter band keeps the heading text just as readable */
+body.summary-compact .summary-table thead th.match-header-cell.match-col-now, body.summary-compact .summary-table thead th.match-header-cell.match-col-next { background-image: linear-gradient(rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.16)) !important; }
+:root[data-theme="dark"] body.summary-compact .summary-table thead th.match-header-cell.match-col-now, :root[data-theme="dark"] body.summary-compact .summary-table thead th.match-header-cell.match-col-next { background-image: linear-gradient(rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.10)) !important; }
