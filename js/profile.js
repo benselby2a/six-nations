@@ -196,19 +196,6 @@
             modal.classList.add('hidden');
         }
 
-        function toggleAdminHelp() {
-            const modal = document.getElementById('adminHelpModal');
-            if (!modal) return;
-            tourPreload('admin');
-            modal.classList.remove('hidden');
-        }
-
-        function closeAdminHelpModal() {
-            const modal = document.getElementById('adminHelpModal');
-            if (!modal) return;
-            modal.classList.add('hidden');
-        }
-
         // Calculate total actual tries in tournament
         function getTotalActualTries() {
             let total = 0;

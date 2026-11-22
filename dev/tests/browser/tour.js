@@ -190,17 +190,17 @@ const mock = `
   await page.click('button.tab:has-text("Match Summary")'); await page.click('button.tab:has-text("Admin Functions")'); await page.waitForTimeout(300);
   await page.click('#adminTourPromptModal button:has-text("No thanks")'); await page.waitForTimeout(150);
   console.log('No thanks remembered:', await page.evaluate(() => localStorage.getItem('adminTourAnswered:ben')));
-  await page.click('.admin-panel-help-btn'); await page.waitForTimeout(150);
-  console.log('admin help has the tour button:', await page.evaluate(() => [...document.querySelectorAll('#adminHelpModal button')].map(b => b.textContent.trim())));
+  await page.click('#adminPanel .admin-tabs button:has-text("Help")'); await page.waitForTimeout(150);
+  console.log('admin help has the tour button:', await page.evaluate(() => [...document.querySelectorAll('#adminHelpTab button')].map(b => b.textContent.trim())));
   // ---- pictures are preloaded: each one is already loaded the moment its step opens ----
-  await page.evaluate(() => { closeGlobalHelpModal(); closeAdminHelpModal(); startTour(); });
+  await page.evaluate(() => { closeGlobalHelpModal(); startTour(); });
   await page.waitForTimeout(500);
   const loadedAtOnce = [];
   for (let i = 0; i < 5; i++) { await tourNextClick(); loadedAtOnce.push(await page.evaluate(() => { const im = document.querySelector('#tourBody img'); return im ? im.complete && im.naturalWidth > 0 : null; })); }
   console.log('each picture is loaded as its step opens:', loadedAtOnce.join(','), '| preloaded images:', await page.evaluate(() => tourPreloaded.length));
   await page.keyboard.press('Escape');
   // ---- the card fits small and short screens (iPhone with its toolbars, landscape), top and bottom visible ----
-  await page.evaluate(() => { closeAdminHelpModal(); closeGlobalHelpModal(); });
+  await page.evaluate(() => { closeGlobalHelpModal(); });
   await page.click('#avatarBtn'); await page.click('#menuHelpBtn'); await page.click('#globalHelpModal button:has-text("Take a tour")'); await page.waitForTimeout(250);
   for (const [w, h] of [[320, 480], [390, 664], [844, 390], [1280, 800]]) {
     await page.setViewportSize({ width: w, height: h }); await page.waitForTimeout(450);

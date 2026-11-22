@@ -1988,40 +1988,8 @@
 
         /* Admin tabs section */
 
-        .admin-panel-help-btn {
-            width: 24px;
-            height: 24px;
-            min-width: 24px;
-            padding: 0;
-            margin: 0;
-            position: absolute;
-            top: 0.55rem;
-            left: 0.55rem;
-            border-radius: 50%;
-            border: 2px solid var(--bad-text);
-            background: rgba(231, 76, 60, 0.22);
-            color: var(--bad-text);
-            font-weight: 800;
-            font-size: 0.84rem;
-            line-height: 1;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            text-transform: none;
-            letter-spacing: 0;
-            box-shadow: none;
-            transform: none;
-        }
-
-        .admin-panel-help-btn::after {
-            display: none;
-        }
-
-        .admin-panel-help-btn:hover {
-            background: rgba(231, 76, 60, 0.35);
-            transform: none;
-            box-shadow: none;
-        }
+        /* An opened admin section is at least a screen tall, so the page can always scroll far enough to bring its top to the top of the screen */
+        #adminHomeTab ~ #checklistTab:not(.hidden), #adminHomeTab ~ #resultsTab:not(.hidden), #adminHomeTab ~ #scoreCorrectionsTab:not(.hidden), #adminHomeTab ~ #competitorsTab:not(.hidden), #adminHomeTab ~ #rulesTab:not(.hidden), #adminHomeTab ~ #prizeFundTab:not(.hidden), #adminHomeTab ~ #yearsTab:not(.hidden), #adminHomeTab ~ #recoveryTab:not(.hidden), #adminHomeTab ~ #usageReportTab:not(.hidden), #adminHomeTab ~ #adminHelpTab:not(.hidden) { min-height: calc(100vh - 1rem); }
 
         .admin-tabs-subheading {
             font-size: 0.78rem;
@@ -2034,11 +2002,6 @@
             max-width: 680px;
         }
 
-        .admin-help-modal-content {
-            max-width: 680px;
-            border: 2px solid rgba(231, 76, 60, 0.55);
-        }
-
         .global-help-content {
             display: grid;
             gap: 0.45rem;
@@ -2049,8 +2012,7 @@
         }
 
         .admin-help-content {
-            border-top: 1px solid rgba(231, 76, 60, 0.25);
-            padding: 0.65rem 0.75rem 0.7rem;
+            padding: 0;
             display: grid;
             gap: 0.45rem;
             font-size: 0.78rem;
