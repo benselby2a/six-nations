@@ -5,6 +5,9 @@ function openAccountMenu() {
     const menu = document.getElementById('accountMenu');
     const btn = document.getElementById('avatarBtn');
     if (!menu || !btn) return;
+    // "What's new" only appears when there is something to announce (the list is empty until the owner chooses to add a note)
+    const whatsNewItem = document.getElementById('menuWhatsNewBtn');
+    if (whatsNewItem) whatsNewItem.hidden = typeof whatsNewForMe !== 'function' || !whatsNewForMe().length;
     menu.classList.remove('hidden');
     btn.setAttribute('aria-expanded', 'true');
 }
