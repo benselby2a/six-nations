@@ -4193,6 +4193,19 @@ body.summary-compact .summary-table td.match-col-now, body.summary-compact .summ
 body.summary-compact .summary-table thead th.match-header-cell.match-col-now, body.summary-compact .summary-table thead th.match-header-cell.match-col-next { background-image: linear-gradient(rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.16)) !important; }
 :root[data-theme="dark"] body.summary-compact .summary-table thead th.match-header-cell.match-col-now, :root[data-theme="dark"] body.summary-compact .summary-table thead th.match-header-cell.match-col-next { background-image: linear-gradient(rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.10)) !important; }
 
+/* Compact and Focus, mouse only: the column under the pointer is lit like the row under it (see watchColumnHover in js/app-bar.js).
+   An overlay layer (like the next-match tint), so result tints, Joker shading and the current-user row stay underneath; where a column is both hovered and the next/in-play match the two layers are stacked. */
+@media (hover: hover) and (pointer: fine) {
+    body.summary-compact .summary-table td.col-hover { background-image: linear-gradient(rgb(var(--ink) / 0.1), rgb(var(--ink) / 0.1)); }
+    body.summary-compact .summary-table td.col-hover.match-col-now, body.summary-compact .summary-table td.col-hover.match-col-next { background-image: linear-gradient(rgb(var(--ink) / 0.1), rgb(var(--ink) / 0.1)), linear-gradient(rgba(232, 176, 42, 0.14), rgba(232, 176, 42, 0.14)); }
+    :root[data-theme="dark"] body.summary-compact .summary-table td.col-hover.match-col-now, :root[data-theme="dark"] body.summary-compact .summary-table td.col-hover.match-col-next { background-image: linear-gradient(rgb(var(--ink) / 0.1), rgb(var(--ink) / 0.1)), linear-gradient(rgba(245, 207, 106, 0.10), rgba(245, 207, 106, 0.10)); }
+    /* the header bar colour is forced with !important elsewhere (a `background` shorthand with several :not()s), so the lighter band needs it too and a doubled class to outrank it */
+    body.summary-compact .summary-table thead th.col-hover.col-hover { background-image: linear-gradient(rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.14)) !important; }
+    :root[data-theme="dark"] body.summary-compact .summary-table thead th.col-hover.col-hover { background-image: linear-gradient(rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.10)) !important; }
+    body.summary-compact .summary-table thead th.col-hover.col-hover.match-col-now, body.summary-compact .summary-table thead th.col-hover.col-hover.match-col-next { background-image: linear-gradient(rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.14)), linear-gradient(rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.16)) !important; }
+    :root[data-theme="dark"] body.summary-compact .summary-table thead th.col-hover.col-hover.match-col-now, :root[data-theme="dark"] body.summary-compact .summary-table thead th.col-hover.col-hover.match-col-next { background-image: linear-gradient(rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.10)), linear-gradient(rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.10)) !important; }
+}
+
 /* Admin > Predictions: spreadsheet template download and upload */
 .admin-template-tools { background: var(--surface); border: 2px solid rgb(var(--accent-rgb) / 0.25); border-radius: 8px; padding: 0.9rem 1rem; margin-bottom: 1.25rem; }
 .admin-template-tools h3 { font-family: 'Bebas Neue', cursive; font-size: 1.8rem; color: var(--bright-gold); margin: 0 0 0.5rem; letter-spacing: 0.1em; }
