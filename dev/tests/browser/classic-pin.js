@@ -126,6 +126,14 @@ const mock = `
   const z1 = await pinState();
   console.log('scrolled sideways the Name column stays at the left edge while the sheet moves:', JSON.stringify(z1), z1.realLeft < 0 || z1.realLeft < z0.realLeft - 100, z1.pinLeft === z0.pinLeft, z1.pinTop === z0.pinTop);
   await page.screenshot({ path: '/tmp/pin-classic.png', clip: { x: 0, y: 100, width: 390, height: 360 } });
+  const divider = () => page.evaluate(() => { const p = document.querySelector('.pdfv-pin'), a = getComputedStyle(p, '::after'); return { w: a.width, bg: a.backgroundColor, shadow: getComputedStyle(p).boxShadow !== 'none' }; });
+  const d1 = await divider();
+  console.log('the pinned column has a 3px gold divider and a shadow:', JSON.stringify(d1), d1.w === '3px' && d1.bg !== 'rgba(0, 0, 0, 0)' && d1.shadow);
+  // a second, higher zoom level, scrolled all the way to the right
+  await page.evaluate(() => { zoomPdfView(1.5); }); await page.waitForTimeout(300);
+  await page.evaluate(() => { const w = document.getElementById('pdfViewWrap'); w.scrollLeft = w.scrollWidth; }); await page.waitForTimeout(300);
+  const z2 = await pinState();
+  console.log('zoomed in further and scrolled to the far right the Name column is still at the left edge:', JSON.stringify(z2), z2.display === 'block' && z2.pinLeft >= 0 && z2.pinLeft < 40 && z2.realLeft < 0 && Math.abs(z2.pinTop - z2.realTop) <= 1);
   await page.evaluate(() => zoomPdfView(0)); await page.waitForTimeout(300);
   console.log('Fit hides it again:', (await pinState()).display === 'none');
   console.log('errors', errors);

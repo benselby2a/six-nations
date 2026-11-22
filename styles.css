@@ -4083,10 +4083,12 @@ body.summary-compact .summary-table td.competitor-name { padding-right: 6px; }
 .worm-chart-tools .worm-zoom button { height: 100%; padding: 0 0.6rem; display: grid; place-items: center; }
 
 /* Classic, zoomed in: the Name column is pinned at the left edge (a sticky layer outside the scaled sheet) */
-.pdfv-pin { position: sticky; left: 0; top: 0; z-index: 3; display: none; background: #fff; box-shadow: 3px 0 5px -2px rgba(0, 0, 0, 0.3); overflow: hidden; }
+.pdfv-pin { position: sticky; left: 0; top: 0; z-index: 3; display: none; background: #fff; box-shadow: 4px 0 6px -2px rgba(0, 0, 0, 0.4); overflow: hidden; }
+.pdfv-pin::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 3px; background: var(--gold); pointer-events: none; }   /* over the copied cells, so the divider is always visible */
 .pdfv-pin-inner { position: absolute; transform-origin: top left; }
 .pdfv-pin-table { table-layout: fixed; width: 100%; }
-:root[data-theme="dark"] .pdfv-pin { background: #0b1a14; }
+:root[data-theme="dark"] .pdfv-pin { background: #0b1a14; box-shadow: 5px 0 8px -2px rgba(0, 0, 0, 0.7); }
+:root[data-theme="dark"] .pdfv-pin::after { background: var(--bright-gold); }
 
 /* Compact: the scores line up in one column (right edge of the Competitor column), whatever flags a person has */
 .summary-table td.competitor-name .comp-sub { width: 100%; }
