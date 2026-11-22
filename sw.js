@@ -1,9 +1,9 @@
 // Service worker (generated into sw.js by dev/build.sh: do not edit sw.js, edit dev/sw.template.js).
 // Lets the app open with no signal. Reads only: the database is never cached here (see js/connectivity.js for the saved
 // scores) and writes are never queued.
-const VERSION = '2fa1c197';
+const VERSION = '8c6a3e88';
 const CACHE = 'six-nations-' + VERSION;
-const CORE = ["./", "index.html", "dist/app.min.js?v=2fa1c197", "dist/app.min.css?v=2fa1c197", "manifest.json", "icons/icon-192.png", "icons/apple-touch-icon.png", "favicon.ico"];
+const CORE = ["./", "index.html", "dist/app.min.js?v=8c6a3e88", "dist/app.min.css?v=8c6a3e88", "manifest.json", "icons/icon-192.png", "icons/apple-touch-icon.png", "favicon.ico"];
 const CDN_HOSTS = ['cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', (event) => {
