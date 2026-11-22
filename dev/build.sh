@@ -13,7 +13,7 @@ ESB="npx --yes esbuild@0.25.5 --log-level=warning"
 $ESB "$OUT/app.js" --minify --target=safari14,chrome90 --legal-comments=none --outfile="$OUT/app.min.js"
 $ESB styles.css --minify --target=safari14,chrome90 --outfile="$OUT/app.min.css"
 rm "$OUT/app.js"
-HASH=$(cat "$OUT/app.min.js" "$OUT/app.min.css" | md5sum | cut -c1-8)
+HASH=$(cat "$OUT/app.min.js" "$OUT/app.min.css" icons/icon-192.png icons/apple-touch-icon.png favicon.ico | md5sum | cut -c1-8)   # the precached icons are part of the version, so a new icon makes the service worker refresh its cache
 if [ -z "$BUILD_OUT" ]; then
   sed -i -E "s#dist/app\.min\.(js|css)\?v=[0-9a-f]+#dist/app.min.\1?v=$HASH#g" index.html
   # Copies of the page cached before the bundle existed look for this exact text to learn that a new version is out
