@@ -137,9 +137,9 @@ const mock = `
       return { bad, nScores: scores.length, overflow, tdW: Math.round(td.getBoundingClientRect().width), gaps };
     });
     if (mode === 'simple') {
-      // Jumbo sizes its Name column to the longest name (96px at least (84px on the narrowest phones), 132px at most, plus the cell padding; see focus-names), and the score still stays on one line
+      // Jumbo sizes its Name column to the longest word of any name (64px at least (58px on the narrowest phones), 100px at most, plus the cell padding; see focus-names), names wrap at spaces, and the score still stays on one line
       console.log('focus gaps', width, JSON.stringify(r.gaps));
-      console.log(`focus @${width}: column between 84px and 150px:`, r.tdW >= 84 && r.tdW <= 150, '| col', r.tdW);
+      console.log(`focus @${width}: column between 58px and 124px (was 84-150; the cell can stretch a little past the 100px target when the table has room):`, r.tdW >= 58 && r.tdW <= 124, '| col', r.tdW);
     }
     console.log(`${mode} @${width}: no wrapped score text:`, r.bad.length === 0, r.bad, '| scores seen:', r.nScores, '| spill past divider:', r.overflow, '| name col', r.tdW, 'px');
   }

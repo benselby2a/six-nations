@@ -318,9 +318,11 @@
         }
 
 
-        // Jumbo view: names never wrap or break mid-word. The Name column is sized to the longest name plus its score (between 96px and 132px, --focus-name-w on the body; in a round of three matches or fewer it also gives up whatever the table is wider than its box);
-        // a name longer than that shrinks a little, and only then is cut with an ellipsis (the full name is in its title). Sized from the real text, so it adapts to the fonts and names in use.
-        const FOCUS_NAME_MIN = 96, FOCUS_NAME_MAX = 132, FOCUS_NAME_MIN_NARROW = 84;
+        // Jumbo view: a name may wrap at SPACES onto up to two lines (never inside a word), so the Name column is sized for the longest single WORD plus its score
+        // (between 64px and 100px, --focus-name-w on the body; in a round of three matches or fewer it also gives up whatever the table is wider than its box, down to the minimum). If a name still needs
+        // more than two lines the column grows a little (up to the maximum), then the name shrinks, and only a single word that is still too long is cut with an ellipsis (the full name is in its title).
+        // Experiment: to go back to one-line names, git revert the commit that introduced this (this function and the `.comp-nick` rules in styles.css).
+        const FOCUS_NAME_MIN = 64, FOCUS_NAME_MAX = 100, FOCUS_NAME_MIN_NARROW = 58;
         function fitFocusNameColumn() {
             const root = document.body;
             if (summaryViewMode !== 'simple') { root.style.removeProperty('--focus-name-w'); root.classList.remove('jumbo-tight'); return; }
@@ -328,43 +330,51 @@
             if (!cells.length) return;
             root.classList.remove('jumbo-tight');
             root.style.setProperty('--focus-name-w', FOCUS_NAME_MIN + 'px');
-            let need = 0;
-            cells.forEach(td => {
-                const nick = td.querySelector('.comp-nick'), score = td.querySelector('.comp-score');
-                if (!nick || !score) return;
-                nick.classList.remove('nick-shrink');
-                nick.title = nick.textContent.trim();
-                const cs = getComputedStyle(td);
-                const padding = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
-                need = Math.max(need, Math.ceil(nick.scrollWidth + score.offsetWidth + 4 + padding + 2));
-            });
-            let width = Math.min(FOCUS_NAME_MAX, Math.max(FOCUS_NAME_MIN, need));
-            root.style.setProperty('--focus-name-w', width + 'px');
-            // A round (three matches or fewer) must fit the screen with no sideways scrolling: if the table is still wider than its box, the Name column gives up the difference (down to the minimum; longer names then shrink and, last of all, get an ellipsis)
+            const nicks = cells.map(td => td.querySelector('.comp-nick')).filter(Boolean);
+            nicks.forEach(nick => { nick.classList.remove('nick-shrink', 'nick-trunc'); nick.title = nick.textContent.trim(); });
+            // widest single word of any name (measured with the name's own font), plus the score and the cell padding
+            // the Name column width the names need: the widest single word (or hyphenated part) of any name, plus the score, the gap and the cell padding
+            const probe = document.createElement('span');
+            probe.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;left:-9999px;top:0';
+            document.body.appendChild(probe);
+            const computeNeed = () => {
+                let need = 0;
+                cells.forEach(td => {
+                    const nick = td.querySelector('.comp-nick'), score = td.querySelector('.comp-score');
+                    if (!nick || !score) return;
+                    const ns = getComputedStyle(nick);
+                    probe.style.font = ns.font; probe.style.letterSpacing = ns.letterSpacing;
+                    let longest = 0;
+                    nick.textContent.trim().split(/(?<=-)|\s+/).forEach(word => { probe.textContent = word; longest = Math.max(longest, probe.getBoundingClientRect().width); });
+                    const cs = getComputedStyle(td);
+                    const padding = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+                    const gap = parseFloat(getComputedStyle(nick.parentElement).columnGap) || 0;
+                    need = Math.max(need, Math.ceil(longest + score.offsetWidth + gap + padding + 2));
+                });
+                return need;
+            };
+            const overflowing = () => nicks.some(n => n.scrollHeight > n.clientHeight + 1 || n.scrollWidth > n.clientWidth + 0.5);
+            const setWidth = (w) => { root.style.setProperty('--focus-name-w', w + 'px'); return w; };
+            let width = setWidth(Math.min(FOCUS_NAME_MAX, Math.max(FOCUS_NAME_MIN, computeNeed())));
+            // a name that needs more than two lines: widen the column a little, up to the maximum
+            while (width < FOCUS_NAME_MAX && overflowing()) width = setWidth(Math.min(FOCUS_NAME_MAX, width + 4));
+            // A round (three matches or fewer) must fit the screen with no sideways scrolling. First the scores and result boxes go one size smaller (that keeps the names whole); only if the table is still wider than its box does the Name column give up the difference (down to the minimum; longer names then shrink and, last of all, are cut).
             const box = document.querySelector('.summary-container');
-            if (box && box.querySelectorAll('thead th.match-header-cell').length <= 3) {
+            if (box && box.querySelectorAll('thead th.match-header-cell').length <= 3 && box.scrollWidth - box.clientWidth > 0) {
+                root.classList.add('jumbo-tight');
+                width = setWidth(Math.min(FOCUS_NAME_MAX, Math.max(FOCUS_NAME_MIN, computeNeed())));
+                while (width < FOCUS_NAME_MAX && overflowing() && box.scrollWidth - box.clientWidth <= 0) width = setWidth(Math.min(FOCUS_NAME_MAX, width + 4));
                 const over = box.scrollWidth - box.clientWidth;
                 if (over > 0) {
                     // on the very narrowest phones (about 320px) the column may go a little below the usual minimum
                     const floor = box.clientWidth < 330 ? FOCUS_NAME_MIN_NARROW : FOCUS_NAME_MIN;
-                    const wanted = width;
-                    width = Math.max(floor, width - over);
-                    root.style.setProperty('--focus-name-w', width + 'px');
-                    // still too wide (three-digit scores on a small phone): set the scores and result boxes one size smaller, then give any room that frees back to the Name column
-                    const still = box.scrollWidth - box.clientWidth;
-                    if (still > 0) {
-                        root.classList.add('jumbo-tight');
-                        const slack = box.clientWidth - box.scrollWidth;
-                        const left = box.scrollWidth - box.clientWidth;
-                        if (left <= 0) { width = Math.min(wanted, width + slack); root.style.setProperty('--focus-name-w', width + 'px'); }
-                    }
+                    width = setWidth(Math.max(floor, width - over));
                 }
             }
-            // anything still too long for the cap shrinks first (the ellipsis in the CSS is the last resort)
-            cells.forEach(td => {
-                const nick = td.querySelector('.comp-nick');
-                if (nick && nick.scrollWidth > nick.clientWidth + 0.5) nick.classList.add('nick-shrink');
-            });
+            probe.remove();
+            // anything still too long shrinks first; a single word that is still too wide is cut with an ellipsis (one line) as the very last resort
+            nicks.forEach(nick => { if (nick.scrollHeight > nick.clientHeight + 1 || nick.scrollWidth > nick.clientWidth + 0.5) nick.classList.add('nick-shrink'); });
+            nicks.forEach(nick => { if (nick.scrollHeight > nick.clientHeight + 1 || nick.scrollWidth > nick.clientWidth + 0.5) nick.classList.add('nick-trunc'); });
         }
         // Fonts that arrive after the first draw change the text widths: fit again, then re-pin the header
         if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {

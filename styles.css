@@ -4136,7 +4136,8 @@ body.summary-compact:not(.summary-simple) .summary-table th.competitor-col .th-a
 body.summary-simple .summary-table { font-size: 1.05rem; }
 body.summary-simple .summary-table th, body.summary-simple .summary-table td { color: var(--text); }
 body.summary-simple .summary-table td { padding-top: 0.7rem; padding-bottom: 0.7rem; }
-body.summary-simple .summary-table td.competitor-name .comp-nick { font-size: 0.92rem; font-weight: 700; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; word-break: normal; }   /* names stay on one line: the column is sized to them (--focus-name-w), then they shrink, then an ellipsis */
+body.summary-simple .summary-table td.competitor-name .comp-nick { font-size: 0.92rem; font-weight: 700; line-height: 1.1; white-space: normal; overflow: hidden; overflow-wrap: normal; word-break: normal; hyphens: manual; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; min-width: 0; text-align: left; }   /* a name wraps at spaces onto up to two lines, never inside a word (the column is sized to the longest word, --focus-name-w); only a single word that is still too wide is cut with an ellipsis (.nick-trunc) */
+body.summary-simple .summary-table td.competitor-name .comp-nick.nick-trunc { display: block; white-space: nowrap; text-overflow: ellipsis; -webkit-line-clamp: unset; line-clamp: unset; }
 body.summary-simple .summary-table td.competitor-name .comp-nick.nick-shrink { font-size: 0.8rem; }
 body.summary-simple .summary-table td.competitor-name .comp-score { font-size: 1.1rem; font-weight: 800; color: var(--text); }
 body.summary-simple .summary-table td.rank-col { font-size: 1.05rem; font-weight: 700; }
@@ -4186,13 +4187,20 @@ body.summary-simple .summary-table thead th.joker-eligible-header .match-header-
 /* Jumbo: tighter scores (no spaces round the dash) and slimmer match columns so a round of three fits a phone without sideways scrolling */
 body.summary-simple .summary-table td.prediction-cell .cell-score { gap: 0.1em; }
 @media (max-width: 699px) {
-    body.summary-simple .summary-table th.match-header-cell { min-width: 58px !important; padding-left: 0.12rem !important; padding-right: 0.12rem !important; }
-    body.summary-simple .summary-table td.prediction-cell { padding-left: 0.12rem; padding-right: 0.12rem; }
-    body.summary-simple .match-header-cell .match-header-bottom .match-result-row .match-result { padding-left: 0.15rem; padding-right: 0.15rem; }
+    body.summary-simple .summary-table th.match-header-cell { min-width: 50px !important; padding-left: 0.08rem !important; padding-right: 0.08rem !important; }
+    body.summary-simple .summary-table td.prediction-cell { padding-left: 0.08rem; padding-right: 0.08rem; }
+    body.summary-simple .match-header-cell .match-header-bottom .match-result-row .match-result { padding-left: 0.1rem; padding-right: 0.1rem; }
+    /* slimmer scores in the match columns and a slimmer Predicted Tries column (the scores still read at a glance) */
+    body.summary-simple .summary-table td.prediction-cell .cell-score { font-size: 1.05rem; }
+    body.summary-simple .summary-table td.prediction-cell .points-earned { font-size: 0.88rem; }
+    body.summary-simple .match-header-cell .match-header-bottom .match-result,
+    body.summary-simple .match-header-cell .match-header-bottom .no-result { font-size: 0.95rem; }
+    body.summary-simple .summary-table thead th.tries-col { font-size: 0.95rem; letter-spacing: 0.01em; padding-left: 0.2rem; padding-right: 0.2rem; }
+    body.summary-simple .summary-table td.tries-col { font-size: 1.1rem; padding-left: 0.2rem; padding-right: 0.2rem; }
 }
 /* three-digit scores on a small phone: one size smaller so a round of three still fits (set by fitFocusNameColumn) */
-body.summary-simple.jumbo-tight .summary-table td.prediction-cell .cell-score { font-size: 1rem; }
-body.summary-simple.jumbo-tight .match-header-cell .match-header-bottom .match-result { font-size: 0.9rem; }
+body.summary-simple.jumbo-tight .summary-table td.prediction-cell .cell-score { font-size: 0.95rem; }
+body.summary-simple.jumbo-tight .match-header-cell .match-header-bottom .match-result { font-size: 0.85rem; }
 /* Simple: the score sits on the same line as the name (flags are gone, so there is nothing else under it) */
 body.summary-simple .summary-table td.competitor-name .comp-name { flex-direction: row; align-items: center; justify-content: space-between; gap: 0.25rem; }
 body.summary-simple .summary-table td.competitor-name .comp-sub { width: auto; flex: none; min-height: 0; }

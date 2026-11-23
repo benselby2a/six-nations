@@ -130,7 +130,14 @@ const mock = `
       const rects = [...rg.getClientRects()].filter(x => x.width > 0);
       const centres = new Set(rects.map(x => Math.round(x.top + x.height / 2)));
       const lh = parseFloat(getComputedStyle(nick).lineHeight) || nick.getBoundingClientRect().height;
-      return { name: nick.textContent.trim().slice(0, 24), lines: centres.size, h: Math.round(nick.getBoundingClientRect().height), lh: Math.round(lh),
+      // does any word (or hyphenated part) itself run over two lines? (a name may break at spaces and after hyphens, never inside a word)
+      let split = false;
+      const tn = nick.firstChild;
+      if (tn && tn.nodeType === 3 && !nick.classList.contains('nick-trunc')) {
+        const txt = tn.textContent; const re = /[^\s-]+-?/g; let m;
+        while ((m = re.exec(txt))) { const wr = document.createRange(); wr.setStart(tn, m.index); wr.setEnd(tn, m.index + m[0].length); const wc = new Set([...wr.getClientRects()].filter(x => x.width > 0).map(x => Math.round(x.top + x.height / 2))); if (wc.size > 1) split = true; }
+      }
+      return { split, name: nick.textContent.trim().slice(0, 24), lines: centres.size, h: Math.round(nick.getBoundingClientRect().height), lh: Math.round(lh),
         clipped: nick.scrollWidth > nick.clientWidth + 0.5, ellipsis: getComputedStyle(nick).textOverflow === 'ellipsis', shrink: nick.classList.contains('nick-shrink'),
         title: nick.title, fs: getComputedStyle(nick).fontSize, scoreRight: Math.round(sc.getBoundingClientRect().right), cellRight: Math.round(c.getBoundingClientRect().right), nickRight: Math.round(nick.getBoundingClientRect().right), scoreLeft: Math.round(sc.getBoundingClientRect().left) };
     });
@@ -151,21 +158,28 @@ const mock = `
     await page.evaluate(() => { document.querySelectorAll('.summary-table:not(.summary-table-clone) .comp-score').forEach((e, i) => { if (i % 2) e.textContent = '1288'; }); });
     await page.evaluate(() => { if (typeof fitFocusNameColumn === 'function') fitFocusNameColumn(); if (typeof layoutSummarySticky === 'function') layoutSummarySticky(); }); await page.waitForTimeout(250);
     const r = await measure();
-    const oneLine = r.rows.every(x => x.lines === 1 && x.h <= x.lh * 1.2 + 1);
-    const noMidWord = r.rows.every(x => !x.clipped || (x.ellipsis && x.title && (x.shrink || x.name.length > 14)));
+    const oneLine = r.rows.every(x => x.lines <= 2);   // a name wraps at spaces onto at most two lines
+    const noMidWord = r.rows.every(x => !x.split && (!x.clipped || (x.ellipsis && x.title)));
     const scoreInside = r.rows.every(x => x.scoreRight <= x.cellRight + 0.5 && x.nickRight <= x.scoreLeft + 1);
-    const bounded = r.colW >= 84 && r.colW <= 150;
+    const bounded = r.colW >= 58 && r.colW <= 112;   // 64-100px (58px on the very narrowest phones) + the cell padding on wide screens
     const aligned = r.hdrW === r.colW && (r.pinnedW === null || Math.abs(r.pinnedW - r.colW) <= 1);
-    console.log(`${theme} detail=${detail} @${width}: names one line:`, oneLine, '| none broken mid-word (clipped only with ellipsis + title):', noMidWord, '| score inside the cell, clear of the name:', scoreInside, '| column 84-150px (96-132px + padding):', bounded, '| header/pinned header same width:', aligned, '|', JSON.stringify({ col: r.colW, hdr: r.hdrW, pinned: r.pinnedW, v: r.varW }));
+    console.log(`${theme} detail=${detail} @${width}: names on at most two lines:`, oneLine, '| no word split across lines (clipped only with ellipsis + title):', noMidWord, '| score inside the cell, clear of the name:', scoreInside, '| column 58-112px (was 96-132px):', bounded, '| header/pinned header same width:', aligned, '|', JSON.stringify({ col: r.colW, hdr: r.hdrW, pinned: r.pinnedW, v: r.varW }));
     if (!oneLine || !noMidWord || !scoreInside || !aligned) console.log('   detail:', JSON.stringify(r.rows));
   }
   // names that fit never shrink or get cut: the short ones are untouched
   const r2 = await measure();
-  console.log('short names are not shrunk or cut:', r2.rows.filter(x => /^(Ben|Claudia)$/.test(x.name)).every(x => !x.shrink && !x.clipped));
+  console.log('short names are not shrunk or cut:', r2.rows.filter(x => /^Ben$/.test(x.name)).every(x => !x.shrink && !x.clipped));
   // the column is no wider than it has to be: with only short names it goes back to its minimum
   await page.evaluate(() => { document.querySelectorAll('.summary-table:not(.summary-table-clone) .comp-nick').forEach(e => { e.textContent = 'Abc'; }); document.querySelectorAll('.summary-table:not(.summary-table-clone) .comp-score').forEach(e => { e.textContent = '99'; }); if (typeof fitFocusNameColumn === 'function') fitFocusNameColumn(); });
   const r3 = await measure();
-  console.log('only short names: the column is back to its minimum (the 96px minimum + the cell padding, never wider than the 108px it used to be):', r3.colW <= 108 && String(r3.varW) === '96px', r3.colW, r3.varW);
+  console.log('only short names: the column is far narrower than before (about 72px, it used to be 96px minimum):', parseInt(r3.varW) <= 76, r3.colW, r3.varW);
+  // a name with spaces really does use two lines and a single word stays whole
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.evaluate(() => { document.querySelectorAll('.summary-table:not(.summary-table-clone) .comp-nick').forEach((e, i) => { e.textContent = ['Carol & Gareth', 'Louise & Ben', 'Jojo & Charlie', 'Claudia', 'Ben', 'Mary Ann Smith', 'Samuelson-longname'][i % 7]; }); document.querySelectorAll('.summary-table:not(.summary-table-clone) .comp-score').forEach(e => { e.textContent = '62'; }); if (typeof fitFocusNameColumn === 'function') fitFocusNameColumn(); }); await page.waitForTimeout(250);
+  const r4 = await measure();
+  const two = r4.rows.filter(x => /^(Carol & Gareth|Louise & Ben|Jojo & Charlie)$/.test(x.name));
+  console.log('names with spaces wrap onto two lines at the narrow column, no word split, none cut:', two.length > 0 && two.every(x => x.lines === 2 && !x.split && !x.clipped), JSON.stringify(two.map(x => [x.name, x.lines])), 'col', r4.colW);
+  console.log('a single short word stays on one line:', r4.rows.filter(x => /^(Ben|Claudia)$/.test(x.name)).every(x => x.lines === 1));
   console.log('errors', errors);
   await browser.close();
 })();
