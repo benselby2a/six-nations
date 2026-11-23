@@ -2,11 +2,21 @@
 <html lang="en">
 <head>
     <script>try { if (sessionStorage.getItem('rugbyPredictorFadeIn')) { document.documentElement.classList.add('app-reloaded'); sessionStorage.removeItem('rugbyPredictorFadeIn'); } } catch (e) { /* ignore */ }</script>
+    <!-- Dark mode without a white flash: apply the saved colour mode (same keys as js/profile.js loadUserTheme) before the first paint; the bundle re-applies the same theme later, so nothing changes then -->
+    <script>try {
+        var m = (localStorage.getItem('rugbyPredictorColourMode') || '').trim().toLowerCase();
+        var legacy = (localStorage.getItem('rugbyPredictorTheme') || '').trim().toLowerCase();
+        if (!m) { var cm = document.cookie.match(/(?:^|;\s*)rugbyPredictorColourMode=([^;]*)/); m = cm ? decodeURIComponent(cm[1]).trim().toLowerCase() : ''; }
+        if (!m && legacy === 'dark') m = 'dark';
+        var dark = m === 'dark' || (m !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) { document.documentElement.setAttribute('data-theme', 'dark'); }
+    } catch (e) { /* the bundle applies the theme once it runs */ }</script>
     <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=f1819eb4" -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Six Nations Predictor</title>
     <meta name="theme-color" content="#00694b">
+    <meta name="theme-color" content="#0b1a14" media="(prefers-color-scheme: dark)">
     <!-- Opens as a full-screen app from the Home Screen (no browser bars). It has its own storage, so
          it signs in on its own; that is why login is a code and not an email link. -->
     <meta name="apple-mobile-web-app-capable" content="yes">
