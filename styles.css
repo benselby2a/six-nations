@@ -3598,6 +3598,9 @@ body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-wi
 
 /* Pinned summary header: a copy of the header row in a sticky strip (see buildSummaryStickyHead) */
 .summary-table-wrap { position: relative; }
+/* Nothing of the table (scrolling score columns, the pinned header's sideways layer) may ever paint outside the table's own left and right edges, i.e. into the page gutter to the left of the phone screen's table: clip the wrap horizontally (vertically it stays open for the pinned header's shadow). overflow-x: clip does not make a scroll container, so the sticky header is unaffected. */
+.summary-table-wrap { overflow-x: clip; }
+@supports not (overflow: clip) { .summary-table-wrap { clip-path: inset(-100px 0 -100px 0); } }
 .summary-sticky-zone { position: absolute; left: 0; right: 0; top: 0; height: 0; pointer-events: none; z-index: 40; }
 .summary-sticky-head { position: sticky; top: env(safe-area-inset-top, 0px); height: 0; z-index: 40; }
 .summary-sticky-inner { position: absolute; top: 0; overflow-x: hidden; pointer-events: auto; box-shadow: 0 3px 5px -2px rgba(0, 0, 0, 0.3); border-radius: 10px 10px 0 0; }
