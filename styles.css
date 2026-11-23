@@ -3856,6 +3856,13 @@ body .cell-score .joker-inline { width: 1.25rem; height: 1.25rem; font-size: 0.8
 @supports (-webkit-touch-callout: none) {
         /* The spacer is page-coloured: iOS tints the status bar to match whatever is pinned at the top, so this makes the top of the screen match the page. It is on the real header too, so the pinned copy is the same height and nothing jumps when it pins. */
         .summary-table thead th { border-top: 24px solid var(--bg); }
+        /* The header cells' green (or dark) background must not run under the page-coloured spacer: a cell sitting at a fractional pixel position leaves the background beneath its border showing at its sides as a thin vertical line through the strip above the header (far left, at every column edge and far right). The background stops at the padding box, and the thead behind them is the page colour (the cells carry their own colour), so nothing but the page colour can show at a cell's side (ios-spacer-clip) */
+        .summary-table thead,
+        :root[data-theme="dark"] .summary-table thead { background: var(--bg); }
+        .summary-table thead th,
+        .summary-table thead th:not(.rank-col):not(.competitor-col):not(.pts-col),
+        :root[data-theme="dark"] .summary-table thead th,
+        :root[data-theme="dark"] .summary-table thead th:not(.rank-col):not(.competitor-col):not(.pts-col) { background-clip: padding-box !important; }
         /* the table's outline would run up the spacer as two vertical bars: keep its widths (for alignment) but hide the sides, top and corners */
         .summary-container { border-left-color: transparent; border-right-color: transparent; border-top-color: transparent; border-radius: 0; }
         /* the pinned header's soft shadow falls only below it: a spread of -8px keeps its blur inside the box's sides, so it cannot show as faint vertical lines beside the table in the spacer strip above the header (ios-sticky-shadow) */

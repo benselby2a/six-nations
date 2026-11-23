@@ -202,10 +202,12 @@ const mock = `
         tdTries: st(document.querySelector('.summary-container tbody td.tries-col')), score: st(document.querySelector('.summary-container tbody td.prediction-cell .cell-score')),
         scoreNum: st(document.querySelector('.summary-container tbody td.prediction-cell .pred-score')), nick: st(document.querySelector('.summary-container tbody td.competitor-name .comp-nick')) };
     });
-    const headOk = s.thTries.family === s.teams.family && s.thTries.size === s.teams.size && s.thTries.weight === s.teams.weight && s.thTries.color === s.thOther.color;
+    // Jumbo trims its fonts a little to fit more columns (PR 261): there the sizes must be close (within 2.5px), not identical
+    const sameSize = (a, b) => view === 'simple' ? Math.abs(parseFloat(a) - parseFloat(b)) <= 2.5 : a === b;
+    const headOk = s.thTries.family === s.teams.family && sameSize(s.thTries.size, s.teams.size) && s.thTries.weight === s.teams.weight && s.thTries.color === s.thOther.color;
     const bodyOk = view === 'compact'
       ? s.tdTries.family === s.score.family && s.tdTries.size === s.score.size && s.tdTries.weight === s.scoreNum.weight && s.tdTries.color === s.nick.color
-      : s.tdTries.family === s.score.family && s.tdTries.size === s.score.size && s.tdTries.weight === s.score.weight && s.tdTries.color === s.nick.color;
+      : s.tdTries.family === s.score.family && sameSize(s.tdTries.size, s.score.size) && s.tdTries.weight === s.score.weight && s.tdTries.color === s.nick.color;
     console.log(`Predicted Tries matches the rest of the table (${view}, ${theme}):`, JSON.stringify({ th: [s.thTries.size, s.thTries.weight, s.thTries.color], teams: [s.teams.size, s.teams.weight, s.teams.color], td: [s.tdTries.size, s.tdTries.weight, s.tdTries.color], score: [s.score.size, s.scoreNum.weight, s.nick.color] }), headOk && bodyOk);
   }
   console.log('errors', JSON.stringify(page.__errors));

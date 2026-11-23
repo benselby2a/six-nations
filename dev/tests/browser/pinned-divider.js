@@ -137,6 +137,8 @@ const mock = `
     let depth = 0;
     for (let e = css.indexOf('{', at); e < css.length; e++) { if (css[e] === '{') depth++; if (css[e] === '}') { depth--; if (!depth) { ios += '@media all ' + css.slice(css.indexOf('{', at), e + 1) + '\n'; break; } } }
   }
+  // (NOCLIP=1 drops the spacer-clip fix from the injected rules, to show the nudged-table check below failing without it)
+  if (process.env.NOCLIP) ios = ios.replace(/background-clip: padding-box !important;/g, '').replace(/\.summary-table thead,\s*:root\[data-theme="dark"\] \.summary-table thead \{ background: var\(--bg\); \}/, '');
   console.log('the iOS header divider rule exists in styles.css:', /ios-divider-inset/.test(css) && /border-top: 24px/.test(ios));
   await page.addStyleTag({ content: process.env.NOFIX ? ios.slice(0, ios.lastIndexOf('@media all')) + '.summary-sticky-inner { box-shadow: 0 5px 6px -4px rgba(0, 0, 0, 0.3) !important; }' : ios });
   for (const theme of ['light', 'dark']) for (const mode of ['compact', 'simple']) {
@@ -169,6 +171,22 @@ const mock = `
       console.log(theme + ' ' + mode + ' after a ' + how + ' the strip above the header is still clean:', bad.length === 0, bad);
     }
   }
+  // The thin line standing up through the 24px spacer above the header, at the table's far LEFT (and at every column edge and far right), seen on iPhone in Jumbo: the header cells'
+  // green (or dark) background ran underneath their page-coloured border-top, and a cell at a fractional pixel position (the table's left edge is at 10.6px) let that background show at
+  // its sides as a 1-device-pixel line (ios-spacer-clip). Chromium snaps boxes to whole pixels, so the table is nudged by a fraction of a pixel (a transform) on a 3x screen to get the
+  // same anti-aliased edges. Jumbo: no visible line anywhere across the strip; Compact: none at the far left and far right (x 0 to 60 and 370 to 390).
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 3, mobile: false });
+  for (const theme of ['light', 'dark']) for (const mode of ['simple', 'compact']) for (const shift of [0.17, 0.33, 0.5]) {
+    await page.evaluate(([m, t, s]) => { setSummaryView(m); document.documentElement.setAttribute('data-theme', t); window.scrollTo(0, 0); let st = document.getElementById('__shift'); if (!st) { st = document.createElement('style'); st.id = '__shift'; document.head.appendChild(st); } st.textContent = '.summary-table-wrap { transform: translateX(' + s + 'px); }'; }, [mode, theme, shift]); await page.waitForTimeout(900);
+    const top = await page.evaluate(() => document.querySelector('.summary-table:not(.summary-table-clone) th.competitor-col').getBoundingClientRect().top);
+    const buf = await page.screenshot({ clip: { x: 0, y: Math.floor(top) + 1, width: 390, height: 22 } });
+    const bad = await page.evaluate(async (b64) => { const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode(); const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const g = c.getContext('2d'); g.drawImage(img, 0, 0); const d = g.getImageData(0, 0, img.width, img.height).data; const out = new Set(); for (let y = 0; y < img.height; y++) for (let x = 0; x < img.width; x++) { const i = (y * img.width + x) * 4; if (Math.abs(d[i] - d[0]) + Math.abs(d[i + 1] - d[1]) + Math.abs(d[i + 2] - d[2]) > 100) out.add(Math.round(x / img.width * 390)); } return [...out]; }, buf.toString('base64'));
+    const flagged = mode === 'simple' ? bad : bad.filter(x => x < 60 || x > 370);
+    console.log(theme + ' ' + mode + ' (table nudged ' + shift + 'px, 3x screen): no line through the strip above the header' + (mode === 'simple' ? '' : ' at the far left or far right') + ':', flagged.length === 0, flagged.slice(0, 10));
+  }
+  await page.evaluate(() => { const st = document.getElementById('__shift'); if (st) st.remove(); });
+  await cdp.send('Emulation.clearDeviceMetricsOverride');
   // the toolbar's tooltips (the gold-edged bubble under a button) must paint over the table, not hide behind its top edge
   const z = await page.evaluate(() => { const tb = getComputedStyle(document.querySelector('.summary-toolbar')); const zone = getComputedStyle(document.querySelector('.summary-sticky-zone')); return { pos: tb.position, tb: Number(tb.zIndex), zone: Number(zone.zIndex) }; });
   console.log('the toolbar (and so its tooltips) stacks above the pinned-header layer:', z.pos !== 'static' && z.tb > z.zone, z);
