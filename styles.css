@@ -4136,8 +4136,8 @@ body.summary-compact:not(.summary-simple) .summary-table th.competitor-col .th-a
 body.summary-simple .summary-table { font-size: 1.05rem; }
 body.summary-simple .summary-table th, body.summary-simple .summary-table td { color: var(--text); }
 body.summary-simple .summary-table td { padding-top: 0.7rem; padding-bottom: 0.7rem; }
-body.summary-simple .summary-table td.competitor-name .comp-nick { font-size: 1.05rem; font-weight: 700; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; word-break: normal; }   /* names stay on one line: the column is sized to them (--focus-name-w), then they shrink, then an ellipsis */
-body.summary-simple .summary-table td.competitor-name .comp-nick.nick-shrink { font-size: 0.9rem; }
+body.summary-simple .summary-table td.competitor-name .comp-nick { font-size: 0.92rem; font-weight: 700; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; word-break: normal; }   /* names stay on one line: the column is sized to them (--focus-name-w), then they shrink, then an ellipsis */
+body.summary-simple .summary-table td.competitor-name .comp-nick.nick-shrink { font-size: 0.8rem; }
 body.summary-simple .summary-table td.competitor-name .comp-score { font-size: 1.1rem; font-weight: 800; color: var(--text); }
 body.summary-simple .summary-table td.rank-col { font-size: 1.05rem; font-weight: 700; }
 body.summary-simple .summary-table th.competitor-col, body.summary-simple .summary-table th.rank-col { vertical-align: bottom; font-size: 0.95rem; }
@@ -4149,7 +4149,7 @@ body.summary-simple .summary-table thead th .match-teams { color: #fff !importan
 :root[data-theme="dark"] body.summary-simple .summary-table thead th .th-angled,
 :root[data-theme="dark"] body.summary-simple .summary-table thead th .match-teams { color: var(--text) !important; }
 body.summary-simple .summary-table th.competitor-col .th-angled { display: inline; width: auto; height: auto; transform: none; margin: 0; font-size: 0.95rem; white-space: nowrap; }
-body.summary-simple .summary-table td.competitor-name { min-width: var(--focus-name-w, 108px); width: var(--focus-name-w, 108px); max-width: var(--focus-name-w, 108px); }
+body.summary-simple .summary-table td.competitor-name { min-width: var(--focus-name-w, 96px); width: var(--focus-name-w, 96px); max-width: var(--focus-name-w, 96px); }
 body.summary-simple .match-header-cell .match-header-top .match-teams { height: auto; font-size: 1.1rem; font-weight: 800; letter-spacing: 0.03em; line-height: 1.35; margin-bottom: 0.4rem; }
 /* Focus: each team abbreviation in its Classic colour (PDF_SCHEMES.team, written as --team-l / --team-d by simpleTeamSpan) on a small chip the colour of the Classic sheet (white; the dark sheet colour in dark mode), so the colours stay readable on the header bar. The chip is a background gradient inset 7% top and bottom, so it adds no height and two stacked chips never touch. */
 body.summary-simple .summary-table thead th .match-teams span.team-tint { color: var(--team-l) !important; }
@@ -4183,6 +4183,16 @@ body.summary-simple .summary-table thead th.match-header-cell.joker-eligible-hea
 /* Jumbo: the Joker match is marked by a gold bar just ABOVE the score chip in its header (4px, drawn in the gap above the chip so nothing moves) */
 body.summary-simple .summary-table thead th.joker-eligible-header .match-header-bottom { position: relative; }
 body.summary-simple .summary-table thead th.joker-eligible-header .match-header-bottom::before { content: ''; position: absolute; left: 0; right: 0; top: -6px; height: 4px; border-radius: 2px; background: var(--joker-gold); pointer-events: none; }
+/* Jumbo: tighter scores (no spaces round the dash) and slimmer match columns so a round of three fits a phone without sideways scrolling */
+body.summary-simple .summary-table td.prediction-cell .cell-score { gap: 0.1em; }
+@media (max-width: 699px) {
+    body.summary-simple .summary-table th.match-header-cell { min-width: 58px !important; padding-left: 0.12rem !important; padding-right: 0.12rem !important; }
+    body.summary-simple .summary-table td.prediction-cell { padding-left: 0.12rem; padding-right: 0.12rem; }
+    body.summary-simple .match-header-cell .match-header-bottom .match-result-row .match-result { padding-left: 0.15rem; padding-right: 0.15rem; }
+}
+/* three-digit scores on a small phone: one size smaller so a round of three still fits (set by fitFocusNameColumn) */
+body.summary-simple.jumbo-tight .summary-table td.prediction-cell .cell-score { font-size: 1rem; }
+body.summary-simple.jumbo-tight .match-header-cell .match-header-bottom .match-result { font-size: 0.9rem; }
 /* Simple: the score sits on the same line as the name (flags are gone, so there is nothing else under it) */
 body.summary-simple .summary-table td.competitor-name .comp-name { flex-direction: row; align-items: center; justify-content: space-between; gap: 0.25rem; }
 body.summary-simple .summary-table td.competitor-name .comp-sub { width: auto; flex: none; min-height: 0; }

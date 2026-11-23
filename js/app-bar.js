@@ -272,7 +272,7 @@ function layoutSummarySticky() {
     zone.style.height = Math.max(pinnedH, table.offsetHeight - (lastRow ? lastRow.offsetHeight : 0)) + 'px';
     head.style.height = pinnedH + 'px';
 }
-window.addEventListener('resize', () => { sizeSummaryStickyHead(); const hint = document.getElementById('scrollHint'); const box = document.querySelector('.summary-container'); if (hint && box) hint.classList.toggle('hidden', box.scrollWidth <= box.clientWidth); if (typeof syncSummaryScrollLock === 'function') syncSummaryScrollLock(); if (typeof refreshWormChartLayout === 'function') refreshWormChartLayout(); });
+window.addEventListener('resize', () => { if (typeof fitFocusNameColumn === 'function' && typeof summaryViewMode !== 'undefined' && summaryViewMode === 'simple') { fitFocusNameColumn(); if (typeof layoutSummarySticky === 'function') layoutSummarySticky(); } sizeSummaryStickyHead(); const hint = document.getElementById('scrollHint'); const box = document.querySelector('.summary-container'); if (hint && box) hint.classList.toggle('hidden', box.scrollWidth <= box.clientWidth); if (typeof syncSummaryScrollLock === 'function') syncSummaryScrollLock(); if (typeof refreshWormChartLayout === 'function') refreshWormChartLayout(); });
 
 // Table view: Compact, Classic or Jumbo (key simple: Compact with plain text only and a light gold shade for Jokers).
 // Compact keeps the match headers short (countries and score); the "details" switch beside the download button brings the date and tries

@@ -154,18 +154,18 @@ const mock = `
     const oneLine = r.rows.every(x => x.lines === 1 && x.h <= x.lh * 1.2 + 1);
     const noMidWord = r.rows.every(x => !x.clipped || (x.ellipsis && x.title && (x.shrink || x.name.length > 14)));
     const scoreInside = r.rows.every(x => x.scoreRight <= x.cellRight + 0.5 && x.nickRight <= x.scoreLeft + 1);
-    const bounded = r.colW >= 108 && r.colW <= 150;
+    const bounded = r.colW >= 84 && r.colW <= 150;
     const aligned = r.hdrW === r.colW && (r.pinnedW === null || Math.abs(r.pinnedW - r.colW) <= 1);
-    console.log(`${theme} detail=${detail} @${width}: names one line:`, oneLine, '| none broken mid-word (clipped only with ellipsis + title):', noMidWord, '| score inside the cell, clear of the name:', scoreInside, '| column 108-150px:', bounded, '| header/pinned header same width:', aligned, '|', JSON.stringify({ col: r.colW, hdr: r.hdrW, pinned: r.pinnedW, v: r.varW }));
+    console.log(`${theme} detail=${detail} @${width}: names one line:`, oneLine, '| none broken mid-word (clipped only with ellipsis + title):', noMidWord, '| score inside the cell, clear of the name:', scoreInside, '| column 84-150px (96-132px + padding):', bounded, '| header/pinned header same width:', aligned, '|', JSON.stringify({ col: r.colW, hdr: r.hdrW, pinned: r.pinnedW, v: r.varW }));
     if (!oneLine || !noMidWord || !scoreInside || !aligned) console.log('   detail:', JSON.stringify(r.rows));
   }
   // names that fit never shrink or get cut: the short ones are untouched
   const r2 = await measure();
   console.log('short names are not shrunk or cut:', r2.rows.filter(x => /^(Ben|Claudia)$/.test(x.name)).every(x => !x.shrink && !x.clipped));
-  // the column is no wider than it has to be: with only short names it goes back to 108px
+  // the column is no wider than it has to be: with only short names it goes back to its minimum
   await page.evaluate(() => { document.querySelectorAll('.summary-table:not(.summary-table-clone) .comp-nick').forEach(e => { e.textContent = 'Abc'; }); document.querySelectorAll('.summary-table:not(.summary-table-clone) .comp-score').forEach(e => { e.textContent = '99'; }); if (typeof fitFocusNameColumn === 'function') fitFocusNameColumn(); });
   const r3 = await measure();
-  console.log('only short names: column back to the 108px minimum:', r3.colW === 108, r3.colW);
+  console.log('only short names: the column is back to its minimum (the 96px minimum + the cell padding, never wider than the 108px it used to be):', r3.colW <= 108 && String(r3.varW) === '96px', r3.colW, r3.varW);
   console.log('errors', errors);
   await browser.close();
 })();
