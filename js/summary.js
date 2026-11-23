@@ -155,7 +155,7 @@
                             <div class="match-date">${match.date} - ${match.time}</div>
                         </div>
                         <div class="match-header-bottom">
-                            <div class="match-result-row">${hasResult ? `<div class="match-result">${match.actualScore1} - ${match.actualScore2}</div>` : '<div class="no-result">-</div>'}${match.jokerEligible ? (simple ? '<span class="sr-only">Joker</span>' : '<span class="joker-inline" aria-hidden="true">🃏</span>') : ''}</div>
+                            <div class="match-result-row">${hasResult ? `<div class="match-result">${match.actualScore1}${simple ? '-' : ' - '}${match.actualScore2}</div>` : '<div class="no-result">-</div>'}${match.jokerEligible ? (simple ? '<span class="sr-only">Joker</span>' : '<span class="joker-inline" aria-hidden="true">🃏</span>') : ''}</div>
                             <div class="match-tries${hasTries ? '' : ' match-tries-empty'}">${hasTries ? `(${totalMatchTries} tries)` : '&nbsp;'}</div>
                             <div class="match-extras">${match.jokerEligible && !simple ? '<span class="joker-indicator joker-eligible-icon" title="Joker eligible" role="img" aria-label="Joker eligible">🃏</span>' : ''}</div>
                         </div>
@@ -275,7 +275,7 @@
                     const tipClass = tooltipContent.replace(/<[^>]*>/g, '').trim() ? 'tooltip' : 'tooltip tooltip-empty';
 
                     // Every cell has the same slots, so rows line up: the score, the points pill, then one line holding the Joker and the top emoji
-                    const scoreLine = `<div class="cell-score"><span class="${score1Class}">${score1}</span> - <span class="${score2Class}">${score2}</span>${isJoker ? (simple ? '<span class="sr-only">Joker</span>' : '<span class="joker-inline" aria-hidden="true">🃏</span>') : ''}</div>`;
+                    const scoreLine = `<div class="cell-score"><span class="${score1Class}">${score1}</span>${simple ? '-' : ' - '}<span class="${score2Class}">${score2}</span>${isJoker ? (simple ? '<span class="sr-only">Joker</span>' : '<span class="joker-inline" aria-hidden="true">🃏</span>') : ''}</div>`;
                     const pointsLine = hasResult
                         ? `<span class="points-earned ${pointsClass}">${pointsEarned} pts</span>`
                         : '<span class="points-earned points-placeholder">&nbsp;</span>';
@@ -318,14 +318,15 @@
         }
 
 
-        // Jumbo view: names never wrap or break mid-word. The Name column is sized to the longest name plus its score (between 108px and 150px, --focus-name-w on the body);
+        // Jumbo view: names never wrap or break mid-word. The Name column is sized to the longest name plus its score (between 96px and 132px, --focus-name-w on the body; in a round of three matches or fewer it also gives up whatever the table is wider than its box);
         // a name longer than that shrinks a little, and only then is cut with an ellipsis (the full name is in its title). Sized from the real text, so it adapts to the fonts and names in use.
-        const FOCUS_NAME_MIN = 108, FOCUS_NAME_MAX = 150;
+        const FOCUS_NAME_MIN = 96, FOCUS_NAME_MAX = 132, FOCUS_NAME_MIN_NARROW = 84;
         function fitFocusNameColumn() {
             const root = document.body;
-            if (summaryViewMode !== 'simple') { root.style.removeProperty('--focus-name-w'); return; }
+            if (summaryViewMode !== 'simple') { root.style.removeProperty('--focus-name-w'); root.classList.remove('jumbo-tight'); return; }
             const cells = [...document.querySelectorAll('.summary-container .summary-table td.competitor-name')];
             if (!cells.length) return;
+            root.classList.remove('jumbo-tight');
             root.style.setProperty('--focus-name-w', FOCUS_NAME_MIN + 'px');
             let need = 0;
             cells.forEach(td => {
@@ -337,8 +338,28 @@
                 const padding = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
                 need = Math.max(need, Math.ceil(nick.scrollWidth + score.offsetWidth + 4 + padding + 2));
             });
-            const width = Math.min(FOCUS_NAME_MAX, Math.max(FOCUS_NAME_MIN, need));
+            let width = Math.min(FOCUS_NAME_MAX, Math.max(FOCUS_NAME_MIN, need));
             root.style.setProperty('--focus-name-w', width + 'px');
+            // A round (three matches or fewer) must fit the screen with no sideways scrolling: if the table is still wider than its box, the Name column gives up the difference (down to the minimum; longer names then shrink and, last of all, get an ellipsis)
+            const box = document.querySelector('.summary-container');
+            if (box && box.querySelectorAll('thead th.match-header-cell').length <= 3) {
+                const over = box.scrollWidth - box.clientWidth;
+                if (over > 0) {
+                    // on the very narrowest phones (about 320px) the column may go a little below the usual minimum
+                    const floor = box.clientWidth < 330 ? FOCUS_NAME_MIN_NARROW : FOCUS_NAME_MIN;
+                    const wanted = width;
+                    width = Math.max(floor, width - over);
+                    root.style.setProperty('--focus-name-w', width + 'px');
+                    // still too wide (three-digit scores on a small phone): set the scores and result boxes one size smaller, then give any room that frees back to the Name column
+                    const still = box.scrollWidth - box.clientWidth;
+                    if (still > 0) {
+                        root.classList.add('jumbo-tight');
+                        const slack = box.clientWidth - box.scrollWidth;
+                        const left = box.scrollWidth - box.clientWidth;
+                        if (left <= 0) { width = Math.min(wanted, width + slack); root.style.setProperty('--focus-name-w', width + 'px'); }
+                    }
+                }
+            }
             // anything still too long for the cap shrinks first (the ellipsis in the CSS is the last resort)
             cells.forEach(td => {
                 const nick = td.querySelector('.comp-nick');
