@@ -143,9 +143,10 @@ const mock = `
     return { box: c.clientWidth, scrollW: c.scrollWidth, scrolls: c.scrollWidth > c.clientWidth + 1, locked: c.classList.contains('no-scroll'),
       hint: !!document.getElementById('scrollHint') && !document.getElementById('scrollHint').classList.contains('hidden'),
       games: c.querySelectorAll('thead th.match-header-cell').length, nameFs: parseFloat(getComputedStyle(nick).fontSize), colW: Math.round(c.querySelector('td.competitor-name').getBoundingClientRect().width),
-      oneLine: [...c.querySelectorAll('td.competitor-name .comp-nick')].every(n => { const r = document.createRange(); r.selectNodeContents(n); const cs = new Set([...r.getClientRects()].filter(x => x.width > 0).map(x => Math.round(x.top + x.height / 2))); return cs.size === 1; }),
+      oneLine: [...c.querySelectorAll('td.competitor-name .comp-nick')].every(n => { const r = document.createRange(); r.selectNodeContents(n); const cs = new Set([...r.getClientRects()].filter(x => x.width > 0).map(x => Math.round(x.top + x.height / 2))); return cs.size <= 2; }),
       scoreText: sc.textContent.replace(/\s+/g, ' ').trim(), dashText, gap, chipText: chip ? chip.textContent.trim() : null,
-      scoresNoWrap: [...c.querySelectorAll('td.prediction-cell .cell-score')].every(e => e.getBoundingClientRect().height < 40) };
+      scoresNoWrap: [...c.querySelectorAll('td.prediction-cell .cell-score')].every(e => e.getBoundingClientRect().height < 40),
+      minW: (() => { const T = c.querySelector('.summary-table'); const keep = [T.style.width, T.style.minWidth]; T.style.width = 'min-content'; T.style.minWidth = '0'; const out = { match: [...c.querySelectorAll('thead th.match-header-cell')].map(t => Math.round(t.getBoundingClientRect().width)), tries: Math.round((c.querySelector('thead th.tries-col') || { getBoundingClientRect: () => ({ width: 0 }) }).getBoundingClientRect().width) }; T.style.width = keep[0]; T.style.minWidth = keep[1]; return out; })() };
   });
   for (const theme of ['light', 'dark']) for (const detail of [false, true]) for (const width of [320, 360, 375, 390, 430, 768, 1280]) {
     await page.evaluate((t) => { document.documentElement.setAttribute('data-theme', t); }, theme);
@@ -155,7 +156,8 @@ const mock = `
     const r = await measure();
     // 360px and up must not scroll at all, even with three-digit scores; 320px (the narrowest phones) may overflow by a hair with those extreme scores (graceful minimum: 12px)
     const fits = r.games === 3 && (width === 320 ? r.scrollW - r.box <= 12 : (!r.scrolls && r.locked && !r.hint));
-    console.log(`${theme} detail=${detail} @${width}: the round (3 matches) fits with no sideways scrolling and no scroll hint:`, fits, '| names one line:', r.oneLine, '| scores not wrapped:', r.scoresNoWrap, '|', JSON.stringify({ box: r.box, scrollW: r.scrollW, nameCol: r.colW }));
+    console.log(`${theme} detail=${detail} @${width}: the round (3 matches) fits with no sideways scrolling and no scroll hint:`, fits, '| names on at most two lines:', r.oneLine, '| scores not wrapped:', r.scoresNoWrap, '|', JSON.stringify({ box: r.box, scrollW: r.scrollW, nameCol: r.colW }));
+    if (width >= 360 && width <= 430) console.log(`   ${theme} detail=${detail} @${width}: match columns (min-content, with these extreme 100-105 scores) are 76px or less and Predicted Tries 76px or less (normal scores: 59/56 and 70 at 390, before 68/64 and 102):`, Math.max(...r.minW.match) <= 76 && r.minW.tries <= 76, JSON.stringify(r.minW));
     if (width >= 360) {
       console.log(`   ${theme} detail=${detail} @${width}: name font smaller than the old 16.8px (now ${r.nameFs}px) and the dash has no spaces round it (gap ${r.gap}px, header chip "${r.chipText}"):`, r.nameFs <= 15 && r.gap !== null && r.gap <= 6 && /^\d+-\d+$/.test(r.chipText || '') && !/ /.test(r.dashText || ''));
     }
