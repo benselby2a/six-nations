@@ -1,5 +1,6 @@
 #!/bin/bash
 # Usage: dev/test.sh <name>   run one test (e.g. fixture-cancel, sql-second-email)
+#        dev/test.sh <a> <b> <c>   run several in parallel (3 to 5 related tests in about the time of the slowest one)
 #        dev/test.sh all      run everything (about 30s in parallel; do this once before merge)
 # First time: (cd dev/tests && npm install)   -- Playwright can use an existing global install.
 cd "$(dirname "$0")/tests"
@@ -15,4 +16,9 @@ if [ "$1" = all ]; then
   { for t in $slow; do echo "$all" | grep -qx "$t" && echo "$t"; done; echo "$all" | grep -vxF "$(echo $slow | tr ' ' '\n')"; } \
     | xargs -P $(( $(nproc) * 2 )) -I{} bash -c 'run {} > /tmp/sn-tests/{}.txt 2>&1'
   cat /tmp/sn-tests/*.txt
+elif [ $# -gt 1 ]; then
+  # several tests at once, in parallel (about as many at a time as cores), each result block printed whole and in the order given
+  export -f run; mkdir -p /tmp/sn-tests; rm -f /tmp/sn-tests/multi-*.txt
+  printf '%s\n' "$@" | xargs -P $(( $(nproc) * 2 )) -I{} bash -c 'run {} > /tmp/sn-tests/multi-{}.txt 2>&1'
+  for t in "$@"; do cat /tmp/sn-tests/multi-$t.txt; done
 else run "$1"; fi
