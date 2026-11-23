@@ -44,8 +44,9 @@
     <div id="loadingScreen" class="loading-screen">
         <div class="loading-content">
             <div class="loading-spinner"></div>
-            <div class="loading-text">Loading...</div>
+            <div class="loading-text" id="loadingText">Loading...</div>
         </div>
+        <script>try { if (document.documentElement.classList.contains('app-reloaded')) document.getElementById('loadingText').textContent = 'Updating to the latest version...'; } catch (e) { /* keep Loading... */ }</script>
     </div>
 
     <div class="container">
