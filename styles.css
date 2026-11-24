@@ -4268,3 +4268,7 @@ body.summary-compact .summary-table thead th.match-header-cell.match-col-now, bo
     body.summary-compact .summary-table th.rank-col, body.summary-compact .summary-table td.rank-col,
     body.summary-compact .summary-table th.competitor-col, body.summary-compact .summary-table td.competitor-name { -webkit-transform: translateZ(0); transform: translateZ(0); -webkit-backface-visibility: hidden; backface-visibility: hidden; will-change: transform; }
 }
+
+/* Compact and Jumbo: sideways scrolling snaps to whole match columns against the pinned columns (scroll-padding-left is set from the pinned width in syncSummaryScrollLock), so no cut-off score chip or cell edge is left showing beside the pinned Name column at rest */
+body.summary-compact .summary-container { scroll-snap-type: x mandatory; }
+body.summary-compact .summary-table:not(.summary-table-clone) th.match-header-cell { scroll-snap-align: start; }
