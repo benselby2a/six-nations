@@ -4303,3 +4303,16 @@ body.summary-compact .summary-table td.cell-sel::after, body.summary-compact .su
 /* Touch selection: fades away once the scrolling that followed it has stopped (see fadeOutSummarySelection in js/app-bar.js) */
 body.summary-compact .summary-table-wrap.sel-fade td.row-sel::after, body.summary-compact .summary-table-wrap.sel-fade td.col-sel::after, body.summary-compact .summary-table-wrap.sel-fade th.col-sel::after, body.summary-compact .summary-table-wrap.sel-fade td.cell-sel::after, body.summary-compact .summary-table-wrap.sel-fade th.cell-sel::after { opacity: 0; transition: opacity 0.2s ease; }
 @media (prefers-reduced-motion: reduce) { body.summary-compact .summary-table-wrap.sel-fade td.row-sel::after, body.summary-compact .summary-table-wrap.sel-fade td.col-sel::after, body.summary-compact .summary-table-wrap.sel-fade th.col-sel::after, body.summary-compact .summary-table-wrap.sel-fade td.cell-sel::after, body.summary-compact .summary-table-wrap.sel-fade th.cell-sel::after { transition: none; } }
+
+/* Dark theme: the signed-in player's own row is green, as in the light theme (it was gold, the same family as the tap/hover selection bars, so the two could not be told apart) */
+:where(:root[data-theme="dark"]) .summary-table tr.current-user-row td { background: rgb(52 168 110 / 0.2); }
+:where(:root[data-theme="dark"]) .summary-table tr.current-user-row td.rank-col,
+:where(:root[data-theme="dark"]) .summary-table tr.current-user-row td.competitor-name,
+:where(:root[data-theme="dark"]) .summary-table tr.current-user-row td.pts-col { background: color-mix(in srgb, #34a86e 24%, var(--grid-bg)); }
+:where(:root[data-theme="dark"]) .summary-table tr.current-user-row td.competitor-name { border-left-color: #4fd08a; }
+@media (hover: hover) and (pointer: fine) {
+    :where(:root[data-theme="dark"]) .summary-table tr.current-user-row:hover td { background: rgb(52 168 110 / 0.3); }
+    :where(:root[data-theme="dark"]) .summary-table tr.current-user-row:hover td.rank-col,
+    :where(:root[data-theme="dark"]) .summary-table tr.current-user-row:hover td.competitor-name,
+    :where(:root[data-theme="dark"]) .summary-table tr.current-user-row:hover td.pts-col { background: color-mix(in srgb, #34a86e 34%, var(--grid-bg)); }
+}
