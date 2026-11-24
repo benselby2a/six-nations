@@ -4272,3 +4272,8 @@ body.summary-compact .summary-table thead th.match-header-cell.match-col-now, bo
 /* Compact and Jumbo: sideways scrolling snaps to whole match columns against the pinned columns (scroll-padding-left is set from the pinned width in syncSummaryScrollLock), so no cut-off score chip or cell edge is left showing beside the pinned Name column at rest */
 body.summary-compact .summary-container { scroll-snap-type: x mandatory; }
 body.summary-compact .summary-table:not(.summary-table-clone) th.match-header-cell { scroll-snap-align: start; }
+
+/* iPhone/iPad, Compact and Jumbo: the table box sits at a fractional x (about 10.6px), so the pinned Rank cell starts part-way into a device pixel and a 1px sliver of the score columns scrolled underneath showed down its left edge (seen on a real iPhone). The box's left border is already transparent there, so clip the box 2px in from its left edge: the sliver (and 1px of the Rank cell) is cut off and only the page shows. */
+@supports (-webkit-touch-callout: none) {
+    body.summary-compact .summary-container { clip-path: inset(0 0 0 2px); }
+}
