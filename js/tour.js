@@ -148,9 +148,9 @@ function tourBuildAdminSteps() {
             'Pick a competitor to review or correct their predictions, Jokers and tries guess.'
         ]),
         tourStep('admin-competitors', 'Competitors', [
-            'Admin Functions, then <strong>Competitors</strong>.',
-            'To add someone, enter their email in <strong>+ Add a competitor</strong>. They sign in with an emailed code and fill in their own name and teams.',
-            'Each card lets you change a name, email (two per person are allowed), teams, whether they are playing this year, whether they are <strong>exempt from the prize fund</strong> (has not paid), and admin access.'
+            'Admin Functions, then <strong>Competitors</strong>. Everyone who has played before is listed here, so use this tab both to edit an existing player and to add a new one.',
+            'Returning player: open their card and tick <strong>Playing</strong> for this year. Each card also changes their name, emails (two allowed), teams, <strong>prize fund exemption</strong> (has not paid) and admin access.',
+            'New player: add their <strong>email first</strong>, in <strong>+ Add a competitor</strong>. Only registered emails can sign in, so do this before they try. They then sign in with an emailed code and fill in their own name and teams.'
         ]),
         tourStep('admin-rules', 'Guesser Rules', [
             'Admin Functions, then <strong>Guesser Rules</strong>.',
