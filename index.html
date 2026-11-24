@@ -11,7 +11,7 @@
         var dark = m === 'dark' || (m !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
         if (dark) { document.documentElement.setAttribute('data-theme', 'dark'); }
     } catch (e) { /* the bundle applies the theme once it runs */ }</script>
-    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=53c8cda2" -->
+    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=7e70502c" -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Six Nations Predictor</title>
@@ -36,7 +36,7 @@
     <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- jsPDF and its table plugin are loaded on demand (see loadPdfLibs in js/export-pdf.js), not on every visit -->
-    <link rel="stylesheet" href="dist/app.min.css?v=53c8cda2">
+    <link rel="stylesheet" href="dist/app.min.css?v=7e70502c">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -48,12 +48,20 @@
         </div>
         <script>try { if (document.documentElement.classList.contains('app-reloaded')) document.getElementById('loadingText').textContent = 'Updating to the latest version...'; } catch (e) { /* keep Loading... */ }</script>
     </div>
-    <!-- Stuck-on-the-spinner safety net: if the app has not started after 12s (an update half-installed, a script that never arrived), clear the saved copies and reload once; if that does not help either, offer a Reload button. The bundle sets window.__appReady when the first screen is up. -->
+    <!-- Stuck-on-the-spinner safety net: if the app has not started after 5s (an update that cannot finish, a script that never arrived), fall back to the previous version from the saved copy (?fallback=1, served by sw.js) once; if there is none or it does not start either, clear the saved copies and reload once; then offer a Reload button. The bundle sets window.__appReady when the first screen is up. -->
     <script>(function () {
-        var after = window.__stuckAfterMs || 12000;
-        function recover(auto) {
-            try { if (auto && sessionStorage.getItem('rugbyPredictorStuckFix') === '1') return false; sessionStorage.setItem('rugbyPredictorStuckFix', '1'); } catch (e) { /* ignore */ }
-            var t = document.getElementById('loadingText'); if (t) t.textContent = 'Refreshing the app...';
+        var after = window.__stuckAfterMs || 5000;
+        function mark(k) { try { if (sessionStorage.getItem(k) === '1') return false; sessionStorage.setItem(k, '1'); return true; } catch (e) { return false; } }
+        function setText(x) { var t = document.getElementById('loadingText'); if (t) t.textContent = x; }
+        function fallback() {   // the previous version, from the service worker's saved copy
+            if (!mark('rugbyPredictorFellBack')) return false;
+            setText('Opening the previous version...');
+            location.replace(location.pathname + '?fallback=1&r=' + Date.now());
+            return true;
+        }
+        function recover() {    // clear the saved copies and start again from the network
+            if (!mark('rugbyPredictorStuckFix')) return false;
+            setText('Refreshing the app...');
             var jobs = [];
             try { if (navigator.serviceWorker) jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); })); } catch (e) { /* ignore */ }
             try { if (window.caches) jobs.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); })); } catch (e) { /* ignore */ }
@@ -61,13 +69,13 @@
             Promise.all(jobs).then(done, done); setTimeout(done, 3000);
             return true;
         }
-        window.__recoverApp = recover;
+        window.__recoverApp = function () { if (!fallback() && !recover()) window.__showStuck(); };
         window.__showStuck = function () {
             var t = document.getElementById('loadingText'); if (!t || window.__appReady) return;
             t.innerHTML = 'Still loading...<br><button type="button" id="stuckReload" style="margin-top:1rem;padding:0.6rem 1.2rem;font:inherit;font-size:1rem;border-radius:8px;border:2px solid currentColor;background:transparent;color:inherit">Reload the app</button>';
-            document.getElementById('stuckReload').onclick = function () { recover(false); };
+            document.getElementById('stuckReload').onclick = function () { try { sessionStorage.removeItem('rugbyPredictorStuckFix'); } catch (e) { /* ignore */ } recover(); };
         };
-        setTimeout(function () { if (window.__appReady) return; if (!recover(true)) window.__showStuck(); }, after);
+        setTimeout(function () { if (!window.__appReady) window.__recoverApp(); }, after);
     })();</script>
 
     <div class="container">
@@ -891,6 +899,6 @@
     </div>
 
     <div class="app-footer"><span id="summaryUpdatedAt" class="app-footer-updated" aria-label="When the scores were last fetched"></span><span id="appVersion" class="app-version" aria-label="App version"></span></div>
-    <script src="dist/app.min.js?v=53c8cda2" onerror="window.__recoverApp && window.__recoverApp(true)"></script>
+    <script src="dist/app.min.js?v=7e70502c" onerror="window.__recoverApp && window.__recoverApp(true)"></script>
 </body>
 </html>

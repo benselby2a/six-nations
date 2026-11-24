@@ -173,6 +173,7 @@ let lastVersionCheckAt = 0;
 
 async function checkForNewVersion() {
     if (!APP_VERSION_TAG || NET.offline || navigator.onLine === false || location.protocol === 'file:') return;
+    if (/[?&]fallback=1/.test(location.search)) return;   // this is the previous version, opened because the new one could not start: do not jump straight back to it this time
     if (Date.now() - lastVersionCheckAt < 30 * 1000) return;
     lastVersionCheckAt = Date.now();
     try {

@@ -17,7 +17,8 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys()
-            .then(keys => Promise.all(keys.filter(k => k.startsWith('six-nations-') && k !== CACHE).map(k => caches.delete(k))))
+            // keep the previous version's saved copy too: if the new one cannot start, the page falls back to it (?fallback=1)
+            .then(keys => { const mine = keys.filter(k => k.startsWith('six-nations-')); const i = mine.indexOf(CACHE); const keep = i > 0 ? mine[i - 1] : null; return Promise.all(mine.filter(k => k !== CACHE && k !== keep).map(k => caches.delete(k))); })
             .then(() => self.clients.claim())
     );
 });
@@ -42,6 +43,16 @@ function networkFirst(request, timeoutMs) {
     });
 }
 
+// The new version could not start within a few seconds: serve the previous version's page from its saved copy (its scripts are in the same saved copy)
+function previousVersionPage(request) {
+    return caches.keys().then(keys => {
+        const mine = keys.filter(k => k.startsWith('six-nations-'));
+        const i = mine.indexOf(CACHE);
+        const prev = i > 0 ? mine[i - 1] : null;
+        return prev ? caches.open(prev).then(c => c.match('index.html')) : null;
+    }).then(hit => hit || networkFirst(request, 4000));
+}
+
 function cacheFirst(request) {
     return caches.match(request).then(hit => hit || fetch(request).then(response => {
         if (response.ok) { const copy = response.clone(); caches.open(CACHE).then(c => c.put(request, copy)); }
@@ -63,6 +74,7 @@ self.addEventListener('fetch', (event) => {
     if (url.origin === self.location.origin) {
         if (url.searchParams.has('_')) return;   // the new-version check must always reach the network
         const isPage = request.mode === 'navigate' || /\/(index\.html)?$/.test(url.pathname);
+        if (isPage && url.searchParams.has('fallback')) { event.respondWith(previousVersionPage(request)); return; }
         if (isPage) { event.respondWith(networkFirst(request, 4000)); return; }
         if (/\/(dist|tour-images|icons)\//.test(url.pathname) || /manifest\.json$|favicon\.ico$/.test(url.pathname)) { event.respondWith(cacheFirst(request)); return; }
         return;
