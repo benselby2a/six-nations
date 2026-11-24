@@ -145,6 +145,8 @@ const mock = `
   await page.evaluate(() => { document.documentElement.setAttribute('data-theme', 'dark'); }); await page.waitForTimeout(300);
   const d = await page.evaluate(() => { const c = document.querySelector('td.simple-joker'); const s = getComputedStyle(c); return { bg: s.backgroundColor, fg: getComputedStyle(c.querySelector('.pred-score')).color, bar: s.boxShadow }; });
   console.log('dark joker cell:', JSON.stringify(d));
+  const own = await page.evaluate(() => { const c = document.querySelector('tr.current-user-row td.prediction-cell, tr.current-user-row td.rank-col'); const n = document.querySelector('tr.current-user-row td.rank-col'); const rgb = (s) => (s.match(/[\d.]+/g) || []).map(Number); return { cell: rgb(getComputedStyle(c).backgroundColor), rank: rgb(getComputedStyle(n).backgroundColor) }; });
+  console.log('dark: the signed-in player\'s own row is green (not gold):', JSON.stringify(own), own.cell[1] > own.cell[0] && own.rank[1] > own.rank[0] && own.rank[1] > own.rank[2]);
   console.log('dark works (soft gold shading, no bar):', /245, 207, 106/.test(d.bg) && !/0px 4px/.test(d.bar));
   await page.screenshot({path:'/tmp/claude-0/-home-user-six-nations/55e70b8c-24a4-53e8-973b-d120bef1189e/scratchpad/simple-dark.png', clip:{x:0,y:150,width:390,height:520}});
   // iPhone/iPad: header cells have a 24px page-coloured spacer on top (border-top); the Joker header's gold bar must show at the top of the green area, below that spacer.
