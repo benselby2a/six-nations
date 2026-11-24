@@ -916,6 +916,7 @@
             white-space: nowrap;
         }
 
+        @media (hover: hover) and (pointer: fine) {
         .summary-table tr:hover td {
             background: rgb(var(--ink) / 0.1);
         }
@@ -924,6 +925,7 @@
         .summary-table tr:hover td.competitor-name,
         .summary-table tr:hover td.pts-col {
             background: color-mix(in srgb, rgb(var(--ink)) 10%, var(--grid-bg));
+        }
         }
 
         /* Highlight current logged in user */
@@ -941,6 +943,7 @@
             border-left: 3px solid var(--bright-gold);
         }
 
+        @media (hover: hover) and (pointer: fine) {
         .summary-table tr.current-user-row:hover td {
             background: rgb(var(--accent-rgb) / 0.25);
         }
@@ -949,6 +952,7 @@
         .summary-table tr.current-user-row:hover td.competitor-name,
         .summary-table tr.current-user-row:hover td.pts-col {
             background: color-mix(in srgb, var(--gold) 26%, var(--grid-bg));
+        }
         }
 
         .match-header-cell {
@@ -4224,9 +4228,15 @@ body.summary-compact .summary-table thead th.match-header-cell.match-col-now, bo
 /* Compact and Focus, mouse only: the column under the pointer is lit like the row under it (see watchColumnHover in js/app-bar.js).
    An overlay layer (like the next-match tint), so result tints, Joker shading and the current-user row stay underneath; where a column is both hovered and the next/in-play match the two layers are stacked. */
 @media (hover: hover) and (pointer: fine) {
-    body.summary-compact .summary-table td.col-hover { background-image: linear-gradient(rgb(var(--ink) / 0.1), rgb(var(--ink) / 0.1)); }
-    body.summary-compact .summary-table td.col-hover.match-col-now, body.summary-compact .summary-table td.col-hover.match-col-next { background-image: linear-gradient(rgb(var(--ink) / 0.1), rgb(var(--ink) / 0.1)), linear-gradient(rgba(232, 176, 42, 0.14), rgba(232, 176, 42, 0.14)); }
-    :root[data-theme="dark"] body.summary-compact .summary-table td.col-hover.match-col-now, :root[data-theme="dark"] body.summary-compact .summary-table td.col-hover.match-col-next { background-image: linear-gradient(rgb(var(--ink) / 0.1), rgb(var(--ink) / 0.1)), linear-gradient(rgba(245, 207, 106, 0.10), rgba(245, 207, 106, 0.10)); }
+    body.summary-compact .summary-table td.col-hover { background-image: linear-gradient(rgba(232, 176, 42, 0.13), rgba(232, 176, 42, 0.13)); }
+    :root[data-theme="dark"] body.summary-compact .summary-table td.col-hover { background-image: linear-gradient(rgba(245, 207, 106, 0.11), rgba(245, 207, 106, 0.11)); }
+    body.summary-compact .summary-table td.col-hover.match-col-now, body.summary-compact .summary-table td.col-hover.match-col-next { background-image: linear-gradient(rgba(232, 176, 42, 0.13), rgba(232, 176, 42, 0.13)), linear-gradient(rgba(232, 176, 42, 0.14), rgba(232, 176, 42, 0.14)); }
+    :root[data-theme="dark"] body.summary-compact .summary-table td.col-hover.match-col-now, :root[data-theme="dark"] body.summary-compact .summary-table td.col-hover.match-col-next { background-image: linear-gradient(rgba(245, 207, 106, 0.11), rgba(245, 207, 106, 0.11)), linear-gradient(rgba(245, 207, 106, 0.10), rgba(245, 207, 106, 0.10)); }
+    /* the row under the mouse: the same gold family (cells and the opaque pinned cells) */
+    body.summary-compact .summary-table tr:hover td { background: rgba(232, 176, 42, 0.13); }
+    body.summary-compact .summary-table tr:hover td.rank-col, body.summary-compact .summary-table tr:hover td.competitor-name, body.summary-compact .summary-table tr:hover td.pts-col { background: color-mix(in srgb, #e8b02a 15%, var(--grid-bg)); }
+    :root[data-theme="dark"] body.summary-compact .summary-table tr:hover td { background: rgba(245, 207, 106, 0.11); }
+    :root[data-theme="dark"] body.summary-compact .summary-table tr:hover td.rank-col, :root[data-theme="dark"] body.summary-compact .summary-table tr:hover td.competitor-name, :root[data-theme="dark"] body.summary-compact .summary-table tr:hover td.pts-col { background: color-mix(in srgb, #f5cf6a 13%, var(--grid-bg)); }
     /* the header bar colour is forced with !important elsewhere (a `background` shorthand with several :not()s), so the lighter band needs it too and a doubled class to outrank it */
     body.summary-compact .summary-table thead th.col-hover.col-hover { background-image: linear-gradient(rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.14)) !important; }
     :root[data-theme="dark"] body.summary-compact .summary-table thead th.col-hover.col-hover { background-image: linear-gradient(rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.10)) !important; }
@@ -4276,3 +4286,14 @@ body.summary-compact .summary-table:not(.summary-table-clone) th.match-header-ce
 @supports (-webkit-touch-callout: none) {
     :root:not([data-theme="dark"]) .app-bar::before { top: -20rem; }
 }
+
+/* Compact and Jumbo: tap or click a cell and its row and column are shaded with a light gold bar (see watchSummaryTap in js/app-bar.js); the tapped cell is a little stronger.
+   An overlay (::after), so result tints, Joker shading, the next-match tint and the pinned cells' opaque backgrounds all stay underneath. */
+.summary-table td, .summary-table th { -webkit-tap-highlight-color: transparent; }
+body.summary-compact .summary-table td.row-sel:not(.rank-col):not(.competitor-name):not(.pts-col),
+body.summary-compact .summary-table td.col-sel:not(.rank-col):not(.competitor-name):not(.pts-col),
+body.summary-compact .summary-table th.col-sel:not(.rank-col):not(.competitor-col):not(.pts-col) { position: relative; }
+body.summary-compact .summary-table td.row-sel::after, body.summary-compact .summary-table td.col-sel::after, body.summary-compact .summary-table th.col-sel::after { content: ''; position: absolute; inset: 0; background: rgba(232, 176, 42, 0.2); pointer-events: none; }
+body.summary-compact .summary-table td.cell-sel::after, body.summary-compact .summary-table th.cell-sel::after { background: rgba(232, 176, 42, 0.4); }
+:root[data-theme="dark"] body.summary-compact .summary-table td.row-sel::after, :root[data-theme="dark"] body.summary-compact .summary-table td.col-sel::after, :root[data-theme="dark"] body.summary-compact .summary-table th.col-sel::after { background: rgba(245, 207, 106, 0.17); }
+:root[data-theme="dark"] body.summary-compact .summary-table td.cell-sel::after, :root[data-theme="dark"] body.summary-compact .summary-table th.cell-sel::after { background: rgba(245, 207, 106, 0.34); }
