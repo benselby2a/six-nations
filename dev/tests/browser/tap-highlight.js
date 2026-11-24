@@ -79,14 +79,35 @@ const goldish = (c) => { const m = (c || '').match(/rgba?\(([^)]+)\)/); if (!m) 
     await page.touchscreen.tap(195, 8); await page.waitForTimeout(250);
     const e = await state(page);
     console.log(label + ': a tap on empty page clears it:', JSON.stringify({ cells: e.cell, col: e.colCells }), e.cell === 0 && e.colCells === 0);
-    // a drag (scroll) is not a tap
+    // a drag across a cell: the cell is highlighted while the finger moves the table, and the highlight fades away once the scrolling has stopped
     const box = await page.locator(T + ' tbody tr:nth-child(2) td').nth(4).boundingBox();
     const cdp = await context.newCDPSession(page);
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: box.x + 20, y: box.y + 20 }] });
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: box.x + 80, y: box.y + 22 }] });
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await page.waitForTimeout(250);
-    const d = await state(page);
-    console.log(label + ': a drag across a cell does not select it:', JSON.stringify({ cell: d.cell, col: d.colCells }), d.cell === 0 && d.colCells === 0);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: box.x + 60, y: box.y + 20 }] });
+    for (let k = 1; k <= 6; k++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: box.x + 60 - k * 12, y: box.y + 22 }] }); await page.waitForTimeout(40); }
+    const dDuring = await state(page);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await page.waitForTimeout(120);
+    const dJust = await state(page);   // finger up, momentum / debounce still running
+    await page.waitForTimeout(900);
+    const dAfter = await state(page);
+    console.log(label + ': a drag shows the highlight while scrolling and it is gone after the scrolling stops:', JSON.stringify({ during: dDuring.cell, justAfterLift: dJust.cell, after: [dAfter.cell, dAfter.colCells, dAfter.rowCells] }), dDuring.cell === 1 && dDuring.colCells > 0 && dAfter.cell === 0 && dAfter.colCells === 0 && dAfter.rowCells === 0);
+    // a tap selection, then the table scrolls: still shown while it scrolls, cleared ~300ms after the last scroll event
+    await name.tap(); await page.waitForTimeout(200);
+    const s0 = await state(page);
+    const scrolled = await page.evaluate(async () => {
+      const box = document.querySelector('.summary-container'); const q = () => document.querySelectorAll('.summary-table-wrap .cell-sel').length;
+      if (box.scrollWidth <= box.clientWidth + 40) document.querySelector('.summary-table:not(.summary-table-clone)').style.minWidth = (box.clientWidth + 400) + 'px';   // the mock's table may fit the screen: make it scrollable
+      const seen = [];
+      for (let k = 1; k <= 6; k++) { box.scrollLeft = k * 20; await new Promise(r => setTimeout(r, 60)); seen.push(q()); }
+      return seen;
+    });
+    await page.waitForTimeout(800);
+    const s1 = await state(page);
+    console.log(label + ': a tap selection stays visible while the table scrolls and is cleared after the scrolling stops:', JSON.stringify({ before: s0.cell, whileScrolling: scrolled, after: [s1.cell, s1.colCells] }), s0.cell === 1 && scrolled.every(n => n === 1) && s1.cell === 0 && s1.colCells === 0);
+    // a tap without any scrolling stays until something else clears it
+    await name.tap(); await page.waitForTimeout(900);
+    const s2 = await state(page);
+    console.log(label + ': a tap with no scrolling stays selected:', JSON.stringify({ cell: s2.cell, col: s2.colCells }), s2.cell === 1 && s2.colCells > 0);
     // a redraw clears it
     await name.tap(); await page.waitForTimeout(200);
     await page.evaluate(() => showSummary()); await page.waitForTimeout(500);

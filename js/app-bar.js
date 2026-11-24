@@ -220,15 +220,29 @@ function setColumnHover(index, anchor) {
     document.addEventListener('scroll', (event) => { if (columnHoverIndex !== -1 && event.target && event.target.classList && event.target.classList.contains('summary-container')) clearColumnHover(); }, { passive: true, capture: true });
 })();
 // Tap or click a cell in Compact and Jumbo: its whole row and column are shaded with a light gold bar (and the tapped cell a little stronger),
-// like the hover on a computer. It stays until another cell is tapped (it moves), the same cell is tapped again, or a tap lands on empty page.
+// like the hover on a computer. On a phone it stays visible while the table is scrolled and fades away once the scrolling stops; a tap with no scrolling stays until another cell is tapped, the same cell is tapped again, or a tap lands on empty page.
 // The tap still does what it did (a prediction or match header still opens its pop-up): this only listens. A drag or scroll is not a tap.
+let summarySel = null;   // { source: 'touch' | 'mouse', scrolled: boolean } while a selection is showing
 function clearSummarySelection() {
     document.querySelectorAll('.summary-table-wrap .row-sel, .summary-table-wrap .col-sel, .summary-table-wrap .cell-sel').forEach(c => c.classList.remove('row-sel', 'col-sel', 'cell-sel'));
+    document.querySelectorAll('.summary-table-wrap.sel-fade').forEach(w => w.classList.remove('sel-fade'));
+    summarySel = null;
 }
-function setSummarySelection(cell) {
+// On a phone the selection is a marker while the finger moves the table: it stays visible during the scroll (and its momentum) and fades
+// away once the scrolling has stopped. A tap with no scrolling leaves it as it was.
+function fadeOutSummarySelection() {
+    const wrap = document.querySelector('.summary-table-wrap');
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!wrap || reduce) { clearSummarySelection(); return; }
+    wrap.classList.add('sel-fade');
+    setTimeout(() => { if (summarySel && summarySel.fading) clearSummarySelection(); }, 230);
+    if (summarySel) summarySel.fading = true;
+}
+function setSummarySelection(cell, source) {
     clearSummarySelection();
     const wrap = cell.closest('.summary-table-wrap');
     if (!wrap) return;
+    summarySel = { source: source || 'mouse', scrolled: false };
     const index = cell.cellIndex;
     wrap.querySelectorAll('table.summary-table tr').forEach(row => { const c = row.cells[index]; if (c) c.classList.add('col-sel'); });
     if (cell.tagName === 'TD') [...cell.parentElement.cells].forEach(c => c.classList.add('row-sel'));
@@ -240,20 +254,54 @@ function setSummarySelection(cell) {
 (function watchSummaryTap() {
     if (typeof document === 'undefined') return;
     let down = null;
+    let fingerDown = false, settleTimer = null;
     const inSummaryView = () => document.body.classList.contains('summary-compact');
-    document.addEventListener('pointerdown', (event) => { down = { x: event.clientX, y: event.clientY, t: Date.now(), id: event.pointerId }; }, { passive: true });
+    const CELL = '.summary-table-wrap table.summary-table td, .summary-table-wrap table.summary-table th';
+    // touch selections end once the scrolling has: 300ms after the last scroll event, and only with the finger up (iPhone keeps scrolling by momentum)
+    const armSettle = () => {
+        if (!summarySel || summarySel.source !== 'touch') return;
+        summarySel.scrolled = true;
+        clearTimeout(settleTimer);
+        settleTimer = setTimeout(() => { if (fingerDown) return; if (summarySel && summarySel.source === 'touch' && summarySel.scrolled) fadeOutSummarySelection(); }, 300);
+    };
+    document.addEventListener('touchstart', (event) => { fingerDown = event.touches.length > 0; clearTimeout(settleTimer); }, { passive: true, capture: true });
+    const fingerUp = (event) => { fingerDown = event.touches.length > 0; if (!fingerDown && summarySel && summarySel.scrolled) armSettle(); };
+    document.addEventListener('touchend', fingerUp, { passive: true, capture: true });
+    document.addEventListener('touchcancel', fingerUp, { passive: true, capture: true });
+    document.addEventListener('scroll', (event) => {
+        if (!summarySel || summarySel.source !== 'touch') return;
+        const t = event.target;
+        if (t === document || t === document.documentElement || (t && t.classList && t.classList.contains('summary-container'))) armSettle();
+    }, { passive: true, capture: true });
+    document.addEventListener('pointerdown', (event) => {
+        down = { x: event.clientX, y: event.clientY, t: Date.now(), id: event.pointerId, touch: event.pointerType === 'touch', wasSame: false, held: false };
+        // touching a cell shows the selection straight away, so it is visible while the same gesture scrolls the table
+        if (down.touch && inSummaryView()) {
+            const cell = event.target && event.target.closest ? event.target.closest(CELL) : null;
+            if (cell) {
+                down.wasSame = !cell.closest('.summary-table-clone') && cell.classList.contains('cell-sel');
+                setSummarySelection(cell, 'touch'); down.held = true;
+            }
+        }
+    }, { passive: true });
+    // the browser takes over a drag as a scroll and cancels the pointer: the selection stays and ends with the scrolling
+    document.addEventListener('pointercancel', (event) => {
+        if (down && down.id === event.pointerId && down.held && summarySel) { armSettle(); }
+        down = null;
+    }, { passive: true });
     document.addEventListener('pointerup', (event) => {
         const start = down; down = null;
         if (!start || start.id !== event.pointerId) return;
-        if (Math.abs(event.clientX - start.x) > 8 || Math.abs(event.clientY - start.y) > 8 || Date.now() - start.t > 700) return;   // a drag or a long press is not a tap
+        if (Math.abs(event.clientX - start.x) > 8 || Math.abs(event.clientY - start.y) > 8 || Date.now() - start.t > 700) { if (start.held && summarySel) armSettle(); return; }   // a drag or a long press is not a tap
         if (!inSummaryView()) return;
         const target = event.target && event.target.closest ? event.target : null;
         if (!target) return;
-        const cell = target.closest('.summary-table-wrap table.summary-table td, .summary-table-wrap table.summary-table th');
+        const cell = target.closest(CELL);
         if (cell) {
+            if (start.held) { if (start.wasSame) clearSummarySelection(); return; }   // the touch already selected it (tapping the same cell again clears)
             const real = cell.closest('.summary-table-clone') ? null : cell;
             if (real && real.classList.contains('cell-sel')) { clearSummarySelection(); return; }   // the same cell again
-            setSummarySelection(cell);
+            setSummarySelection(cell, start.touch ? 'touch' : 'mouse');
             return;
         }
         // a tap on empty page clears it; taps on buttons, menus and pop-ups leave it alone
