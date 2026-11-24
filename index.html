@@ -11,7 +11,7 @@
         var dark = m === 'dark' || (m !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
         if (dark) { document.documentElement.setAttribute('data-theme', 'dark'); }
     } catch (e) { /* the bundle applies the theme once it runs */ }</script>
-    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=ce831ecb" -->
+    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=53c8cda2" -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Six Nations Predictor</title>
@@ -36,7 +36,7 @@
     <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- jsPDF and its table plugin are loaded on demand (see loadPdfLibs in js/export-pdf.js), not on every visit -->
-    <link rel="stylesheet" href="dist/app.min.css?v=ce831ecb">
+    <link rel="stylesheet" href="dist/app.min.css?v=53c8cda2">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -48,6 +48,27 @@
         </div>
         <script>try { if (document.documentElement.classList.contains('app-reloaded')) document.getElementById('loadingText').textContent = 'Updating to the latest version...'; } catch (e) { /* keep Loading... */ }</script>
     </div>
+    <!-- Stuck-on-the-spinner safety net: if the app has not started after 12s (an update half-installed, a script that never arrived), clear the saved copies and reload once; if that does not help either, offer a Reload button. The bundle sets window.__appReady when the first screen is up. -->
+    <script>(function () {
+        var after = window.__stuckAfterMs || 12000;
+        function recover(auto) {
+            try { if (auto && sessionStorage.getItem('rugbyPredictorStuckFix') === '1') return false; sessionStorage.setItem('rugbyPredictorStuckFix', '1'); } catch (e) { /* ignore */ }
+            var t = document.getElementById('loadingText'); if (t) t.textContent = 'Refreshing the app...';
+            var jobs = [];
+            try { if (navigator.serviceWorker) jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister(); })); })); } catch (e) { /* ignore */ }
+            try { if (window.caches) jobs.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k); })); })); } catch (e) { /* ignore */ }
+            var done = function () { if (window.__stuckReloaded) return; window.__stuckReloaded = true; location.replace(location.pathname + '?r=' + Date.now()); };
+            Promise.all(jobs).then(done, done); setTimeout(done, 3000);
+            return true;
+        }
+        window.__recoverApp = recover;
+        window.__showStuck = function () {
+            var t = document.getElementById('loadingText'); if (!t || window.__appReady) return;
+            t.innerHTML = 'Still loading...<br><button type="button" id="stuckReload" style="margin-top:1rem;padding:0.6rem 1.2rem;font:inherit;font-size:1rem;border-radius:8px;border:2px solid currentColor;background:transparent;color:inherit">Reload the app</button>';
+            document.getElementById('stuckReload').onclick = function () { recover(false); };
+        };
+        setTimeout(function () { if (window.__appReady) return; if (!recover(true)) window.__showStuck(); }, after);
+    })();</script>
 
     <div class="container">
         <header>
@@ -870,6 +891,6 @@
     </div>
 
     <div class="app-footer"><span id="summaryUpdatedAt" class="app-footer-updated" aria-label="When the scores were last fetched"></span><span id="appVersion" class="app-version" aria-label="App version"></span></div>
-    <script src="dist/app.min.js?v=ce831ecb"></script>
+    <script src="dist/app.min.js?v=53c8cda2" onerror="window.__recoverApp && window.__recoverApp(true)"></script>
 </body>
 </html>
