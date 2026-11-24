@@ -4262,3 +4262,9 @@ body.summary-compact .summary-table thead th.match-header-cell.match-col-now, bo
 /* Pinned columns: seam-proofing. The Rank and Name cells are sticky and opaque, but on a phone the table's left edge sits at a fractional pixel (e.g. 10.59px, which is 31.78 device pixels at 3x), so the seam between them and the container's left edge fall inside a device pixel: both neighbours are partly covering it, and whatever scrolls underneath (cell borders, column lines, tints) can show as a hairline there. The Name cell therefore reaches 1px over the Rank cell (same colour, drawn with the cell's own background) so the seam is always covered. */
 .summary-table td.competitor-name::before, .summary-table th.competitor-col::before { content: ''; position: absolute; top: 0; bottom: 0; left: -1px; width: 1px; background: inherit; pointer-events: none; }
 .summary-table td.rank-col::after, .summary-table th.rank-col::after { content: ''; position: absolute; top: 0; bottom: 0; right: -1px; width: 1px; background: inherit; pointer-events: none; }
+
+/* iPhone/iPad (Home Screen app and Safari): a sticky cell inside a scrolling box is composited late during momentum scrolling, so for a moment the scrolled score cells can be seen sliding past or to the left of the pinned Rank/Name columns. Giving the pinned cells their own compositing layer keeps them locked to the box while it scrolls (Compact and Jumbo). */
+@supports (-webkit-touch-callout: none) {
+    body.summary-compact .summary-table th.rank-col, body.summary-compact .summary-table td.rank-col,
+    body.summary-compact .summary-table th.competitor-col, body.summary-compact .summary-table td.competitor-name { -webkit-transform: translateZ(0); transform: translateZ(0); -webkit-backface-visibility: hidden; backface-visibility: hidden; will-change: transform; }
+}
