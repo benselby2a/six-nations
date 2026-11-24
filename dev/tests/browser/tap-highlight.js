@@ -58,7 +58,7 @@ const goldish = (c) => { const m = (c || '').match(/rgba?\(([^)]+)\)/); if (!m) 
     const ov = await overlay(page, T + ' tbody tr:nth-child(1) td:nth-child(5)');       // same column, another row: column bar only
     const ovCell = await overlay(page, T + ' tbody tr:nth-child(2) td:nth-child(5)');    // the tapped cell
     const ovRow = await overlay(page, T + ' tbody tr:nth-child(2) td:nth-child(2)');     // same row, Name column
-    console.log(label + ': the bars are gold (not grey) and the tapped cell is stronger:', JSON.stringify({ col: ov && ov.bg, cell: ovCell && ovCell.bg, row: ovRow && ovRow.bg }), goldish(ov && ov.bg) && goldish(ovCell && ovCell.bg) && goldish(ovRow && ovRow.bg) && parseFloat(ovCell.bg.split(',')[3]) > parseFloat(ov.bg.split(',')[3]));
+    console.log(label + ': the bars are gold (not grey) and the crossing (tapped) cell is shaded once, the same as the bars:', JSON.stringify({ col: ov && ov.bg, cell: ovCell && ovCell.bg, row: ovRow && ovRow.bg }), goldish(ov && ov.bg) && goldish(ovCell && ovCell.bg) && goldish(ovRow && ovRow.bg) && parseFloat(ovCell.bg.split(',')[3]) === parseFloat(ov.bg.split(',')[3]) && ovCell.bg === ovRow.bg);
     const pinned = await page.evaluate(() => { const c = document.querySelector('.summary-table:not(.summary-table-clone) tbody tr:nth-child(2) td.competitor-name'); const s = getComputedStyle(c); return { pos: s.position, bg: s.backgroundColor }; });
     console.log(label + ': the pinned Name cell stays sticky and opaque:', JSON.stringify(pinned), pinned.pos === 'sticky' && !/rgba\(0, 0, 0, 0\)/.test(pinned.bg));
     await page.screenshot({ path: SHOTS + 'tap-' + view + '-' + scheme + '.png', clip: { x: 0, y: 150, width: 390, height: 520 } });
