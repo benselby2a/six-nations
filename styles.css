@@ -4271,3 +4271,8 @@ body.summary-compact .summary-table:not(.summary-table-clone) th.match-header-ce
 @supports (-webkit-touch-callout: none) {
     .tour-layer { padding-top: calc(env(safe-area-inset-top, 0px) + 36px); }
 }
+
+/* iPhone/iPad app (light theme): the cream page showed between the status bar and the green header band (the safe-area padding and the container's top gap were not covered by the band's 3rem extension). Let the band's green run all the way up to the top of the screen. */
+@supports (-webkit-touch-callout: none) {
+    :root:not([data-theme="dark"]) .app-bar::before { top: -20rem; }
+}
