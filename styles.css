@@ -4266,3 +4266,8 @@ body.summary-compact .summary-table:not(.summary-table-clone) th.match-header-ce
 @supports (-webkit-touch-callout: none) {
     body.summary-compact .summary-container { clip-path: inset(0 0 0 2px); }
 }
+
+/* iPhone/iPad: the system draws a faded band over the top of the screen that is taller than the status-bar inset (about 34px more), so the tour card, which starts at the inset, had its top (the step count, the X and the top edge) hidden under it */
+@supports (-webkit-touch-callout: none) {
+    .tour-layer { padding-top: calc(env(safe-area-inset-top, 0px) + 36px); }
+}
