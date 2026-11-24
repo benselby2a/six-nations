@@ -128,6 +128,13 @@ const mock = `
   await page.evaluate(() => { switchYear(2027); }); await page.waitForTimeout(600);
   const y2 = await page.evaluate(() => document.getElementById('fixtureImportPrompt').textContent.includes('2027 Six Nations'));
   console.log('switching the year updates the prompt:', y2);
+  // the year of an uploaded date is respected: a 2026 date in the 2027 season keeps 2026, a 2027 date is written without the year
+  await page.evaluate(() => { showBulkImport(); document.getElementById('bulkImportData').value = '05/02/2026, 14:30, England, France\n05/02/2027, 20:10, Ireland, Wales\n12/03/2027, 14:30, Italy, Scotland'; });
+  await page.evaluate(() => processBulkImport()); await page.waitForTimeout(600);
+  const imp = await page.evaluate(() => matches.filter(m => ['England', 'Ireland', 'Italy'].includes(m.team1) && /Feb 5|Mar 12/.test(m.date)).map(m => ({ team1: m.team1, date: m.date, kickoff: getMatchKickoffDate(m) && getMatchKickoffDate(m).getFullYear() + '-' + (getMatchKickoffDate(m).getMonth() + 1) + '-' + getMatchKickoffDate(m).getDate(), iso: parseDateForInput(m.date) })));
+  const byTeam = Object.fromEntries(imp.map(m => [m.team1, m]));
+  console.log('a 2026 date in the 2027 season keeps its year (saved "Thu, Feb 5 2026", kicks off in 2026):', !!byTeam.England && byTeam.England.date === 'Thu, Feb 5 2026' && byTeam.England.iso === '2026-02-05', JSON.stringify(byTeam.England));
+  console.log('2027 dates in the 2027 season are written without the year and kick off in 2027:', !!byTeam.Ireland && byTeam.Ireland.date === 'Fri, Feb 5' && byTeam.Ireland.iso === '2027-02-05' && byTeam.Italy.iso === '2027-03-12', JSON.stringify([byTeam.Ireland, byTeam.Italy]));
   console.log('pageerrors', errors.length);
   await browser.close();
 })();

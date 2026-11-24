@@ -11,7 +11,7 @@
         var dark = m === 'dark' || (m !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
         if (dark) { document.documentElement.setAttribute('data-theme', 'dark'); }
     } catch (e) { /* the bundle applies the theme once it runs */ }</script>
-    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=e9dbd555" -->
+    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=a0880d59" -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Six Nations Predictor</title>
@@ -36,7 +36,7 @@
     <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- jsPDF and its table plugin are loaded on demand (see loadPdfLibs in js/export-pdf.js), not on every visit -->
-    <link rel="stylesheet" href="dist/app.min.css?v=e9dbd555">
+    <link rel="stylesheet" href="dist/app.min.css?v=a0880d59">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -411,7 +411,7 @@
                         <pre id="fixtureImportPrompt" class="fixture-import-prompt"></pre>
                         <button type="button" class="btn-small" onclick="copyFixtureImportPrompt()">Copy prompt</button>
                         <span id="fixtureImportCopied" class="fixture-import-copied" role="status" aria-live="polite"></span>
-                        <p class="fixture-import-note">Check the answer before importing: 15 lines, the right dates and kick-off times, home team first. Dates are saved without a year, so the app always uses the year you have selected (<span id="fixtureImportYear"></span>). Rounds are worked out from the dates.</p>
+                        <p class="fixture-import-note">Check the answer before importing: 15 lines, the right dates and kick-off times, home team first. The year in each date is kept exactly as written (your season is <span id="fixtureImportYear"></span>, so dates in other years are shown with their year). Rounds are worked out from the dates.</p>
                     </details>
                 </div>
 
@@ -907,6 +907,6 @@
     </div>
 
     <div class="app-footer"><span id="summaryUpdatedAt" class="app-footer-updated" aria-label="When the scores were last fetched"></span><span id="appVersion" class="app-version" aria-label="App version"></span></div>
-    <script src="dist/app.min.js?v=e9dbd555" onerror="window.__recoverApp && window.__recoverApp(true)"></script>
+    <script src="dist/app.min.js?v=a0880d59" onerror="window.__recoverApp && window.__recoverApp(true)"></script>
 </body>
 </html>
