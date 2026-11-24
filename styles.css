@@ -3598,9 +3598,6 @@ body { overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; max-wi
 
 /* Pinned summary header: a copy of the header row in a sticky strip (see buildSummaryStickyHead) */
 .summary-table-wrap { position: relative; }
-/* Nothing of the table (scrolling score columns, the pinned header's sideways layer) may ever paint outside the table's own left and right edges, i.e. into the page gutter to the left of the phone screen's table: clip the wrap horizontally (vertically it stays open for the pinned header's shadow). overflow-x: clip does not make a scroll container, so the sticky header is unaffected. */
-.summary-table-wrap { overflow-x: clip; }
-@supports not (overflow: clip) { .summary-table-wrap { clip-path: inset(-100px 0 -100px 0); } }
 .summary-sticky-zone { position: absolute; left: 0; right: 0; top: 0; height: 0; pointer-events: none; z-index: 40; }
 .summary-sticky-head { position: sticky; top: env(safe-area-inset-top, 0px); height: 0; z-index: 40; }
 .summary-sticky-inner { position: absolute; top: 0; overflow-x: hidden; pointer-events: auto; box-shadow: 0 3px 5px -2px rgba(0, 0, 0, 0.3); border-radius: 10px 10px 0 0; }
@@ -4259,15 +4256,7 @@ body.summary-compact .summary-table thead th.match-header-cell.match-col-now, bo
 .admin-upload-actions .btn-small, .admin-upload-actions .btn-cancel { margin: 0; width: auto; padding: 0.5rem 1rem; font-size: 0.85rem; }
 .admin-upload-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* Pinned columns: seam-proofing. The Rank and Name cells are sticky and opaque, but on a phone the table's left edge sits at a fractional pixel (e.g. 10.59px, which is 31.78 device pixels at 3x), so the seam between them and the container's left edge fall inside a device pixel: both neighbours are partly covering it, and whatever scrolls underneath (cell borders, column lines, tints) can show as a hairline there. The Name cell therefore reaches 1px over the Rank cell (same colour, drawn with the cell's own background) so the seam is always covered. */
-.summary-table td.competitor-name::before, .summary-table th.competitor-col::before { content: ''; position: absolute; top: 0; bottom: 0; left: -1px; width: 1px; background: inherit; pointer-events: none; }
-.summary-table td.rank-col::after, .summary-table th.rank-col::after { content: ''; position: absolute; top: 0; bottom: 0; right: -1px; width: 1px; background: inherit; pointer-events: none; }
 
-/* iPhone/iPad (Home Screen app and Safari): a sticky cell inside a scrolling box is composited late during momentum scrolling, so for a moment the scrolled score cells can be seen sliding past or to the left of the pinned Rank/Name columns. Giving the pinned cells their own compositing layer keeps them locked to the box while it scrolls (Compact and Jumbo). */
-@supports (-webkit-touch-callout: none) {
-    body.summary-compact .summary-table th.rank-col, body.summary-compact .summary-table td.rank-col,
-    body.summary-compact .summary-table th.competitor-col, body.summary-compact .summary-table td.competitor-name { -webkit-transform: translateZ(0); transform: translateZ(0); -webkit-backface-visibility: hidden; backface-visibility: hidden; will-change: transform; }
-}
 
 /* Compact and Jumbo: sideways scrolling snaps to whole match columns against the pinned columns (scroll-padding-left is set from the pinned width in syncSummaryScrollLock), so no cut-off score chip or cell edge is left showing beside the pinned Name column at rest */
 body.summary-compact .summary-container { scroll-snap-type: x mandatory; }
