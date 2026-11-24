@@ -11,7 +11,7 @@
         var dark = m === 'dark' || (m !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
         if (dark) { document.documentElement.setAttribute('data-theme', 'dark'); }
     } catch (e) { /* the bundle applies the theme once it runs */ }</script>
-    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=5333987e" -->
+    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=e9dbd555" -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Six Nations Predictor</title>
@@ -36,7 +36,7 @@
     <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- jsPDF and its table plugin are loaded on demand (see loadPdfLibs in js/export-pdf.js), not on every visit -->
-    <link rel="stylesheet" href="dist/app.min.css?v=5333987e">
+    <link rel="stylesheet" href="dist/app.min.css?v=e9dbd555">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -405,6 +405,14 @@
                     <h2 style="font-family: 'Bebas Neue', cursive; font-size: 2rem; color: var(--bright-gold); margin-bottom: 1rem; letter-spacing: 0.1em;">Fixtures and Scores</h2>
                     <p style="margin-bottom: 1rem;">Manage fixtures and results. Click a row or Edit to update all fixture fields.</p>
                     <div class="past-year-banner hidden" data-past-year-banner role="alert"></div>
+                    <details class="fixture-import-tip" id="fixtureImportTip">
+                        <summary>Tip: adding a whole season? Use Bulk Import and let an AI tool format the list</summary>
+                        <p>Copy the fixture list from the Six Nations website (or any source), then ask an AI tool such as Google Gemini, ChatGPT or Claude to turn it into the format <strong>Bulk Import</strong> needs. Paste the prompt below into the AI tool, put your fixture list where it says so, then paste the answer into <strong>Bulk Import</strong> at the bottom of this screen.</p>
+                        <pre id="fixtureImportPrompt" class="fixture-import-prompt"></pre>
+                        <button type="button" class="btn-small" onclick="copyFixtureImportPrompt()">Copy prompt</button>
+                        <span id="fixtureImportCopied" class="fixture-import-copied" role="status" aria-live="polite"></span>
+                        <p class="fixture-import-note">Check the answer before importing: 15 lines, the right dates and kick-off times, home team first. Dates are saved without a year, so the app always uses the year you have selected (<span id="fixtureImportYear"></span>). Rounds are worked out from the dates.</p>
+                    </details>
                 </div>
 
                 <div class="results-table-container">
@@ -899,6 +907,6 @@
     </div>
 
     <div class="app-footer"><span id="summaryUpdatedAt" class="app-footer-updated" aria-label="When the scores were last fetched"></span><span id="appVersion" class="app-version" aria-label="App version"></span></div>
-    <script src="dist/app.min.js?v=5333987e" onerror="window.__recoverApp && window.__recoverApp(true)"></script>
+    <script src="dist/app.min.js?v=e9dbd555" onerror="window.__recoverApp && window.__recoverApp(true)"></script>
 </body>
 </html>

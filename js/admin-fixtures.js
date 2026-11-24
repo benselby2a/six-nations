@@ -2,7 +2,46 @@
 // Classic script (shared global scope); load order is set in index.html.
 
         // Render admin matches for entering results
+        // The prompt an admin can give an AI tool to turn a pasted fixture list into the Bulk Import format
+        function fixtureImportPromptText() {
+            const year = selectedYear || new Date().getFullYear();
+            return `Here is the fixture list for the ${year} Six Nations rugby championship. Rewrite it as one match per line, in exactly this format and nothing else (no headings, bullets, numbering, tables or explanation):
+
+DD/MM/YYYY, HH:MM, Home Team, Away Team
+
+Rules:
+- Use the ${year} dates, written DD/MM/YYYY.
+- Kick-off time in 24-hour HH:MM, in the local time shown in the list (UK time if not stated).
+- Team names must be exactly one of: England, France, Ireland, Italy, Scotland, Wales.
+- Home team first, away team second.
+- One match per line, in date then time order. There should be 15 matches in total.
+- Plain text only, so I can copy it.
+
+Fixture list:
+[paste the fixture list here]`;
+        }
+
+        function updateFixtureImportTip() {
+            const pre = document.getElementById('fixtureImportPrompt');
+            if (pre) pre.textContent = fixtureImportPromptText();
+            const year = document.getElementById('fixtureImportYear');
+            if (year) year.textContent = selectedYear || '';
+        }
+
+        async function copyFixtureImportPrompt() {
+            const text = fixtureImportPromptText();
+            const note = document.getElementById('fixtureImportCopied');
+            let ok = false;
+            try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(text); ok = true; } } catch (error) { ok = false; }
+            if (!ok) {   // older browsers: select the text so it can be copied by hand
+                const pre = document.getElementById('fixtureImportPrompt');
+                if (pre) { const range = document.createRange(); range.selectNodeContents(pre); const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range); try { ok = document.execCommand('copy'); } catch (error) { ok = false; } }
+            }
+            if (note) { note.textContent = ok ? 'Copied.' : 'Select the text above and copy it.'; setTimeout(() => { note.textContent = ''; }, 3000); }
+        }
+
         function renderAdminMatches() {
+            updateFixtureImportTip();
             renderReadinessChecklist();
             const container = document.getElementById('adminMatchesContainer');
             if (!container) return;
