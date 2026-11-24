@@ -194,6 +194,9 @@ async function checkForNewVersion() {
 
 setTimeout(checkForNewVersion, 1500);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkForNewVersion(); });
+// The iPhone Home Screen app is often brought back from memory without a visibilitychange: also check when the page is shown again or focused
+window.addEventListener('pageshow', () => { checkForNewVersion(); });
+window.addEventListener('focus', () => { checkForNewVersion(); });
 
 // ---- Service worker: lets the app open with no signal (see sw.js; reads only, nothing is queued) ----
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
