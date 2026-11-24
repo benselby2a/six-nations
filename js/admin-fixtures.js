@@ -463,14 +463,18 @@ Fixture list:
             if (!isoDate) return 'TBD';
             
             const date = new Date(isoDate + 'T12:00:00');
+            return fixtureDateText(date.getFullYear(), date.getMonth() + 1, date.getDate());
+        }
+
+        // The text saved for a fixture's date. The year is part of the date: it is written only when it differs from the season's
+        // year ("Fri, Feb 5" in a 2027 season, "Thu, Feb 5 2026" for a 2026 date in that season), and parseDateForInput reads it back,
+        // so the date a fixture was entered with is always the date it has (never silently moved into the season's year)
+        function fixtureDateText(year, month, day) {
+            const date = new Date(year, month - 1, day);
             const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            
-            const dayName = days[date.getDay()];
-            const monthName = months[date.getMonth()];
-            const dayNum = date.getDate();
-            
-            return `${dayName}, ${monthName} ${dayNum}`;
+            const base = `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`;
+            return selectedYear && Number(year) !== Number(selectedYear) ? `${base} ${year}` : base;
         }
 
         // Add a new match
@@ -629,10 +633,7 @@ Fixture list:
                 }
                 
                 // Format date for display
-                const date = new Date(year, month - 1, day);
-                const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                const displayDate = `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`;
+                const displayDate = fixtureDateText(year, month, day);   // keeps the year of the uploaded date (written when it is not the season's)
                 
                 // Format time
                 const displayTime = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
