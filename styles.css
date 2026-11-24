@@ -4225,10 +4225,12 @@ body.summary-compact .summary-table td.match-col-now, body.summary-compact .summ
 body.summary-compact .summary-table thead th.match-header-cell.match-col-now, body.summary-compact .summary-table thead th.match-header-cell.match-col-next { background-image: linear-gradient(rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.16)) !important; }
 :root[data-theme="dark"] body.summary-compact .summary-table thead th.match-header-cell.match-col-now, :root[data-theme="dark"] body.summary-compact .summary-table thead th.match-header-cell.match-col-next { background-image: linear-gradient(rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.10)) !important; }
 
+/* The cell where the row and column highlights cross is shaded once, like the bars (not stronger, not twice): tap selection above, and on mouse hover the column overlay is dropped from cells already in the hovered row */
 /* Compact and Focus, mouse only: the column under the pointer is lit like the row under it (see watchColumnHover in js/app-bar.js).
    An overlay layer (like the next-match tint), so result tints, Joker shading and the current-user row stay underneath; where a column is both hovered and the next/in-play match the two layers are stacked. */
 @media (hover: hover) and (pointer: fine) {
     body.summary-compact .summary-table td.col-hover { background-image: linear-gradient(rgba(232, 176, 42, 0.13), rgba(232, 176, 42, 0.13)); }
+    body.summary-compact .summary-table tr:hover td.col-hover:not(.match-col-now):not(.match-col-next):not(.rank-col):not(.competitor-name) { background-image: none; }
     :root[data-theme="dark"] body.summary-compact .summary-table td.col-hover { background-image: linear-gradient(rgba(245, 207, 106, 0.11), rgba(245, 207, 106, 0.11)); }
     body.summary-compact .summary-table td.col-hover.match-col-now, body.summary-compact .summary-table td.col-hover.match-col-next { background-image: linear-gradient(rgba(232, 176, 42, 0.13), rgba(232, 176, 42, 0.13)), linear-gradient(rgba(232, 176, 42, 0.14), rgba(232, 176, 42, 0.14)); }
     :root[data-theme="dark"] body.summary-compact .summary-table td.col-hover.match-col-now, :root[data-theme="dark"] body.summary-compact .summary-table td.col-hover.match-col-next { background-image: linear-gradient(rgba(245, 207, 106, 0.11), rgba(245, 207, 106, 0.11)), linear-gradient(rgba(245, 207, 106, 0.10), rgba(245, 207, 106, 0.10)); }
@@ -4294,9 +4296,9 @@ body.summary-compact .summary-table td.row-sel:not(.rank-col):not(.competitor-na
 body.summary-compact .summary-table td.col-sel:not(.rank-col):not(.competitor-name):not(.pts-col),
 body.summary-compact .summary-table th.col-sel:not(.rank-col):not(.competitor-col):not(.pts-col) { position: relative; }
 body.summary-compact .summary-table td.row-sel::after, body.summary-compact .summary-table td.col-sel::after, body.summary-compact .summary-table th.col-sel::after { content: ''; position: absolute; inset: 0; background: rgba(232, 176, 42, 0.2); pointer-events: none; }
-body.summary-compact .summary-table td.cell-sel::after, body.summary-compact .summary-table th.cell-sel::after { background: rgba(232, 176, 42, 0.4); }
+body.summary-compact .summary-table td.cell-sel::after, body.summary-compact .summary-table th.cell-sel::after { background: rgba(232, 176, 42, 0.2); }
 :root[data-theme="dark"] body.summary-compact .summary-table td.row-sel::after, :root[data-theme="dark"] body.summary-compact .summary-table td.col-sel::after, :root[data-theme="dark"] body.summary-compact .summary-table th.col-sel::after { background: rgba(245, 207, 106, 0.17); }
-:root[data-theme="dark"] body.summary-compact .summary-table td.cell-sel::after, :root[data-theme="dark"] body.summary-compact .summary-table th.cell-sel::after { background: rgba(245, 207, 106, 0.34); }
+:root[data-theme="dark"] body.summary-compact .summary-table td.cell-sel::after, :root[data-theme="dark"] body.summary-compact .summary-table th.cell-sel::after { background: rgba(245, 207, 106, 0.17); }
 
 /* Touch selection: fades away once the scrolling that followed it has stopped (see fadeOutSummarySelection in js/app-bar.js) */
 body.summary-compact .summary-table-wrap.sel-fade td.row-sel::after, body.summary-compact .summary-table-wrap.sel-fade td.col-sel::after, body.summary-compact .summary-table-wrap.sel-fade th.col-sel::after, body.summary-compact .summary-table-wrap.sel-fade td.cell-sel::after, body.summary-compact .summary-table-wrap.sel-fade th.cell-sel::after { opacity: 0; transition: opacity 0.2s ease; }
