@@ -410,6 +410,15 @@
             if (!box) return;
             box.classList.remove('no-scroll');
             box.classList.toggle('no-scroll', box.scrollWidth - box.clientWidth <= 3);
+            // Sideways scrolling snaps to whole match columns, lined up against the pinned Rank/Name columns, so no sliver of a
+            // column (a cut-off score chip) is left showing right beside the pinned columns when the table comes to rest
+            const pinned = box.querySelector('.summary-table:not(.summary-table-clone) td.competitor-name, .summary-table:not(.summary-table-clone) th.competitor-col');
+            if (pinned) {
+                const pts = box.querySelector('.summary-table:not(.summary-table-clone) td.pts-col');
+                const last = pts && pts.offsetParent !== null ? pts : pinned;
+                const edge = last.getBoundingClientRect().right - box.getBoundingClientRect().left - (parseFloat(getComputedStyle(box).borderLeftWidth) || 0);
+                box.style.scrollPaddingLeft = Math.max(0, Math.round(edge)) + 'px';
+            }
         }
 
         // The "scroll left and right" hint goes away for good once the user has scrolled the table sideways themselves
