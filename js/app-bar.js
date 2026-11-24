@@ -219,6 +219,47 @@ function setColumnHover(index, anchor) {
     // the table moving under a still pointer (sideways scroll) would leave the wrong column lit: clear it, the next mouse move sets it again
     document.addEventListener('scroll', (event) => { if (columnHoverIndex !== -1 && event.target && event.target.classList && event.target.classList.contains('summary-container')) clearColumnHover(); }, { passive: true, capture: true });
 })();
+// Tap or click a cell in Compact and Jumbo: its whole row and column are shaded with a light gold bar (and the tapped cell a little stronger),
+// like the hover on a computer. It stays until another cell is tapped (it moves), the same cell is tapped again, or a tap lands on empty page.
+// The tap still does what it did (a prediction or match header still opens its pop-up): this only listens. A drag or scroll is not a tap.
+function clearSummarySelection() {
+    document.querySelectorAll('.summary-table-wrap .row-sel, .summary-table-wrap .col-sel, .summary-table-wrap .cell-sel').forEach(c => c.classList.remove('row-sel', 'col-sel', 'cell-sel'));
+}
+function setSummarySelection(cell) {
+    clearSummarySelection();
+    const wrap = cell.closest('.summary-table-wrap');
+    if (!wrap) return;
+    const index = cell.cellIndex;
+    wrap.querySelectorAll('table.summary-table tr').forEach(row => { const c = row.cells[index]; if (c) c.classList.add('col-sel'); });
+    if (cell.tagName === 'TD') [...cell.parentElement.cells].forEach(c => c.classList.add('row-sel'));
+    // a tap on the pinned header copy marks the real header cell as the tapped one
+    let anchor = cell;
+    if (cell.closest('.summary-table-clone')) { const real = wrap.querySelector('.summary-container table.summary-table:not(.summary-table-clone) thead tr'); if (real && real.cells[index]) anchor = real.cells[index]; }
+    anchor.classList.add('cell-sel');
+}
+(function watchSummaryTap() {
+    if (typeof document === 'undefined') return;
+    let down = null;
+    const inSummaryView = () => document.body.classList.contains('summary-compact');
+    document.addEventListener('pointerdown', (event) => { down = { x: event.clientX, y: event.clientY, t: Date.now(), id: event.pointerId }; }, { passive: true });
+    document.addEventListener('pointerup', (event) => {
+        const start = down; down = null;
+        if (!start || start.id !== event.pointerId) return;
+        if (Math.abs(event.clientX - start.x) > 8 || Math.abs(event.clientY - start.y) > 8 || Date.now() - start.t > 700) return;   // a drag or a long press is not a tap
+        if (!inSummaryView()) return;
+        const target = event.target && event.target.closest ? event.target : null;
+        if (!target) return;
+        const cell = target.closest('.summary-table-wrap table.summary-table td, .summary-table-wrap table.summary-table th');
+        if (cell) {
+            const real = cell.closest('.summary-table-clone') ? null : cell;
+            if (real && real.classList.contains('cell-sel')) { clearSummarySelection(); return; }   // the same cell again
+            setSummarySelection(cell);
+            return;
+        }
+        // a tap on empty page clears it; taps on buttons, menus and pop-ups leave it alone
+        if (!target.closest('button, a, select, input, textarea, label, .modal, .fixture-chat-sheet, .account-menu, .tour-layer')) clearSummarySelection();
+    }, { passive: true });
+})();
 function sizeSummaryStickyHead() {
     const wrap = document.querySelector('.summary-table-wrap');
     if (!wrap) return;

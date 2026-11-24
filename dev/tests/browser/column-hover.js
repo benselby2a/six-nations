@@ -149,7 +149,7 @@ const FIXTURES = [
     console.log(label + ': hovering a body cell lights its column (every row + header):', JSON.stringify({ real: a.real, rows: a.rows, head: a.head, idx: a.realIdx }), a.realIdx.length === 1 && a.real === a.rows + 1 && a.head === 1);
     console.log(label + ': the pinned header copies show it too (sideways copy lit at the same index, pinned copy not, as that column is not pinned):', JSON.stringify({ scroll: a.scrollCopy, pin: a.pinCopy }), a.scrollCopy.length === 1 && a.scrollCopy[0] === a.realIdx[0] && a.pinCopy.length === 0);
     const tdBg = await bg(page, T + ' td.col-hover'), thBg = await bg(page, T + ' thead th.col-hover');
-    console.log(label + ': an overlay layer on the cells and on the header (the same kind of tint as the row hover):', JSON.stringify({ tdBg, thBg }), /linear-gradient/.test(tdBg) && /linear-gradient/.test(thBg));
+    console.log(label + ': an overlay layer on the cells and on the header, gold like the rest of the app (not grey):', JSON.stringify({ tdBg, thBg }), /linear-gradient/.test(tdBg) && /linear-gradient/.test(thBg) && /232, 176, 42/.test(tdBg));
     const row = await page.evaluate(() => { const r = document.querySelector('.summary-table:not(.summary-table-clone) tbody tr:nth-child(2)'); return getComputedStyle(r.querySelector('td.competitor-name')).backgroundColor + ' | ' + getComputedStyle(r.cells[4]).backgroundColor; });
     console.log(label + ': the row hover still works on the same row (cells have a tinted background):', row, !/rgba\(0, 0, 0, 0\)/.test(row.split(' | ')[0]));
     // a different column
