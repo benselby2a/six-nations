@@ -4316,3 +4316,11 @@ body.summary-compact .summary-table-wrap.sel-fade td.row-sel::after, body.summar
     :where(:root[data-theme="dark"]) .summary-table tr.current-user-row:hover td.competitor-name,
     :where(:root[data-theme="dark"]) .summary-table tr.current-user-row:hover td.pts-col { background: color-mix(in srgb, #34a86e 34%, var(--grid-bg)); }
 }
+
+/* Admin fixtures: the tip about Bulk Import and the AI prompt */
+.fixture-import-tip { margin: 0.8rem 0 0; padding: 0.6rem 0.9rem; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--surface-2); }
+.fixture-import-tip summary { cursor: pointer; font-weight: 600; color: var(--bright-gold); }
+.fixture-import-tip p { margin: 0.6rem 0; line-height: 1.45; }
+.fixture-import-prompt { margin: 0.4rem 0 0.7rem; padding: 0.7rem 0.8rem; white-space: pre-wrap; overflow-wrap: anywhere; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.82rem; line-height: 1.4; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; color: var(--text); user-select: all; -webkit-user-select: all; }
+.fixture-import-copied { margin-left: 0.6rem; font-size: 0.85rem; color: var(--good-text); }
+.fixture-import-note { font-size: 0.88rem; color: var(--muted); }
