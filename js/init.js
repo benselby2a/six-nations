@@ -41,7 +41,7 @@
             const loader = document.getElementById('loadingScreen');
             if (loader) loader.classList.add('hidden');
             window.__appReady = true;   // the first screen is up: the stuck-on-the-spinner safety net in index.html stands down
-            try { sessionStorage.removeItem('rugbyPredictorStuckFix'); } catch (e) { /* ignore */ }
+            try { sessionStorage.removeItem('rugbyPredictorStuckFix'); sessionStorage.removeItem('rugbyPredictorFellBack'); } catch (e) { /* ignore */ }
         }
 
         function updateChallengeSubtitleYear() {
