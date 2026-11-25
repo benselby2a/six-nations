@@ -682,9 +682,8 @@
                     `predictions_locked:${year}`,
                     `rules_saved:${year}`,
                     `prize_saved:${year}`,
-                    `active_overrides:${year}`,
                     `prize_exempt:${year}`
-                ])]);
+                ])]);   // active_overrides:<year> (who is signed up / playing) is deliberately kept
                 for (const [table, run] of steps) {
                     const { error } = await run();
                     if (error) {

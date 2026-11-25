@@ -289,7 +289,7 @@
             const typed = prompt(
                 `Reset ${year} back to empty?\n\nThis permanently deletes, for ${year} only: ${counts.matches} fixture${counts.matches !== 1 ? 's' : ''} and ${counts.results} result${counts.results !== 1 ? 's' : ''}, ` +
                 `${counts.predictions} prediction${counts.predictions !== 1 ? 's' : ''} from ${counts.competitors} competitor${counts.competitors !== 1 ? 's' : ''} with their jokers and tries, ` +
-                `the scoring and prize rules, the prediction lock, who is playing and prize exemptions.\n\nKept: the year itself, competitors and their emails, admins and every other year.` +
+                `the scoring and prize rules, the prediction lock and prize exemptions.\n\nKept: who is signed up (the Playing ticks), the year itself, competitors and their emails, admins and every other year.` +
                 `${warning}\n\nThis cannot be undone. Type ${year} to confirm.`
             );
             if (typed === null) return;
