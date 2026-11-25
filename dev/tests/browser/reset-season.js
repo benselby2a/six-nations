@@ -123,7 +123,7 @@ const mock = `
 
   // 3. the confirmation text: lists what is deleted and what is kept, with a strong warning when results exist or the year is past
   const text = prompts[prompts.length - 1] || '';
-  console.log('the prompt lists what is deleted and kept and asks to type the year:', /fixture/.test(text) && /prediction/.test(text) && /scoring and prize rules/.test(text) && /Kept: the year itself, competitors/.test(text) && /Type 2027 to confirm/.test(text));
+  console.log('the prompt lists what is deleted and kept and asks to type the year:', /fixture/.test(text) && /prediction/.test(text) && /scoring and prize rules/.test(text) && /Kept: who is signed up \(the Playing ticks\), the year itself, competitors/.test(text) && /Type 2027 to confirm/.test(text));
   console.log('2027 has results: the prompt carries the strong WARNING and points to Database Recovery:', /WARNING: 2027 has 1 result entered/.test(text) && /permanently lost/.test(text) && /Database Recovery/.test(text), JSON.stringify(text.match(/WARNING[^\n]*/)));
   await page.evaluate(() => { __db.matches.find(x => x.id === 3).actual_score1 = null; __db.matches.find(x => x.id === 3).actual_score2 = null; });
   promptAnswer = null;
@@ -141,7 +141,7 @@ const mock = `
   promptAnswer = '2027';
   await page.evaluate(() => resetSeasonForYear(2027)); await page.waitForTimeout(900);
   const after27 = await rows(2027);
-  console.log('reset: fixtures, predictions, jokers, tries, rules, tiers and every per-year setting are gone:', after27.matches === 0 && after27.predictions === 0 && after27.jokers === 0 && after27.tries === 0 && after27.rules === 0 && after27.tiers === 0 && after27.settings.length === 0, JSON.stringify(after27));
+  console.log('reset: fixtures, predictions, jokers, tries, rules, tiers and the per-year settings are gone, but who is signed up (active_overrides) is kept:', after27.matches === 0 && after27.predictions === 0 && after27.jokers === 0 && after27.tries === 0 && after27.rules === 0 && after27.tiers === 0 && JSON.stringify(after27.settings) === JSON.stringify(['active_overrides:2027']), JSON.stringify(after27));
   console.log('reset: the year, the competitors, admins and 2026 are untouched:', JSON.stringify(await rows(2026)) === JSON.stringify(before26) && (await db('seasons')).some(s => s.year === 2027) && (await db('users')).length === 4 && (await db('admin_usernames')).length === 1);
   console.log('reset: success message and the row now offers Remove (nothing left in 2027):', /has been reset/.test(await feedback()) && (await yearRow(2027)).remove, JSON.stringify((await yearRow(2027)).text));
   const st = await page.evaluate(() => ({ matches: matches.length, all2027: allMatches.filter(m => m.year === 2027).length, rules: appSettings.rulesSavedAt, prize: appSettings.prizeSavedAt, locked: appSettings.predictionsLocked }));
