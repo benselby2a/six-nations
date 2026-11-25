@@ -5,8 +5,7 @@
         let users = {};
         let currentUsername = null;
         let adminUsernames = [];
-        let appSettings = { predictionsLocked: false, rulesSavedAt: null, prizeSavedAt: null, activeOverrides: {}, prizeExempt: {}, trial: false };
-        let trialYears = {};   // year -> true for every year in Trial run mode (settings rows `trial:<year>`), see js/years-admin.js
+        let appSettings = { predictionsLocked: false, rulesSavedAt: null, prizeSavedAt: null, activeOverrides: {}, prizeExempt: {} };
         let selectedYear = null;
         let availableYears = [];
         let allMatches = [];  // Fixtures for every year; `matches` holds the selected year only

@@ -134,7 +134,6 @@
             activeScoringRules = loadedRules;
             userJokerSelections = loadedJokerSelections;
             updateChallengeSubtitleYear();
-            updateTrialBanner();
             lastDataRefreshAt = Date.now();
             updateSummaryUpdatedAt();
         }
@@ -245,7 +244,6 @@
                 const hasPredictions = counts.predictions > 0 || counts.tries > 0;
                 const hasResults = counts.results > 0;
                 const isCurrent = year === selectedYear;
-                const trial = !!trialYears[year];
                 const predictionsLabel = hasPredictions
                     ? `${counts.predictions} from ${counts.competitors} competitor${counts.competitors !== 1 ? 's' : ''}${counts.tries > 0 ? `, ${counts.tries} tries` : ''}`
                     : 'None';
@@ -258,11 +256,10 @@
                         <td data-label="Actions">
                             <div class="competitor-actions">
                                 ${isCurrent ? '' : `<button class="btn-small btn-success" onclick="switchYear(${year})">View</button>`}
-                                ${hasResults && !trial ? '<span class="profile-hint">Results entered: locked</span>' : ''}
-                                ${hasPredictions && (!hasResults || trial) ? `<button class="btn-small btn-warning" onclick="clearYearPredictions(${year})">Clear predictions</button>` : ''}
-                                ${hasPredictions || (hasResults && !trial) ? '' : `<button class="btn-small btn-danger" onclick="removeYear(${year})">Remove</button>`}
-                                <button class="btn-small ${trial ? 'btn-warning' : 'btn-cancel'}" onclick="toggleTrialRun(${year})" aria-pressed="${trial}">Trial run: ${trial ? 'ON' : 'OFF'}</button>
-                                ${trial ? `<button class="btn-small btn-danger" onclick="resetSeasonForTrial(${year})">Reset season</button>` : ''}
+                                ${hasResults ? '<span class="profile-hint">Results entered: locked</span>' : ''}
+                                ${hasPredictions && !hasResults ? `<button class="btn-small btn-warning" onclick="clearYearPredictions(${year})">Clear predictions</button>` : ''}
+                                ${hasPredictions || hasResults ? '' : `<button class="btn-small btn-danger" onclick="removeYear(${year})">Remove</button>`}
+                                <button class="btn-small btn-danger" onclick="resetSeasonForYear(${year})">Reset season</button>
                             </div>
                         </td>
                     </tr>`;
@@ -275,45 +272,25 @@
                     </thead>
                     <tbody>${rows}</tbody>
                 </table>
-                <p class="profile-hint" style="margin-top: 0.75rem;">A year with results entered is locked: it cannot be cleared or removed here. Otherwise a year can only be removed once it has no predictions; use Clear predictions first (fixtures are kept). <strong>Trial run</strong> lifts that lock for a year you are only testing, shows a banner to everyone, and enables <strong>Reset season</strong>, which wipes the year's fixtures, results, predictions, jokers, tries, rules and prize values (competitors and the year itself are kept). Switch Trial run off again before the real season.</p>`;
+                <p class="profile-hint" style="margin-top: 0.75rem;">A year with results entered is locked: it cannot be cleared or removed here. Otherwise a year can only be removed once it has no predictions; use Clear predictions first (fixtures are kept). <strong>Reset season</strong> is always available: it wipes a year back to empty (fixtures, results, predictions, jokers, tries, rules and prize values), keeping competitors and the year itself. Use it after a rehearsal, before adding the real fixtures; export a backup from Database Recovery first if the year matters.</p>`;
         }
 
-        // ---- Trial run (per year) ----
-        // The banner shown to everyone while the selected year is a trial, and the reminder on the Setup checklist screen
-        function updateTrialBanner() {
-            const banner = document.getElementById('trialBanner');
-            if (banner) {
-                const on = !!(appSettings && appSettings.trial);
-                banner.classList.toggle('hidden', !on);
-                banner.textContent = on ? `Trial run for ${selectedYear}: predictions, scores and rules here are for testing and will be wiped before the real season.` : '';
-            }
-        }
-
-        async function toggleTrialRun(year) {
+        // ---- Reset season (any year) ----
+        // Wipe a year back to empty: fixtures and results, predictions, jokers, tries, rules and prize values, and the per-year settings.
+        // Competitors, their emails, admins, the year itself and every other year are kept.
+        async function resetSeasonForYear(year) {
             if (!isCurrentUserAdmin()) return;
-            const turningOn = !trialYears[year];
             const counts = await Storage.getSeasonCounts(year);
-            const message = turningOn
-                ? `Switch Trial run ON for ${year}?\n\nEveryone will see a "Trial run" banner, and the results lock is lifted so ${year} can be cleared or wiped with Reset season. Use this only for a rehearsal before the real season.`
-                : `Switch Trial run OFF for ${year}?\n\nThe banner goes away.` + (counts.results > 0 ? ` ${year} has results entered, so it becomes locked again and can no longer be cleared or removed here.` : '') + `\n\nOnly switch it off after Reset season, before the real season.`;
-            if (!confirm(message)) return;
-            const ok = await Storage.setTrial(year, turningOn);
-            if (!ok) { setYearsFeedback('Could not change Trial run. Please try again.', 'error'); return; }
-            updateTrialBanner();
-            if (typeof renderReadinessChecklist === 'function') renderReadinessChecklist();
-            await renderYearsTab();
-            setYearsFeedback(`Trial run is ${turningOn ? 'ON' : 'OFF'} for ${year}.`, 'success');
-        }
-
-        async function resetSeasonForTrial(year) {
-            if (!isCurrentUserAdmin()) return;
-            if (!trialYears[year]) { setYearsFeedback(`${year} is not in Trial run mode, so it cannot be reset.`, 'error'); return; }
-            const counts = await Storage.getSeasonCounts(year);
+            const currentYear = appNow().getFullYear();
+            const pastYear = year < currentYear;
+            const warning = (counts.results > 0 || pastYear)
+                ? `\n\nWARNING: ${year} ${counts.results > 0 ? `has ${counts.results} result${counts.results !== 1 ? 's' : ''} entered` : 'is a past year'}${counts.results > 0 && pastYear ? ' and is a past year' : ''}. Its results and leaderboard will be permanently lost. Download a backup first: Admin Functions, then Database Recovery.`
+                : '';
             const typed = prompt(
                 `Reset ${year} back to empty?\n\nThis permanently deletes, for ${year} only: ${counts.matches} fixture${counts.matches !== 1 ? 's' : ''} and ${counts.results} result${counts.results !== 1 ? 's' : ''}, ` +
                 `${counts.predictions} prediction${counts.predictions !== 1 ? 's' : ''} from ${counts.competitors} competitor${counts.competitors !== 1 ? 's' : ''} with their jokers and tries, ` +
-                `the scoring and prize rules, the prediction lock, who is playing and prize exemptions.\n\nKept: the year itself, competitors and their emails, admins and every other year.\n\n` +
-                `This cannot be undone. Type ${year} to confirm.`
+                `the scoring and prize rules, the prediction lock, who is playing and prize exemptions.\n\nKept: the year itself, competitors and their emails, admins and every other year.` +
+                `${warning}\n\nThis cannot be undone. Type ${year} to confirm.`
             );
             if (typed === null) return;
             if (typed.trim() !== String(year)) { setYearsFeedback('The year you typed did not match, so nothing was reset.', 'error'); return; }
@@ -327,16 +304,15 @@
                 if (typeof renderAdminMatches === 'function') renderAdminMatches();
                 if (typeof showSummary === 'function') showSummary();
             }
-            updateTrialBanner();
             if (typeof renderReadinessChecklist === 'function') renderReadinessChecklist();
             await renderYearsTab();
-            setYearsFeedback(`${year} has been reset. Switch Trial run off before the real season.`, 'success');
+            setYearsFeedback(`${year} has been reset. Add its fixtures to start again.`, 'success');
         }
 
         async function clearYearPredictions(year) {
             if (!isCurrentUserAdmin()) return;
             const counts = await Storage.getSeasonCounts(year);
-            if (counts.results > 0 && !trialYears[year]) {
+            if (counts.results > 0) {
                 setYearsFeedback(`${year} has results entered, so its predictions cannot be cleared here.`, 'error');
                 return;
             }
@@ -399,7 +375,7 @@
             }
 
             const counts = await Storage.getSeasonCounts(year);
-            if (counts.results > 0 && !trialYears[year]) {
+            if (counts.results > 0) {
                 setYearsFeedback(`${year} has results entered, so it cannot be removed here.`, 'error');
                 return;
             }
@@ -564,7 +540,6 @@
                     <div>
                         <div class="readiness-title">${allDone ? `${selectedYear} is ready` : `Ready for ${selectedYear}?`}</div>
                         <div class="readiness-summary">${doneCount} of ${items.length} steps done</div>
-                        ${appSettings.trial ? '<div class="readiness-trial">Trial run: remember to Reset season and switch Trial run off before the real season.</div>' : ''}
                     </div>
                 </div>
                 ${items.map(item => `
