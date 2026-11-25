@@ -4324,3 +4324,5 @@ body.summary-compact .summary-table-wrap.sel-fade td.row-sel::after, body.summar
 .fixture-import-prompt { margin: 0.4rem 0 0.7rem; padding: 0.7rem 0.8rem; white-space: pre-wrap; overflow-wrap: anywhere; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.82rem; line-height: 1.4; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; color: var(--text); user-select: all; -webkit-user-select: all; }
 .fixture-import-copied { margin-left: 0.6rem; font-size: 0.85rem; color: var(--good-text); }
 .fixture-import-note { font-size: 0.88rem; color: var(--muted); }
+
+.rules-reset-note { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--muted); }

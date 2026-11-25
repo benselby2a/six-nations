@@ -659,6 +659,25 @@
                 return savedAt;
             },
 
+            // Remove the selected year's Guesser Rules and Prize Fund values (the app then falls back to the built-in defaults) and the
+            // "saved" markers, so both items are outstanding again on the Setup checklist for that year
+            resetScoringRules: async () => {
+                const year = selectedYear;
+                const steps = [
+                    ['scoring_close_tiers', () => supabaseClient.from('scoring_close_tiers').delete().eq('year', year)],
+                    ['scoring_rules', () => supabaseClient.from('scoring_rules').delete().eq('year', year)],
+                    ['settings', () => supabaseClient.from('settings').delete().in('key', [`rules_saved:${year}`, `prize_saved:${year}`])]
+                ];
+                for (const [table, run] of steps) {
+                    const { error } = await run();
+                    if (error) {
+                        console.error(`Error resetting ${year} rules in ${table}:`, error);
+                        return false;
+                    }
+                }
+                return true;
+            },
+
             // Which competitors are playing in the selected year: { username: true|false }.
             // Anyone not listed counts as playing if they have predictions that year.
             saveActiveOverrides: async (overrides) => {

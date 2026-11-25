@@ -11,7 +11,7 @@
         var dark = m === 'dark' || (m !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
         if (dark) { document.documentElement.setAttribute('data-theme', 'dark'); }
     } catch (e) { /* the bundle applies the theme once it runs */ }</script>
-    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=a0880d59" -->
+    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=929a7bfd" -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Six Nations Predictor</title>
@@ -36,7 +36,7 @@
     <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- jsPDF and its table plugin are loaded on demand (see loadPdfLibs in js/export-pdf.js), not on every visit -->
-    <link rel="stylesheet" href="dist/app.min.css?v=a0880d59">
+    <link rel="stylesheet" href="dist/app.min.css?v=929a7bfd">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -617,7 +617,9 @@
                 <div class="rules-action-row">
                     <button class="btn-small btn-success" id="rulesSaveUpdatedBtn" onclick="saveUpdatedRules('rules')">Save Updated Rules</button>
                     <button class="btn-small btn-cancel" id="rulesRevertBtn" onclick="revertRulesToSaved()">Revert to Saved Rules</button>
+                    <button class="btn-small btn-danger" id="rulesResetBtn" onclick="resetRulesAndPrize()">Reset Rules and Prize Fund</button>
                 </div>
+                <p class="rules-reset-note">Reset removes every saved rule and prize value for this year and puts both back on the Setup checklist.</p>
             </div>
 
             <!-- Prize Fund Tab (Admin Only) -->
@@ -670,7 +672,9 @@
                 <div class="rules-action-row">
                     <button class="btn-small btn-success" id="prizeSaveUpdatedBtn" onclick="saveUpdatedRules('prize')">Save Updated Prize Rules</button>
                     <button class="btn-small btn-cancel" id="prizeRevertBtn" onclick="revertRulesToSaved()">Revert to Saved Prize Rules</button>
+                    <button class="btn-small btn-danger" id="prizeResetBtn" onclick="resetRulesAndPrize()">Reset Rules and Prize Fund</button>
                 </div>
+                <p class="rules-reset-note">Reset removes every saved rule and prize value for this year and puts both back on the Setup checklist.</p>
             </div>
 
             <!-- Years Tab (Admin Only) -->
@@ -907,6 +911,6 @@
     </div>
 
     <div class="app-footer"><span id="summaryUpdatedAt" class="app-footer-updated" aria-label="When the scores were last fetched"></span><span id="appVersion" class="app-version" aria-label="App version"></span></div>
-    <script src="dist/app.min.js?v=a0880d59" onerror="window.__recoverApp && window.__recoverApp(true)"></script>
+    <script src="dist/app.min.js?v=929a7bfd" onerror="window.__recoverApp && window.__recoverApp(true)"></script>
 </body>
 </html>

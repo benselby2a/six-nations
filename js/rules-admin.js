@@ -331,6 +331,36 @@
             }
         }
 
+        // Reset the Guesser Rules and the Prize Fund for the selected year: removes every saved value (defaults apply again) and puts
+        // both items back on the Setup checklist. The two pages share one set of values, so one reset covers both.
+        async function resetRulesAndPrize() {
+            if (!isCurrentUserAdmin()) return;
+            const hasResults = matches.some(m => m.actualScore1 !== null && m.actualScore2 !== null);
+            const message = `Reset the Guesser Rules and Prize Fund for ${selectedYear}?\n\nThis removes every saved rule and prize value for ${selectedYear} (the built-in defaults apply until you save again) and puts "Guesser rules saved" and "Prize fund saved" back on the Setup checklist.`
+                + (hasResults ? `\n\nWARNING: ${selectedYear} already has results entered, so points and prizes will change until the rules are saved again.` : '');
+            if (!confirm(message)) return;
+            const buttons = [document.getElementById('rulesResetBtn'), document.getElementById('prizeResetBtn')].filter(Boolean);
+            buttons.forEach(b => { b.disabled = true; });
+            try {
+                const ok = await Storage.resetScoringRules();
+                if (!ok) { setRulesFeedback('Could not reset the rules. Nothing was changed.', 'error'); return; }
+                appSettings.rulesSavedAt = null;
+                appSettings.prizeSavedAt = null;
+                activeScoringRules = await Storage.getActiveScoringRules();
+                populateRulesForm(activeScoringRules);
+                setRulesFeedback(`Rules and prize fund reset for ${selectedYear}. Review them and save to tick them off the Setup checklist.`, 'success');
+                renderRulesPreview();
+                renderReadinessChecklist();
+                if (typeof trackUsage === 'function') trackUsage('reset rules', formatUsagePayload ? formatUsagePayload({ year: selectedYear }) : '');
+            } catch (error) {
+                console.error('Error resetting rules:', error);
+                setRulesFeedback('Error while resetting the rules.', 'error');
+            } finally {
+                buttons.forEach(b => { b.disabled = false; });
+                updateRulesPublishState();
+            }
+        }
+
         async function revertRulesToSaved() {
             if (!isCurrentUserAdmin()) return;
             activeScoringRules = await Storage.getActiveScoringRules();
