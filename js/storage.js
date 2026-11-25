@@ -397,7 +397,7 @@
             // Clear every competitor's predictions, jokers and tries for a year (fixtures are kept)
             clearSeasonPredictions: async (year) => {
                 const counts = await Storage.getSeasonCounts(year);
-                if (counts.results > 0 && !trialYears[year]) {
+                if (counts.results > 0) {
                     console.error(`Refusing to clear ${year}: it has results entered.`);
                     return false;
                 }
@@ -434,7 +434,7 @@
             // Delete a year and everything that belongs to it. Competitors are kept.
             removeSeason: async (year) => {
                 const counts = await Storage.getSeasonCounts(year);
-                if (counts.results > 0 && !trialYears[year]) {
+                if (counts.results > 0) {
                     console.error(`Refusing to remove ${year}: it has results entered.`);
                     return false;
                 }
@@ -467,8 +467,7 @@
                     `rules_saved:${year}`,
                     `prize_saved:${year}`,
                     `active_overrides:${year}`,
-                    `prize_exempt:${year}`,
-                    `trial:${year}`
+                    `prize_exempt:${year}`
                 ])]);
                 steps.push(['seasons', () => supabaseClient.from('seasons').delete().eq('year', year)]);
 
@@ -616,14 +615,8 @@
                     return { predictionsLocked: false };
                 }
                 
-                const settings = { predictionsLocked: false, rulesSavedAt: null, prizeSavedAt: null, activeOverrides: {}, prizeExempt: {}, trial: false };
+                const settings = { predictionsLocked: false, rulesSavedAt: null, prizeSavedAt: null, activeOverrides: {}, prizeExempt: {} };
                 const lockKey = `predictions_locked:${selectedYear}`;
-                const trialMap = {};
-                data.forEach(row => {
-                    if (/^trial:\d{4}$/.test(row.key || '') && (row.value === 'true' || row.value === true)) trialMap[Number(row.key.slice(6))] = true;
-                });
-                trialYears = trialMap;
-                settings.trial = !!trialMap[selectedYear];
                 data.forEach(row => {
                     if (row.key === lockKey) {
                         settings.predictionsLocked = row.value === 'true' || row.value === true;
@@ -666,30 +659,10 @@
                 return savedAt;
             },
 
-            // Trial run for a year (settings row `trial:<year>`): lifts the results lock so the year can be wiped, shows a banner
-            setTrial: async (year, on) => {
-                const query = supabaseClient.from('settings');
-                const { error } = on
-                    ? await query.upsert({ key: `trial:${year}`, value: 'true' }, { onConflict: 'key' })
-                    : await query.delete().eq('key', `trial:${year}`);
-                if (error) {
-                    console.error('Error saving trial run setting:', error);
-                    return false;
-                }
-                if (on) trialYears[year] = true; else delete trialYears[year];
-                if (Number(year) === Number(selectedYear)) appSettings.trial = !!on;
-                trackUsage(on ? 'trial run on' : 'trial run off', formatUsagePayload({ year }));
-                return true;
-            },
-
-            // Wipe one year back to empty for a trial run: fixtures and results, predictions, jokers, tries, rules and prize values, and the
-            // lock / saved markers / who-plays / prize exemptions. Kept: the year itself, competitors and their emails, admins, other years,
-            // and the `trial:<year>` flag (so the banner stays until trial is switched off). Trial years only.
+            // Wipe one year back to empty (a rehearsal, or a fresh start): predictions and jokers, fixtures and results, tries, rules and
+            // close tiers, and the lock / saved markers / who-plays / prize exemptions. Kept: the year itself, competitors and their
+            // emails, admins and every other year. Works on any year, whatever it holds: the UI asks for the year to be typed first.
             resetSeason: async (year) => {
-                if (!trialYears[year]) {
-                    console.error(`Refusing to reset ${year}: it is not in trial run mode.`);
-                    return false;
-                }
                 const { data: matchRows, error: matchReadError } = await supabaseClient.from('matches').select('id').eq('year', year);
                 if (matchReadError) {
                     console.error('Error reading fixtures before resetting the season:', matchReadError);
