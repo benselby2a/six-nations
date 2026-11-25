@@ -11,7 +11,7 @@
         var dark = m === 'dark' || (m !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
         if (dark) { document.documentElement.setAttribute('data-theme', 'dark'); }
     } catch (e) { /* the bundle applies the theme once it runs */ }</script>
-    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=929a7bfd" -->
+    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=ee4c16e3" -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Six Nations Predictor</title>
@@ -36,7 +36,7 @@
     <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- jsPDF and its table plugin are loaded on demand (see loadPdfLibs in js/export-pdf.js), not on every visit -->
-    <link rel="stylesheet" href="dist/app.min.css?v=929a7bfd">
+    <link rel="stylesheet" href="dist/app.min.css?v=ee4c16e3">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -258,6 +258,8 @@
                     <button class="tab admin-only hidden admin-top-tab" onclick="showTab('adminHome')">Admin Functions</button>
                 </div>
             </div>
+
+            <div id="trialBanner" class="trial-banner hidden" role="status"></div>
 
             <!-- Admin Home Tab (Admin Only) -->
             <div id="adminHomeTab" class="prediction-section admin-only hidden" style="margin-top: 2rem;">
@@ -767,7 +769,7 @@
                         <div><strong>Competitors</strong> Add, edit, or remove competitors, update display names, assign teams, and manage admin access.</div>
                         <div><strong>Prize Fund</strong> Set entry fee and payout allocation for 1st/2nd/3rd and closest tries prize.</div>
                         <div><strong>Database Recovery</strong> Generate SQL to recreate schema and optionally restore current data.</div>
-                        <div><strong>Years</strong> Add a new year or remove one, including all of its fixtures, predictions and rules.</div>
+                        <div><strong>Years</strong> Add a new year or remove one, including all of its fixtures, predictions and rules. <strong>Trial run</strong> (per year) is for a rehearsal: it shows a banner to everyone, lifts the results lock and enables <strong>Reset season</strong>, which wipes that year's fixtures, results, predictions and rules. Reset it and switch Trial run off before the real season.</div>
                         <div><strong>Usage Report</strong> View the most recent 100 login and database write events.</div>
                     </div>
                     <div class="fixture-modal-actions" style="justify-content: center; margin-top: 1rem;">
@@ -911,6 +913,6 @@
     </div>
 
     <div class="app-footer"><span id="summaryUpdatedAt" class="app-footer-updated" aria-label="When the scores were last fetched"></span><span id="appVersion" class="app-version" aria-label="App version"></span></div>
-    <script src="dist/app.min.js?v=929a7bfd" onerror="window.__recoverApp && window.__recoverApp(true)"></script>
+    <script src="dist/app.min.js?v=ee4c16e3" onerror="window.__recoverApp && window.__recoverApp(true)"></script>
 </body>
 </html>

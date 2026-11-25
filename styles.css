@@ -4326,3 +4326,8 @@ body.summary-compact .summary-table-wrap.sel-fade td.row-sel::after, body.summar
 .fixture-import-note { font-size: 0.88rem; color: var(--muted); }
 
 .rules-reset-note { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--muted); }
+
+/* Trial run: a slim banner for everyone while the selected year is a rehearsal, and the reminder on the Setup checklist screen */
+.trial-banner { margin: 0 0 0.8rem; padding: 0.55rem 0.8rem; border-radius: 10px; border: 1px solid var(--bright-gold); background: rgba(232, 176, 42, 0.16); color: var(--text); font-size: 0.9rem; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.trial-banner.hidden { display: none; }
+.readiness-trial { margin-top: 0.3rem; font-size: 0.88rem; font-weight: 600; color: var(--bright-gold); }
