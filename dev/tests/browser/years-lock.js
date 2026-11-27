@@ -66,6 +66,8 @@ const mock = `
 })();`;
 
 
+const openCards = (page) => page.evaluate(() => document.querySelectorAll('#yearsListContainer details.year-card').forEach(d => { d.open = true; }));
+
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage();
@@ -80,7 +82,7 @@ const mock = `
   await page.goto('file://' + path);
   await page.waitForTimeout(Math.min(900, 40));
   const db = (k) => page.evaluate((k)=>JSON.stringify(__db[k]), k);
-  const ui = () => page.evaluate(() => ({ table:[...document.querySelectorAll('#yearsListContainer tbody tr')].map(r=>({ text:r.innerText.replace(/\s+/g,' ').trim(), removeShown: !!r.querySelector('button.btn-danger') })), feedback: document.getElementById('yearsFeedback').textContent }));
+  const ui = () => page.evaluate(() => ({ table:[...document.querySelectorAll('#yearsListContainer details.year-card')].map(r=>({ text:r.textContent.replace(/\s+/g,' ').trim(), removeShown: !!r.querySelector('button.btn-danger') })), feedback: document.getElementById('yearsFeedback').textContent }));
 
   await page.click('button[onclick="showTab(\'adminHome\')"]');
   await page.click('button[onclick="showTab(\'years\')"]'); await page.waitForTimeout(Math.min(300, 40));
@@ -100,7 +102,7 @@ const mock = `
   await page.fill('#newYearInput','2028'); await page.click('button[onclick="addYearFromAdmin()"]'); await page.waitForTimeout(Math.min(400, 40));
   console.log('2a 2028 row', JSON.stringify((await ui()).table[0]));
   promptAnswer = '2028';
-  await page.click('tr:has-text("2028") button.btn-danger'); await page.waitForTimeout(Math.min(400, 40));
+  await openCards(page); await page.click('details.year-card:has-text("2028") button.btn-danger'); await page.waitForTimeout(Math.min(400, 40));
   console.log('2b after remove 2028:', (await ui()).feedback, '| seasons', await db('seasons'));
 
   // 3. a year with predictions cannot be removed (UI function and storage layer)
@@ -112,10 +114,10 @@ const mock = `
 
   // 4. clear 2027 predictions (wrong confirmation first)
   promptAnswer = '2026';
-  await page.click('tr:has-text("2027") button:has-text("Clear predictions")'); await page.waitForTimeout(Math.min(300, 40));
+  await openCards(page); await page.click('details.year-card:has-text("2027") button:has-text("Clear predictions")'); await page.waitForTimeout(Math.min(300, 40));
   console.log('4a wrong confirm ->', (await ui()).feedback, '| 2027 preds', (JSON.parse(await db('predictions'))).filter(p=>p.match_id===3).length);
   promptAnswer = '2027';
-  await page.click('tr:has-text("2027") button:has-text("Clear predictions")'); await page.waitForTimeout(Math.min(500, 40));
+  await openCards(page); await page.click('details.year-card:has-text("2027") button:has-text("Clear predictions")'); await page.waitForTimeout(Math.min(500, 40));
   const t = (await ui()).table;
   console.log('4b cleared ->', (await ui()).feedback, JSON.stringify(t[0]), JSON.stringify(t[1]));
   console.log('   predictions', await db('predictions'));
@@ -124,7 +126,7 @@ const mock = `
 
   // 5. now 2027 can be removed; 2026 data untouched
   promptAnswer = '2027';
-  await page.click('tr:has-text("2027") button.btn-danger'); await page.waitForTimeout(Math.min(800, 40));
+  await openCards(page); await page.click('details.year-card:has-text("2027") button.btn-danger'); await page.waitForTimeout(Math.min(800, 40));
   console.log('5 after removing 2027: seasons', await db('seasons'), '| year now', await page.evaluate(()=>selectedYear));
   console.log('   2026 intact: predictions', (JSON.parse(await db('predictions'))).length, 'tries', await db('user_tries'));
   console.log('dialogs:', dialogs);

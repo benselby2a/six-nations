@@ -66,6 +66,8 @@ const mock = `
 })();`;
 
 
+const openCards = (page) => page.evaluate(() => document.querySelectorAll('#yearsListContainer details.year-card').forEach(d => { d.open = true; }));
+
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage();
@@ -80,7 +82,7 @@ const mock = `
   await page.goto('file://' + path);
   await page.waitForTimeout(Math.min(900, 40));
   const db = (k) => page.evaluate((k)=>JSON.stringify(__db[k]), k);
-  const ui = () => page.evaluate(() => ({ table:[...document.querySelectorAll('#yearsListContainer tbody tr')].map(r=>({ text:r.innerText.replace(/\s+/g,' ').trim(), removeDisabled: r.querySelector('button.btn-danger').disabled })), feedback: document.getElementById('yearsFeedback').textContent }));
+  const ui = () => page.evaluate(() => ({ table:[...document.querySelectorAll('#yearsListContainer details.year-card')].map(r=>({ text:r.textContent.replace(/\s+/g,' ').trim(), removeDisabled: r.querySelector('button.btn-danger').disabled })), feedback: document.getElementById('yearsFeedback').textContent }));
 
 
 

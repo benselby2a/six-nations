@@ -68,6 +68,8 @@ const mock = `
 })();`;
 
 
+const openCards = (page) => page.evaluate(() => document.querySelectorAll('#yearsListContainer details.year-card').forEach(d => { d.open = true; }));
+
 (async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
@@ -90,7 +92,7 @@ const mock = `
     settings: __db.settings.filter(s => s.key.endsWith(':' + y)).map(s => s.key).sort(),
   }), year);
   const feedback = () => page.evaluate(() => (document.getElementById('yearsFeedback') || {}).textContent || '');
-  const yearRow = (y) => page.evaluate((y) => { const r = [...document.querySelectorAll('#yearsListContainer tbody tr')].find(x => x.innerText.includes(String(y))); return r ? { text: r.innerText.replace(/\s+/g, ' ').trim(), reset: !!r.querySelector('button[onclick^="resetSeasonForYear"]'), clear: !!r.querySelector('button[onclick^="clearYearPredictions"]'), remove: !!r.querySelector('button[onclick^="removeYear"]') } : null; }, y);
+  const yearRow = (y) => page.evaluate((y) => { const r = [...document.querySelectorAll('#yearsListContainer details.year-card')].find(x => x.textContent.includes(String(y))); return r ? { text: r.textContent.replace(/\s+/g, ' ').trim(), reset: !!r.querySelector('button[onclick^="resetSeasonForYear"]'), clear: !!r.querySelector('button[onclick^="clearYearPredictions"]'), remove: !!r.querySelector('button[onclick^="removeYear"]') } : null; }, y);
 
   // give 2027 a result, rules, a tier, a lock and other per-year settings so the reset has everything to remove
   await page.evaluate(() => {
