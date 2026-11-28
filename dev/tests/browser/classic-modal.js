@@ -101,7 +101,7 @@ const mock = `
 
 
 
-// Classic: clicking a player's prediction cell opens an Excel-style window (title bar, formula bar, A/B/C columns and numbered rows, status bar) that shows
+// Classic: clicking a player's prediction cell opens an Excel-style window (a title bar and a plain table, no formula bar, column or row headers or status bar) that shows
 // the match, the player, the prediction, the result and how the points were made (same numbers as the summary), Joker doubling and "Not played yet".
 // A drag does not open it, Escape / x / backdrop close it and focus returns; other players' predictions stay hidden before the lock.
 (async () => {
@@ -124,7 +124,7 @@ const mock = `
     return { ctx, page };
   };
   const SHOT = '/tmp/claude-0/-home-user-six-nations/55e70b8c-24a4-53e8-973b-d120bef1189e/scratchpad/';
-  const win = (page) => page.evaluate(() => { const w = document.getElementById('pdfvCellWindow'); if (!w) return null; const g = (s) => { const e = w.querySelector(s); return e ? e.textContent.replace(/\s+/g, ' ').trim() : null; }; const rows = [...w.querySelectorAll('.xl-grid tbody tr')].map(tr => [tr.querySelector('.xl-label').textContent.trim(), tr.querySelector('.xl-value').textContent.trim(), tr.querySelector('.xl-pts').textContent.trim()]); const r = w.querySelector('.xl-window').getBoundingClientRect(); return { title: g('.xl-title'), formula: g('.xl-formula-text'), status: g('.xl-status'), rows, cols: [...w.querySelectorAll('.xl-grid thead th')].map(t => t.textContent.trim()).join(','), box: { l: Math.round(r.left), t: Math.round(r.top), r: Math.round(r.right), b: Math.round(r.bottom) }, vw: innerWidth, vh: innerHeight, over: document.documentElement.scrollWidth > innerWidth + 1, role: w.querySelector('.xl-window').getAttribute('role'), modal: w.querySelector('.xl-window').getAttribute('aria-modal') }; });
+  const win = (page) => page.evaluate(() => { const w = document.getElementById('pdfvCellWindow'); if (!w) return null; const g = (s) => { const e = w.querySelector(s); return e ? e.textContent.replace(/\s+/g, ' ').trim() : null; }; const rows = [...w.querySelectorAll('.xl-grid tbody tr')].map(tr => [tr.querySelector('.xl-label').textContent.trim(), tr.querySelector('.xl-value').textContent.trim(), tr.querySelector('.xl-pts').textContent.trim()]); const r = w.querySelector('.xl-window').getBoundingClientRect(); return { title: g('.xl-title'), rows, extras: { formula: !!w.querySelector('.xl-formula'), status: !!w.querySelector('.xl-status'), thead: !!w.querySelector('.xl-grid thead'), rownum: !!w.querySelector('.xl-rownum') }, cols: [...w.querySelectorAll('.xl-grid tbody tr')][0].children.length, box: { l: Math.round(r.left), t: Math.round(r.top), r: Math.round(r.right), b: Math.round(r.bottom) }, vw: innerWidth, vh: innerHeight, over: document.documentElement.scrollWidth > innerWidth + 1, role: w.querySelector('.xl-window').getAttribute('role'), modal: w.querySelector('.xl-window').getAttribute('aria-modal') }; });
   const cellOf = (user, match, kind) => `td[data-pred-user="${user}"][data-pred-match="${match}"]:nth-of-type(1)`;
 
   // ---- light, desktop 1280 ----
@@ -135,13 +135,13 @@ const mock = `
     const benScore = await page.evaluate(() => { const c = [...document.querySelectorAll('.pdfv-sheet td[data-pred-user="ben"][data-pred-match="1"]')]; return { n: c.length, texts: c.map(x => x.textContent.trim()) }; });
     await page.click('.pdfv-sheet td[data-pred-user="ben"][data-pred-match="1"]'); await page.waitForTimeout(250);
     const w1 = await win(page);
-    console.log('Ben, France v Ireland: window opens with the match, player, prediction and result:', JSON.stringify(w1 && [w1.title, w1.formula]), !!w1 && /Ben - France v Ireland/.test(w1.title) && /R1/.test(w1.formula) && w1.rows[0][1] === 'France v Ireland' && w1.rows[1][1] === 'Ben' && w1.rows[2][1] === '25 - 20' && w1.rows[3][1] === '30 - 20');
+    console.log('Ben, France v Ireland: window opens with the match, player, prediction and result:', JSON.stringify(w1 && w1.title), !!w1 && /Ben - France v Ireland/.test(w1.title) && w1.rows[0][1] === 'France v Ireland' && w1.rows[1][1] === 'Ben' && w1.rows[2][1] === '25 - 20' && w1.rows[3][1] === '30 - 20');
     const tot = w1 && Number(w1.rows.find(r => r[0] === 'Total points')[2]);
     const sum = w1 && w1.rows.filter(r => ['Correct result', 'Perfect score bonus', 'Draw bonus', 'Close score bonus', 'Joker'].includes(r[0])).reduce((a, r) => a + Number(r[2]), 0);
     const cellPts = await page.evaluate(() => { const row = [...document.querySelectorAll('.pdfv-sheet tbody tr')].find(tr => tr.querySelector('td[data-pred-user="ben"]')); const tds = [...row.querySelectorAll('td[data-pred-user="ben"][data-pred-match="1"]')]; return tds.map(t => t.textContent.trim()); });
     console.log('the breakdown rows add up to the total and match the points shown in the cell:', JSON.stringify({ tot, sum, cellPts }), sum === tot && tot > 0 && cellPts.includes(String(tot)));
-    console.log('Joker doubling is shown (x2, the extra equals the base points) and the status bar says so:', JSON.stringify([w1.rows.find(r => r[0] === 'Joker'), w1.status]), w1.rows.find(r => r[0] === 'Joker')[1] === 'x2' && Number(w1.rows.find(r => r[0] === 'Joker')[2]) * 2 === tot && /Joker played/.test(w1.status));
-    console.log('it looks like Excel: column letters A B C, numbered rows, a formula bar and a status bar, a dialog with aria-modal:', JSON.stringify([w1.cols, w1.role, w1.modal]), /^,A,B,C$/.test(w1.cols) && w1.role === 'dialog' && w1.modal === 'true' && /Joker/.test(w1.status));
+    console.log('Joker doubling is shown (x2, the extra equals the base points):', JSON.stringify(w1.rows.find(r => r[0] === 'Joker')), w1.rows.find(r => r[0] === 'Joker')[1] === 'x2' && Number(w1.rows.find(r => r[0] === 'Joker')[2]) * 2 === tot);
+    console.log('it is a plain table in the Excel style: no formula bar, no A B C column headers, no row numbers, no status bar; a dialog with aria-modal:', JSON.stringify([w1.extras, w1.cols, w1.role, w1.modal]), !w1.extras.formula && !w1.extras.status && !w1.extras.thead && !w1.extras.rownum && w1.cols === 3 && w1.role === 'dialog' && w1.modal === 'true');
     const sel = await page.evaluate(() => ({ cells: document.querySelectorAll('.pdfv-selected').length, outline: getComputedStyle(document.querySelector('.pdfv-selected')).outlineColor, scroll: document.body.style.overflow }));
     console.log('the clicked cell gets the green selection border and the page does not scroll behind:', JSON.stringify(sel), sel.cells === 1 && /33, 115, 70/.test(sel.outline) && sel.scroll === 'hidden');
     await page.screenshot({ path: SHOT + 'classic-modal-light-desktop.png' });
@@ -151,7 +151,7 @@ const mock = `
     // a match with no result yet (Ben, Italy v Scotland, predicted 10-30)
     await page.click('.pdfv-sheet td[data-pred-user="ben"][data-pred-match="2"]'); await page.waitForTimeout(250);
     const w2 = await win(page);
-    console.log('a match not played yet: shows the prediction and "Not played yet", no points rows:', JSON.stringify([w2.rows.map(r => r[0]), w2.rows[3], w2.status]), w2.rows[2][1] === '10 - 30' && w2.rows[3][1] === 'Not played yet' && !w2.rows.some(r => r[0] === 'Total points') && /Not played yet/.test(w2.status));
+    console.log('a match not played yet: shows the prediction and "Not played yet", no points rows:', JSON.stringify([w2.rows.map(r => r[0]), w2.rows[3]]), w2.rows[2][1] === '10 - 30' && w2.rows[3][1] === 'Not played yet' && !w2.rows.some(r => r[0] === 'Total points'));
     await page.click('.xl-close'); await page.waitForTimeout(150);
     console.log('the x button closes it:', !(await win(page)));
     await page.click('.pdfv-sheet td[data-pred-user="sam"][data-pred-match="1"]'); await page.waitForTimeout(250);
