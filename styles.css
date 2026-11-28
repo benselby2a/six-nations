@@ -3915,7 +3915,8 @@ body .cell-score .joker-inline { width: 1.25rem; height: 1.25rem; font-size: 0.8
 .pdfv-table { border-collapse: collapse; table-layout: fixed; }
 .pdfv-c { --lc: #545454; --pdfv-lines: inset calc(var(--bl, var(--pdfv-thin)) / 2) 0 0 0 var(--lc), inset calc(var(--br, var(--pdfv-thin)) / -2) 0 0 0 var(--lc), inset 0 calc(var(--bt, var(--pdfv-thin)) / 2) 0 0 var(--lc), inset 0 calc(var(--bb, var(--pdfv-thin)) / -2) 0 0 var(--lc);
     box-sizing: border-box; padding: calc(1.6px * var(--pdfv-k)) calc(1px * var(--pdfv-k)); overflow: hidden; border: 0; box-shadow: var(--pdfv-lines); background: var(--bg); color: var(--fg); line-height: 1.15; }
-.pdfv-stack span { display: block; line-height: 1.12; }
+.pdfv-stack span { display: block; line-height: 0.94; }   /* the team names run down the header: letters set close together, so the header row is shorter */
+.pdfv-stack { padding-top: calc(0.8px * var(--pdfv-k)); padding-bottom: calc(0.8px * var(--pdfv-k)); }
 :root[data-theme="dark"] .pdfv-sheet { background: #0b1a14; }
 :root[data-theme="dark"] .pdfv-title { color: #eaf3ee; }
 :root[data-theme="dark"] .pdfv-sub { color: #9db4a7; }
@@ -4178,9 +4179,9 @@ body.summary-simple .summary-table thead th.tries-col { font-size: 1.1rem; font-
 /* Joker: a light gold background shading on the cell (no bars, no card); the Joker match header gets a gold accent bar along its bottom edge (no tint, heading colours unchanged). One yellow-gold (--joker-gold) for both, tuned per theme. */
 body.summary-simple { --joker-gold: #e8b02a; --joker-shade: rgba(232, 176, 42, 0.30); }
 :root[data-theme="dark"] body.summary-simple { --joker-gold: var(--bright-gold); --joker-shade: rgba(245, 207, 106, 0.22); }
-/* Jumbo Joker cell: a short gold bar at the top of the cell, the same bar as in the Joker match header (no shading) */
-body.summary-simple .summary-table td.simple-joker { position: relative; }
-body.summary-simple .summary-table td.simple-joker::before { content: ''; position: absolute; top: 5px; left: 50%; width: min(64%, 58px); height: 4px; margin-left: calc(min(64%, 58px) / -2); border-radius: 2px; background: var(--joker-gold); pointer-events: none; }
+/* Jumbo Joker cell: a short gold bar between the score and its points line, the same bar as in the Joker match header (no shading) */
+body.summary-simple .summary-table td.simple-joker .cell-score { position: relative; }
+body.summary-simple .summary-table td.simple-joker .cell-score::after { content: ''; position: absolute; left: 50%; bottom: -3px; width: min(64%, 58px); height: 4px; margin-left: calc(min(64%, 58px) / -2); border-radius: 2px; background: var(--joker-gold); pointer-events: none; }
 :root[data-theme="dark"] body.summary-simple .summary-table td.competitor-name .comp-score { color: var(--text); }
 
 /* Plain: faint vertical lines between the grid's columns (body and header, 1px, no width change). Borders/inset shadows only, so the gold pinned divider and the Joker shading are untouched. */
