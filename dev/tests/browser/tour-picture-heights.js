@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const path = '/home/user/six-nations/index.html';
+const path = require('path').resolve(__dirname, '../../../index.html');
 
 const mock = `
 (() => {
@@ -128,7 +128,7 @@ const mock = `
     console.log(`${kind} tour at ${vw}x${vh}: every picture is shown and big enough:`, small.length === 0, JSON.stringify(pics.map(p => p.h)), small.length ? JSON.stringify(small) : '');
     await page.evaluate(() => endTour());
   };
-  for (const [w, h] of [[390, 664], [320, 480], [844, 390], [1280, 800]]) { await run('app', w, h, 6); await run('admin', w, h, 8); }
+  for (const [w, h] of [[390, 664], [320, 480], [844, 390], [1280, 800]]) { await run('app', w, h, 4); await run('admin', w, h, 8); }
   console.log('errors', errors);
   await browser.close();
 })();

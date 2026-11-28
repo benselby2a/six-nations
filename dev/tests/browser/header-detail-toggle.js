@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const path = '/home/user/six-nations/index.html';
+const path = require('path').resolve(__dirname, '../../../index.html');
 
 const mock = `
 (() => {
@@ -210,6 +210,17 @@ const mock = `
       : s.tdTries.family === s.score.family && sameSize(s.tdTries.size, s.score.size) && s.tdTries.weight === s.score.weight && s.tdTries.color === s.nick.color;
     console.log(`Predicted Tries matches the rest of the table (${view}, ${theme}):`, JSON.stringify({ th: [s.thTries.size, s.thTries.weight, s.thTries.color], teams: [s.teams.size, s.teams.weight, s.teams.color], td: [s.tdTries.size, s.tdTries.weight, s.tdTries.color], score: [s.score.size, s.scoreNum.weight, s.nick.color] }), headOk && bodyOk);
   }
+  // desktop-sized screens: the two toolbar buttons also show a text label; phones stay icon-only
+  const labels = () => page.evaluate(() => { const one = (id) => { const b = document.getElementById(id); const l = b.querySelector('.toolbar-btn-label'); const lr = l.getBoundingClientRect(); const br = b.getBoundingClientRect(); return { text: l.textContent.trim(), shown: getComputedStyle(l).display !== 'none' && lr.width > 0, inside: lr.left >= br.left - 0.5 && lr.right <= br.right + 0.5, oneLine: lr.height < 24, tipHidden: getComputedStyle(b, '::after').display === 'none' }; }; return { details: one('headerDetailBtn'), download: one('exportPdfBtn'), overflow: document.documentElement.scrollWidth > innerWidth + 1 }; });
+  await page.setViewportSize({ width: 1280, height: 800 }); await page.waitForTimeout(300);
+  const wide = await labels();
+  console.log('1280px: the details switch says "Show details" and the download button says "Download", inside the buttons on one line, no tooltip duplicate, no overflow:', wide.details.shown && wide.details.text === 'Show details' && wide.download.shown && wide.download.text === 'Download' && wide.details.inside && wide.download.inside && wide.details.oneLine && wide.download.oneLine && wide.details.tipHidden && !wide.overflow, JSON.stringify(wide));
+  await page.evaluate(() => toggleSummaryHeaderDetail()); await page.waitForTimeout(500);
+  console.log('with the details on the label reads "Hide details" and the button still shows pressed:', await page.evaluate(() => ({ t: document.querySelector('#headerDetailBtn .toolbar-btn-label').textContent, p: document.getElementById('headerDetailBtn').getAttribute('aria-pressed') })).then(r => r.t === 'Hide details' && r.p === 'true'));
+  await page.evaluate(() => toggleSummaryHeaderDetail()); await page.waitForTimeout(300);
+  await page.setViewportSize({ width: 390, height: 800 }); await page.waitForTimeout(300);
+  const narrow = await labels();
+  console.log('390px: icon-only (no visible labels), no overflow:', !narrow.details.shown && !narrow.download.shown && !narrow.overflow, JSON.stringify(narrow));
   console.log('errors', JSON.stringify(page.__errors));
   await browser.close();
 })();

@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const path = '/home/user/six-nations/index.html';
+const path = require('path').resolve(__dirname, '../../../index.html');
 
 const mock = `
 (() => {
@@ -126,7 +126,7 @@ const mock = `
     console.log(`${kind} tour at ${vw}x${vh}: card, Next, Back and close identical on all ${steps} steps:`, same('card') && same('next') && same('back') && same('close'), '| card fills the screen (gaps):', JSON.stringify(fills), '| card', boxes[0].card);
     await page.evaluate(() => endTour());
   };
-  for (const [w, h] of [[390, 664], [320, 480], [844, 390]]) { await run('app', w, h, 6); await run('admin', w, h, 8); }
+  for (const [w, h] of [[390, 664], [320, 480], [844, 390]]) { await run('app', w, h, 4); await run('admin', w, h, 8); }
   await page.evaluate(() => { window.isCurrentUserAdmin = () => true; });
   console.log('errors', errors);
   await browser.close();

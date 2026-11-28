@@ -400,6 +400,8 @@ function applySummaryHeaderDetail(on, redraw) {
         btn.setAttribute('aria-pressed', summaryHeaderDetail ? 'true' : 'false');
         btn.setAttribute('aria-label', tip);
         btn.setAttribute('data-tip', tip);
+        const label = btn.querySelector('.toolbar-btn-label');
+        if (label) label.textContent = summaryHeaderDetail ? 'Hide details' : 'Show details';   // visible on desktop-sized screens
     }
     if (redraw && typeof showSummary === 'function' && document.getElementById('summaryContainer')) showSummary();   // the redraw also rebuilds the pinned header
 }

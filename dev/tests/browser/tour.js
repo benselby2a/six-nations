@@ -156,15 +156,14 @@ const mock = `
   await page.keyboard.press('Escape'); await page.waitForTimeout(200);
   console.log('Escape closes:', !(await state()).open);
 
-  // ---- on an iPhone the tour ends with Add to Home Screen ----
-  await page.evaluate(() => { Object.defineProperty(navigator, 'userAgent', { get: () => 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1', configurable: true }); startTour(); });
-  await page.waitForTimeout(300);
-  const titles = await page.evaluate(() => tourState.steps.map(x => x.title));
-  console.log('on an iPhone the tour has', titles.length, 'steps, last:', titles[titles.length - 1]);
-  for (let i = 0; i < titles.length - 1; i++) { await tourNextClick(); await page.waitForTimeout(i === 0 ? 450 : 80); }
-  await page.waitForTimeout(450);
-  console.log('Home Screen step explains the long press:', await page.evaluate(() => { const b = document.getElementById('tourBody'); return { text: /long press/i.test(b.textContent) && /Share/.test(b.textContent), noScroll: b.scrollHeight <= b.clientHeight + 2, title: document.getElementById('tourTitle').textContent }; }).then(JSON.stringify));
-  await page.keyboard.press('Escape');
+  // ---- the player tour is four steps for everybody (the Home Screen advice is an after-tour tip, see home-screen-tip.js) ----
+  const playerTitles = await page.evaluate(() => tourBuildSteps(tourRulesHtml()).map(x => x.title));
+  console.log('the player tour has 4 steps:', playerTitles.length === 4 && /rules/i.test(playerTitles[0]) && /predictions/i.test(playerTitles[1]) && /leaderboard/i.test(playerTitles[2]) && /Choose your view/.test(playerTitles[3]), playerTitles.join(' > '));
+  await page.evaluate(() => { Object.defineProperty(navigator, 'userAgent', { get: () => 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1', configurable: true }); });
+  const iphoneTitles = await page.evaluate(() => tourBuildSteps(tourRulesHtml()).map(x => x.title));
+  console.log('on an iPhone in Safari it is still 4 steps (no Home Screen step):', iphoneTitles.length === 4 && !iphoneTitles.some(x => /Home Screen/.test(x)));
+  const leaderboard = await page.evaluate(() => { const s = tourBuildSteps(tourRulesHtml())[2]; return { items: s.items.length, text: s.items.join(' ') }; });
+  console.log('the leaderboard step carries the download and Show match details bullets (4 numbered bullets matching the 4 marks):', leaderboard.items === 4 && /download icon/.test(leaderboard.text) && /Show match details/.test(leaderboard.text));
 
   // ---- the admin tour ----
   await page.click('button.tab:has-text("Admin Functions")'); await page.waitForTimeout(300);
@@ -196,7 +195,7 @@ const mock = `
   await page.evaluate(() => { closeGlobalHelpModal(); startTour(); });
   await page.waitForTimeout(500);
   const loadedAtOnce = [];
-  for (let i = 0; i < 5; i++) { await tourNextClick(); loadedAtOnce.push(await page.evaluate(() => { const im = document.querySelector('#tourBody img'); return im ? im.complete && im.naturalWidth > 0 : null; })); }
+  for (let i = 0; i < 3; i++) { await tourNextClick(); loadedAtOnce.push(await page.evaluate(() => { const im = document.querySelector('#tourBody img'); return im ? im.complete && im.naturalWidth > 0 : null; })); }
   console.log('each picture is loaded as its step opens:', loadedAtOnce.join(','), '| preloaded images:', await page.evaluate(() => tourPreloaded.length));
   await page.keyboard.press('Escape');
   // ---- the card fits small and short screens (iPhone with its toolbars, landscape), top and bottom visible ----
@@ -205,14 +204,14 @@ const mock = `
   for (const [w, h] of [[320, 480], [390, 664], [844, 390], [1280, 800]]) {
     await page.setViewportSize({ width: w, height: h }); await page.waitForTimeout(450);
     let bad = 0; const pics = [];
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 4; i++) {
       const ok = await page.evaluate(() => { const c = document.getElementById('tourCard').getBoundingClientRect(); const hd = document.querySelector('.tour-head').getBoundingClientRect(); const n = document.getElementById('tourNext').getBoundingClientRect(); const b = document.getElementById('tourBody');
         return c.top >= 0 && c.bottom <= innerHeight + 1 && hd.top >= 0 && n.bottom <= innerHeight && c.left >= 0 && c.right <= innerWidth + 1 && b.scrollHeight <= b.clientHeight + 1; });
       if (!ok) bad++;
       if (true) pics.push(await page.evaluate(() => { const f = document.querySelector('#tourBody .tour-figure'); return f ? (f.style.display === 'none' ? 'hidden' : Math.round(f.getBoundingClientRect().height)) : 'text'; }));
-      if (i < 5) { await tourNextClick(); await page.waitForTimeout([0, 2, 3, 4].includes(i) ? 700 : 80); }
+      if (i < 3) { await tourNextClick(); await page.waitForTimeout([0, 1, 2, 3].includes(i) ? 700 : 80); }
     }
-    for (let i = 0; i < 5; i++) { await page.click('#tourBack'); await page.waitForTimeout([3, 4].includes(i) ? 700 : 30); }
+    for (let i = 0; i < 3; i++) { await page.click('#tourBack'); await page.waitForTimeout([1, 2].includes(i) ? 700 : 30); }
     console.log(`fits with no scrolling at ${w}x${h}:`, bad === 0 && !pics.includes('hidden'), '| picture heights (first/last step):', pics.join(','), '| pictures all shown:', !pics.includes('hidden'));
   }
   // the admin tour too (picture hidden only where the screen is too short for picture and text together)

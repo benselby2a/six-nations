@@ -61,47 +61,14 @@
 
   // ---- the app tour ----
   await shot('predictions', { before: () => clickTab('My Predictions'), clip: [tab('My Predictions'), '#matchesContainer .prediction-table-container'], marks: [tab('My Predictions'), '#matchesContainer .prediction-table-container button.btn-success'], maxH: 760 });
-  await shot('score', { before: () => clickTab('Match Summary'), clip: [tab('Match Summary'), '.summary-container'], marks: [tab('Match Summary'), '.summary-container'], maxH: 760 });
+  await shot('score', { before: () => clickTab('Match Summary'), clip: [tab('Match Summary'), '.summary-toolbar', '.summary-container'], marks: [tab('Match Summary'), '.summary-container', '#exportPdfBtn', '#headerDetailBtn'], maxH: 760 });
   // the views the tour lets people choose between
   await shot('view-compact', { before: () => page.evaluate(() => setSummaryView('compact')), clip: ['.summary-container'], marks: [], maxH: 330 });
   await shot('view-classic', { before: () => page.evaluate(() => setSummaryView('classic')), clip: ['#pdfViewWrap'], marks: [], maxH: 330 });
   await shot('view-simple', { before: () => page.evaluate(() => setSummaryView('simple')), clip: ['.summary-container'], marks: [], maxH: 330 });
   await page.evaluate(() => setSummaryView('compact')); await page.waitForTimeout(300);
-  // the player menu, open: the Table view and Appearance choices
-  await shot('menu-view', { before: async () => { await page.evaluate(() => { window.scrollTo(0, 0); document.getElementById('avatarBtn').click(); }); await page.waitForTimeout(350); }, clip: ['#avatarBtn', '#accountMenu'], marks: ['#avatarBtn', '#accountViewRow', '#accountThemeRow'], maxH: 420 });
-  await page.evaluate(() => closeAccountMenu()); await page.waitForTimeout(200);
-  await shot('pdf', { clip: ['.summary-toolbar', '.summary-updated-row'], marks: ['#exportPdfBtn', '#headerDetailBtn'] });
   // the quick score button, on the Match Summary
   await shot('admin-scores', { before: async () => { await clickTab('Match Summary'); await page.evaluate(() => { const m = matches[1] || matches[0]; const b = document.getElementById('nextMatchScoreMainBtn'); b.classList.remove('hidden'); b.disabled = false; b.textContent = `+ ${getFlag(m.team1)} ${getTeamAbbr(m.team1)} v ${getFlag(m.team2)} ${getTeamAbbr(m.team2)} score`; }); }, clip: ['.summary-toolbar', '.summary-updated-row'], marks: ['#nextMatchScoreMainBtn'], maxH: 220 });
-  // The PDF itself: build it with the app's own export, save the download, turn page 1 into a picture
-  try {
-    const glob = (name) => require('child_process').execSync(`find ${process.env.JSPDF_DIR} -name ${name} | head -1`).toString().trim();
-    await page.addScriptTag({ content: fs.readFileSync(glob('jspdf.umd.min.js'), 'utf8') });
-    await page.addScriptTag({ content: fs.readFileSync(glob('jspdf.plugin.autotable.min.js'), 'utf8') });
-    // on a desktop-style pointer the app shows the PDF in a pop-up instead of downloading it: pretend to be a phone so it downloads, and no pop-up is left over the later pictures
-    const [download] = await Promise.all([page.waitForEvent('download'), page.evaluate(() => { window.isDesktopPointer = () => false; exportToPDF(); })]);
-    await page.evaluate(() => { delete window.isDesktopPointer; if (typeof closePdfModal === 'function') closePdfModal(); });
-    const pdfPath = process.env.JSPDF_DIR + '/summary.pdf';
-    await download.saveAs(pdfPath);
-    require('child_process').execSync(`pdftoppm -png -r 130 -f 1 -l 1 -singlefile ${pdfPath} ${process.env.JSPDF_DIR}/page`);
-    require('child_process').execSync(`convert ${process.env.JSPDF_DIR}/page.png -trim +repage -bordercolor white -border 12 -quality 85 ${REPO}/tour-images/pdf-output.jpg`);
-    // Stack the toolbar picture and the PDF page into one picture (same width), keeping the mark on the PDF icon
-    const cp = require('child_process');
-    const top = `${REPO}/tour-images/pdf.jpg`, pageImg = `${REPO}/tour-images/pdf-output.jpg`;
-    const dimsOf = (f) => cp.execSync(`identify -format "%w %h" ${f}`).toString().split(' ').map(Number);
-    const [tw, th] = dimsOf(top);
-    cp.execSync(`convert ${pageImg} -resize ${tw}x ${process.env.JSPDF_DIR}/pdfpage.png`);
-    const gap = 24;
-    const ph = dimsOf(process.env.JSPDF_DIR + '/pdfpage.png')[1];
-    cp.execSync(`convert ${top} -size ${tw}x${gap} xc:#0d2818 ${process.env.JSPDF_DIR}/pdfpage.png -append -quality 85 ${top}`);
-    fs.unlinkSync(pageImg);
-    const total = th + gap + ph;
-    const bufP = fs.readFileSync(top);
-    const m = manifest['pdf'];
-    m.marks = m.marks.map(k => ({ ...k, y: Math.round(k.y * th / total * 10) / 10, h: Math.round(k.h * th / total * 10) / 10 }));
-    m.h = total; m.v = crypto.createHash('md5').update(bufP).digest('hex').slice(0, 8);
-    console.log('pdf (with page)', tw + 'x' + total, Math.round(bufP.length / 1024) + 'KB');
-  } catch (e) { console.log('PDF PICTURE FAILED', e.message); }
 
   // ---- the admin tour ----
   await clickTab('Admin Functions');
