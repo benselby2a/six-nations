@@ -379,17 +379,14 @@ function pdfvOpenCellWindow(username, matchId, opener) {
         .concat(played && pred ? [['Total points', '', String(total), 'total']] : [])
         .concat(match.actualTries1 !== null && match.actualTries2 !== null ? [['Tries in match', String(match.actualTries1 + match.actualTries2), '']] : [])
         .concat(user.totalTries != null ? [['Tries guess (season)', String(user.totalTries), '']] : []);
-    const cells = gridRows.map((r, i) => `<tr class="${r[3] ? 'xl-' + r[3] : ''}"><th class="xl-rownum" scope="row">${i + 1}</th><td class="xl-label">${escapeHtml(r[0])}</td><td class="xl-value">${escapeHtml(r[1])}</td><td class="xl-pts">${escapeHtml(r[2])}</td></tr>`).join('');
-    const status = !pred ? 'No prediction made' : !played ? 'Not played yet' : (joker ? (b && b.jokerApplied ? 'Joker played: points doubled' : 'Joker played') : 'Ready');
+    const cells = gridRows.map((r, i) => `<tr class="${r[3] ? 'xl-' + r[3] : ''}"><td class="xl-label">${escapeHtml(r[0])}</td><td class="xl-value">${escapeHtml(r[1])}</td><td class="xl-pts">${escapeHtml(r[2])}</td></tr>`).join('');
     const box = document.createElement('div');
     box.id = 'pdfvCellWindow';
     box.className = 'xl-backdrop';
     box.setAttribute('style', vars);
     box.innerHTML = `<div class="xl-window" role="dialog" aria-modal="true" aria-labelledby="xlTitle" tabindex="-1">
         <div class="xl-titlebar"><span class="xl-title" id="xlTitle">${escapeHtml(name)} - ${escapeHtml(match.team1)} v ${escapeHtml(match.team2)}</span><button type="button" class="xl-close" aria-label="Close">x</button></div>
-        <div class="xl-formula"><span class="xl-namebox">B3</span><span class="xl-fx">fx</span><span class="xl-formula-text">R${match.round} ${escapeHtml(match.date)} ${escapeHtml(match.time || '')}</span></div>
-        <div class="xl-scroll"><table class="xl-grid"><thead><tr><th class="xl-corner"></th><th>A</th><th>B</th><th>C</th></tr></thead><tbody>${cells}</tbody></table></div>
-        <div class="xl-status"><span>${escapeHtml(status)}</span><span>${played && pred ? `${total} pts` : ''}</span></div>
+        <div class="xl-scroll"><table class="xl-grid"><tbody>${cells}</tbody></table></div>
     </div>`;
     document.body.appendChild(box);
     pdfvWindowPrevOverflow = document.body.style.overflow;
