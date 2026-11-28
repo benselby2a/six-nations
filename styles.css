@@ -4432,3 +4432,30 @@ body.summary-compact .summary-table-wrap.sel-fade td.row-sel::after, body.summar
     body.summary-simple .summary-table th.competitor-col .th-angled { font-size: 1.2rem; }
     body.summary-compact .summary-table th.rank-col { font-size: 1.1rem; }
 }
+/* ===== Classic: click a player's prediction for an Excel-style detail window ===== */
+.pdfv-click { cursor: pointer; }
+@media (hover: hover) and (pointer: fine) { .pdfv-click:hover { outline: 1px solid rgba(33, 115, 70, 0.7); outline-offset: -1px; } }
+.pdfv-click.pdfv-selected, .pdfv-click.pdfv-selected:hover { outline: calc(2.4px * var(--pdfv-k, 1)) solid #217346; outline-offset: calc(-1.2px * var(--pdfv-k, 1)); position: relative; z-index: 3; }
+.xl-backdrop { position: fixed; inset: 0; z-index: 2600; display: flex; align-items: center; justify-content: center; padding: 12px; background: rgba(20, 20, 20, 0.45); font-family: Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+.xl-window { display: flex; flex-direction: column; width: min(92vw, 440px); max-height: min(92vh, 640px); background: var(--xl-sheet); color: var(--xl-text); border: 1px solid var(--xl-border); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); outline: none; }
+.xl-titlebar { display: flex; align-items: stretch; justify-content: space-between; background: #217346; color: #fff; min-height: 34px; }
+.xl-title { align-self: center; padding: 0 10px; font-size: 0.92rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.xl-close { all: unset; box-sizing: border-box; width: 42px; display: grid; place-items: center; cursor: pointer; font: 600 1.05rem/1 Helvetica, Arial, sans-serif; color: #fff; }
+.xl-close:hover { background: #c42b1c; transform: none; box-shadow: none; }
+.xl-close:focus-visible { outline: 2px solid #fff; outline-offset: -3px; }
+.xl-formula { display: flex; align-items: center; gap: 0.5rem; padding: 3px 6px; background: var(--xl-head); border-bottom: 1px solid var(--xl-border); font-size: 0.8rem; }
+.xl-namebox { min-width: 44px; padding: 1px 6px; text-align: center; background: var(--xl-sheet); border: 1px solid var(--xl-border); font-weight: 600; }
+.xl-fx { font-style: italic; font-family: Georgia, serif; color: var(--xl-sub); }
+.xl-formula-text { flex: 1; min-width: 0; padding: 1px 6px; background: var(--xl-sheet); border: 1px solid var(--xl-border); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.xl-scroll { overflow: auto; min-height: 0; }
+.xl-grid { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 0.9rem; }
+.xl-grid th, .xl-grid td { border: 1px solid var(--xl-border); padding: 4px 7px; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.xl-grid thead th { background: var(--xl-head); color: var(--xl-sub); text-align: center; font-weight: 400; font-size: 0.78rem; padding: 2px; }
+.xl-grid .xl-corner, .xl-grid .xl-rownum { width: 30px; background: var(--xl-head); color: var(--xl-sub); text-align: center; font-weight: 400; font-size: 0.78rem; padding: 2px; }
+.xl-grid .xl-label { width: 44%; color: var(--xl-red); font-weight: 700; white-space: normal; }
+.xl-grid .xl-value { font-weight: 700; white-space: normal; }
+.xl-grid .xl-pts { width: 18%; text-align: right; font-weight: 700; }
+.xl-grid .xl-pred .xl-value { background: var(--xl-pred); }
+.xl-grid .xl-total td { background: var(--xl-total); font-weight: 800; }
+.xl-grid .xl-total .xl-label { color: var(--xl-text); }
+.xl-status { display: flex; justify-content: space-between; gap: 1rem; padding: 3px 8px; background: #217346; color: #fff; font-size: 0.78rem; }
