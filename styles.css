@@ -4419,3 +4419,16 @@ body.summary-compact .summary-table-wrap.sel-fade td.row-sel::after, body.summar
     body.summary-compact .summary-table-wrap[class*="density-"] .summary-table .match-header-cell .match-header-bottom .match-result,
     body.summary-compact .summary-table-wrap[class*="density-"] .summary-table .match-header-cell .match-header-bottom .no-result { height: var(--dh-chip); }
 }
+
+/* Wide desktops only (1100px and up): the top bar's tab labels sit on the same line as the title, the year, the view and sun/moon switches and the initial circle (the tabs read about 2px high next to them) */
+@media (min-width: 1100px) {
+    #appView .app-bar > .tabs .tab { padding-top: calc(0.6rem + 2px); padding-bottom: calc(0.7rem - 2px); }   /* the text moves down 2px, the box and the underline stay where they are */
+}
+
+/* Wide desktops with a mouse: the first column heading has room, so it is larger and on one line ("Competitor & Score" in Default, "Competitor" in Jumbo) instead of the small phone-sized two-line heading */
+@media (min-width: 1100px) and (hover: hover) and (pointer: fine) {
+    body.summary-compact:not(.summary-simple) .summary-table th.competitor-col .th-angled { font-size: 1.15rem; line-height: 1.15; white-space: normal; }   /* one line when the column is wide enough, two ('Competitor' / '& Score') when it is not */
+    body.summary-compact:not(.summary-simple) .summary-table th.competitor-col .th-amp { display: inline; }
+    body.summary-simple .summary-table th.competitor-col .th-angled { font-size: 1.2rem; }
+    body.summary-compact .summary-table th.rank-col { font-size: 1.1rem; }
+}
