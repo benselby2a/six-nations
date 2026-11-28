@@ -230,9 +230,9 @@
                 <!-- Wide screens only (css, 1100px and up): the table view and light/dark switches next to the initial circle. They mirror the account menu's switches and use the same functions. -->
                 <div class="app-bar-tools" id="appBarTools">
                     <div class="bar-switch" id="topViewSwitch" role="group" aria-label="Table view">
-                        <button type="button" class="bar-switch-btn" data-view="compact" aria-pressed="false" title="Default view" onclick="setSummaryView('compact')">Default</button>
-                        <button type="button" class="bar-switch-btn" data-view="classic" aria-pressed="false" title="Classic view" onclick="setSummaryView('classic')">Classic</button>
-                        <button type="button" class="bar-switch-btn" data-view="simple" aria-pressed="false" title="Jumbo view" onclick="setSummaryView('simple')">Jumbo</button>
+                        <button type="button" class="bar-switch-btn" data-view="compact" aria-pressed="false" title="Default: countries and scores in a tidy table, with the points under each score. The best all-round view on any screen." onclick="setSummaryView('compact')">Default</button>
+                        <button type="button" class="bar-switch-btn" data-view="classic" aria-pressed="false" title="Classic: the whole tournament on one Excel-style sheet. Zoom and scroll it, click a score for its points breakdown, or download it as a PDF." onclick="setSummaryView('classic')">Classic</button>
+                        <button type="button" class="bar-switch-btn" data-view="simple" aria-pressed="false" title="Jumbo: large, plain text with no flags or icons, so it is easy to read. A Joker is marked with a gold bar." onclick="setSummaryView('simple')">Jumbo</button>
                     </div>
                     <div class="bar-switch bar-switch-icons" id="topThemeSwitch" role="group" aria-label="Appearance">
                         <button type="button" class="bar-switch-btn bar-icon-btn" data-theme-mode="light" aria-pressed="false" title="Sun: light mode" aria-label="Light mode" onclick="changeTheme('light')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.3 5.3l1.7 1.7M17 17l1.7 1.7M5.3 18.7L7 17M17 7l1.7-1.7"/></svg></button>
@@ -253,9 +253,9 @@
                     <div class="account-view" id="accountViewRow">
                         <span class="account-view-label" id="accountViewLabel">Table view</span>
                         <div class="view-switch" id="summaryViewSwitch" role="group" aria-label="Table view">
-                            <span class="view-switch-cell"><button type="button" class="view-switch-btn" data-view="compact" aria-pressed="false" onclick="setSummaryView('compact')">Default</button></span>
-                            <span class="view-switch-cell"><button type="button" class="view-switch-btn" data-view="classic" aria-pressed="false" onclick="setSummaryView('classic')">Classic</button></span>
-                            <span class="view-switch-cell"><button type="button" class="view-switch-btn" data-view="simple" aria-pressed="false" onclick="setSummaryView('simple')">Jumbo</button></span>
+                            <span class="view-switch-cell"><button type="button" class="view-switch-btn" data-view="compact" aria-pressed="false" title="Default: countries and scores in a tidy table, with the points under each score. The best all-round view on any screen." onclick="setSummaryView('compact')">Default</button></span>
+                            <span class="view-switch-cell"><button type="button" class="view-switch-btn" data-view="classic" aria-pressed="false" title="Classic: the whole tournament on one Excel-style sheet. Zoom and scroll it, click a score for its points breakdown, or download it as a PDF." onclick="setSummaryView('classic')">Classic</button></span>
+                            <span class="view-switch-cell"><button type="button" class="view-switch-btn" data-view="simple" aria-pressed="false" title="Jumbo: large, plain text with no flags or icons, so it is easy to read. A Joker is marked with a gold bar." onclick="setSummaryView('simple')">Jumbo</button></span>
                         </div>
                     </div>
                     <button type="button" class="account-item" id="menuWhatsNewBtn" role="menuitem" onclick="closeAccountMenu(); openWhatsNew()">What's new</button>

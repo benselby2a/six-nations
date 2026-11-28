@@ -53,6 +53,10 @@ const SHOTS = '/tmp/claude-0/-home-user-six-nations/55e70b8c-24a4-53e8-973b-d120
     const noWrap = g.bar.h < 80 && Math.abs(g.tabs.t - g.title.t) < 40 && g.chip.h < 50 && !g.barOverflow && !g.pageOverflow;
     console.log(`@${w}: view switch and sun/moon are left of the initial circle on the bar's row, nothing wraps or overflows:`, left && sameRow && noWrap, JSON.stringify({ viewR: g.viewR && [Math.round(g.viewR.l), Math.round(g.viewR.r)], themeR: g.themeR && [Math.round(g.themeR.l), Math.round(g.themeR.r)], av: Math.round(g.avatar.l), barH: Math.round(g.bar.h) }));
     console.log(`@${w}: tap targets are at least 32px high:`, !!g.viewR && g.viewR.h >= 32 && g.themeR.h >= 32);
+    if (w === 1440) {   // the three view buttons explain themselves in a short tooltip
+      const tips = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll('#topViewSwitch .bar-switch-btn')].map(b => [b.dataset.view, b.title])));
+      console.log('each top-bar view button has a short tooltip summarising the view (Default, Classic, Jumbo):', JSON.stringify(tips), /Default/.test(tips.compact) && /scores/.test(tips.compact) && /Excel-style/.test(tips.classic) && /PDF/.test(tips.classic) && /plain text/.test(tips.simple) && /gold bar/.test(tips.simple) && Object.values(tips).every(s => s.length > 30 && s.length < 170));
+    }
     await context.close();
   }
 
