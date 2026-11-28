@@ -118,18 +118,18 @@ const IPHONE_CHROME = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) Ap
     await page.waitForTimeout(Math.min(800, 40));
     return page;
   };
-  const homeStep = (page) => page.evaluate(() => tourBuildSteps(tourRulesHtml()).some(st => st.title === 'Add it to your Home Screen'));
+  const homeStep = (page) => page.evaluate(() => tourCanAddToHomeScreen() && !tourBuildSteps(tourRulesHtml()).some(st => /Home Screen/.test(st.title)));   // the tip is offered (after the tour), and it is not a tour step
 
-  // ---- the Home Screen advice is a step in the tour (there is no banner)
+  // ---- the Home Screen advice is a tip after the player tour, not a tour step (there is no banner)
   let page = await open({ userAgent: IPHONE_SAFARI, viewport: { width: 390, height: 800 } });
   console.log('1 no Home Screen banner in the page:', await page.evaluate(() => !document.getElementById('installTip') && !document.querySelector('.install-tip')));
-  console.log('  iPhone Safari -> the tour has the Home Screen step:', await homeStep(page));
+  console.log('  iPhone Safari -> the Home Screen tip is offered after the tour:', await homeStep(page));
   page = await open({ userAgent: IPHONE_CHROME });
-  console.log('2 iPhone Chrome (also has a Share button) -> Home Screen step:', await homeStep(page), '(expect true)');
+  console.log('2 iPhone Chrome (also has a Share button) -> Home Screen tip:', await homeStep(page), '(expect true)');
   page = await open({ userAgent: IPHONE_SAFARI }, () => { Object.defineProperty(navigator, 'standalone', { value: true }); });
-  console.log('3 already installed (standalone) -> Home Screen step:', await homeStep(page), '(expect false)');
+  console.log('3 already installed (standalone) -> Home Screen tip:', await homeStep(page), '(expect false)');
   page = await open({});
-  console.log('4 desktop browser -> Home Screen step:', await homeStep(page), '(expect false)');
+  console.log('4 desktop browser -> Home Screen tip:', await homeStep(page), '(expect false)');
 
   // ---- full-screen settings
   const cfg = await page.evaluate(async () => ({

@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const path = '/home/user/six-nations/index.html';
+const path = require('path').resolve(__dirname, '../../../index.html');
 
 const mock = `
 (() => {

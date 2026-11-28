@@ -52,23 +52,12 @@ function tourBuildSteps(rulesHtml) {
         ? '<p>Sign in to enter your own predictions.</p>'
         : '<p>Predictions lock when the tournament starts, so get them in early. Open <strong>Rules</strong> at the top of the screen any time to see how points are won.</p>'));
     steps.push(tourStep('score', 'See the leaderboard', [
-        'Tap <strong>Match Summary</strong> at the top of the screen. It is the screen you land on after signing in.',
-        'Everyone\'s rank and total score are on the left, with each prediction and the points it earned for every match.',
-        'Choose how the table looks (<strong>Compact, Classic or Jumbo</strong>) on the next screen.'
-    ], '<p>Tap any prediction to see how it was scored. The header row stays at the top as you scroll, and a 🃏 marks a Joker. <strong>All matches / Current round</strong> sits above the table.</p>'));
+        'Tap <strong>Match Summary</strong>, the screen you land on after signing in.',
+        'Ranks and totals are on the left, with each prediction and its points. Tap a prediction to see how it was scored.',
+        'The <strong>download icon</strong> saves the table as a PDF.',
+        '<strong>Show match details</strong> adds the date and tries to the headings.'
+    ], '<p>A 🃏 marks a Joker.</p>'));
     steps.push({ id: null, title: 'Choose your view', raw: () => tourViewsHtml(), needsViewChoice: true });
-    steps.push(tourStep('menu-view', 'Change your view any time', [
-        'Tap your <strong>initial</strong> at the top right to open the player menu.',
-        'Under <strong>Table view</strong>, choose Compact, Classic or Jumbo whenever you like.',
-        'Under <strong>Appearance</strong>, choose Light, Dark or Auto.'
-    ], '<p>Your choices are remembered on this device. Auto follows your phone\'s light or dark setting.</p>'));
-    steps.push(tourStep('pdf', 'Download and print', [
-        'Tap the <strong>download icon</strong> above the table to save the Classic page as a PDF, or to print it.',
-        'The button just before it, <strong>Show match details</strong>, adds the date and tries to the column headings in Compact and Jumbo.'
-    ], '<p>The Classic view is the same Excel-styled page, shown on screen. On a computer the icon opens the file in a pop-up with Print and Save buttons. The picture shows the page you get.</p>'));
-    if (tourCanAddToHomeScreen()) {
-        steps.push({ id: null, title: 'Add it to your Home Screen', raw: () => '<p>For one-tap access, add the Six Nations Guesser to your iPhone Home Screen.</p><p>Tap the <strong>Share</strong> button <svg class="tour-share-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> in your browser, then choose <strong>Add to Home Screen</strong>. Open it from there and sign in with a code.</p><p><strong>Can\'t see the Share button?</strong> Press and hold (long press) the browser address at the bottom of the screen, then choose <strong>Share</strong>.</p>' });
-    }
     return steps;
 }
 
@@ -107,9 +96,10 @@ function tourViewsHtml() {
     const points = TOUR_VIEW_OPTIONS.map(([mode, label, list]) =>
         `<ul class="tour-view-points" data-view="${mode}"${mode === current ? '' : ' hidden'}>${list.map(t => `<li>${t}</li>`).join('')}</ul>`).join('');
     // A column: the picture takes whatever room is left above, so the choices and their highlights keep their place at the bottom
-    return `<div class="tour-views-wrap"><p class="tour-views-intro">Tap a view to make it your default. You can change it any time from your player menu (next screen).</p>`
+    return `<div class="tour-views-wrap"><p class="tour-views-intro">Tap a view to make it your default.</p>`
         + `<div class="tour-view-pics">${pictures}</div><div class="tour-view-tabs${chosen ? '' : ' pending'}" role="group" aria-label="Choose your view">${tabs}</div>`
-        + `<p class="tour-views-need"${chosen ? ' hidden' : ''}>Choose a view to continue.</p><div class="tour-view-points-stack">${points}</div></div>`;
+        + `<p class="tour-views-need"${chosen ? ' hidden' : ''}>Choose a view to continue.</p><div class="tour-view-points-stack">${points}</div>`
+        + `<p class="tour-views-note">Change it any time from your initial at the top right, where you can also pick Light, Dark or Auto.</p></div>`;
 }
 function tourPickView(mode) {
     if (typeof setSummaryView === 'function') setSummaryView(mode);
@@ -401,14 +391,61 @@ function prevTourStep() {
     showTourStep(tourState.index - 1);
 }
 
+// ---- After the player tour: on an iPhone/iPad in Safari (not yet on the Home Screen), a small one-time tip about adding the app ----
+const HOME_SCREEN_TIP_KEY_PREFIX = 'homeScreenTipSeen:';
+const HOME_SCREEN_SHARE_ICON = '<svg class="tour-share-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+let homeScreenTipTimer = null;
+
+function homeScreenTipKey() { return HOME_SCREEN_TIP_KEY_PREFIX + (currentUsername || ''); }
+
+function homeScreenTipSeen() {
+    try { return !!localStorage.getItem(homeScreenTipKey()); } catch (error) { return true; }   // no storage: never nag
+}
+
+function dismissHomeScreenTip() {
+    try { localStorage.setItem(homeScreenTipKey(), 'yes'); } catch (error) { /* ignore */ }
+    const tip = document.getElementById('homeScreenTip');
+    if (tip) tip.remove();
+}
+
+function showHomeScreenTip() {
+    if (document.getElementById('homeScreenTip')) return;
+    const tip = document.createElement('div');
+    tip.id = 'homeScreenTip';
+    tip.className = 'home-screen-tip';
+    tip.setAttribute('role', 'status');
+    tip.innerHTML = `<p><strong>Tip:</strong> for one-tap access, add the Six Nations Guesser to your Home Screen. Tap the <strong>Share</strong> button ${HOME_SCREEN_SHARE_ICON} in your browser, then choose <strong>Add to Home Screen</strong>. Open it from there and sign in once.</p>`
+        + '<button type="button" id="homeScreenTipGotIt">Got it</button>';
+    document.body.appendChild(tip);
+    document.getElementById('homeScreenTipGotIt').onclick = dismissHomeScreenTip;
+}
+
+// Waits for a quiet moment: no tour, no pop-up (including the What's new notice) open
+function homeScreenTipSchedule() {
+    if (homeScreenTipTimer || window.__noTourPrompts && !window.__homeScreenTipForce) return;
+    if (!tourCanAddToHomeScreen() || homeScreenTipSeen()) return;
+    let attempts = 0;
+    const attempt = () => {
+        homeScreenTipTimer = null;
+        attempts++;
+        if (homeScreenTipSeen()) return;
+        const busy = tourState || document.body.classList.contains('tour-open') || document.querySelector('.modal:not(.hidden)');
+        if (busy) { if (attempts < 40) homeScreenTipTimer = setTimeout(attempt, 1500); return; }
+        showHomeScreenTip();
+    };
+    homeScreenTipTimer = setTimeout(attempt, 1200);
+}
+
 function endTour(completed) {
     if (!tourState) return;
+    const endedKind = tourState.kind;
     if (completed === true) {
         if (tourState.kind === 'admin') rememberAdminTourAnswer('yes'); else rememberTourAnswer('yes');
         trackUsage(tourState.kind === 'admin' ? 'admin tour completed' : 'tour completed');
     }
     tourState = null;
     if (typeof whatsNewSchedule === 'function') whatsNewSchedule();   // a pending new-feature notice can show now
+    if (endedKind !== 'admin') homeScreenTipSchedule();   // finished or closed the player tour: the one-time Home Screen tip (iPhone in Safari only)
     document.removeEventListener('keydown', tourKeys);
     window.removeEventListener('resize', tourFitScreen);
     document.removeEventListener('touchmove', tourBlockScroll);

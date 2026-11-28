@@ -41,19 +41,33 @@ const TOUR_IMAGES = {
     "y": 25.4,
     "w": 95.1,
     "h": 72.9
+   },
+   {
+    "n": 3,
+    "x": 87.8,
+    "y": 9.5,
+    "w": 9.7,
+    "h": 5.4
+   },
+   {
+    "n": 4,
+    "x": 76.2,
+    "y": 9.5,
+    "w": 9.7,
+    "h": 5.4
    }
   ]
  },
  "view-compact": {
   "src": "tour-images/view-compact.webp",
-  "v": "955cb6a2",
+  "v": "e330159f",
   "w": 780,
   "h": 660,
   "marks": []
  },
  "view-classic": {
   "src": "tour-images/view-classic.webp",
-  "v": "bd23dd26",
+  "v": "df82f583",
   "w": 780,
   "h": 294,
   "marks": []
@@ -64,57 +78,6 @@ const TOUR_IMAGES = {
   "w": 780,
   "h": 660,
   "marks": []
- },
- "menu-view": {
-  "src": "tour-images/menu-view.webp",
-  "v": "c1b5efa7",
-  "w": 580,
-  "h": 840,
-  "marks": [
-   {
-    "n": 1,
-    "x": 83.6,
-    "y": 2.3,
-    "w": 13.1,
-    "h": 9
-   },
-   {
-    "n": 2,
-    "x": 6.7,
-    "y": 45.2,
-    "w": 86.9,
-    "h": 19
-   },
-   {
-    "n": 3,
-    "x": 6.7,
-    "y": 26.2,
-    "w": 86.9,
-    "h": 19
-   }
-  ]
- },
- "pdf": {
-  "src": "tour-images/pdf.webp",
-  "v": "1b086101",
-  "w": 780,
-  "h": 586,
-  "marks": [
-   {
-    "n": 1,
-    "x": 87.8,
-    "y": 37,
-    "w": 9.7,
-    "h": 11.6
-   },
-   {
-    "n": 2,
-    "x": 76.2,
-    "y": 37,
-    "w": 9.7,
-    "h": 11.6
-   }
-  ]
  },
  "admin-scores": {
   "src": "tour-images/admin-scores.webp",
@@ -133,7 +96,7 @@ const TOUR_IMAGES = {
  },
  "admin-menu": {
   "src": "tour-images/admin-menu.webp",
-  "v": "67c950cb",
+  "v": "08fc75fc",
   "w": 780,
   "h": 940,
   "marks": [
@@ -155,7 +118,7 @@ const TOUR_IMAGES = {
  },
  "admin-fixtures": {
   "src": "tour-images/admin-fixtures.webp",
-  "v": "8014b652",
+  "v": "b253f704",
   "w": 780,
   "h": 1246,
   "marks": [
@@ -251,23 +214,23 @@ const TOUR_IMAGES = {
  },
  "admin-years": {
   "src": "tour-images/admin-years.webp",
-  "v": "fb5bf3ba",
+  "v": "00bf5462",
   "w": 780,
-  "h": 1280,
+  "h": 906,
   "marks": [
    {
     "n": 1,
     "x": 2.5,
-    "y": 1.6,
+    "y": 2.2,
     "w": 95.1,
-    "h": 36.6
+    "h": 51.7
    },
    {
     "n": 2,
     "x": 2.5,
-    "y": 45.8,
+    "y": 64.8,
     "w": 95.1,
-    "h": 54.2
+    "h": 33.1
    }
   ]
  }

@@ -11,7 +11,7 @@
         var dark = m === 'dark' || (m !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
         if (dark) { document.documentElement.setAttribute('data-theme', 'dark'); }
     } catch (e) { /* the bundle applies the theme once it runs */ }</script>
-    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=a6111b03" -->
+    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=2189c791" -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Six Nations Predictor</title>
@@ -36,7 +36,7 @@
     <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- jsPDF and its table plugin are loaded on demand (see loadPdfLibs in js/export-pdf.js), not on every visit -->
-    <link rel="stylesheet" href="dist/app.min.css?v=a6111b03">
+    <link rel="stylesheet" href="dist/app.min.css?v=2189c791">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -358,8 +358,8 @@
                         <button class="filter-toggle-btn" onclick="filterMatches('round')">Current round</button>
                     </div>
                     <div class="classic-tools" id="classicTools"><span class="pdfv-hint">Pinch to zoom, drag to move.</span><span class="pdfv-zoom"><button type="button" onclick="zoomPdfView(1 / 1.3)" aria-label="Zoom out">−</button><button type="button" onclick="zoomPdfView(0)" aria-label="Fit to screen">Fit</button><button type="button" onclick="zoomPdfView(1.3)" aria-label="Zoom in">+</button></span></div>
-                    <button type="button" class="toolbar-icon-btn header-detail-btn" id="headerDetailBtn" onclick="toggleSummaryHeaderDetail()" aria-pressed="false" data-tip="Show match details" aria-label="Show match details"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M3.5 9.5h17M8 14h8"/></svg></button>
-                    <button type="button" class="toolbar-icon-btn export-pdf-btn" id="exportPdfBtn" onclick="exportToPDF()" data-tip="Download the PDF" aria-label="Download the PDF"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 11l5 5 5-5M5 20h14"/></svg></button>
+                    <button type="button" class="toolbar-icon-btn header-detail-btn" id="headerDetailBtn" onclick="toggleSummaryHeaderDetail()" aria-pressed="false" data-tip="Show match details" aria-label="Show match details"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M3.5 9.5h17M8 14h8"/></svg><span class="toolbar-btn-label">Show details</span></button>
+                    <button type="button" class="toolbar-icon-btn export-pdf-btn" id="exportPdfBtn" onclick="exportToPDF()" data-tip="Download the PDF" aria-label="Download the PDF"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 11l5 5 5-5M5 20h14"/></svg><span class="toolbar-btn-label">Download</span></button>
                     <div class="summary-updated-row">
                         <button id="nextMatchScoreMainBtn" class="pill-add admin-only hidden" onclick="openNextMatchScoreModal()">Add next score</button>
                     </div>
@@ -911,6 +911,6 @@
     </div>
 
     <div class="app-footer"><span id="summaryUpdatedAt" class="app-footer-updated" aria-label="When the scores were last fetched"></span><span id="appVersion" class="app-version" aria-label="App version"></span></div>
-    <script src="dist/app.min.js?v=a6111b03" onerror="window.__recoverApp && window.__recoverApp(true)"></script>
+    <script src="dist/app.min.js?v=2189c791" onerror="window.__recoverApp && window.__recoverApp(true)"></script>
 </body>
 </html>

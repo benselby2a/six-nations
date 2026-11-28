@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const path = '/home/user/six-nations/index.html';
+const path = require('path').resolve(__dirname, '../../../index.html');
 
 const mock = `
 (() => {
@@ -124,12 +124,13 @@ const mock = `
   console.log('before a view is chosen the button says Select view:', JSON.stringify(labelBefore), labelBefore === 'Select view');
   await page.click('.tour-view-tab[data-view="compact"]'); await page.waitForTimeout(300);
   const boxAfter = await nextBox(), labelAfter = await nextLabel();
-  console.log('then it says Next, in exactly the same place and size:', labelAfter, boxBefore, boxAfter, labelAfter === 'Next' && boxBefore === boxAfter);
+  console.log('then it says Done (the view step is the last of the four), in exactly the same place and size:', labelAfter, boxBefore, boxAfter, labelAfter === 'Done' && boxBefore === boxAfter);
   const after = await st();
   console.log('choosing a view unlocks Next and highlights it:', JSON.stringify(after), !after.nextDisabled && !after.hint && after.selected === 1 && (await page.evaluate(() => summaryViewMode)) === 'compact');
-  await page.click('#tourNext'); await page.waitForTimeout(500);
-  console.log('and Next moves on:', (await st()).title);
+  console.log('under the choices a note says where to change the view later:', await page.evaluate(() => (document.querySelector('.tour-views-note') || {}).textContent), await page.evaluate(() => /Change it any time from your initial at the top right, where you can also pick Light, Dark or Auto\./.test((document.querySelector('.tour-views-note') || {}).textContent || '')));
   await page.click('#tourBack'); await page.waitForTimeout(500);
+  console.log('Back goes to the leaderboard step:', (await st()).title);
+  await page.click('#tourNext'); await page.waitForTimeout(500);
   console.log('coming back, the choice stays and Next is open:', JSON.stringify(await st()));
   const h = await page.evaluate(() => { const t = document.querySelector('.tour-view-tabs'), b = t.querySelector('.tour-view-tab.on'); const tr = t.getBoundingClientRect(), br = b.getBoundingClientRect(), cr = b.parentElement.getBoundingClientRect(); return { top: Math.round(br.top - tr.top), bottom: Math.round(tr.bottom - br.bottom), cellFilled: Math.abs(br.height - cr.height) < 1 && Math.abs(br.width - cr.width) <= 3 }; });
   console.log('the chosen card fills its cell:', JSON.stringify(h), h.cellFilled);

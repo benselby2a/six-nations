@@ -4,7 +4,7 @@
 // and Jumbo, light and dark, with the iPhone-only CSS injected. Hit testing (elementsFromPoint) respects clipping, so a cell that leaks is found.
 const { chromium } = require('playwright');
 const fs = require('fs');
-const path = '/home/user/six-nations/index.html';
+const path = require('path').resolve(__dirname, '../../../index.html');
 
 // the mocked database of pinned-divider.js, with six more fixtures so the table scrolls sideways
 const src = fs.readFileSync(require('path').join(__dirname, 'pinned-divider.js'), 'utf8');
