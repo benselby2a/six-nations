@@ -71,7 +71,7 @@ function buildPdfStyleViewHtml(matchList, sortedUsers) {
     const totalActualTries = getTotalActualTries();
 
     // One cell. paint(scheme) gives its fill and text colour in that scheme; both are written out as variables.
-    const cell = ({ content = '', colspan = 1, paint, bold = false, size = bodyFont, align = 'center', valign = 'middle', borders = '', stack = false, pin = false }) => {
+    const cell = ({ content = '', colspan = 1, paint, bold = false, size = bodyFont, align = 'center', valign = 'middle', borders = '', stack = false, pin = false, data = '' }) => {
         const vars = schemes.map(([suffix, S]) => { const c = paint(S); return `--bg${suffix}:${pdfvRgb(c.fill)};--fg${suffix}:${pdfvRgb(c.text)}`; }).join(';');
         const inner = stack
             ? String(content).split('').map(ch => `<span>${escapeHtml(ch)}</span>`).join('')
@@ -82,7 +82,7 @@ function buildPdfStyleViewHtml(matchList, sortedUsers) {
         const sideVar = { '': ['--bt', '--br', '--bb', '--bl'], '-top': ['--bt'], '-right': ['--br'], '-bottom': ['--bb'], '-left': ['--bl'] };
         const lineVars = [];
         const rest = String(borders).replace(/border(-top|-right|-bottom|-left)?-width:([^;]+);/g, (m, side, width) => { (sideVar[side || ''] || []).forEach(v => lineVars.push(`${v}:${width.trim()}`)); return ''; });
-        return `<td${colspan > 1 ? ` colspan="${colspan}"` : ''} class="pdfv-c${stack ? ' pdfv-stack' : ''}${pin ? ' pdfv-pinned' : ''}" style="${vars};${lineVars.join(';')}${lineVars.length ? ';' : ''}font-size:${pt(size)};font-weight:${bold ? 700 : 400};text-align:${align};vertical-align:${valign};${rest}">${inner}</td>`;
+        return `<td${colspan > 1 ? ` colspan="${colspan}"` : ''} class="pdfv-c${stack ? ' pdfv-stack' : ''}${pin ? ' pdfv-pinned' : ''}${data ? ' pdfv-click' : ''}"${data ? ' ' + data : ''} style="${vars};${lineVars.join(';')}${lineVars.length ? ';' : ''}font-size:${pt(size)};font-weight:${bold ? 700 : 400};text-align:${align};vertical-align:${valign};${rest}">${inner}</td>`;
     };
     const THIN = mm(0.35), HEAD = mm(0.45), BOLD = mm(0.9);
     // The heavier lines at the left and right edge of each match group
@@ -177,6 +177,8 @@ function buildPdfStyleViewHtml(matchList, sortedUsers) {
         matchSchemas.forEach(({ match, cols }) => {
             const pred = getViewablePrediction(user.username, match.id);
             const isJoker = canSeePredictionsOf(user.username) && isUserJokerForMatch(user.username, match.id);
+            // a player's prediction cells open the Excel-style detail window (only where their prediction may be seen: never before the lock for others)
+            const clickData = canSeePredictionsOf(user.username) ? `data-pred-user="${escapeHtml(user.username)}" data-pred-match="${match.id}"` : '';
             cols.forEach((kind, offset) => {
                 const colMeta = { kind, offset, size: cols.length };
                 const borders = topBorder + minH + edge(colMeta);
@@ -188,12 +190,12 @@ function buildPdfStyleViewHtml(matchList, sortedUsers) {
                         if (isDraw) return { fill: S.P.predDrawBg, text: S.P.predDrawFg };
                         return kind === winner ? { fill: S.P.predWinBg, text: S.P.predWinFg } : { fill: S.P.predLoseBg, text: S.P.predLoseFg };
                     };
-                    row += cell({ content: pred ? String(kind === 'home' ? pred.team1 : pred.team2) : '—', bold: true, size: scoreFont, paint: tone(paintFn), borders });
+                    row += cell({ content: pred ? String(kind === 'home' ? pred.team1 : pred.team2) : '—', bold: true, size: scoreFont, paint: tone(paintFn), borders, data: clickData });
                 } else if (kind === 'pts') {
                     const pts = pred ? calculateMatchPoints(pred, match, isJoker) : null;
-                    row += cell({ content: !pred ? '—' : (pts === null ? '' : String(pts)), bold: pts > 3, size: scoreFont, paint: tone((S) => ({ fill: S.P.pointsBg, text: S.pointsText })), borders });
+                    row += cell({ content: !pred ? '—' : (pts === null ? '' : String(pts)), bold: pts > 3, size: scoreFont, paint: tone((S) => ({ fill: S.P.pointsBg, text: S.pointsText })), borders, data: clickData });
                 } else {
-                    row += cell({ content: pred && isJoker ? 'x' : '', bold: true, paint: tone((S) => ({ fill: S.P.jokerBg, text: S.jokerText })), borders });
+                    row += cell({ content: pred && isJoker ? 'x' : '', bold: true, paint: tone((S) => ({ fill: S.P.jokerBg, text: S.jokerText })), borders, data: clickData });
                 }
             });
         });
@@ -247,6 +249,7 @@ function fitPdfView() {
         wrap.dataset.watched = '1';
         if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => fitPdfView()).observe(wrap);   // also when the tab is shown or the window changes
         enablePdfvPinch(wrap);
+        enablePdfvCellClicks(wrap);
     }
     if (!wrap.clientWidth) return;   // not visible yet
     applyPdfvScale(currentPdfvScale());
@@ -287,3 +290,114 @@ function enablePdfvPinch(wrap) {
     wrap.addEventListener('touchcancel', end, { passive: true });
 }
 window.addEventListener('resize', fitPdfView);
+
+
+// ---- Click a player's prediction: an Excel-style window with how the points were made (the same numbers as the summary's scoring) ----
+// The window is drawn at the top level of the page (outside the scaled sheet), at normal size, in the sheet's own colours.
+function enablePdfvCellClicks(wrap) {
+    let down = null, pinched = false;
+    wrap.addEventListener('pointerdown', (e) => { down = { x: e.clientX, y: e.clientY, moved: false }; });
+    wrap.addEventListener('pointermove', (e) => { if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 8) down.moved = true; });
+    wrap.addEventListener('touchstart', (e) => { if (e.touches.length > 1) pinched = true; }, { passive: true });
+    wrap.addEventListener('touchend', (e) => { if (e.touches.length === 0) setTimeout(() => { pinched = false; }, 350); }, { passive: true });
+    wrap.addEventListener('click', (e) => {
+        const cell = e.target.closest && e.target.closest('td[data-pred-user]');
+        if (!cell || !wrap.contains(cell)) return;
+        if ((down && down.moved) || pinched) { down = null; return; }   // a scroll, drag or pinch is not a click
+        down = null;
+        pdfvOpenCellWindow(cell.dataset.predUser, Number(cell.dataset.predMatch), cell);
+    });
+}
+
+let pdfvWindowOpener = null, pdfvWindowPrevOverflow = '';
+function pdfvCloseCellWindow() {
+    const box = document.getElementById('pdfvCellWindow');
+    if (!box) return;
+    box.remove();
+    document.removeEventListener('keydown', pdfvWindowKeys, true);
+    if (!document.body.classList.contains('tour-open')) document.body.style.overflow = pdfvWindowPrevOverflow;
+    document.querySelectorAll('.pdfv-selected').forEach(el => el.classList.remove('pdfv-selected'));
+    if (pdfvWindowOpener && document.contains(pdfvWindowOpener)) { try { pdfvWindowOpener.focus({ preventScroll: true }); } catch (e) { /* ignore */ } }
+    pdfvWindowOpener = null;
+}
+function pdfvWindowKeys(e) {
+    const box = document.getElementById('pdfvCellWindow');
+    if (!box) return;
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); pdfvCloseCellWindow(); return; }
+    if (e.key === 'Tab') { e.preventDefault(); const btn = box.querySelector('.xl-close'); if (btn) btn.focus(); }   // the close button is the only control: keep focus inside the window
+}
+
+function pdfvCellWindowData(username, matchId) {
+    const match = matches.find(m => m.id === matchId);
+    const user = users[username];
+    if (!match || !user) return null;
+    const pred = getViewablePrediction(username, matchId);
+    const played = match.actualScore1 !== null && match.actualScore2 !== null;
+    const joker = isUserJokerForMatch(username, matchId);
+    const rules = getEffectiveScoringRules();
+    const b = pred ? getMatchPointsBreakdown(pred, match, joker) : null;
+    const rows = [];
+    const yn = (v) => v ? 'Yes' : 'No';
+    if (played && pred && b) {
+        const close = (b.team1CloseBonus || 0) + (b.team2CloseBonus || 0);
+        const draw = getResult(match.actualScore1, match.actualScore2) === 'draw';
+        rows.push(['Correct result', yn(b.correctResult), b.correctResult ? rules.correctResultPoints : 0]);
+        rows.push(['Perfect score bonus', yn(b.perfectScore), b.perfectScore ? rules.perfectScoreBonus : 0]);
+        rows.push(['Draw bonus', draw ? yn(b.correctResult) : 'n/a', b.drawBonus || 0]);
+        const closeNames = [b.team1CloseBonus ? match.team1 : '', b.team2CloseBonus ? match.team2 : ''].filter(Boolean).join(' + ');
+        rows.push(['Close score bonus', closeNames || 'No', close]);
+        rows.push(['Joker', joker ? (b.jokerApplied ? 'x2' : 'x2 (nothing to double)') : 'Not played', b.jokerApplied ? b.basePoints : 0]);
+    }
+    return { match, user, pred, played, joker, b, rows };
+}
+
+function pdfvOpenCellWindow(username, matchId, opener) {
+    const d = pdfvCellWindowData(username, matchId);
+    if (!d) return;
+    pdfvCloseCellWindow();
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const S = dark ? PDF_SCHEMES.dark : PDF_SCHEMES.light, P = S.P;
+    const { match, user, pred, played, joker, b, rows } = d;
+    const name = toTitleCase(user.nickname || username);
+    const predText = pred ? `${pred.team1} - ${pred.team2}` : 'No prediction';
+    const resultText = played ? `${match.actualScore1} - ${match.actualScore2}` : 'Not played yet';
+    let fill = S.white;
+    if (pred) {
+        if (pred.team1 === pred.team2) fill = P.predDrawBg;
+        else if (!played) fill = P.pointsBg;
+        else fill = (pred.team1 > pred.team2) === (match.actualScore1 > match.actualScore2) && match.actualScore1 !== match.actualScore2 ? P.predWinBg : P.predLoseBg;
+    }
+    const vars = [['--xl-border', P.border], ['--xl-text', P.text], ['--xl-red', P.red], ['--xl-blue', P.blue], ['--xl-head', S.head], ['--xl-sheet', S.white], ['--xl-total', P.gameTotalBg], ['--xl-pred', fill], ['--xl-sub', S.sub]]
+        .map(([k, c]) => `${k}:${pdfvRgb(c)}`).join(';');
+    const total = b ? b.points : 0;
+    const gridRows = [
+        ['Match', `${match.team1} v ${match.team2}`, ''],
+        ['Player', name, ''],
+        ['Prediction', predText, '', 'pred'],
+        ['Result', resultText, '']
+    ].concat(rows.map(r => [r[0], r[1], String(r[2])]))
+        .concat(played && pred ? [['Total points', '', String(total), 'total']] : [])
+        .concat(match.actualTries1 !== null && match.actualTries2 !== null ? [['Tries in match', String(match.actualTries1 + match.actualTries2), '']] : [])
+        .concat(user.totalTries != null ? [['Tries guess (season)', String(user.totalTries), '']] : []);
+    const cells = gridRows.map((r, i) => `<tr class="${r[3] ? 'xl-' + r[3] : ''}"><th class="xl-rownum" scope="row">${i + 1}</th><td class="xl-label">${escapeHtml(r[0])}</td><td class="xl-value">${escapeHtml(r[1])}</td><td class="xl-pts">${escapeHtml(r[2])}</td></tr>`).join('');
+    const status = !pred ? 'No prediction made' : !played ? 'Not played yet' : (joker ? (b && b.jokerApplied ? 'Joker played: points doubled' : 'Joker played') : 'Ready');
+    const box = document.createElement('div');
+    box.id = 'pdfvCellWindow';
+    box.className = 'xl-backdrop';
+    box.setAttribute('style', vars);
+    box.innerHTML = `<div class="xl-window" role="dialog" aria-modal="true" aria-labelledby="xlTitle" tabindex="-1">
+        <div class="xl-titlebar"><span class="xl-title" id="xlTitle">${escapeHtml(name)} - ${escapeHtml(match.team1)} v ${escapeHtml(match.team2)}</span><button type="button" class="xl-close" aria-label="Close">x</button></div>
+        <div class="xl-formula"><span class="xl-namebox">B3</span><span class="xl-fx">fx</span><span class="xl-formula-text">R${match.round} ${escapeHtml(match.date)} ${escapeHtml(match.time || '')}</span></div>
+        <div class="xl-scroll"><table class="xl-grid"><thead><tr><th class="xl-corner"></th><th>A</th><th>B</th><th>C</th></tr></thead><tbody>${cells}</tbody></table></div>
+        <div class="xl-status"><span>${escapeHtml(status)}</span><span>${played && pred ? `${total} pts` : ''}</span></div>
+    </div>`;
+    document.body.appendChild(box);
+    pdfvWindowPrevOverflow = document.body.style.overflow;
+    if (!document.body.classList.contains('tour-open')) document.body.style.overflow = 'hidden';
+    pdfvWindowOpener = opener;
+    if (opener) { opener.setAttribute('tabindex', '-1'); opener.classList.add('pdfv-selected'); }
+    document.addEventListener('keydown', pdfvWindowKeys, true);
+    box.addEventListener('click', (e) => { if (e.target === box || e.target.closest('.xl-close')) pdfvCloseCellWindow(); });
+    const btn = box.querySelector('.xl-close');
+    if (btn) btn.focus({ preventScroll: true });
+}
