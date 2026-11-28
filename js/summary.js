@@ -305,6 +305,7 @@
 
             container.innerHTML = html;
             fitFocusNameColumn();
+            fitSummaryDensity();
             buildSummaryStickyHead();
             renderPrizeMoneyPanel(sortedUsers);
             renderWormChart(sortedUsers);
@@ -326,6 +327,7 @@
         function fitFocusNameColumn() {
             const root = document.body;
             if (summaryViewMode !== 'simple') { root.style.removeProperty('--focus-name-w'); root.classList.remove('jumbo-tight'); return; }
+            if (summaryIsWideDesktop()) { root.style.removeProperty('--focus-name-w'); root.classList.remove('jumbo-tight'); return; }   // the desktop layout sizes the Name column itself (fitSummaryDensity)
             const cells = [...document.querySelectorAll('.summary-container .summary-table td.competitor-name')];
             if (!cells.length) return;
             root.classList.remove('jumbo-tight');
@@ -376,10 +378,71 @@
             nicks.forEach(nick => { if (nick.scrollHeight > nick.clientHeight + 1 || nick.scrollWidth > nick.clientWidth + 0.5) nick.classList.add('nick-shrink'); });
             nicks.forEach(nick => { if (nick.scrollHeight > nick.clientHeight + 1 || nick.scrollWidth > nick.clientWidth + 0.5) nick.classList.add('nick-trunc'); });
         }
+        // ---- Wide desktops (a mouse, 1100px or more): short rows, so the whole table fits the screen without scrolling down ----
+        // Compact and Jumbo only (Classic is its own page). Phones, tablets and narrow windows are never touched.
+        // fitSummaryDensity() sizes the Name column to the longest name on ONE line, then tries three levels on the table wrap, from the roomiest
+        // (density-comfortable: score over points, about 55px a row) to density-tight (about 45px) and density-tightest (about 37px, smaller type),
+        // and keeps the first one whose bottom edge is on screen.
+        // With more players than fit even at the tightest level it stays there and the page scrolls as before.
+        const DENSITY_LEVELS = ['density-comfortable', 'density-tight', 'density-tightest'];
+        function summaryIsWideDesktop() {
+            if (typeof window === 'undefined' || typeof summaryViewMode === 'undefined' || summaryViewMode === 'classic') return false;
+            try { return window.innerWidth >= 1100 && window.matchMedia('(hover: hover) and (pointer: fine)').matches; } catch (error) { return false; }
+        }
+        function fitSummaryDensity() {
+            const wrap = document.querySelector('.summary-table-wrap');
+            if (!wrap) return;
+            const root = document.body;
+            const clear = () => { DENSITY_LEVELS.forEach(c => wrap.classList.remove(c)); root.style.removeProperty('--desk-name-w'); };
+            const box = wrap.querySelector('.summary-container');
+            const table = box && box.querySelector('table.summary-table');
+            if (!table || !summaryIsWideDesktop()) { clear(); return; }
+            const bottomOf = () => table.getBoundingClientRect().bottom + window.scrollY;
+            const fits = () => bottomOf() <= window.innerHeight - 8;
+            // the Name column: the widest name + flags + total on one line (between 130px and 260px)
+            const fitName = () => {
+                root.style.setProperty('--desk-name-w', '420px');
+                let need = 0;
+                table.querySelectorAll('tbody td.competitor-name').forEach(td => {
+                    const nick = td.querySelector('.comp-nick'), sub = td.querySelector('.comp-sub');
+                    if (!nick) return;
+                    const cs = getComputedStyle(td);
+                    const pad = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+                    need = Math.max(need, Math.ceil(nick.getBoundingClientRect().width + (sub ? sub.getBoundingClientRect().width : 0) + 14 + pad + 2));
+                });
+                root.style.setProperty('--desk-name-w', Math.min(260, Math.max(130, need)) + 'px');
+            };
+            table.querySelectorAll('.comp-nick').forEach(n => n.classList.remove('nick-shrink', 'nick-trunc'));
+            wrap.classList.remove('density-tight', 'density-tightest');
+            wrap.classList.add('density-comfortable');
+            fitName();
+            if (fits()) return;
+            for (const level of ['density-tight', 'density-tightest']) {
+                wrap.classList.remove('density-comfortable', 'density-tight', 'density-tightest');
+                wrap.classList.add(level);
+                fitName();
+                if (fits()) return;
+            }
+        }
+        let densityResizeTimer = null;
+        function refitSummaryDensity() {
+            clearTimeout(densityResizeTimer);
+            densityResizeTimer = setTimeout(() => {
+                if (!document.querySelector('.summary-table-wrap .summary-table')) return;
+                fitSummaryDensity();
+                if (summaryViewMode === 'simple') fitFocusNameColumn();
+                if (typeof sizeSummaryStickyHead === 'function') sizeSummaryStickyHead();
+                if (typeof layoutSummarySticky === 'function') layoutSummarySticky();
+            }, 120);
+        }
+        if (typeof window !== 'undefined') window.addEventListener('resize', refitSummaryDensity);
+
         // Fonts that arrive after the first draw change the text widths: fit again, then re-pin the header
         if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
             document.fonts.ready.then(() => {
-                if (summaryViewMode !== 'simple' || !document.querySelector('.summary-container .summary-table')) return;
+                if (!document.querySelector('.summary-container .summary-table')) return;
+                if (summaryIsWideDesktop()) { fitSummaryDensity(); if (typeof sizeSummaryStickyHead === 'function') sizeSummaryStickyHead(); if (typeof layoutSummarySticky === 'function') layoutSummarySticky(); return; }
+                if (summaryViewMode !== 'simple') return;
                 fitFocusNameColumn();
                 if (typeof layoutSummarySticky === 'function') layoutSummarySticky();
             }).catch(() => {});

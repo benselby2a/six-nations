@@ -161,15 +161,18 @@ const mock = `
     const oneLine = r.rows.every(x => x.lines <= 2);   // a name wraps at spaces onto at most two lines
     const noMidWord = r.rows.every(x => !x.split && (!x.clipped || (x.ellipsis && x.title)));
     const scoreInside = r.rows.every(x => x.scoreRight <= x.cellRight + 0.5 && x.nickRight <= x.scoreLeft + 1);
-    const bounded = r.colW >= 58 && r.colW <= 112;   // 64-100px (58px on the very narrowest phones) + the cell padding on wide screens
+    // 64-100px (58px on the very narrowest phones) + the cell padding; on a wide desktop with a mouse (1100px and up) the desktop layout takes over: one-line names in a 130-260px column (see desktop-density.js)
+    const wideDesktop = width >= 1100;
+    const bounded = wideDesktop ? (r.colW >= 130 && r.colW <= 260 && r.rows.every(x => x.lines <= 1)) : (r.colW >= 58 && r.colW <= 112);
     const aligned = r.hdrW === r.colW && (r.pinnedW === null || Math.abs(r.pinnedW - r.colW) <= 1);
-    console.log(`${theme} detail=${detail} @${width}: names on at most two lines:`, oneLine, '| no word split across lines (clipped only with ellipsis + title):', noMidWord, '| score inside the cell, clear of the name:', scoreInside, '| column 58-112px (was 96-132px):', bounded, '| header/pinned header same width:', aligned, '|', JSON.stringify({ col: r.colW, hdr: r.hdrW, pinned: r.pinnedW, v: r.varW }));
+    console.log(`${theme} detail=${detail} @${width}: names on at most two lines:`, oneLine, '| no word split across lines (clipped only with ellipsis + title):', noMidWord, '| score inside the cell, clear of the name:', scoreInside, '| column 58-112px (was 96-132px; 130-260px and one line on a wide desktop):', bounded, '| header/pinned header same width:', aligned, '|', JSON.stringify({ col: r.colW, hdr: r.hdrW, pinned: r.pinnedW, v: r.varW }));
     if (!oneLine || !noMidWord || !scoreInside || !aligned) console.log('   detail:', JSON.stringify(r.rows));
   }
   // names that fit never shrink or get cut: the short ones are untouched
   const r2 = await measure();
   console.log('short names are not shrunk or cut:', r2.rows.filter(x => /^Ben$/.test(x.name)).every(x => !x.shrink && !x.clipped));
-  // the column is no wider than it has to be: with only short names it goes back to its minimum
+  // the column is no wider than it has to be: with only short names it goes back to its minimum (a phone-sized window: the wide desktop sizes the column itself)
+  await page.setViewportSize({ width: 390, height: 800 }); await page.waitForTimeout(400);
   await page.evaluate(() => { document.querySelectorAll('.summary-table:not(.summary-table-clone) .comp-nick').forEach(e => { e.textContent = 'Abc'; }); document.querySelectorAll('.summary-table:not(.summary-table-clone) .comp-score').forEach(e => { e.textContent = '99'; }); if (typeof fitFocusNameColumn === 'function') fitFocusNameColumn(); });
   const r3 = await measure();
   console.log('only short names: the column is far narrower than before (about 72px, it used to be 96px minimum):', parseInt(r3.varW) <= 76, r3.colW, r3.varW);
