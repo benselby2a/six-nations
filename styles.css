@@ -4277,10 +4277,8 @@ body.summary-compact .summary-table thead th.match-header-cell.match-col-now, bo
 body.summary-compact .summary-container { scroll-snap-type: x mandatory; }
 body.summary-compact .summary-table:not(.summary-table-clone) th.match-header-cell { scroll-snap-align: start; }
 
-/* iPhone/iPad, Compact and Jumbo: the table box sits at a fractional x (about 10.6px), so the pinned Rank cell starts part-way into a device pixel and a 1px sliver of the score columns scrolled underneath showed down its left edge (seen on a real iPhone). The box's left border is already transparent there, so clip the box 2px in from its left edge: the sliver (and 1px of the Rank cell) is cut off and only the page shows. */
-@supports (-webkit-touch-callout: none) {
-    body.summary-compact .summary-container { clip-path: inset(0 0 0 2px); }
-}
+/* iPhone/iPad, Compact and Jumbo: the table box sits at a fractional x (about 10.6px), so the pinned Rank cell started part-way into a device pixel and a 1px sliver of the score columns scrolled underneath showed down its left edge (seen on a real iPhone). This used to be hidden with a clip-path on the scrolling box; a clip-path on a scroller makes the browser mask the whole scrolling layer, which is costly while scrolling (and the pinned header lagged behind). Instead alignSummaryBox() (js/app-bar.js) shifts the box by the missing fraction of a device pixel (--box-nudge, at most 1/3px on a 3x screen), so its left edge, and the Rank cell on it, sit exactly on a device pixel and there is no sliver to hide. */
+.summary-table-wrap .summary-container { left: var(--box-nudge, 0px); margin-right: var(--box-nudge, 0px); }
 
 /* iPhone/iPad: the system draws a faded band over the top of the screen that is taller than the status-bar inset (about 34px more), so the tour card, which starts at the inset, had its top (the step count, the X and the top edge) hidden under it */
 @supports (-webkit-touch-callout: none) {

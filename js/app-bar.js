@@ -308,10 +308,22 @@ function setSummarySelection(cell, source) {
         if (!target.closest('button, a, select, input, textarea, label, .modal, .fixture-chat-sheet, .account-menu, .tour-layer')) clearSummarySelection();
     }, { passive: true });
 })();
+// iPhone/iPad: put the table box's left edge on a whole device pixel (see the note in styles.css by --box-nudge). Only there: other browsers draw fractional edges without a sliver.
+const BOX_NUDGE_NEEDED = !!(window.CSS && CSS.supports && CSS.supports('-webkit-touch-callout: none'));
+function alignSummaryBox(box) {
+    if (!BOX_NUDGE_NEEDED || !box) return 0;
+    box.style.setProperty('--box-nudge', '0px');
+    const dpr = window.devicePixelRatio || 1;
+    const edge = box.getBoundingClientRect().left * dpr;
+    const nudge = Math.abs(edge - Math.round(edge)) < 0.02 ? 0 : (Math.ceil(edge) - edge) / dpr;
+    box.style.setProperty('--box-nudge', nudge.toFixed(4) + 'px');
+    return nudge;
+}
 function sizeSummaryStickyHead() {
     const wrap = document.querySelector('.summary-table-wrap');
     if (!wrap) return;
     const box = wrap.querySelector('.summary-container');
+    const nudge = alignSummaryBox(box);
     const table = box.querySelector('table.summary-table');
     const inner = wrap.querySelector('.summary-sticky-inner');
     const copy = inner.querySelector('.summary-sticky-scroll table');
@@ -319,7 +331,7 @@ function sizeSummaryStickyHead() {
     if (!table || !copy || !pinCopy) return;
     const real = [...table.tHead.querySelectorAll('th')];
     const setWidth = (el, w) => { el.style.width = w + 'px'; el.style.minWidth = w + 'px'; el.style.maxWidth = w + 'px'; };
-    inner.style.left = box.clientLeft + 'px';
+    inner.style.left = (box.clientLeft + nudge) + 'px';
     inner.style.width = box.clientWidth + 'px';
     copy.style.width = table.offsetWidth + 'px';
     const mine = copy.tHead.querySelectorAll('th');
