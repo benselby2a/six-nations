@@ -63,7 +63,7 @@ function tourBuildSteps(rulesHtml) {
 
 // The summary view choices, each with a picture: tapping one makes it the default (the same switch as above the table)
 const TOUR_VIEW_OPTIONS = [
-    ['compact', 'Compact', [
+    ['compact', 'Default', [
         'Designed for small screens: just the countries and scores, so more fits.',
         'Tap the details button beside the download icon to add match dates and try counts to the headers.',
         'Tap a match header or a prediction for the full details. The header row stays pinned as you scroll.'
@@ -75,7 +75,7 @@ const TOUR_VIEW_OPTIONS = [
     ]],
     ['simple', 'Jumbo', [
         'The easiest to read: larger plain text, no icons or flags.',
-        'Compact\'s layout: just the countries and scores.',
+        'The Default view\'s layout: just the countries and scores.',
         'A Joker is shown by light gold shading on the cell, not a card.'
     ]]
 ];
