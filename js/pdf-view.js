@@ -106,7 +106,7 @@ function buildPdfStyleViewHtml(matchList, sortedUsers) {
             const colMeta = { kind, offset, size: cols.length };
             if (kind === 'home' || kind === 'away') {
                 const team = kind === 'home' ? match.team1 : match.team2;
-                head2 += cell({ content: team, stack: true, bold: true, size: teamHeaderFont, paint: (S) => ({ fill: S.head, text: S.team[team] || (kind === 'home' ? S.P.blue : S.P.red) }), borders: `border-width:${HEAD};${edge(colMeta, false)}height:${mm(12.5)};` });
+                head2 += cell({ content: team, stack: true, bold: true, size: teamHeaderFont, paint: (S) => ({ fill: S.head, text: S.team[team] || (kind === 'home' ? S.P.blue : S.P.red) }), borders: `border-width:${HEAD};${edge(colMeta, false)}height:${mm(9)};` });
             } else {
                 head2 += cell({ bold: true, size: headFont, paint: (S) => ({ fill: S.head, text: S.P.text }), borders: `border-width:${HEAD};${edge(colMeta, false)}` });
             }
@@ -204,7 +204,10 @@ function buildPdfStyleViewHtml(matchList, sortedUsers) {
         return `<tr>${row}</tr>`;
     }).join('');
 
-    const colgroup = `<col style="width:${mm(22)}">` + matchSchemas.map(({ cols }) => cols.map(() => `<col style="width:${mm(matchColWidth)}">`).join('')).join('') + `<col style="width:${mm(9)}"><col style="width:${mm(9)}"><col style="width:${mm(9)}">`;
+    // The Pts column is about 2px wider so 'Pts' never touches the heavy line on its right; the two team columns give up the same width between them
+    const ptsExtra = 0.55;
+    const colWidth = (kind, cols) => kind === 'pts' ? matchColWidth + ptsExtra : (kind === 'home' || kind === 'away') ? matchColWidth - ptsExtra / 2 : matchColWidth;
+    const colgroup = `<col style="width:${mm(22)}">` + matchSchemas.map(({ cols }) => cols.map(kind => `<col style="width:${mm(colWidth(kind, cols))}">`).join('')).join('') + `<col style="width:${mm(9)}"><col style="width:${mm(9)}"><col style="width:${mm(9)}">`;
     // "Updated Sat, 21 Nov 2026 at 07:26": the day and time the data was last fetched, worded like the export's "Exported ... at ..."
     const stamp = new Date(typeof lastDataRefreshAt === 'number' ? lastDataRefreshAt : Date.now());
     const updated = `${stamp.toLocaleDateString('en-GB', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })} at ${stamp.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
