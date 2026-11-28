@@ -128,7 +128,7 @@ const mock = `
       mode: summaryViewMode, simpleClass: document.body.classList.contains('summary-simple'),
       emoji, flagsEl: !!tbl.querySelector('.supported-team-flags'), jokerIcons: tbl.querySelectorAll('.joker-indicator, .joker-inline').length,
       heads, hasAbbr: heads.some(h => /FRA/.test(h) && /IRE/.test(h)),
-      jokerCells: jokerCells.length, jokerClass: jokerCells.every(c => c.classList.contains('simple-joker')), jokerBg: jokerCells[0] && getComputedStyle(jokerCells[0]).backgroundColor, jokerShadow: jokerCells[0] && getComputedStyle(jokerCells[0]).boxShadow,
+      jokerCells: jokerCells.length, jokerClass: jokerCells.every(c => c.classList.contains('simple-joker')), jokerBg: jokerCells[0] && getComputedStyle(jokerCells[0]).backgroundColor, jokerShadow: jokerCells[0] && getComputedStyle(jokerCells[0]).boxShadow, jokerBar: jokerCells[0] && (() => { const p = getComputedStyle(jokerCells[0], '::before'); return { h: p.height, bg: p.backgroundColor, pos: p.position }; })(),
       jokerText: jokerCells.every(c => /Joker/.test(c.textContent) && c.querySelector('.sr-only')),
       hdrAccent: !!hdr && /Joker/.test(hdr.textContent) && !/0px -5px 0px 0px/.test(getComputedStyle(hdr).boxShadow) && getComputedStyle(hdr).backgroundImage === 'none' && (() => { const b = hdr.querySelector('.match-header-bottom'); const p = getComputedStyle(b, '::before'); return p.height === '4px' && p.position === 'absolute' && /232, 176, 42|245, 207, 106/.test(p.backgroundColor) && parseFloat(p.top) < 0; })(),
       legend: !!document.querySelector('.simple-legend'),
@@ -138,16 +138,16 @@ const mock = `
   console.log(JSON.stringify(r));
   console.log('no emoji / flags / card icons in the table:', !r.emoji && !r.flagsEl && r.jokerIcons === 0);
   console.log('text abbreviations in headers:', r.hasAbbr);
-  console.log('joker cell has colour class, light gold shading (no bar) and hidden Joker text:', r.jokerCells >= 1 && r.jokerClass && r.jokerText && /232, 176, 42/.test(r.jokerBg) && !/0px 4px/.test(r.jokerShadow));
+  console.log('joker cell has the colour class, hidden Joker text, a 4px gold bar at the top (like the header) and no background shading:', r.jokerCells >= 1 && r.jokerClass && r.jokerText && r.jokerBar && r.jokerBar.h === '4px' && /232, 176, 42/.test(r.jokerBar.bg) && r.jokerBar.pos === 'absolute' && !/232, 176, 42|245, 207, 106/.test(r.jokerBg));   // the cell may still carry the own-row wash, but not the old gold shading
   console.log('header has a 4px gold bar above the score chip, no bottom bar, no tint, and no legend line:', r.hdrAccent && !r.legend);
   console.log('competitor header horizontal and header pinned:', r.angled.every(t => t === 'none') && r.pinned);
   await page.screenshot({path:'/tmp/claude-0/-home-user-six-nations/55e70b8c-24a4-53e8-973b-d120bef1189e/scratchpad/simple-light.png', clip:{x:0,y:150,width:390,height:520}});
   await page.evaluate(() => { document.documentElement.setAttribute('data-theme', 'dark'); }); await page.waitForTimeout(300);
-  const d = await page.evaluate(() => { const c = document.querySelector('td.simple-joker'); const s = getComputedStyle(c); return { bg: s.backgroundColor, fg: getComputedStyle(c.querySelector('.pred-score')).color, bar: s.boxShadow }; });
+  const d = await page.evaluate(() => { const c = document.querySelector('td.simple-joker'); const s = getComputedStyle(c); return { bg: s.backgroundColor, fg: getComputedStyle(c.querySelector('.pred-score')).color, bar: s.boxShadow, barBg: getComputedStyle(c, '::before').backgroundColor }; });
   console.log('dark joker cell:', JSON.stringify(d));
   const own = await page.evaluate(() => { const c = document.querySelector('tr.current-user-row td.prediction-cell, tr.current-user-row td.rank-col'); const n = document.querySelector('tr.current-user-row td.rank-col'); const rgb = (s) => (s.match(/[\d.]+/g) || []).map(Number); return { cell: rgb(getComputedStyle(c).backgroundColor), rank: rgb(getComputedStyle(n).backgroundColor) }; });
   console.log('dark: the signed-in player\'s own row is green (not gold):', JSON.stringify(own), own.cell[1] > own.cell[0] && own.rank[1] > own.rank[0] && own.rank[1] > own.rank[2]);
-  console.log('dark works (soft gold shading, no bar):', /245, 207, 106/.test(d.bg) && !/0px 4px/.test(d.bar));
+  console.log('dark works (the Joker bar is the brighter gold, no background shading):', /245, 207, 106/.test(d.barBg) && !/232, 176, 42|245, 207, 106/.test(d.bg));
   await page.screenshot({path:'/tmp/claude-0/-home-user-six-nations/55e70b8c-24a4-53e8-973b-d120bef1189e/scratchpad/simple-dark.png', clip:{x:0,y:150,width:390,height:520}});
   // iPhone/iPad: header cells have a 24px page-coloured spacer on top (border-top); the Joker header's gold bar must show at the top of the green area, below that spacer.
   // Chromium does not match the iOS-only @supports, so the same rules are injected as plain CSS.
