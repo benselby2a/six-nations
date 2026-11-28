@@ -141,7 +141,7 @@ const FIXTURES = [
     const { page, context } = await open();
     await page.evaluate((v) => setSummaryView(v), view); await page.waitForTimeout(500);
     const T = '.summary-table:not(.summary-table-clone)';
-    const label = view === 'compact' ? 'Compact' : 'Focus';
+    const label = view === 'compact' ? 'Default' : 'Jumbo';
     // hover a prediction cell of the second match column (cell index 4: #, name, score, match 1, match 2 ...)
     const cell = page.locator(T + ' tbody tr:nth-child(2) td.prediction-cell, ' + T + ' tbody tr:nth-child(2) td').nth(4);
     await cell.hover(); await page.waitForTimeout(150);

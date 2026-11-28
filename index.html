@@ -11,7 +11,7 @@
         var dark = m === 'dark' || (m !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
         if (dark) { document.documentElement.setAttribute('data-theme', 'dark'); }
     } catch (e) { /* the bundle applies the theme once it runs */ }</script>
-    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=39c6eef0" -->
+    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=51b35f04" -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Six Nations Predictor</title>
@@ -36,7 +36,7 @@
     <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- jsPDF and its table plugin are loaded on demand (see loadPdfLibs in js/export-pdf.js), not on every visit -->
-    <link rel="stylesheet" href="dist/app.min.css?v=39c6eef0">
+    <link rel="stylesheet" href="dist/app.min.css?v=51b35f04">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -230,7 +230,7 @@
                 <!-- Wide screens only (css, 1100px and up): the table view and light/dark switches next to the initial circle. They mirror the account menu's switches and use the same functions. -->
                 <div class="app-bar-tools" id="appBarTools">
                     <div class="bar-switch" id="topViewSwitch" role="group" aria-label="Table view">
-                        <button type="button" class="bar-switch-btn" data-view="compact" aria-pressed="false" title="Compact view" onclick="setSummaryView('compact')">Compact</button>
+                        <button type="button" class="bar-switch-btn" data-view="compact" aria-pressed="false" title="Default view" onclick="setSummaryView('compact')">Default</button>
                         <button type="button" class="bar-switch-btn" data-view="classic" aria-pressed="false" title="Classic view" onclick="setSummaryView('classic')">Classic</button>
                         <button type="button" class="bar-switch-btn" data-view="simple" aria-pressed="false" title="Jumbo view" onclick="setSummaryView('simple')">Jumbo</button>
                     </div>
@@ -253,7 +253,7 @@
                     <div class="account-view" id="accountViewRow">
                         <span class="account-view-label" id="accountViewLabel">Table view</span>
                         <div class="view-switch" id="summaryViewSwitch" role="group" aria-label="Table view">
-                            <span class="view-switch-cell"><button type="button" class="view-switch-btn" data-view="compact" aria-pressed="false" onclick="setSummaryView('compact')">Compact</button></span>
+                            <span class="view-switch-cell"><button type="button" class="view-switch-btn" data-view="compact" aria-pressed="false" onclick="setSummaryView('compact')">Default</button></span>
                             <span class="view-switch-cell"><button type="button" class="view-switch-btn" data-view="classic" aria-pressed="false" onclick="setSummaryView('classic')">Classic</button></span>
                             <span class="view-switch-cell"><button type="button" class="view-switch-btn" data-view="simple" aria-pressed="false" onclick="setSummaryView('simple')">Jumbo</button></span>
                         </div>
@@ -827,7 +827,7 @@
                 <div><strong>Dark and light mode:</strong> The app follows your device&#39;s dark or light setting. To choose for yourself, open your account menu (your initial, top right) and choose Light, Dark or Auto under Appearance.</div>
                 <div><strong>Your Profile:</strong> If you are logged in, open your account menu (your initial, top right) and click your name to customise your profile and choose your preferred team(s). Appearance, Take a tour, Help and Log out are in the same menu.</div>
                 <div><strong>My Predictions:</strong> Enter your score predictions for each fixture, choose your jokers, and set your tournament tries prediction. Predictions can only be entered/edited while predictions are unlocked.</div>
-                <div><strong>Match Summary:</strong> View the live table, tries tracking, and prize projections as results are entered. Tap a prediction to see how it was scored and who reacted. The header row stays pinned as you scroll, turning your phone sideways shows just the countries and scores, and the details button beside the download icon adds the match dates and tries to the headers (the Compact view is the default).</div>
+                <div><strong>Match Summary:</strong> View the live table, tries tracking, and prize projections as results are entered. Tap a prediction to see how it was scored and who reacted. The header row stays pinned as you scroll, turning your phone sideways shows just the countries and scores, and the details button beside the download icon adds the match dates and tries to the headers (Default is the standard view).</div>
                 <div><strong>Reactions:</strong> Tap the 😀＋ chip under a match, or any prediction in the Match Summary table, to react with an emoji.</div>
                 <div><strong>Admin Functions:</strong> Fixtures and Scores, Predictions, Competitors, Prize Fund, and recovery are available to admins only. Admins can lock predictions (typically once the tournament starts).</div>
             </div>
@@ -923,6 +923,6 @@
     </div>
 
     <div class="app-footer"><span id="summaryUpdatedAt" class="app-footer-updated" aria-label="When the scores were last fetched"></span><span id="appVersion" class="app-version" aria-label="App version"></span></div>
-    <script src="dist/app.min.js?v=39c6eef0" onerror="window.__recoverApp && window.__recoverApp(true)"></script>
+    <script src="dist/app.min.js?v=51b35f04" onerror="window.__recoverApp && window.__recoverApp(true)"></script>
 </body>
 </html>
