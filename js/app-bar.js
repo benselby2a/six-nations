@@ -384,7 +384,19 @@ function applySummaryViewMode(mode, redraw) {
         btn.classList.toggle('active', on);
         btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
+    // the view switch in the top bar (wide screens) mirrors the menu's
+    document.querySelectorAll('#topViewSwitch .bar-switch-btn').forEach(btn => {
+        const on = btn.dataset.view === mode;
+        btn.classList.toggle('active', on);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
     if (redraw && typeof showSummary === 'function' && document.getElementById('summaryContainer')) showSummary();   // the redraw also rebuilds the pinned header
+}
+// The table view switch in the top bar only matters on Match Summary: show it there, hide it on My Predictions and the Admin screens
+function syncTopBarToggles() {
+    const view = document.getElementById('topViewSwitch');
+    const summary = document.getElementById('summaryTab');
+    if (view && summary) view.classList.toggle('hidden', summary.classList.contains('hidden'));
 }
 function setSummaryView(mode) {
     try { localStorage.setItem(SUMMARY_VIEW_MODE_KEY, mode); } catch (error) { /* not remembered */ }
@@ -424,4 +436,5 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!SUMMARY_VIEW_MODES.includes(mode)) mode = 'compact';
     applySummaryViewMode(mode, false);
     applySummaryHeaderDetail(detail === '1', false);
+    syncTopBarToggles();
 });

@@ -157,6 +157,21 @@
                 btn.classList.toggle('active', on);
                 btn.setAttribute('aria-pressed', on ? 'true' : 'false');
             });
+            // The sun / moon pair in the top bar (wide screens) marks the theme that is showing now, even when the mode is Auto
+            const effectiveDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            const top = document.getElementById('topThemeSwitch');
+            if (top) {
+                top.classList.toggle('is-auto', colourMode === 'auto');
+                top.querySelectorAll('.bar-switch-btn').forEach(btn => {
+                    const dark = btn.dataset.themeMode === 'dark';
+                    const on = dark === effectiveDark;
+                    btn.classList.toggle('active', on);
+                    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+                    btn.title = colourMode === 'auto'
+                        ? `Auto (following your device): click to force ${dark ? 'Dark' : 'Light'}`
+                        : (dark ? 'Moon: dark mode' : 'Sun: light mode');
+                });
+            }
         }
 
         // Load the saved choice (none: Auto). Someone who picked Dark under the old theme selector keeps Dark.

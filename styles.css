@@ -4362,3 +4362,20 @@ body.summary-compact .summary-table-wrap.sel-fade td.row-sel::after, body.summar
     .toolbar-icon-btn .toolbar-btn-label { display: inline; font-family: var(--body-font); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; }
     .toolbar-icon-btn.header-detail-btn::after, .toolbar-icon-btn.export-pdf-btn::after { display: none; }   /* the label says it: no tooltip */
 }
+
+/* ===== Top-bar switches (wide screens only): table view and sun / moon, left of the initial circle ===== */
+.app-bar-tools { display: none; }
+@media (min-width: 1100px) {
+    .app-bar-tools { display: flex; align-items: center; gap: 0.7rem; order: 2; flex: none; }
+    .bar-switch { display: inline-flex; align-items: stretch; height: 34px; border: 1px solid rgb(var(--ink) / 0.3); border-radius: 9px; overflow: hidden; background: rgb(var(--ink) / 0.1); }
+    .bar-switch.hidden { display: none; }
+    .bar-switch-btn { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0 0.85rem; min-width: 32px; font-family: var(--body-font); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.03em; color: rgb(var(--ink) / 0.8); white-space: nowrap; transition: none; }
+    .bar-switch-btn + .bar-switch-btn { border-left: 1px solid rgb(var(--ink) / 0.22); }
+    .bar-switch-btn:hover { background: rgb(var(--ink) / 0.16); color: var(--text); transform: none; box-shadow: none; }
+    .bar-switch-btn.active, .bar-switch-btn.active:hover { background: var(--gold); color: var(--on-accent); }
+    .bar-switch-btn:focus-visible { outline: 2px solid var(--bright-gold); outline-offset: -2px; }
+    .bar-icon-btn { padding: 0 0.6rem; }
+    .bar-icon-btn svg { display: block; }
+    /* Auto (following the device): the highlighted icon is the theme showing now, marked with a dashed outline so it reads as "not forced" */
+    .bar-switch.is-auto { border-style: dashed; }
+}

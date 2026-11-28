@@ -142,6 +142,7 @@
             if (['predictions', 'summary'].includes(tabName)) {   // Admin is not remembered: the app reopens on whichever of these two was viewed last
                 try { localStorage.setItem(LAST_TAB_KEY, tabName); } catch (error) { /* not remembered */ }
             }
+            if (typeof syncTopBarToggles === 'function') syncTopBarToggles();
             updatePastYearBanners();
             renderReadinessChecklist();
             scrollAdminSectionIntoView(tabName, clickEvent);
