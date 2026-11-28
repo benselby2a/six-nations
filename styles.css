@@ -4381,3 +4381,40 @@ body.summary-compact .summary-table-wrap.sel-fade td.row-sel::after, body.summar
     /* Auto (following the device): the highlighted icon is the theme showing now, marked with a dashed outline so it reads as "not forced" */
     .bar-switch.is-auto { border-style: dashed; }
 }
+
+/* Wide desktops (a mouse, 1100px or more), Compact and Jumbo: short rows, so the whole table fits the screen without scrolling down.
+   js/summary.js fitSummaryDensity() puts one of three levels on .summary-table-wrap: density-comfortable (score over points, ~54px a row), density-tight (~44px)
+   and density-tightest (~37px, smaller type), and sizes the Name column (--desk-name-w) so a name, its flags and the total sit on one line.
+   Phones, tablets and narrow windows never get these classes, so nothing below applies to them. */
+@media (min-width: 1100px) and (hover: hover) and (pointer: fine) {
+    .summary-table-wrap.density-comfortable { --dp-y: 6px; --dp-score: 22px; --dp-pill: 18px; --dp-gap: 2px; --dh-y: 6px; --dh-chip: 26px; --dh-gap: 4px; }
+    body.summary-simple .summary-table-wrap.density-comfortable { --dp-y: 5px; --dp-score: 21px; --dp-pill: 17px; --dp-gap: 2px; }   /* Jumbo's larger type needs a little less padding to match */
+    .summary-table-wrap.density-tight { --dp-y: 3px; --dp-score: 20px; --dp-pill: 17px; --dp-gap: 1px; --dh-y: 4px; --dh-chip: 24px; --dh-gap: 3px; }
+    .summary-table-wrap.density-tightest { --dp-y: 2px; --dp-score: 18px; --dp-pill: 15px; --dp-gap: 0px; --dh-y: 3px; --dh-chip: 22px; --dh-gap: 2px; }
+    /* body rows: less padding, content centred */
+    body.summary-compact .summary-table-wrap[class*="density-"] .summary-table tbody td { padding-top: var(--dp-y); padding-bottom: var(--dp-y); vertical-align: middle; }
+    body.summary-compact .summary-table-wrap[class*="density-"] .summary-table td.prediction-cell .cell-score { height: var(--dp-score); line-height: 1; }
+    body.summary-compact .summary-table-wrap[class*="density-"] .summary-table td.prediction-cell .points-earned { height: var(--dp-pill); margin: var(--dp-gap) auto 0; padding-top: 0; padding-bottom: 0; align-items: center; }
+    body.summary-compact .summary-table-wrap[class*="density-"] .summary-table td.prediction-cell .points-earned.points-placeholder { margin-top: var(--dp-gap); }
+    /* the tightest level: smaller type, still score over points */
+    body.summary-compact:not(.summary-simple) .summary-table-wrap.density-tightest .summary-table td.prediction-cell .cell-score { font-size: 14.4px; }
+    body.summary-compact:not(.summary-simple) .summary-table-wrap.density-tightest .summary-table td.prediction-cell .points-earned { font-size: 12px; }
+    body.summary-simple .summary-table-wrap.density-tightest .summary-table td.prediction-cell .cell-score { font-size: 16px; }
+    body.summary-simple .summary-table-wrap.density-tightest .summary-table td.prediction-cell .points-earned { font-size: 13.6px; }
+    /* the Name column: name, flags and total on one line */
+    body.summary-compact .summary-table-wrap[class*="density-"] .summary-table td.competitor-name,
+    body.summary-compact .summary-table-wrap[class*="density-"] .summary-table th.competitor-col { min-width: var(--desk-name-w, 190px); width: var(--desk-name-w, 190px); max-width: var(--desk-name-w, 190px); }
+    body.summary-compact .summary-table-wrap[class*="density-"] .summary-table td.competitor-name .comp-name { flex-direction: row; align-items: center; justify-content: space-between; gap: 14px; width: 100%; }
+    body.summary-compact .summary-table-wrap[class*="density-"] .summary-table td.competitor-name .comp-sub { width: auto; flex: none; min-height: 0; margin: 0; }
+    body.summary-compact .summary-table-wrap[class*="density-"] .summary-table td.competitor-name .comp-score { margin-left: 8px; }
+    body.summary-compact .summary-table-wrap[class*="density-"] .summary-table td.competitor-name .comp-nick,
+    body.summary-simple .summary-table-wrap[class*="density-"] .summary-table td.competitor-name .comp-nick { display: block; white-space: nowrap; overflow: visible; text-overflow: clip; -webkit-line-clamp: unset; line-clamp: unset; font-size: 14.4px; font-weight: 700; line-height: 1.15; }
+    /* the match headers: tighter, same content */
+    body.summary-compact .summary-table-wrap[class*="density-"] .summary-table thead th { padding-top: var(--dh-y) !important; padding-bottom: var(--dh-y) !important; }
+    body.summary-compact .summary-table-wrap[class*="density-"] .summary-table thead th.competitor-col,
+    body.summary-compact .summary-table-wrap[class*="density-"] .summary-table thead th.rank-col,
+    body.summary-compact .summary-table-wrap[class*="density-"] .summary-table thead th.tries-col { padding-top: var(--dh-y) !important; padding-bottom: calc(var(--dh-y) + 4px) !important; }
+    body.summary-compact .summary-table-wrap[class*="density-"] .summary-table .match-header-cell .match-header-top .match-teams { height: auto; margin: 0 0 var(--dh-gap); }
+    body.summary-compact .summary-table-wrap[class*="density-"] .summary-table .match-header-cell .match-header-bottom .match-result,
+    body.summary-compact .summary-table-wrap[class*="density-"] .summary-table .match-header-cell .match-header-bottom .no-result { height: var(--dh-chip); }
+}
