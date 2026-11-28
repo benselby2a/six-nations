@@ -11,7 +11,7 @@
         var dark = m === 'dark' || (m !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
         if (dark) { document.documentElement.setAttribute('data-theme', 'dark'); }
     } catch (e) { /* the bundle applies the theme once it runs */ }</script>
-    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=2189c791" -->
+    <!-- version marker for copies of the page cached before the bundle existed (they look for this text): src="js/connectivity.js?v=3b9c2a0a" -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Six Nations Predictor</title>
@@ -36,7 +36,7 @@
     <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- jsPDF and its table plugin are loaded on demand (see loadPdfLibs in js/export-pdf.js), not on every visit -->
-    <link rel="stylesheet" href="dist/app.min.css?v=2189c791">
+    <link rel="stylesheet" href="dist/app.min.css?v=3b9c2a0a">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -227,6 +227,18 @@
                 <span class="app-bar-title">Six Nations</span>
                 <span class="year-chip"><select id="yearSelect" onchange="switchYear(this.value)" aria-label="Year"></select></span>
                 <span class="app-bar-space"></span>
+                <!-- Wide screens only (css, 1100px and up): the table view and light/dark switches next to the initial circle. They mirror the account menu's switches and use the same functions. -->
+                <div class="app-bar-tools" id="appBarTools">
+                    <div class="bar-switch" id="topViewSwitch" role="group" aria-label="Table view">
+                        <button type="button" class="bar-switch-btn" data-view="compact" aria-pressed="false" title="Compact view" onclick="setSummaryView('compact')">Compact</button>
+                        <button type="button" class="bar-switch-btn" data-view="classic" aria-pressed="false" title="Classic view" onclick="setSummaryView('classic')">Classic</button>
+                        <button type="button" class="bar-switch-btn" data-view="simple" aria-pressed="false" title="Jumbo view" onclick="setSummaryView('simple')">Jumbo</button>
+                    </div>
+                    <div class="bar-switch bar-switch-icons" id="topThemeSwitch" role="group" aria-label="Appearance">
+                        <button type="button" class="bar-switch-btn bar-icon-btn" data-theme-mode="light" aria-pressed="false" title="Sun: light mode" aria-label="Light mode" onclick="changeTheme('light')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.3 5.3l1.7 1.7M17 17l1.7 1.7M5.3 18.7L7 17M17 7l1.7-1.7"/></svg></button>
+                        <button type="button" class="bar-switch-btn bar-icon-btn" data-theme-mode="dark" aria-pressed="false" title="Moon: dark mode" aria-label="Dark mode" onclick="changeTheme('dark')"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.2 14.6A8.4 8.4 0 0 1 9.4 3.8 8.4 8.4 0 1 0 20.2 14.6z"/></svg></button>
+                    </div>
+                </div>
                 <button type="button" id="avatarBtn" class="avatar-btn" aria-haspopup="true" aria-expanded="false" aria-controls="accountMenu" aria-label="Account menu" onclick="toggleAccountMenu(event)"><span id="avatarInitial">?</span><i class="avatar-dot hidden" id="avatarDot"></i></button>
                 <div id="accountMenu" class="account-menu hidden" role="menu" aria-label="Account">
                     <div class="account-who"><div class="username profile-link" id="currentUser" onclick="closeAccountMenu(); openProfile()"></div></div>
@@ -911,6 +923,6 @@
     </div>
 
     <div class="app-footer"><span id="summaryUpdatedAt" class="app-footer-updated" aria-label="When the scores were last fetched"></span><span id="appVersion" class="app-version" aria-label="App version"></span></div>
-    <script src="dist/app.min.js?v=2189c791" onerror="window.__recoverApp && window.__recoverApp(true)"></script>
+    <script src="dist/app.min.js?v=3b9c2a0a" onerror="window.__recoverApp && window.__recoverApp(true)"></script>
 </body>
 </html>
